@@ -1,3 +1,5 @@
+// auth.js
+
 // Show signup form
 function showSignup() {
     document.getElementById('login-form').style.display = 'none';

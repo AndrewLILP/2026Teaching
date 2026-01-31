@@ -1,3 +1,5 @@
+// app.js - Main JavaScript file for MyMoney Tracker application
+
 let currentUser;
 
 // Check authentication

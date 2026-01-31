@@ -1,3 +1,5 @@
+// dashboard.js
+
 let currentUser;
 
 // Check authentication
