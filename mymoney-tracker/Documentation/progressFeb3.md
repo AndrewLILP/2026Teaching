@@ -98,16 +98,16 @@ let currentChart = null;  // Global variable to store the chart
 ```
 
 ### Step 2: Check if chart exists, destroy if needed
-```javascript
+
 if (currentChart) {
     currentChart.destroy();  // Remove the old chart
 }
-```
+
 
 ### Step 3: Create new chart and save reference
-```javascript
+
 currentChart = new Chart(ctx, { ... });  // Now we can make a new one
-```
+
 
 ## Real-World Analogy
 
@@ -142,3 +142,51 @@ currentChart.data.datasets[0].data = Object.values(categoryTotals);
 currentChart.update();
 
 This is more efficient! (Good for A-grade pathway)
+
+# Bug Fix: Logout Button Not Working
+
+## What Went Wrong?
+
+**The Error:**
+- Click logout button
+- Nothing happens
+- Console shows: `Uncaught ReferenceError: logout is not defined`
+
+## Debugging Process
+
+### Step 1: Check the HTML
+<button onclick="logout()">Logout</button>
+
+✅ Button calls `logout()` function
+
+### Step 2: Check what JavaScript files are loaded
+
+<script src="js/firebase-config.js"></script>
+<script src="js/dashboard.js"></script>
+
+⚠️ Only loading `dashboard.js`, not `app.js`
+
+### Step 3: Check where logout() is defined
+- `app.js`: ✅ Has `logout()` function
+- `dashboard.js`: ❌ No `logout()` function
+
+**Problem found!** The button is trying to call a function that doesn't exist on this page.
+
+## The Solution
+
+**Option 1:** Add `logout()` to `dashboard.js` ✅ (We chose this)
+**Option 2:** Load `app.js` on dashboard page (would work but loads unnecessary code)
+
+## Why We Chose Option 1
+
+Each page should only load the JavaScript it needs:
+- `dashboard.html` needs dashboard functions → load `dashboard.js`
+- `transactions.html` needs transaction functions → load `app.js`
+- Both pages need logout → add `logout()` to both files
+
+## What Students Learn
+
+1. **Function Scope**: Functions only exist in the files where they're defined
+2. **Script Loading Order**: HTML loads scripts in order from top to bottom
+3. **Console Debugging**: Error messages tell you exactly what's missing
+4. **Code Organization**: Decide which functions go in which files

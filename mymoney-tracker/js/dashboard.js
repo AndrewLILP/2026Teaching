@@ -258,4 +258,30 @@ function loadChart() {
         });
 }
 
+// ... rest of dashboard.js code ...
+
+// Show receipt location field when tax deductible checked
+document.getElementById('tax-deductible').addEventListener('change', function() {
+    const receiptSection = document.getElementById('receipt-section');
+    if (this.checked) {
+        receiptSection.style.display = 'block';
+    } else {
+        receiptSection.style.display = 'none';
+    }
+});
+
+
+// 👇 ADD THIS LOGOUT FUNCTION
+// Logout function
+function logout() {
+    auth.signOut()
+        .then(() => {
+            window.location.href = 'index.html';
+        })
+        .catch((error) => {
+            console.error('Logout error:', error);
+            alert('Error logging out. Please try again.');
+        });
+}
+
 
