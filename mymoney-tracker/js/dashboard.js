@@ -1,6 +1,8 @@
 // dashboard.js
 
 let currentUser;
+// bug fix for load chart
+let currentChart = null; // 👈 ADD THIS LINE - stores reference to the chart
 
 // Check authentication
 auth.onAuthStateChanged((user) => {
@@ -22,6 +24,7 @@ function loadDashboard() {
     document.getElementById('income-date').value = today;
     document.getElementById('expense-date').value = today;
 }
+
 
 // Calculate monthly totals
 function calculateMonthlyTotals() {
@@ -219,9 +222,14 @@ function loadChart() {
                 }
             });
             
+            // 👇 DESTROY OLD CHART BEFORE CREATING NEW ONE
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
             // Create chart
             const ctx = document.getElementById('categoryChart').getContext('2d');
-            new Chart(ctx, {
+            currentChart = new Chart(ctx, {  // 👈 SAVE REFERENCE TO THE CHART
                 type: 'pie',
                 data: {
                     labels: categories,
@@ -249,3 +257,5 @@ function loadChart() {
             });
         });
 }
+
+
