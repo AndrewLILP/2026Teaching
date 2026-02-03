@@ -58,7 +58,7 @@ function loadTransactions() {
             });
         })
         .catch((error) => {
-            transactionsList.innerHTML = '<p>Error loading transactions: ' + error.message + '</p>';
+            transactionsList.innerHTML = '<p>Error loading transactions:  </p>';
         });
 }
 
@@ -105,7 +105,7 @@ function loadTaxItems() {
             document.getElementById('total-deductible').textContent = '$' + totalDeductible.toFixed(2);
         })
         .catch((error) => {
-            taxItemsList.innerHTML = '<p>Error loading tax items: ' + error.message + '</p>';
+            taxItemsList.innerHTML = '<p>Error loading tax items: </p>';
         });
 }
 
