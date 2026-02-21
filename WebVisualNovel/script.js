@@ -10,28 +10,59 @@ const dialogue = [
 ];
 
 let currentLine = 0;
+let typing = false;
+let fullText = "";
+let charIndex = 0;
+let typingSpeed = 35;
 
-function nextLine() {
-    if (currentLine >= dialogue.length) return;
+function handleClick() {
+    if (typing) {
+        // If text is still typing, finish instantly
+        document.getElementById("text").textContent = fullText;
+        typing = false;
+        return;
+    }
 
+    if (currentLine < dialogue.length) {
+        showLine();
+    }
+}
+
+function showLine() {
     const line = dialogue[currentLine];
 
     document.getElementById("name").textContent = line.name;
-    document.getElementById("text").textContent = line.text;
 
     const leftChar = document.getElementById("charLeft");
     const rightChar = document.getElementById("charRight");
 
     if (line.side === "left") {
         leftChar.style.opacity = "1";
-        rightChar.style.opacity = "0.4";
+        rightChar.style.opacity = "0.3";
     } else {
         rightChar.style.opacity = "1";
-        leftChar.style.opacity = "0.4";
+        leftChar.style.opacity = "0.3";
     }
+
+    fullText = line.text;
+    charIndex = 0;
+    document.getElementById("text").textContent = "";
+    typing = true;
+
+    typeWriter();
 
     currentLine++;
 }
 
-// Start first line automatically
-nextLine();
+function typeWriter() {
+    if (charIndex < fullText.length) {
+        document.getElementById("text").textContent += fullText.charAt(charIndex);
+        charIndex++;
+        setTimeout(typeWriter, typingSpeed);
+    } else {
+        typing = false;
+    }
+}
+
+// Start first line
+showLine();
