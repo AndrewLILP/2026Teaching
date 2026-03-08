@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcus's Story — Vertex Games | Side Conversations</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #060c0b;
+  --surface:   #0a1210;
+  --panel:     #0f1a18;
+  --border:    #172420;
+  --border2:   #234038;
+  --marcus:    #2dd4bf;
+  --marcus-bg: #051211;
+  --sam:       #fb923c;
+  --sam-bg:    #1a0e05;
+  --ada:       #94a3b8;
+  --ada-bg:    #0d1018;
+  --text:      #d0e8e4;
+  --text-dim:  #4a6860;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.hd {
+  flex-shrink: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hd-back {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer; text-decoration: none;
+  transition: all 0.18s; flex-shrink: 0;
+}
+.hd-back:hover { border-color: var(--marcus); color: var(--marcus); }
+.hd-back svg { width: 11px; height: 11px; }
+
+.hd-divider { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+
+.hd-badge {
+  padding: 3px 10px; border-radius: 20px;
+  background: var(--marcus-bg); border: 1px solid var(--marcus);
+  font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--marcus);
+  flex-shrink: 0;
+}
+.hd-info { flex: 1; min-width: 0; }
+.hd-title {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px;
+  letter-spacing: 0.04em; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hd-sub { font-size: 10px; color: var(--text-dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hd-pills { display: flex; gap: 5px; flex-shrink: 0; }
+.cpill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 12px; border: 1px solid;
+  font-size: 10px; font-weight: 500;
+}
+.cpill .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ── Tabs ────────────────────────────────────────────── */
+.tabs {
+  flex-shrink: 0; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 2px; padding: 7px 14px; overflow-x: auto;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 13px; border-radius: 5px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim);
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.tab:hover:not(.locked) { border-color: var(--border2); color: var(--text); }
+.tab.active { background: var(--marcus); border-color: var(--marcus); color: #000; font-weight: 600; }
+.tab.done   { border-color: var(--border2); color: var(--text); }
+.tab.locked { opacity: 0.3; cursor: default; }
+.tab-pip { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; flex-shrink: 0; }
+.tab.active .tab-pip { background: rgba(0,0,0,0.2); border-color: rgba(0,0,0,0.3); }
+
+/* ── Stage ───────────────────────────────────────────── */
+.stage {
+  flex: 1; position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ── Room backgrounds ─── */
+/* Gap 1 & 2: Art room — dark with viewport grid hints, warm accent glow */
+.room {
+  position: absolute; inset: 0;
+  transition: opacity 0.5s;
+}
+.room-art {
+  background: linear-gradient(180deg, #030807 0%, #071210 55%, #0e1c19 100%);
+}
+.room-art::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 20%, rgba(45,212,191,0.04) 0%, transparent 65%),
+    radial-gradient(ellipse 25% 35% at 18% 35%, rgba(251,146,60,0.05) 0%, transparent 55%),
+    /* wireframe grid hint */
+    linear-gradient(rgba(45,212,191,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,212,191,0.018) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+}
+.room-art::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 32%;
+  background: linear-gradient(180deg, transparent 0%, rgba(6,14,12,0.85) 100%);
+}
+
+/* Gap 3: Art Director's review room — cooler, more formal */
+.room-review {
+  background: linear-gradient(180deg, #050710 0%, #090e1a 55%, #0f1422 100%);
+}
+.room-review::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 40% 50% at 65% 25%, rgba(148,163,184,0.05) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 40% at 25% 30%, rgba(45,212,191,0.04) 0%, transparent 55%);
+}
+.room-review::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 32%;
+  background: linear-gradient(180deg, transparent 0%, rgba(5,7,16,0.85) 100%);
+}
+
+/* Workstation desk */
+.desk {
+  position: absolute;
+  bottom: 158px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  transition: all 0.4s;
+}
+/* Art workstation: wide, two monitors implied */
+.desk-art {
+  width: 62%;
+  height: 40px;
+  background: linear-gradient(160deg, #0d1c18 0%, #060e0c 100%);
+  border-radius: 4px;
+  border-top: 2px solid #1a3530;
+  box-shadow: 0 20px 55px rgba(0,0,0,0.95), inset 0 1px 0 rgba(45,212,191,0.04);
+}
+/* Review room: narrower table */
+.desk-review {
+  width: 50%;
+  height: 38px;
+  background: linear-gradient(160deg, #0c0e18 0%, #060810 100%);
+  border-radius: 4px;
+  border-top: 2px solid #1e2438;
+  box-shadow: 0 20px 55px rgba(0,0,0,0.95);
+}
+
+/* ── Workstation monitor (shows data table in Gap 2) ─── */
+.ws-wrap {
+  position: absolute;
+  bottom: 188px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  transition: opacity 0.5s, transform 0.5s;
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  pointer-events: none;
+}
+.ws-wrap.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.ws-monitor {
+  background: #0a1a16;
+  border: 3px solid #1a1a1a;
+  border-radius: 4px;
+  box-shadow: 0 0 0 5px #0d0d0d, 0 0 25px rgba(45,212,191,0.2), inset 0 0 18px rgba(45,212,191,0.04);
+  overflow: hidden;
+}
+.ws-monitor-bar {
+  background: #0d1f1a;
+  padding: 3px 8px;
+  border-bottom: 1px solid rgba(45,212,191,0.15);
+  display: flex; align-items: center; gap: 5px;
+}
+.ws-monitor-dot { width: 4px; height: 4px; border-radius: 50%; }
+.ws-monitor-title { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(45,212,191,0.65); letter-spacing: 0.06em; }
+.ws-table-wrap { padding: 6px 8px; }
+.ws-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5px;
+}
+.ws-table th {
+  color: rgba(45,212,191,0.55);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-bottom: 1px solid rgba(45,212,191,0.1);
+  white-space: nowrap;
+  text-align: left;
+}
+.ws-table td {
+  padding: 3px 6px;
+  color: rgba(208,232,228,0.8);
+  border-bottom: 1px solid rgba(45,212,191,0.05);
+  white-space: nowrap;
+}
+.ws-table tr.highlight td { background: rgba(45,212,191,0.08); color: var(--marcus); }
+.ws-table .over { color: #f87171; }
+.ws-table .ok   { color: #4ade80; }
+
+.ws-stand { width: 5px; height: 12px; background: #1a1a1a; margin: 0 auto; border-radius: 1px; }
+.ws-base  { width: 35px; height: 4px; background: #151515; margin: 0 auto; border-radius: 2px; }
+
+/* ── Big projector / presentation screen ─────────────── */
+.proj-wrap {
+  position: absolute; top: 10px; left: 50%;
+  transform: translateX(-50%) translateY(-10px) scale(0.96);
+  z-index: 10;
+  opacity: 0; transition: opacity 0.5s, transform 0.5s;
+  pointer-events: none;
+}
+.proj-wrap.visible { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.proj-mount { width: 6px; height: 15px; background: #1e1e1e; margin: 0 auto; border-radius: 1px; }
+.proj-screen {
+  width: 420px;
+  background: #f0f2f5;
+  border: 4px solid #111;
+  border-radius: 3px;
+  box-shadow: 0 0 0 8px #0e0e0e, 0 18px 60px rgba(0,0,0,0.95);
+  overflow: hidden;
+}
+.proj-hd {
+  background: #111820;
+  padding: 5px 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.proj-hd-title { font-family: 'Syne', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--marcus); }
+.proj-hd-sub   { font-size: 8px; color: var(--text-dim); }
+.proj-body { padding: 8px 10px 7px; background: #f8f9fc; }
+
+/* ── Annotation layer for Gap 3 revised chart ────────── */
+.revised-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: #4ade80;
+  color: #000;
+  font-family: 'Syne', sans-serif;
+  font-size: 7px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 10px;
+  opacity: 0; transition: opacity 0.5s;
+  z-index: 2;
+}
+.revised-badge.show { opacity: 1; }
+
+/* ── Characters ──────────────────────────────────────── */
+.chars {
+  position: absolute;
+  bottom: 172px; left: 0; right: 0;
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 0; z-index: 3; padding: 0 8%;
+}
+.char {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  transition: all 0.32s cubic-bezier(0.34,1.56,0.64,1);
+  filter: brightness(0.42) saturate(0.2); opacity: 0.28;
+  transform: scale(0.87) translateY(7px);
+}
+.char.active { filter: brightness(1) saturate(1); opacity: 1; transform: scale(1) translateY(0); }
+.char.left  { margin-right: auto; }
+.char.right { margin-left: auto; }
+.char.center { margin: 0 auto; }
+
+.cfig { width: 68px; height: 88px; position: relative; }
+.cb { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 54px; height: 56px; border-radius: 10px 10px 5px 5px; }
+.cn { position: absolute; bottom: 53px; left: 50%; transform: translateX(-50%); width: 13px; height: 9px; }
+.ch { position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%); width: 40px; height: 42px; border-radius: 50% 50% 44% 44%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; overflow: hidden; }
+.cha { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); height: 14px; border-radius: 50% 50% 0 0; }
+.cnp { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 9px; border-radius: 20px; border: 1px solid; }
+
+/* Marcus */
+.char[data-id="marcus"] .cb  { background: linear-gradient(160deg, #0d8a7a, #055a52); }
+.char[data-id="marcus"] .ch  { background: #b0a070; color: #3a2800; }
+.char[data-id="marcus"] .cha { background: #1a0a00; width: 42px; }
+.char[data-id="marcus"] .cn  { background: #b0a070; }
+.char[data-id="marcus"] .cnp { color: var(--marcus); border-color: var(--marcus); background: var(--marcus-bg); }
+
+/* Sam */
+.char[data-id="sam"] .cb  { background: linear-gradient(160deg, #a85a15, #6a3308); }
+.char[data-id="sam"] .ch  { background: #e8c088; color: #5a2800; }
+.char[data-id="sam"] .cha { background: #100800; width: 46px; }
+.char[data-id="sam"] .cn  { background: #e8c088; }
+.char[data-id="sam"] .cnp { color: var(--sam); border-color: var(--sam); background: var(--sam-bg); }
+
+/* Ada */
+.char[data-id="ada"] .cb  { background: linear-gradient(160deg, #3a4560, #222a40); }
+.char[data-id="ada"] .ch  { background: #c8b8a0; color: #3a2a18; }
+.char[data-id="ada"] .cha { background: #181820; width: 50px; }
+.char[data-id="ada"] .cn  { background: #c8b8a0; }
+.char[data-id="ada"] .cnp { color: var(--ada); border-color: var(--ada); background: var(--ada-bg); }
+
+/* Scene badge & context */
+.scene-badge {
+  position: absolute; top: 10px; left: 12px; z-index: 20;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  border: 1px solid var(--border2); border-radius: 20px;
+  padding: 4px 12px; font-family: 'Syne', sans-serif;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
+}
+.ctx-label {
+  position: absolute; top: 10px; right: 12px; z-index: 20;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
+  border: 1px solid var(--border2); border-radius: 6px;
+  padding: 5px 12px; font-size: 10px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 6px;
+}
+.ctx-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Dialogue ────────────────────────────────────────── */
+.dlg {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 12px 18px 11px; flex-shrink: 0; position: relative; z-index: 20;
+  min-height: 145px; display: grid; grid-template-rows: auto 1fr auto; gap: 5px;
+}
+.dlg::before {
+  content: ''; position: absolute; top: -1px; left: 0;
+  height: 2px; background: var(--sc, var(--marcus)); width: 100%; transition: background 0.3s;
+}
+.spkrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spkdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 7px currentColor; }
+.spkname { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+.spkrole { font-size: 10px; color: var(--text-dim); }
+.spktag  { padding: 1px 7px; border-radius: 10px; font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; border: 1px solid; opacity: 0.7; }
+
+.dlgtext { font-size: 14px; line-height: 1.72; color: var(--text); max-width: 820px; }
+.dlgtext .cur { display: inline-block; width: 2px; height: 12px; background: var(--marcus); margin-left: 1px; vertical-align: middle; animation: blink 0.8s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.dlgfooter { display: flex; align-items: center; justify-content: space-between; }
+.prog { display: flex; gap: 3px; align-items: center; flex-wrap: wrap; }
+.pd { width: 5px; height: 5px; border-radius: 50%; background: var(--border2); transition: all 0.25s; }
+.pd.done    { background: var(--text-dim); }
+.pd.cur     { background: var(--sc, var(--marcus)); width: 13px; border-radius: 3px; }
+
+.btnadv {
+  background: var(--marcus); color: #000; border: none;
+  padding: 8px 18px; border-radius: 5px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.16s;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.btnadv:hover { background: #5ef0dc; transform: translateY(-1px); }
+.btnadv svg { width: 11px; height: 11px; }
+
+/* ── Complete overlay ────────────────────────────────── */
+.cmp {
+  position: absolute; inset: 0;
+  background: rgba(3,8,7,0.87); backdrop-filter: blur(7px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.45s;
+}
+.cmp.show { opacity: 1; pointer-events: auto; }
+.cmp-icon  { width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--marcus); background: rgba(45,212,191,0.08); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.cmp-gap   { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--marcus); }
+.cmp-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--text); text-align: center; max-width: 340px; }
+.cmp-body  { font-size: 12px; color: var(--text-dim); text-align: center; max-width: 360px; line-height: 1.6; }
+.cmp-lesson {
+  background: rgba(45,212,191,0.07); border: 1px solid rgba(45,212,191,0.2);
+  border-radius: 8px; padding: 10px 18px; max-width: 360px; text-align: center;
+}
+.cmp-lesson-lbl { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--marcus); margin-bottom: 5px; }
+.cmp-lesson-txt { font-size: 12px; color: var(--text); line-height: 1.6; }
+.cmp-btns { display: flex; gap: 8px; margin-top: 4px; }
+.cmpbtn { padding: 9px 20px; border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: none; transition: all 0.18s; }
+.cmpbtn.pri { background: var(--marcus); color: #000; }
+.cmpbtn.pri:hover { background: #5ef0dc; }
+.cmpbtn.sec { background: transparent; color: var(--text-dim); border: 1px solid var(--border2); }
+.cmpbtn.sec:hover { color: var(--text); border-color: var(--text-dim); }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  .hd-pills  { display: none; }
+  .hd-divider{ display: none; }
+  .hd-back span { display: none; }
+  .hd-back { padding: 5px 8px; }
+  .proj-screen { width: 290px; }
+  .ws-wrap { bottom: 180px; }
+  .ws-monitor { max-width: 220px; }
+  .ws-table, .ws-table th, .ws-table td { font-size: 6.5px; }
+  .cfig { width: 54px; height: 70px; }
+  .cb { width: 42px; height: 44px; }
+  .ch { width: 32px; height: 34px; font-size: 11px; bottom: 46px; }
+  .cn { width: 10px; height: 7px; bottom: 42px; }
+  .cha { height: 11px; }
+  .cnp { font-size: 8px; padding: 2px 7px; }
+  .chars { bottom: 158px; padding: 0 4%; }
+  .desk { bottom: 148px; }
+  .desk-art { width: 78%; }
+  .desk-review { width: 64%; }
+  .dlg { padding: 10px 13px 9px; min-height: 135px; }
+  .dlgtext { font-size: 13px; }
+  .spkname { font-size: 11px; }
+  .btnadv  { padding: 7px 14px; font-size: 9px; }
+  .scene-badge { font-size: 8px; padding: 3px 9px; }
+  .ctx-label   { font-size: 9px; padding: 4px 9px; }
+}
+@media (max-width: 380px) {
+  .proj-screen { width: 240px; }
+  .spktag { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hd">
+  <a class="hd-back" href="studio-meeting.html">
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2L4 6l4 4"/></svg>
+    <span>Main Meetings</span>
+  </a>
+  <div class="hd-divider"></div>
+  <div class="hd-badge">Side Story</div>
+  <div class="hd-info">
+    <div class="hd-title">Marcus — Technical Artist: Between-Meeting Conversations</div>
+    <div class="hd-sub">Vertex Games · Enterprise Information Systems: Analysing Data</div>
+  </div>
+  <div class="hd-pills">
+    <div class="cpill" style="color:var(--marcus);border-color:var(--marcus);background:var(--marcus-bg)">
+      <div class="dot" style="background:var(--marcus)"></div> Marcus
+    </div>
+    <div class="cpill" style="color:var(--sam);border-color:var(--sam);background:var(--sam-bg)">
+      <div class="dot" style="background:var(--sam)"></div> Sam
+    </div>
+    <div class="cpill" style="color:var(--ada);border-color:var(--ada);background:var(--ada-bg)">
+      <div class="dot" style="background:var(--ada)"></div> Ada
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" data-s="0" onclick="selScene(0)">
+    <div class="tab-pip"></div> Gap 1 — After Identifying &amp; Defining
+  </button>
+  <button class="tab locked" data-s="1" onclick="selScene(1)">
+    <div class="tab-pip"></div> Gap 2 — After Researching &amp; Planning
+  </button>
+  <button class="tab locked" data-s="2" onclick="selScene(2)">
+    <div class="tab-pip"></div> Gap 3 — After Producing &amp; Implementing
+  </button>
+</div>
+
+<!-- STAGE -->
+<div class="stage">
+
+  <!-- Rooms -->
+  <div class="room room-art"    id="rArt"></div>
+  <div class="room room-review" id="rReview" style="opacity:0"></div>
+
+  <!-- Desk -->
+  <div class="desk desk-art" id="deskEl"></div>
+
+  <!-- Workstation monitors (Gap 2) -->
+  <div class="ws-wrap" id="wsWrap">
+    <div>
+      <div class="ws-monitor" style="width:220px">
+        <div class="ws-monitor-bar">
+          <div class="ws-monitor-dot" style="background:#f87171"></div>
+          <div class="ws-monitor-dot" style="background:#facc15;margin-left:2px"></div>
+          <div class="ws-monitor-dot" style="background:#4ade80;margin-left:2px"></div>
+          <span class="ws-monitor-title" style="margin-left:6px">ASSET_OPTIMISATION_LOG.xlsx</span>
+        </div>
+        <div class="ws-table-wrap">
+          <table class="ws-table">
+            <thead><tr>
+              <th>Asset</th><th>Type</th><th>Polys Before</th><th>Polys After</th><th>Change</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>Bench_01</td><td>Prop</td><td class="over">12,200</td><td class="ok">2,800</td><td>-77%</td><td class="ok">✓ Done</td></tr>
+              <tr class="highlight"><td>Fountain_01</td><td>Hero</td><td class="over">14,000</td><td>—</td><td>—</td><td style="color:#facc15">⚡ Active</td></tr>
+              <tr><td>StreetLamp_01</td><td>Prop</td><td class="over">8,400</td><td>—</td><td>—</td><td style="color:var(--text-dim)">Queued</td></tr>
+              <tr><td>FireHydrant_01</td><td>Prop</td><td class="over">6,100</td><td>—</td><td>—</td><td style="color:var(--text-dim)">Queued</td></tr>
+              <tr><td>RubbishBin_01</td><td>Prop</td><td class="over">4,800</td><td>—</td><td>—</td><td style="color:var(--text-dim)">Queued</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ws-stand"></div>
+      <div class="ws-base"></div>
+    </div>
+    <div>
+      <div class="ws-monitor" style="width:170px">
+        <div class="ws-monitor-bar">
+          <div class="ws-monitor-dot" style="background:#f87171"></div>
+          <div class="ws-monitor-dot" style="background:#facc15;margin-left:2px"></div>
+          <div class="ws-monitor-dot" style="background:#4ade80;margin-left:2px"></div>
+          <span class="ws-monitor-title" style="margin-left:6px">Blender — Fountain_01.blend</span>
+        </div>
+        <div class="ws-table-wrap" style="padding:6px 8px 4px">
+          <div style="font-family:'DM Mono',monospace;font-size:7px;color:rgba(45,212,191,0.55);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Mesh Info</div>
+          <table class="ws-table">
+            <tbody>
+              <tr><td>Vertices</td><td class="over">28,441</td></tr>
+              <tr><td>Faces</td><td class="over">14,000</td></tr>
+              <tr><td>Tris</td><td class="over">27,840</td></tr>
+              <tr><td>Target</td><td class="ok">≤ 5,000 faces</td></tr>
+              <tr class="highlight"><td>Budget</td><td style="color:#facc15">△ Over by 9,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ws-stand"></div>
+      <div class="ws-base"></div>
+    </div>
+  </div>
+
+  <!-- Projector screen (Gap 3 chart) -->
+  <div class="proj-wrap" id="projWrap">
+    <div class="proj-mount"></div>
+    <div class="proj-screen" style="position:relative">
+      <div class="proj-hd">
+        <span class="proj-hd-title" id="projTitle">Asset File Size Distribution</span>
+        <span class="proj-hd-sub"   id="projSub">All Tracked Assets</span>
+      </div>
+      <div class="proj-body">
+        <canvas id="chartCanvas" width="400" height="162"></canvas>
+      </div>
+      <div class="revised-badge" id="revisedBadge">REVISED ✓</div>
+    </div>
+  </div>
+
+  <!-- Characters -->
+  <div class="chars" id="charsEl">
+    <div class="char left" data-id="marcus" id="cMarcus">
+      <div class="cfig"><div class="cb"></div><div class="cn"></div><div class="ch"><div class="cha"></div>M</div></div>
+      <div class="cnp">Marcus</div>
+    </div>
+    <div class="char right" data-id="sam" id="cSam">
+      <div class="cfig"><div class="cb"></div><div class="cn"></div><div class="ch"><div class="cha"></div>S</div></div>
+      <div class="cnp">Sam</div>
+    </div>
+    <div class="char right" data-id="ada" id="cAda" style="display:none">
+      <div class="cfig"><div class="cb"></div><div class="cn"></div><div class="ch"><div class="cha"></div>A</div></div>
+      <div class="cnp">Ada</div>
+    </div>
+  </div>
+
+  <div class="scene-badge" id="sceneBadge">Gap 1 · Art Room</div>
+  <div class="ctx-label" id="ctxLabel">
+    <div class="ctx-dot" id="ctxDot" style="background:var(--sam)"></div>
+    <span id="ctxText">Sam Park · Junior 3D Artist</span>
+  </div>
+
+  <!-- Complete -->
+  <div class="cmp" id="cmp">
+    <div class="cmp-icon"  id="cmpIcon">💬</div>
+    <div class="cmp-gap"   id="cmpGap">Gap 1 Complete</div>
+    <div class="cmp-title" id="cmpTitle">Visual Quality vs Technical Cost</div>
+    <div class="cmp-body"  id="cmpBody"></div>
+    <div class="cmp-lesson">
+      <div class="cmp-lesson-lbl">Key Insight</div>
+      <div class="cmp-lesson-txt" id="cmpLesson"></div>
+    </div>
+    <div class="cmp-btns">
+      <button class="cmpbtn sec" onclick="replay()">↺ Replay</button>
+      <button class="cmpbtn pri" id="btnNext" onclick="goNext()">Next Gap →</button>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- DIALOGUE -->
+<div class="dlg" id="dlg">
+  <div class="spkrow">
+    <div class="spkdot" id="spkDot"></div>
+    <div class="spkname" id="spkName">Marcus</div>
+    <div class="spkrole" id="spkRole">Technical Artist</div>
+    <div class="spktag"  id="spkTag">INTERNAL</div>
+  </div>
+  <div class="dlgtext" id="dlgText"></div>
+  <div class="dlgfooter">
+    <div class="prog" id="prog"></div>
+    <button class="btnadv" onclick="advance()">
+      Continue
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6h8M6 2l4 4-4 4"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const CHARS = {
+  marcus: { name:'Marcus', role:'Technical Artist', tag:'INTERNAL', color:'var(--marcus)' },
+  sam:    { name:'Sam',    role:'Junior 3D Artist', tag:'MENTEE',   color:'var(--sam)'    },
+  ada:    { name:'Ada',    role:'Art Director',     tag:'LEAD',     color:'var(--ada)'    },
+};
+
+// Chart config helpers
+const BAR_OPTS = (yLabel) => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: true, labels: { color:'#888', font:{ size:8 }, boxWidth:9 } } },
+  scales: {
+    y: { grid:{ color:'#33334418' }, ticks:{ color:'#666', font:{ size:8 } }, title: yLabel ? { display:true, text: yLabel, color:'#777', font:{ size:8 } } : undefined },
+    x: { grid:{ display:false }, ticks:{ color:'#555', font:{ size:8 } } }
+  }
+});
+
+const scenes = [
+  /* ── GAP 1: Art Room — Marcus + Sam ─────────────────── */
+  {
+    badge: "Gap 1 · Art Room",
+    ctx: "Sam Park · Junior 3D Artist", ctxChar: 'sam',
+    room: 'art', showWs: false, showProj: false, showAda: false,
+    deskClass: 'desk-art',
+    cmpIcon: '🔺', cmpGap: 'Gap 1 Complete',
+    cmpTitle: 'Visual Quality vs Technical Cost',
+    cmpBody: "Sam's reaction — 'it looks fine' — is one of the most common responses to a data-defined problem in creative disciplines. Marcus separated aesthetic judgement from technical measurement.",
+    cmpLesson: "Something can look correct and still be wrong in data terms. A polygon budget is not an opinion about quality — it is a constraint derived from evidence about what the hardware can actually process.",
+    lines: [
+      { c:'marcus', t:"Sam, got five minutes? I want to walk you through the profiling findings from yesterday's meeting before we start on any new assets." },
+      { c:'sam',    t:"Sure — is this about the performance stuff? I heard QA has been loud about Scene 3." },
+      { c:'marcus', t:"It is. Here's the situation: Scene 3 is averaging 24fps on target hardware. Our threshold is 30fps. The data points pretty clearly to asset density — polygon counts specifically." },
+      { c:'sam',    t:"I've been loading my stuff in-engine and it looks fine though. Clean renders, no artefacts. I don't see a quality problem." },
+      { c:'marcus', t:"And that's the thing — it does look fine. You're not wrong about that. But looking fine and performing fine are two different measures entirely." },
+      { c:'sam',    t:"How can something look fine but be causing a performance problem?" },
+      { c:'marcus', t:"Your fountain model has 14,000 polygons. The GPU doesn't care whether those extra polygons are visible at typical viewing distance — it has to process every single one of them, every single frame, sixty times a second." },
+      { c:'sam',    t:"But I spent a lot of time on the detail in that fountain. The sculpt is really clean." },
+      { c:'marcus', t:"The sculpt quality is genuinely good — that's a real thing. But detail that the player never sees at playing distance costs exactly the same as detail they do see. The GPU doesn't know the difference." },
+      { c:'sam',    t:"So what's the right number? How do I know where to stop adding detail?" },
+      { c:'marcus', t:"That's exactly the right question. The answer is a polygon budget — a data-informed ceiling based on what our target hardware can actually process across an entire scene. It's not an aesthetic call. It comes from the benchmark research we ran this week." },
+      { c:'sam',    t:"And my assets are over that budget." },
+      { c:'marcus', t:"Most of them, yes. But here's the important part: this isn't a judgement about your work being bad. It means we need a technical process to reduce complexity without ruining what you've built visually. That's what we're doing this week — and I want to work through it with you, not just hand you a list of numbers." },
+      { c:'sam',    t:"...Okay. That actually makes sense. What do we do first?" },
+      { c:'marcus', t:"We start with the fountain — it's the highest-priority asset. I'll walk you through how to read the benchmark data and then how to retopologise to hit the budget. The goal is to get it to the right number with no visible quality loss at playing distance." },
+    ]
+  },
+
+  /* ── GAP 2: Art Room — Marcus + Sam workstation ─────── */
+  {
+    badge: "Gap 2 · Art Room Workstation",
+    ctx: "Sam Park · Junior 3D Artist", ctxChar: 'sam',
+    room: 'art', showWs: true, showProj: false, showAda: false,
+    deskClass: 'desk-art',
+    cmpIcon: '⚙️', cmpGap: 'Gap 2 Complete',
+    cmpTitle: 'Data in Practice',
+    cmpBody: "The workstation session showed how abstract benchmark numbers become concrete decisions — and why logging every change is part of the analysis, not just admin.",
+    cmpLesson: "A data collection plan means nothing if people don't know how to use it in practice. The optimisation log turns individual changes into traceable evidence that the whole team's evaluation can depend on.",
+    lines: [
+      { c:'marcus', t:"Alright — let's pull up the fountain in Blender and the log side by side. I want you to see how the data drives the decisions, not just watch me make the changes." },
+      { c:'sam',    t:"The log has the asset already listed — it's showing 14,000 faces. And the benchmark column says 3,000 to 5,000 for a hero prop." },
+      { c:'marcus', t:"Exactly. That benchmark range didn't come from our heads — it came from measuring the polygon counts on the top-rated environment packs on the Unity Asset Store. Professional work that ships and runs well on hardware like ours." },
+      { c:'sam',    t:"So 14,000 is about three times over the upper limit." },
+      { c:'marcus', t:"Right. And before we touch anything — what do we do first?" },
+      { c:'sam',    t:"...Record the original value in the log?" },
+      { c:'marcus', t:"Exactly. The 'before' data is just as important as the 'after'. If we don't log it first, we lose the evidence of how much improvement we made. The log is what turns this from 'we fixed some stuff' to 'we reduced the fountain by 77% with no visual quality loss at playing distance.'" },
+      { c:'sam',    t:"That's a pretty big difference in how it sounds." },
+      { c:'marcus', t:"One is an impression. The other is a finding. Now — the retopology approach. We're not going to just delete polygons randomly. We identify the loops that are contributing to detail the player never sees, and collapse them. The detail that matters — the rim, the basin edge, the major form — we keep." },
+      { c:'sam',    t:"How do we know what 'playing distance' means for this asset?" },
+      { c:'marcus', t:"Good question. It comes from our scene layout data. This fountain sits in the city square — the camera's minimum approach is about eight metres. At that distance, detail under roughly two centimetres in real-world scale is invisible. We can use that as our retopology guide." },
+      { c:'sam',    t:"So the data is actually telling us where to make the cuts. It's not just a limit — it's guiding the creative decision." },
+      { c:'marcus', t:"That's exactly it. The benchmark gives us the target. The scene data tells us the method. We're not guessing which detail to remove — we're using evidence to make that call. Go ahead and start collapsing the edge loops on the basin detail — I'll watch." },
+      { c:'sam',    t:"Okay... there. I've taken out the inner basin subdivisions. Face count is down to about 9,200." },
+      { c:'marcus', t:"Good start. Now log that as an intermediate step with a note: 'removed inner basin subdivision loops, no visual change at 8m distance.' Every step gets logged — not just the final number. Then we keep going." },
+    ]
+  },
+
+  /* ── GAP 3: Review Room — Marcus + Ada ──────────────── */
+  {
+    badge: "Gap 3 · Art Director Review",
+    ctx: "Ada Reyes · Art Director", ctxChar: 'ada',
+    room: 'review', showWs: false, showProj: true, showAda: true,
+    deskClass: 'desk-review',
+    chartVersions: [
+      {
+        // Version 1: "before" — unlabelled, no reference line
+        title: 'Asset File Size Distribution',
+        sub: 'Scene 3 — 52 assets',
+        config: {
+          type: 'bar',
+          data: {
+            labels: ['<500KB','500KB–1MB','1–2MB','2–4MB','4–8MB','>8MB'],
+            datasets: [{ label:'Asset Count', data:[8,14,16,7,5,2], backgroundColor:['#4ade8077','#4ade8077','#facc1577','#fb923c77','#f8717177','#f8717177'], borderColor:['#4ade80','#4ade80','#facc15','#fb923c','#f87171','#ef4444'], borderWidth:2, borderRadius:3 }]
+          },
+          options: { ...BAR_OPTS('Count'), plugins: { legend: { display: false } } }
+        }
+      },
+      {
+        // Version 2: "after" — clearer labels, annotation note
+        title: 'File Size Distribution: Scene 3 Assets vs Budget',
+        sub: '52 assets tracked — budget threshold: ≤ 2MB per asset',
+        config: {
+          type: 'bar',
+          data: {
+            labels: ['Under 500KB\n(Lean)','500KB–1MB\n(Good)','1–2MB\n(Acceptable)','2–4MB\n(Over budget)','4–8MB\n(High priority)','Over 8MB\n(Critical)'],
+            datasets: [
+              { label:'Within budget', data:[8,14,16,0,0,0], backgroundColor:'#4ade8055', borderColor:'#4ade80', borderWidth:2, borderRadius:3 },
+              { label:'Over budget',   data:[0,0,0,7,5,2],   backgroundColor:'#f8717155', borderColor:'#f87171', borderWidth:2, borderRadius:3 },
+            ]
+          },
+          options: { ...BAR_OPTS('Number of assets'), plugins: { legend: { display: true, labels: { color:'#888', font:{ size:8 }, boxWidth:9 } } } }
+        }
+      }
+    ],
+    cmpIcon: '📐', cmpGap: 'Gap 3 Complete',
+    cmpTitle: "If You Have to Explain It, It Isn't Finished",
+    cmpBody: "Ada's challenge forced Marcus to recognise the difference between a chart built for analysis and a chart built for communication. The data was the same — the design had to change.",
+    cmpLesson: "A visualisation for internal analysis can assume shared context. A visualisation for evaluation or external review must be self-contained — the chart should answer the reader's question before they have to ask it.",
+    lines: [
+      { c:'marcus', t:"Ada — I wanted to get your eyes on the distribution chart before tomorrow's final meeting. Priya and I put it together from the 52-asset dataset.", showChart: true, chartV: 0 },
+      { c:'ada',    t:"Walk me through it. What am I looking at?" },
+      { c:'marcus', t:"It's a histogram showing how our Scene 3 assets distribute across file size ranges. The cluster on the left is the lean assets, the right side is the problematic ones — the ones contributing to the performance issue." },
+      { c:'ada',    t:"Which bars are the problem ones?" },
+      { c:'marcus', t:"The orange and red bars on the right — from 2MB upward. Those are over budget." },
+      { c:'ada',    t:"Marcus. If I have to ask you which bars are the problem ones, the chart isn't finished." },
+      { c:'marcus', t:"...That's fair." },
+      { c:'ada',    t:"I work in this studio. I know what 'file size distribution' means. But at tomorrow's meeting Jordan will be presenting this to the broader team, and Dana may share it with the publisher's team. None of them will have your context." },
+      { c:'marcus', t:"So the axis labels aren't enough — I need the chart itself to communicate the budget threshold." },
+      { c:'ada',    t:"Exactly. What's the budget threshold?" },
+      { c:'marcus', t:"Two megabytes per asset, based on the benchmark research." },
+      { c:'ada',    t:"So why isn't that written on the chart? Why isn't the bar colour change happening at the 2MB line? Why don't the labels say 'Over budget' and 'Within budget'?" },
+      { c:'marcus', t:"Because I built it to analyse the data, not to communicate it. Those are actually two different jobs." },
+      { c:'ada',    t:"Now you're thinking about it correctly. An analytical chart is a tool for you. A communication chart is a document for someone else. This one needs to be the second thing." },
+      { c:'marcus', t:"I can rework it before tomorrow — split the dataset into two colours at the 2MB threshold, relabel the axes with plain-English descriptions, update the title to state the question it's answering. Give me an hour.", showChart: true, chartV: 1, showRevised: true },
+      { c:'marcus', t:"There — revised version. The colour split now shows within-budget versus over-budget directly. The title states the comparison. The axis labels explain what each bar means without prior knowledge of the project." },
+      { c:'ada',    t:"Much better. Now I can read the key finding — fourteen assets over budget — without having to ask you anything. That's the standard." },
+      { c:'marcus', t:"Noted. And honestly — for every chart we produce from now on, I'll run it through that test first: 'can someone with no context answer the key question without asking me?' If not, it needs more work." },
+    ]
+  }
+];
+
+// ── State ─────────────────────────────────────────────
+let cur = 0, line = 0, typing = false, timer = null, chart = null;
+let unlocked = new Set([0]);
+
+function init() { loadScene(0); }
+
+function selScene(idx) {
+  if (!unlocked.has(idx)) return;
+  cur = idx; line = 0;
+  hideCmp(); hideProj();
+  loadScene(idx);
+}
+
+function loadScene(si) {
+  const s = scenes[si];
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.remove('active');
+    if (i === si) t.classList.add('active');
+  });
+
+  // Room
+  document.getElementById('rArt').style.opacity    = s.room === 'art'    ? '1' : '0';
+  document.getElementById('rReview').style.opacity = s.room === 'review' ? '1' : '0';
+
+  // Desk class
+  const dk = document.getElementById('deskEl');
+  dk.className = 'desk ' + s.deskClass;
+
+  // Workstation
+  document.getElementById('wsWrap').classList.toggle('visible', s.showWs);
+
+  // Characters
+  document.getElementById('cSam').style.display = s.showAda ? 'none' : '';
+  document.getElementById('cAda').style.display = s.showAda ? ''     : 'none';
+
+  // Badge + ctx
+  document.getElementById('sceneBadge').textContent = s.badge;
+  document.getElementById('ctxText').textContent    = s.ctx;
+  document.getElementById('ctxDot').style.background = `var(--${s.ctxChar})`;
+
+  renderLine(si, 0);
+}
+
+function renderLine(si, li) {
+  const s = scenes[si];
+  const d = s.lines[li];
+  const info = CHARS[d.c];
+
+  // Characters
+  document.querySelectorAll('.char').forEach(c => c.classList.remove('active'));
+  document.getElementById('cMarcus').classList.toggle('active', d.c === 'marcus');
+  if (!scenes[si].showAda) document.getElementById('cSam').classList.toggle('active', d.c === 'sam');
+  else                     document.getElementById('cAda').classList.toggle('active', d.c === 'ada');
+
+  // Speaker
+  const dlg = document.getElementById('dlg');
+  dlg.style.setProperty('--sc', info.color);
+  const dot = document.getElementById('spkDot');
+  dot.style.background = info.color;
+  dot.style.color = info.color;
+  document.getElementById('spkName').textContent = info.name;
+  document.getElementById('spkName').style.color = info.color;
+  document.getElementById('spkRole').textContent = info.role;
+  const tag = document.getElementById('spkTag');
+  tag.textContent = info.tag;
+  tag.style.color = info.color;
+  tag.style.borderColor = info.color;
+  tag.style.background = `color-mix(in srgb, ${info.color} 10%, transparent)`;
+
+  // Chart / projector
+  if (d.showChart && s.showProj) {
+    showChart(s, d.chartV || 0, d.showRevised || false);
+  } else if (!d.showChart) {
+    hideProj();
+  }
+
+  renderProg(si, li);
+  typeText(d.t);
+}
+
+function typeText(txt) {
+  if (timer) clearInterval(timer);
+  typing = true;
+  let i = 0;
+  const el = document.getElementById('dlgText');
+  timer = setInterval(() => {
+    if (i < txt.length) { el.innerHTML = txt.slice(0, ++i) + '<span class="cur"></span>'; }
+    else { clearInterval(timer); timer = null; typing = false; el.innerHTML = txt; }
+  }, 16);
+}
+
+function advance() {
+  if (typing) {
+    clearInterval(timer); timer = null; typing = false;
+    document.getElementById('dlgText').innerHTML = scenes[cur].lines[line].t;
+    return;
+  }
+  line++;
+  if (line >= scenes[cur].lines.length) { showCmp(cur); unlockNext(cur); }
+  else { renderLine(cur, line); }
+}
+
+function renderProg(si, li) {
+  const total = scenes[si].lines.length;
+  const el = document.getElementById('prog');
+  el.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'pd' + (i < li ? ' done' : i === li ? ' cur' : '');
+    el.appendChild(d);
+  }
+}
+
+function showChart(s, versionIdx, showRevised) {
+  if (chart) { chart.destroy(); chart = null; }
+  const v = s.chartVersions[versionIdx];
+  document.getElementById('projTitle').textContent = v.title;
+  document.getElementById('projSub').textContent   = v.sub;
+  document.getElementById('projWrap').classList.add('visible');
+  document.getElementById('revisedBadge').classList.toggle('show', !!showRevised);
+  setTimeout(() => {
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    chart = new Chart(ctx, JSON.parse(JSON.stringify(v.config)));
+  }, 100);
+}
+
+function hideProj() {
+  document.getElementById('projWrap').classList.remove('visible');
+  document.getElementById('revisedBadge').classList.remove('show');
+  if (chart) { chart.destroy(); chart = null; }
+}
+
+function showCmp(si) {
+  const s = scenes[si];
+  document.getElementById('cmpIcon').textContent   = s.cmpIcon;
+  document.getElementById('cmpGap').textContent    = s.cmpGap;
+  document.getElementById('cmpTitle').textContent  = s.cmpTitle;
+  document.getElementById('cmpBody').textContent   = s.cmpBody;
+  document.getElementById('cmpLesson').textContent = s.cmpLesson;
+  const btn = document.getElementById('btnNext');
+  if (si >= scenes.length - 1) { btn.textContent = 'All Gaps Complete ✓'; btn.disabled = true; btn.style.opacity = '0.45'; }
+  else { btn.textContent = 'Next Gap →'; btn.disabled = false; btn.style.opacity = '1'; }
+  document.getElementById('cmp').classList.add('show');
+}
+
+function hideCmp() { document.getElementById('cmp').classList.remove('show'); }
+
+function unlockNext(si) {
+  const n = si + 1;
+  if (n < scenes.length) {
+    unlocked.add(n);
+    const t = document.querySelector(`.tab[data-s="${n}"]`);
+    if (t) { t.classList.remove('locked'); t.classList.add('done'); }
+  }
+}
+
+function replay() { hideCmp(); hideProj(); line = 0; loadScene(cur); }
+
+function goNext() {
+  const n = cur + 1;
+  if (n < scenes.length) { hideCmp(); hideProj(); cur = n; line = 0; selScene(n); }
+}
+
+document.addEventListener('keydown', e => {
+  if (['Space','ArrowRight','Enter'].includes(e.code)) {
+    if (!document.getElementById('cmp').classList.contains('show')) { e.preventDefault(); advance(); }
+  }
+});
+
+init();
+</script>
+</body>
+</html>
