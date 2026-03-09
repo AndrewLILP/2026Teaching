@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mario Kart Data Challenge – Visual Novel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Nunito',sans-serif;padding:14px;}
+.page-title{color:#FBD000;font-family:'Press Start 2P',monospace;font-size:9px;text-align:center;margin-bottom:10px;letter-spacing:.5px;text-shadow:2px 2px 0 #7a6000;}
+
+/* GAME */
+#game{width:920px;height:590px;position:relative;overflow:hidden;border-radius:14px;border:3px solid #FBD000;box-shadow:0 0 60px rgba(251,208,0,.18),0 0 100px rgba(4,156,216,.1);}
+.screen{position:absolute;inset:0;display:none;}
+.screen.active{display:block;}
+#s-title.active,#s-spread.active,#s-graph.active,#s-analysis.active,#s-syllabus.active,#s-questions.active{display:flex;}
+
+/* ===== TITLE ===== */
+#s-title{background:linear-gradient(155deg,#1a1a2e 0%,#0f3460 55%,#1a1a2e 100%);flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+#s-title::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1px);background-size:70px 70px;pointer-events:none;animation:stars 100s linear infinite;}
+@keyframes stars{to{background-position:420px 420px}}
+.checkers{position:absolute;bottom:0;left:0;right:0;height:24px;background-image:repeating-conic-gradient(rgba(255,255,255,.12) 0% 25%,transparent 0% 50%);background-size:12px 12px;}
+.t-flag{font-size:38px;animation:wave 2s ease-in-out infinite;z-index:1;}
+@keyframes wave{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.t-head{text-align:center;z-index:1;}
+.t-h1{font-family:'Press Start 2P',monospace;font-size:19px;color:#FBD000;text-shadow:3px 3px 0 #7a6000;line-height:1.75;}
+.t-h1 span{color:#E52222;text-shadow:3px 3px 0 #7a0000;}
+.t-sub{font-size:11px;font-weight:700;color:#a0c4ff;letter-spacing:3px;text-transform:uppercase;margin-top:7px;}
+.t-meta{display:flex;gap:18px;z-index:1;}
+.t-badge{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,.7);text-align:center;}
+.t-badge strong{display:block;font-size:17px;color:white;}
+.t-chars{display:flex;gap:10px;z-index:1;}
+.t-av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;border:3px solid rgba(255,255,255,.3);animation:bob .9s ease-in-out infinite alternate;}
+.t-av:nth-child(1){background:#049CD8;animation-delay:0s;}
+.t-av:nth-child(2){background:#E91E8C;animation-delay:.2s;}
+.t-av:nth-child(3){background:#27AE60;animation-delay:.35s;}
+.t-av:nth-child(4){background:#9B59B6;animation-delay:.5s;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.btn-start{font-family:'Press Start 2P',monospace;font-size:9px;background:#E52222;color:white;border:none;padding:11px 22px;border-radius:8px;cursor:pointer;z-index:1;box-shadow:0 5px 0 #7a0000;transition:transform .1s,box-shadow .1s;animation:glowbtn 1.8s ease-in-out infinite;}
+.btn-start:hover{transform:translateY(3px);box-shadow:0 2px 0 #7a0000;}
+@keyframes glowbtn{0%,100%{box-shadow:0 5px 0 #7a0000,0 0 20px rgba(229,34,34,.2)}50%{box-shadow:0 5px 0 #7a0000,0 0 40px rgba(229,34,34,.55)}}
+
+/* ===== MAIN VN ===== */
+#s-main{cursor:pointer;user-select:none;}
+#prog{position:absolute;top:0;left:0;height:3px;background:linear-gradient(90deg,#FBD000,#E52222);transition:width .3s;z-index:10;}
+#round-badge{position:absolute;top:10px;right:12px;font-family:'Press Start 2P',monospace;font-size:7px;color:#FBD000;background:rgba(0,0,0,.65);padding:5px 10px;border-radius:20px;z-index:10;border:1px solid rgba(251,208,0,.35);}
+#scene-bg{position:absolute;inset:0;bottom:185px;transition:background .45s;}
+.bg-classroom{background:linear-gradient(180deg,#87CEEB 0%,#87CEEB 28%,#ede0c8 28%,#ede0c8 66%,#b8924a 66%);}
+.bg-track{background:linear-gradient(180deg,#5ba3e8 0%,#87CEEB 26%,#5a8a3f 26%,#5a8a3f 43%,#636363 43%,#636363 57%,#5a8a3f 57%);}
+.bg-track::after{content:'';position:absolute;top:43%;left:0;right:0;height:14%;background:repeating-linear-gradient(90deg,transparent 0,transparent 40px,rgba(255,255,255,.28) 40px,rgba(255,255,255,.28) 68px);}
+#char-area{position:absolute;left:0;right:0;bottom:185px;top:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;}
+.c-sprite{display:flex;flex-direction:column;align-items:center;animation:spritein .38s ease-out;}
+@keyframes spritein{from{transform:scale(.87) translateY(18px);opacity:.2}to{transform:scale(1) translateY(0);opacity:1}}
+.c-head{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:46px;border:5px solid white;z-index:2;}
+.c-body{width:146px;height:118px;border-radius:20px 20px 0 0;}
+#dlg{position:absolute;bottom:0;left:0;right:0;height:185px;background:rgba(4,4,18,.97);border-top:3px solid #FBD000;padding:11px 22px 9px;display:flex;flex-direction:column;gap:6px;backdrop-filter:blur(8px);}
+#d-name{height:26px;display:flex;align-items:center;}
+.name-badge{display:inline-flex;align-items:center;padding:3px 16px;border-radius:20px;font-weight:900;font-size:15px;color:white;}
+#d-text{flex:1;font-size:14.5px;font-weight:600;color:#f0f0f0;line-height:1.72;overflow:hidden;}
+#d-hint{font-size:10px;color:rgba(255,255,255,.28);text-align:right;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+
+/* ===== DATA SCREENS (shared) ===== */
+.data-screen{flex-direction:column;align-items:center;padding:12px 18px;gap:9px;overflow-y:auto;background:#eff1f5;}
+.scr-head{font-family:'Press Start 2P',monospace;font-size:8px;color:#1a1a2e;text-align:center;line-height:1.8;}
+.tip-box{background:#1a1a2e;color:rgba(255,255,255,.85);border-radius:8px;padding:9px 13px;font-size:11.5px;font-weight:600;width:100%;max-width:860px;display:flex;align-items:flex-start;gap:8px;line-height:1.55;}
+.nxt{font-family:'Press Start 2P',monospace;font-size:7.5px;padding:9px 18px;border-radius:8px;cursor:pointer;border:none;color:white;transition:transform .1s,box-shadow .1s;}
+.nxt:hover{transform:translateY(2px);}
+.nxt-g{background:#27AE60;box-shadow:0 4px 0 #145a2e;}.nxt-b{background:#049CD8;box-shadow:0 4px 0 #025f8a;}
+.nxt-r{background:#E52222;box-shadow:0 4px 0 #7a0000;}.nxt-p{background:#9B59B6;box-shadow:0 4px 0 #4a148c;}
+
+/* ===== SPREADSHEET ===== */
+#s-spread{background:#eff1f5;}
+.excel-win{width:100%;max-width:874px;border-radius:10px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.15);border:1px solid #bbb;}
+.excel-bar{background:#217346;padding:7px 13px;color:white;font-weight:800;font-size:12px;display:flex;align-items:center;gap:7px;}
+.excel-tabs{background:#1b5e34;padding:3px 12px;}
+.excel-tab{display:inline-block;background:#f0f0f0;color:#333;font-size:10px;font-weight:700;padding:2px 10px;border-radius:4px 4px 0 0;}
+table.xls{width:100%;border-collapse:collapse;background:white;font-size:11.5px;}
+table.xls th{background:#e6e6e6;border:1px solid #c4c4c4;padding:6px 7px;font-weight:800;text-align:center;color:#333;}
+table.xls td{border:1px solid #d8d8d8;padding:5px 7px;text-align:center;color:#444;}
+th.la,td.la{text-align:left!important;}
+.rn-h{width:26px;background:#e6e6e6!important;}
+.rn-c{background:#ececec!important;color:#bbb!important;font-weight:700;font-size:10px;width:26px;}
+.filled-cell{background:#fff9e6!important;}
+.empty-cell{color:#ccc;font-size:10px;}
+.future-cell{color:#e0e0e0;font-style:italic;font-size:10px;}
+.avg-row td{background:#f0fff4!important;font-size:11px;}
+.avg-formula{color:#27AE60;font-weight:700;font-size:10.5px;}
+
+/* ===== GRAPH ===== */
+#s-graph{background:#eff1f5;}
+.chart-win{width:100%;max-width:874px;background:white;border-radius:10px;padding:12px 16px 10px;box-shadow:0 6px 22px rgba(0,0,0,.12);border:1px solid #e0e0e0;}
+.chart-title{font-weight:900;font-size:12.5px;text-align:center;color:#333;margin-bottom:8px;}
+.round-progress{display:flex;gap:4px;justify-content:center;margin-bottom:7px;}
+.rp-dot{width:22px;height:7px;border-radius:4px;background:#e0e0e0;transition:background .3s;}
+.rp-dot.done{background:#27AE60;}
+.rp-dot.active{background:#FBD000;}
+.graph-caption{width:100%;max-width:874px;background:rgba(26,26,46,.9);color:rgba(255,255,255,.88);border-radius:8px;padding:8px 13px;font-size:11.5px;font-weight:600;line-height:1.55;}
+
+/* ===== ANALYSIS ===== */
+#s-analysis{background:linear-gradient(140deg,#141428 0%,#0f3460 100%);flex-direction:column;padding:12px 18px;gap:9px;overflow-y:auto;}
+.an-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#FBD000;text-align:center;line-height:2;}
+.an-excel{width:100%;max-width:874px;border-radius:9px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.5);}
+.an-bar{background:#217346;padding:6px 12px;color:white;font-weight:800;font-size:11px;}
+table.an-tbl{width:100%;border-collapse:collapse;font-size:11px;}
+table.an-tbl th{background:#2a2a4a;color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.12);padding:5px 8px;text-align:center;font-weight:700;}
+table.an-tbl td{border:1px solid rgba(255,255,255,.09);padding:5px 8px;text-align:center;color:rgba(255,255,255,.8);}
+.an-name{text-align:left!important;font-weight:800;}
+.an-best{background:rgba(251,208,0,.15)!important;color:#FBD000!important;font-weight:700;}
+.an-avg-row td{background:rgba(255,255,255,.06)!important;color:rgba(255,255,255,.6)!important;font-style:italic;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:874px;}
+.in-card{background:rgba(255,255,255,.06);border-radius:8px;padding:10px 13px;border-left:4px solid;}
+.in-card h4{font-size:11.5px;font-weight:900;margin-bottom:5px;}
+.in-card p,.in-card li{font-size:10.5px;color:rgba(255,255,255,.72);line-height:1.65;}
+.in-card ul{margin-left:13px;}.in-card li{margin-bottom:2px;}
+.ic1{border-left-color:#FBD000;}.ic1 h4{color:#FBD000;}
+.ic2{border-left-color:#4dd0e1;}.ic2 h4{color:#4dd0e1;}
+.ic3{border-left-color:#81C784;}.ic3 h4{color:#81C784;}
+.ic4{border-left-color:#CE93D8;}.ic4 h4{color:#CE93D8;}
+
+/* ===== SYLLABUS ===== */
+#s-syllabus{background:linear-gradient(140deg,#141428 0%,#0f3460 100%);flex-direction:column;padding:12px 18px;gap:9px;overflow-y:auto;}
+.syl-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#FBD000;text-align:center;line-height:2;}
+.syl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;}
+.syl-card{background:rgba(255,255,255,.06);border-left:4px solid;border-radius:8px;padding:10px 13px;}
+.syl-card h3{font-size:11px;font-weight:900;margin-bottom:5px;}
+.syl-card p,.syl-card li{font-size:10.5px;color:rgba(255,255,255,.72);line-height:1.65;}
+.syl-card ul{margin-left:13px;}.syl-card li{margin-bottom:2px;}
+.sc1{border-left-color:#FBD000;}.sc1 h3{color:#FBD000;}
+.sc2{border-left-color:#4dd0e1;}.sc2 h3{color:#4dd0e1;}
+.sc3{border-left-color:#81C784;}.sc3 h3{color:#81C784;}
+.sc4{border-left-color:#CE93D8;}.sc4 h3{color:#CE93D8;}
+
+/* ===== QUESTIONS ===== */
+#s-questions{background:linear-gradient(140deg,#141428 0%,#0f3460 100%);flex-direction:column;justify-content:center;align-items:center;padding:22px 36px;gap:14px;}
+.q-title{font-family:'Press Start 2P',monospace;font-size:8px;color:#FBD000;text-align:center;line-height:2;}
+.q-list{display:flex;flex-direction:column;gap:10px;width:100%;}
+.q-card{background:rgba(255,255,255,.07);border-radius:10px;padding:13px 17px;display:flex;gap:13px;align-items:flex-start;border:2px solid;}
+.q-card:nth-child(1){border-color:#049CD8;}.q-card:nth-child(2){border-color:#E91E8C;}.q-card:nth-child(3){border-color:#9B59B6;}
+.qn{font-family:'Press Start 2P',monospace;font-size:19px;flex-shrink:0;line-height:1;}
+.q-card:nth-child(1) .qn{color:#049CD8;}.q-card:nth-child(2) .qn{color:#E91E8C;}.q-card:nth-child(3) .qn{color:#9B59B6;}
+.qq{font-size:12.5px;font-weight:800;color:white;line-height:1.55;}
+.qh{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:4px;font-style:italic;}
+</style>
+</head>
+<body>
+<div class="page-title">🏁 Mario Kart Data Challenge — Technology 7–8 Visual Novel &nbsp;|&nbsp; 5 Rounds · 20 Data Points</div>
+<div id="game">
+
+  <!-- ===== TITLE ===== -->
+  <div id="s-title" class="screen active">
+    <div class="t-flag">🏁</div>
+    <div class="t-head">
+      <div class="t-h1"><span>Mario Kart</span><br>Data Challenge</div>
+      <div class="t-sub">Technology 7–8 · Stage 4</div>
+    </div>
+    <div class="t-meta">
+      <div class="t-badge"><strong>4</strong>Students</div>
+      <div class="t-badge"><strong>5</strong>Rounds</div>
+      <div class="t-badge"><strong>20</strong>Data Points</div>
+    </div>
+    <div class="t-chars">
+      <div class="t-av" title="Jake">🎮</div>
+      <div class="t-av" title="Emily">⭐</div>
+      <div class="t-av" title="Marcus">🏎️</div>
+      <div class="t-av" title="Chloe">🎨</div>
+    </div>
+    <button class="btn-start" onclick="startGame()">▶ START ACTIVITY</button>
+    <div class="checkers"></div>
+  </div>
+
+  <!-- ===== MAIN VN ===== -->
+  <div id="s-main" class="screen">
+    <div id="prog" style="width:0%"></div>
+    <div id="round-badge">🏁 Round 1</div>
+    <div id="scene-bg" class="bg-classroom"></div>
+    <div id="char-area">
+      <div id="csprite" class="c-sprite">
+        <div id="chead" class="c-head" style="background:#F5A623">👩‍🏫</div>
+        <div id="cbody" class="c-body" style="background:linear-gradient(180deg,#F5A623,#8B6000)"></div>
+      </div>
+    </div>
+    <div id="dlg">
+      <div id="d-name"><span id="nbadge" class="name-badge" style="background:#F5A623">Ms Rodriguez</span></div>
+      <div id="d-text"></div>
+      <div id="d-hint">▼ click anywhere to continue</div>
+    </div>
+  </div>
+
+  <!-- ===== SPREADSHEET ===== -->
+  <div id="s-spread" class="screen data-screen">
+    <div class="scr-head" id="spread-head">📗 Spreadsheet Update</div>
+    <div class="excel-win">
+      <div class="excel-bar">📗 &nbsp;MarioKart_TimeTrials_Group1.xlsx</div>
+      <div class="excel-tabs"><div class="excel-tab">Round Data ✓</div></div>
+      <table class="xls">
+        <thead>
+          <tr>
+            <th class="rn-h"></th>
+            <th class="la">A &nbsp;— Student Name</th>
+            <th>B — Round 1</th>
+            <th>C — Round 2</th>
+            <th>D — Round 3</th>
+            <th>E — Round 4</th>
+            <th>F — Round 5</th>
+            <th>G — Best (s)</th>
+            <th>H — Average (s)</th>
+          </tr>
+        </thead>
+        <tbody id="spread-body"></tbody>
+      </table>
+    </div>
+    <div class="tip-box" id="spread-tip">💡 …</div>
+    <button class="nxt nxt-g" onclick="continueFromScreen()">▶ CONTINUE STORY</button>
+  </div>
+
+  <!-- ===== GRAPH ===== -->
+  <div id="s-graph" class="screen data-screen">
+    <div class="scr-head" id="graph-head">📊 Line Graph</div>
+    <div class="round-progress" id="round-dots"></div>
+    <div class="chart-win">
+      <div class="chart-title" id="chart-title">Group 1 — Time Trial Performance</div>
+      <canvas id="chart" width="840" height="268"></canvas>
+    </div>
+    <div class="graph-caption" id="graph-caption"></div>
+    <button class="nxt nxt-b" onclick="continueFromScreen()">▶ CONTINUE STORY</button>
+  </div>
+
+  <!-- ===== ANALYSIS ===== -->
+  <div id="s-analysis" class="screen">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:12px 18px;gap:9px;overflow-y:auto;width:100%;height:100%;">
+    <div class="an-title">📊 Complete Analysis — All 20 Data Points</div>
+    <div class="an-excel">
+      <div class="an-bar">📗 &nbsp;MarioKart_TimeTrials_Group1.xlsx — Complete Dataset</div>
+      <table class="an-tbl">
+        <thead>
+          <tr>
+            <th class="la" style="width:120px">Student</th>
+            <th>R1 (s)</th><th>R2 (s)</th><th>R3 (s)</th><th>R4 (s)</th><th>R5 (s)</th>
+            <th>=MIN()</th><th>=AVERAGE()</th><th>Improvement</th><th>% Better</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="an-name" style="color:#049CD8">🎮 Jake</td>
+            <td>112.34</td><td>109.87</td><td>108.23</td><td>107.56</td><td class="an-best">105.12</td>
+            <td class="an-best">105.12</td><td>108.62</td>
+            <td style="color:#81C784;font-weight:700">↓ 7.22s</td><td style="color:#81C784;font-weight:700">6.4%</td>
+          </tr>
+          <tr>
+            <td class="an-name" style="color:#E91E8C">⭐ Emily</td>
+            <td>123.17</td><td>120.45</td><td>117.88</td><td>116.23</td><td class="an-best">114.67</td>
+            <td class="an-best">114.67</td><td>118.48</td>
+            <td style="color:#81C784;font-weight:700">↓ 8.50s</td><td style="color:#81C784;font-weight:700">6.9%</td>
+          </tr>
+          <tr>
+            <td class="an-name" style="color:#27AE60">🏎️ Marcus</td>
+            <td>135.08</td><td>131.23</td><td>128.67</td><td>125.44</td><td class="an-best">122.89</td>
+            <td class="an-best">122.89</td><td>128.66</td>
+            <td style="color:#81C784;font-weight:700">↓ 12.19s</td><td style="color:#81C784;font-weight:700">9.0%</td>
+          </tr>
+          <tr>
+            <td class="an-name" style="color:#9B59B6">🎨 Chloe</td>
+            <td>118.42</td><td>116.78</td><td>115.34</td><td>114.89</td><td class="an-best">113.45</td>
+            <td class="an-best">113.45</td><td>115.78</td>
+            <td style="color:#81C784;font-weight:700">↓ 4.97s</td><td style="color:#81C784;font-weight:700">4.2%</td>
+          </tr>
+          <tr class="an-avg-row">
+            <td class="an-name">Group Avg</td>
+            <td>122.25</td><td>119.58</td><td>117.53</td><td>116.03</td><td>114.03</td>
+            <td>—</td><td>117.89</td>
+            <td style="color:#4dd0e1;font-weight:700">↓ 8.22s</td><td style="color:#4dd0e1;font-weight:700">6.7%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight-grid">
+      <div class="in-card ic1">
+        <h4>🏆 Performance Leaders</h4>
+        <ul>
+          <li><strong>Fastest overall:</strong> Jake — 105.12s (R5)</li>
+          <li><strong>Most improved (abs):</strong> Marcus — ↓12.19s</li>
+          <li><strong>Most improved (%):</strong> Marcus — 9.0%</li>
+          <li><strong>Most consistent:</strong> Chloe — smallest range (4.97s)</li>
+          <li><strong>Fastest R1 → R5 rate:</strong> Marcus (steepest gradient)</li>
+        </ul>
+      </div>
+      <div class="in-card ic2">
+        <h4>📈 Trends &amp; Patterns</h4>
+        <ul>
+          <li>All 4 students improved every single round — no regressions</li>
+          <li>Group average dropped 8.22s across 5 rounds (6.7%)</li>
+          <li>Improvement rate slowed in R4–R5: <em>learning plateau</em></li>
+          <li>Jake's curve flattened earliest — near his performance ceiling</li>
+          <li>Marcus's steep curve reflects greatest room to improve</li>
+        </ul>
+      </div>
+      <div class="in-card ic3">
+        <h4>📐 Why 20 Data Points?</h4>
+        <p>Data scientists recommend a minimum of <strong>5 readings per variable</strong> to identify reliable trends. With 4 students × 5 rounds:</p>
+        <ul>
+          <li>Enough to calculate meaningful averages</li>
+          <li>Enough to visualise learning curves on a line graph</li>
+          <li>Achievable within a single lesson</li>
+          <li>Sufficient to identify and discuss outliers</li>
+        </ul>
+      </div>
+      <div class="in-card ic4">
+        <h4>🔍 Discussion Questions</h4>
+        <ul>
+          <li>Why does Marcus show the biggest % improvement despite the slowest times?</li>
+          <li>What does a flattening line graph tell us about learning limits?</li>
+          <li>How would the graph change if we added a 6th round?</li>
+          <li>Is absolute or percentage improvement a fairer comparison? Why?</li>
+        </ul>
+      </div>
+    </div>
+    <button class="nxt nxt-p" onclick="showSyllabus()">▶ SYLLABUS CONNECTIONS</button>
+    </div>
+  </div>
+
+  <!-- ===== SYLLABUS ===== -->
+  <div id="s-syllabus" class="screen">
+    <div style="display:flex;flex-direction:column;align-items:center;padding:12px 18px;gap:9px;overflow-y:auto;width:100%;height:100%;">
+    <div class="syl-title">📋 How This Activity Addresses the Syllabus</div>
+    <div class="syl-grid">
+      <div class="syl-card sc1">
+        <h3>🔧 Technology 7–8 (2023) — Stage 4</h3>
+        <p>This activity directly addresses key Stage 4 outcomes:</p>
+        <ul>
+          <li><strong>TE4-SDP-01</strong> — Students explain relationships between sustainability, design and production; analysing performance data over 5 rounds models iterative improvement processes</li>
+          <li><strong>TE4-DIG-01</strong> — Students use digital technologies (Nintendo Switch, Excel) to collect, organise and present data</li>
+          <li><strong>TE4-DIG-02</strong> — Students store, share and communicate digital information when producing project work (the shared spreadsheet)</li>
+          <li>Fulfils the <em>Digital &amp; Communication Technologies</em> focus area requirement to <em>"research, collect and share information using digital tools"</em></li>
+        </ul>
+      </div>
+      <div class="syl-card sc2">
+        <h3>📐 Cross-KLA: Data Representation (Stage 4)</h3>
+        <p>Directly meets cross-curriculum numeracy outcomes from the NSW data literacy document:</p>
+        <ul>
+          <li>Students record data in tables with correct units (mm:ss.ms → seconds conversion)</li>
+          <li>Students create <strong>line graphs</strong> — a core Stage 4 graphing type — to represent multiple datasets</li>
+          <li>Students compare multiple line graphs to identify similarities, differences and trends across 5 rounds</li>
+          <li>Students use spreadsheet formulas: <strong>=AVERAGE(), =MIN()</strong> and calculate % improvement</li>
+          <li>Students interpret downward slopes and learning plateaus — connecting graph shape to real meaning</li>
+        </ul>
+      </div>
+      <div class="syl-card sc3">
+        <h3>🤝 Collaborative Learning Design</h3>
+        <p>The group structure embeds the syllabus expectation to <em>"work collaboratively to plan projects and share information"</em>:</p>
+        <ul>
+          <li>One shared spreadsheet = collaborative data production</li>
+          <li>Jake explains unit conversion to Emily — peer scaffolding modelled explicitly</li>
+          <li>Emily's axis question models authentic inquiry during graph interpretation</li>
+          <li>Chloe's percentage improvement suggestion models higher-order statistical thinking</li>
+          <li>Mixed ability group supports expert/novice learning discourse</li>
+          <li>Group average row demonstrates collective data analysis</li>
+        </ul>
+      </div>
+      <div class="syl-card sc4">
+        <h3>💡 Teaching &amp; Learning Design Principles</h3>
+        <p>The 5-round structure reflects evidence-based design choices:</p>
+        <ul>
+          <li><strong>Authenticity</strong> — students generate their own real data rather than using given datasets</li>
+          <li><strong>Sample size literacy</strong> — 20 data points explicitly discussed: 5 readings per variable for reliable trends</li>
+          <li><strong>Iterative improvement</strong> — mirrors the Technology syllabus design and production cycle</li>
+          <li><strong>Visual novel format</strong> — models the thinking and questioning that expert learners do during data activities</li>
+          <li><strong>Scaffolding</strong> — spreadsheet builds visually round by round; graphs progressively add data</li>
+        </ul>
+      </div>
+    </div>
+    <button class="nxt nxt-r" onclick="showQuestions()">▶ REFLECTION QUESTIONS FOR YOU</button>
+    </div>
+  </div>
+
+  <!-- ===== QUESTIONS ===== -->
+  <div id="s-questions" class="screen">
+    <div class="q-title">🤔 Three Questions for You, Teacher!</div>
+    <div class="q-list">
+      <div class="q-card">
+        <div class="qn">1</div>
+        <div>
+          <div class="qq">Would you want students to run this activity live in real-time, or use the visual novel as a modelled example before they do their own data collection?</div>
+          <div class="qh">The VN could serve as a worked example first — showing students exactly what to record and how — before they do their own 5-round time trial with their actual group data.</div>
+        </div>
+      </div>
+      <div class="q-card">
+        <div class="qn">2</div>
+        <div>
+          <div class="qq">Should the line graph screen include interactive elements — for example, clicking a student's line to highlight their data, or toggling the group average on/off?</div>
+          <div class="qh">Adding interactivity to the graph could deepen the data interpretation phase and let students explore the dataset at their own pace.</div>
+        </div>
+      </div>
+      <div class="q-card">
+        <div class="qn">3</div>
+        <div>
+          <div class="qq">Would you like to add a differentiation layer — for example, extension questions for students who finish early, or scaffolded sentence starters for interpreting the graph?</div>
+          <div class="qh">The analysis screen currently shows all four insights at once. These could be revealed progressively, or different versions shown depending on student readiness level.</div>
+        </div>
+      </div>
+    </div>
+    <button class="nxt nxt-r" onclick="restartGame()">↩ RESTART ACTIVITY</button>
+  </div>
+
+</div><!-- end #game -->
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const TIMES = {
+  jake:   [112.34, 109.87, 108.23, 107.56, 105.12],
+  emily:  [123.17, 120.45, 117.88, 116.23, 114.67],
+  marcus: [135.08, 131.23, 128.67, 125.44, 122.89],
+  chloe:  [118.42, 116.78, 115.34, 114.89, 113.45],
+};
+const ORDER = ['jake','emily','marcus','chloe'];
+const CHARS = {
+  teacher:{name:'Ms Rodriguez',color:'#F5A623',body:'linear-gradient(180deg,#F5A623,#8B6000)',emoji:'👩‍🏫'},
+  jake:   {name:'Jake',        color:'#049CD8',body:'linear-gradient(180deg,#049CD8,#01579B)',emoji:'🎮'},
+  emily:  {name:'Emily',       color:'#E91E8C',body:'linear-gradient(180deg,#E91E8C,#880E4F)',emoji:'⭐'},
+  marcus: {name:'Marcus',      color:'#27AE60',body:'linear-gradient(180deg,#27AE60,#1B5E20)',emoji:'🏎️'},
+  chloe:  {name:'Chloe',       color:'#9B59B6',body:'linear-gradient(180deg,#9B59B6,#4A148C)',emoji:'🎨'},
+};
+
+// ============================================================
+// SCENES
+// ============================================================
+const SCENES = [
+  // ── INTRO ──
+  {c:'teacher', badge:'🏁 Round 1', t:"Welcome to the Mario Kart Data Challenge! Each of you will complete 5 time trials today — giving our group 20 data points in total. Ready? 🏁"},
+  {c:'teacher', t:"Why 20 data points? Data scientists recommend a minimum of 5 readings per variable to identify reliable trends. With 4 students × 5 rounds = 20, we'll have enough data to see how your times improve — and by how much! Jake — you're first!"},
+
+  // ── ROUND 1 · JAKE ──
+  {c:'jake', t:"YESSS! I've been practising Mushroom Gorge all week. Let me show everyone how it's done! 🎮"},
+  {c:'jake', bg:'track', t:"⚡ Perfect racing line through the mushrooms... hit every boost pad... push on the final straight... FINISH! 1 minute, 52.34 seconds!"},
+  {c:'jake', t:"That converts to 112.34 seconds total. I'm entering it into column B — Round 1 — right now. ✅"},
+  {type:'spread', students:['jake'], tip:"💡 Converting time to total seconds (e.g. 1:52.34 → 60 + 52.34 = 112.34s) means Excel treats it as a plain number — enabling AVERAGE(), MIN() formulas and graphs to work correctly."},
+
+  // ── ROUND 1 · EMILY ──
+  {c:'emily', t:"My turn! I've played Mario Kart loads but I've never actually measured my times before. Staying focused! 🎯"},
+  {c:'emily', bg:'track', t:"🏎️ Steady through Turn 2... clean over the mushroom jump... strong finish... 2 minutes, 3.17 seconds!"},
+  {c:'emily', t:"That's 123.17 seconds. Ms Rodriguez — which column do I enter this in?"},
+  {c:'teacher', t:"Column B, Row 3 — the Round 1 column next to your name. You can already compare yourself with Jake. His time is 112.34 — that's 10.83 seconds faster. Can you close that gap?"},
+  {type:'spread', students:['jake','emily'], tip:"💡 The table is already showing its power — Jake's 112.34 vs Emily's 123.17 side by side. Tabular organisation makes comparison instant and precise."},
+
+  // ── ROUND 1 · MARCUS ──
+  {c:'marcus', t:"I haven't played much Mario Kart, but I've been watching everyone's racing lines carefully. Strategy first! 📊"},
+  {c:'marcus', bg:'track', t:"🏎️ Wide line on the corners... smooth through the chicane... careful on the boost pad timing... 2 minutes, 15.08 seconds."},
+  {c:'marcus', t:"135.08 seconds — the slowest so far. But I know exactly which corners cost me time. Entered in Round 1! ✅"},
+  {type:'spread', students:['jake','emily','marcus'], tip:"💡 Marcus's higher starting time means he has the most room to improve — expect the steepest learning curve on our line graph. Track layout knowledge improves rapidly with repetition."},
+
+  // ── ROUND 1 · CHLOE ──
+  {c:'chloe', t:"Last in Round 1, but first in preparation! I spotted a shortcut on the uphill section that no one used. Here goes! 📝"},
+  {c:'chloe', bg:'track', t:"⭐ Tight inside line... nail the shortcut boost on the uphill... strong final sector... 1 minute, 58.42 seconds!"},
+  {c:'chloe', t:"118.42 seconds — second fastest! All four of us have our Round 1 times now. The spreadsheet is really taking shape! ✅"},
+  {c:'teacher', badge:'🏁 Round 2', t:"Excellent! 4 of our 20 data points recorded. Remember: 5 data points per student is our target — enough to visualise trends on a line graph and draw meaningful conclusions. On to Round 2! 🏁"},
+  {type:'spread', students:['jake','emily','marcus','chloe'], tip:"💡 With all 4 Round 1 times, we can calculate the group average: (112.34 + 123.17 + 135.08 + 118.42) ÷ 4 = 122.25 seconds. This becomes our Round 1 benchmark to beat!"},
+
+  // ── ROUND 2 ──
+  {c:'teacher', t:"Round 2! Think about what slowed you down last round. Apply what you've learned about the track layout. Go! 🏁"},
+  {c:'jake', bg:'track', t:"Used the mushroom shortcut on the uphill section this time — 1:49.87! Converting: 109.87 seconds! That's 2.47 seconds faster! ✅"},
+  {c:'emily', bg:'track', t:"Copied Jake's line on Turn 2 like he suggested — 2:00.45. That's 120.45 seconds — 2.72 seconds faster already! ✅"},
+  {c:'marcus', bg:'track', t:"Smoother through the chicane, better corner entry — 2:11.23. That's 131.23 seconds. 3.85 seconds improvement! ✅"},
+  {c:'chloe', bg:'track', t:"Tighter line on the final bend, hit a second shortcut — 1:56.78. That's 116.78 seconds! ✅"},
+  {c:'teacher', t:"Everyone improved in Round 2 — 8 of 20 data points collected. The trend is forming! Let's plot our first line graph and see what the data is telling us. 📊"},
+  {type:'graph', round:2, caption:"📈 Rounds 1–2: All 4 students improved between rounds. The group average dropped from 122.25s → 119.58s. A downward trend on a time graph = faster performance — this is the key pattern to watch over 5 rounds."},
+
+  // ── ROUND 3 ──
+  {c:'teacher', badge:'🏁 Round 3', t:"Round 3! Your muscle memory is kicking in. Can everyone continue to improve? The graph so far says yes — let's confirm it! 💪"},
+  {c:'jake', bg:'track', t:"1:48.23 — 108.23 seconds! Finding my perfect racing line now! ✅"},
+  {c:'emily', bg:'track', t:"1:57.88 — 117.88 seconds! UNDER 2 MINUTES for the first time! 🎉 ✅"},
+  {c:'marcus', bg:'track', t:"2:08.67 — 128.67 seconds. I've memorised every corner and boost pad position now! ✅"},
+  {c:'chloe', bg:'track', t:"1:55.34 — 115.34 seconds. Steady drop each round — I love consistent improvement! ✅"},
+  {type:'graph', round:3, caption:"📈 Rounds 1–3: 12 of 20 data points. The downward trend holds for all 4 students. Notice the lines are beginning to converge slightly — the gap between students is narrowing as everyone optimises their racing lines."},
+  {c:'emily', t:"Ms Rodriguez — I just noticed something. Our lines on the graph are going DOWN. Doesn't a downward slope mean we're getting SLOWER? 🤔"},
+  {c:'teacher', t:"Brilliant observation Emily! The Y-axis measures time in seconds — a LOWER number means FASTER. So a downward slope = improvement. This is exactly why clearly labelled axes with units are absolutely essential in data visualisation! 📉 = 🏆"},
+
+  // ── ROUND 4 ──
+  {c:'teacher', badge:'🏁 Round 4', t:"Round 4! Two rounds to go. Notice whether your improvement is still the same size each round, or whether it's starting to slow down. That's a really interesting data pattern! 👀"},
+  {c:'jake', bg:'track', t:"1:47.56 — 107.56 seconds! The gap between rounds is getting smaller but I'm still improving! ✅"},
+  {c:'emily', bg:'track', t:"1:56.23 — 116.23 seconds. Steady and consistent — my improvement is holding! ✅"},
+  {c:'marcus', bg:'track', t:"2:05.44 — 125.44 seconds. Still a significant drop each round — my gradient is still steep! ✅"},
+  {c:'chloe', bg:'track', t:"1:54.89 — 114.89 seconds. The gap between Jake and me is closing! 👀 ✅"},
+  {c:'teacher', t:"16 of 20 data points! Jake — your rounds 3→4 improvement was only 0.67 seconds compared to 1.64 in rounds 1→2. That narrowing gap is called a learning plateau. Watch for it on the graph!"},
+  {type:'graph', round:4, caption:"📈 Rounds 1–4: 16 data points. The improvement rate is visibly slowing — especially for Jake. The lines are beginning to flatten slightly, indicating a performance ceiling being approached. Marcus's gradient remains the steepest."},
+
+  // ── ROUND 5 ──
+  {c:'teacher', badge:'🏁 Round 5', t:"FINAL ROUND — Round 5! This is your personal best attempt. All 20 data points after this one. Give everything you have! 🏁🏁🏁"},
+  {c:'jake', bg:'track', t:"PERFECT LAP — 1:45.12! That's 105.12 seconds! A 7.22 second improvement from Round 1! Personal BEST! 🏆 ✅"},
+  {c:'emily', bg:'track', t:"1:54.67 — 114.67 seconds! I've improved 8.50 seconds since Round 1. I'm SO proud of that progress! 🎊 ✅"},
+  {c:'chloe', bg:'track', t:"1:53.45 — 113.45 seconds! Fastest I've ever done on this track! The shortcut made all the difference! ✅"},
+  {c:'marcus', bg:'track', t:"2:02.89 — 122.89 seconds! That's a massive 12.19 second improvement from Round 1! 🎉 ✅"},
+  {c:'teacher', t:"ALL 20 DATA POINTS COLLECTED! What a dataset! Marcus — your 12.19 second improvement was the largest in the group. What do you think explains that?"},
+  {c:'marcus', t:"I think I had the most to learn! In Round 1 I barely knew the track. By Round 5 I'd memorised every corner, every boost pad and every shortcut. Knowledge + practice = performance improvement in the data! 🗺️"},
+  {c:'chloe', t:"Ms Rodriguez — we should calculate percentage improvement too. It's fairer than just seconds because we all started at different times. Marcus improved 12.19 seconds but Jake started faster, so percentage makes the comparison equal!"},
+  {c:'teacher', t:"That is exceptional statistical thinking Chloe! Percentage improvement IS the fairer measure when baselines differ — a concept called normalisation. That insight is exactly what data analysts do. Let's look at the complete picture! 📊"},
+  {type:'graph', round:5, caption:"📈 Complete dataset — all 20 data points! Every student improved in every round with no regressions. The flattening curves signal learning plateaus at different rates — compare Jake's flat R4→R5 with Marcus's still-steep gradient."},
+  {type:'analysis'},
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let scene = -1;
+let typing = false;
+let typingTimer = null;
+let graphRaf = null;
+let spreadStudents = [];
+let graphRound = 2;
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function switchTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showSyllabus() { switchTo('s-syllabus'); }
+function showQuestions() { switchTo('s-questions'); }
+function restartGame() {
+  switchTo('s-title');
+  scene = -1;
+}
+
+// ============================================================
+// GAME START
+// ============================================================
+function startGame() {
+  switchTo('s-main');
+  scene = -1;
+  next();
+}
+
+// ============================================================
+// SCENE ENGINE
+// ============================================================
+function next() {
+  scene++;
+  if (scene >= SCENES.length) { switchTo('s-syllabus'); return; }
+  const s = SCENES[scene];
+
+  if (s.type === 'spread') {
+    spreadStudents = s.students;
+    document.getElementById('spread-head').textContent =
+      `📗 Round 1 — ${s.students.length} of 4 students recorded (${s.students.length * 5} of 20 total data points)`;
+    document.getElementById('spread-tip').innerHTML = s.tip;
+    buildSpreadsheet();
+    switchTo('s-spread');
+  } else if (s.type === 'graph') {
+    graphRound = s.round;
+    document.getElementById('graph-head').textContent =
+      `📊 Line Graph — Rounds 1 to ${s.round} of 5`;
+    document.getElementById('chart-title').textContent =
+      `Group 1 — Time Trial Performance (Rounds 1–${s.round})`;
+    document.getElementById('graph-caption').textContent = s.caption;
+    buildRoundDots(s.round);
+    switchTo('s-graph');
+    if (graphRaf) cancelAnimationFrame(graphRaf);
+    animateGraph();
+  } else if (s.type === 'analysis') {
+    switchTo('s-analysis');
+  } else {
+    switchTo('s-main');
+    renderDlg(s);
+  }
+}
+
+function continueFromScreen() { next(); }
+
+// ============================================================
+// DIALOGUE RENDERING
+// ============================================================
+function renderDlg(s) {
+  const ch = CHARS[s.c || 'teacher'];
+  if (s.badge) document.getElementById('round-badge').textContent = s.badge;
+  document.getElementById('scene-bg').className = 'bg-' + (s.bg || 'classroom');
+  // Sprite
+  const sp = document.getElementById('csprite');
+  sp.style.animation = 'none'; void sp.offsetHeight; sp.style.animation = 'spritein .38s ease-out';
+  const hd = document.getElementById('chead');
+  hd.textContent = ch.emoji; hd.style.background = ch.color;
+  hd.style.boxShadow = `0 0 48px ${ch.color}55`;
+  document.getElementById('cbody').style.background = ch.body;
+  const nb = document.getElementById('nbadge');
+  nb.textContent = ch.name; nb.style.background = ch.color;
+  // Progress
+  const dlgScenes = SCENES.filter(x => !x.type);
+  const dlgIdx = SCENES.slice(0, scene + 1).filter(x => !x.type).length;
+  document.getElementById('prog').style.width = (dlgIdx / dlgScenes.length * 100) + '%';
+  // Type
+  if (typingTimer) clearInterval(typingTimer);
+  typing = true;
+  const el = document.getElementById('d-text'); el.textContent = ''; let i = 0;
+  typingTimer = setInterval(() => {
+    el.textContent += s.t[i++];
+    if (i >= s.t.length) { clearInterval(typingTimer); typing = false; }
+  }, 17);
+}
+
+document.getElementById('s-main').addEventListener('click', () => {
+  if (!document.getElementById('s-main').classList.contains('active')) return;
+  if (typing) {
+    clearInterval(typingTimer); typing = false;
+    document.getElementById('d-text').textContent = SCENES[scene].t; return;
+  }
+  next();
+});
+
+// ============================================================
+// SPREADSHEET BUILDER
+// ============================================================
+function buildSpreadsheet() {
+  const rows = ORDER.map((k, i) => {
+    const ch = CHARS[k];
+    const inc = spreadStudents.includes(k);
+    const r1 = inc
+      ? `<td class="filled-cell" style="color:${ch.color};font-weight:700">${TIMES[k][0]}</td>`
+      : '<td class="empty-cell">—</td>';
+    const rest = [1,2,3,4].map(() => '<td class="future-cell">—</td>').join('');
+    return `<tr>
+      <td class="rn-c">${i+2}</td>
+      <td class="la" style="color:${ch.color};font-weight:800">${ch.emoji} ${ch.name}</td>
+      ${r1}${rest}
+      <td class="future-cell">—</td>
+      <td class="future-cell">—</td>
+    </tr>`;
+  });
+
+  const all4 = spreadStudents.length === 4;
+  const avgR1 = all4 ? '122.25' : '—';
+  const avgRow = `<tr class="avg-row">
+    <td class="rn-c">6</td>
+    <td class="la" style="color:#27AE60;font-style:italic">Group Average</td>
+    <td class="avg-formula">${all4 ? `=AVERAGE(B2:B5)<br><span style="color:#27AE60">→ ${avgR1}s</span>` : '—'}</td>
+    <td class="future-cell">—</td><td class="future-cell">—</td>
+    <td class="future-cell">—</td><td class="future-cell">—</td>
+    <td class="future-cell">—</td><td class="future-cell">—</td>
+  </tr>`;
+
+  document.getElementById('spread-body').innerHTML = rows.join('') + avgRow;
+}
+
+// ============================================================
+// ROUND PROGRESS DOTS
+// ============================================================
+function buildRoundDots(active) {
+  document.getElementById('round-dots').innerHTML =
+    [1,2,3,4,5].map(r =>
+      `<div class="rp-dot ${r < active ? 'done' : r === active ? 'active' : ''}"></div>`
+    ).join('');
+}
+
+// ============================================================
+// LINE GRAPH DRAWING
+// ============================================================
+function animateGraph() {
+  let start = null;
+  function frame(ts) {
+    if (!start) start = ts;
+    const p = Math.min((ts - start) / 1500, 1);
+    drawGraph(p);
+    if (p < 1) graphRaf = requestAnimationFrame(frame);
+    else graphRaf = null;
+  }
+  graphRaf = requestAnimationFrame(frame);
+}
+
+function drawGraph(prog) {
+  const N = graphRound;
+  const canvas = document.getElementById('chart');
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const pad = {t:30, r:128, b:44, l:58};
+  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+  const yMin = 100, yMax = 140;
+
+  const xp = r => pad.l + (r-1) / Math.max(N-1, 1) * cW;
+  const yp = v => pad.t + cH - (v - yMin) / (yMax - yMin) * cH;
+
+  ctx.clearRect(0, 0, W, H);
+  // BG
+  ctx.fillStyle = '#fafafa';
+  ctx.fillRect(pad.l, pad.t, cW, cH);
+
+  // Y grid + labels
+  for (let y = 100; y <= 140; y += 5) {
+    const yc = yp(y);
+    ctx.strokeStyle = y % 10 === 0 ? '#d4d4d4' : '#ececec';
+    ctx.lineWidth = y % 10 === 0 ? 1.2 : 0.8;
+    ctx.setLineDash(y % 10 === 0 ? [] : [3,3]);
+    ctx.beginPath(); ctx.moveTo(pad.l, yc); ctx.lineTo(pad.l + cW, yc); ctx.stroke();
+    ctx.setLineDash([]);
+    if (y % 5 === 0) {
+      ctx.fillStyle = '#999'; ctx.font = '10px Nunito, sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(y + 's', pad.l - 5, yc + 3.5);
+    }
+  }
+
+  // Axes
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t+cH); ctx.lineTo(pad.l+cW, pad.t+cH); ctx.stroke();
+
+  // X labels + vertical guides
+  for (let r = 1; r <= N; r++) {
+    const xc = xp(r);
+    ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(xc, pad.t); ctx.lineTo(xc, pad.t+cH); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = 'bold 11px Nunito, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('R' + r, xc, pad.t + cH + 16);
+  }
+
+  // Axis titles
+  ctx.save(); ctx.translate(13, pad.t + cH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = '#777'; ctx.font = '10px Nunito, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Time (seconds)', 0, 0); ctx.restore();
+  ctx.fillStyle = '#777'; ctx.font = '10px Nunito, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Round', pad.l + cW/2, pad.t + cH + 36);
+
+  // Group average dashed line
+  if (N >= 2) {
+    const avgPts = Array.from({length: N}, (_, i) => {
+      const avg = ORDER.reduce((s, k) => s + TIMES[k][i], 0) / 4;
+      return {x: xp(i+1), y: yp(avg)};
+    });
+    ctx.strokeStyle = 'rgba(120,120,120,0.45)'; ctx.lineWidth = 1.5; ctx.setLineDash([7,4]);
+    ctx.beginPath(); avgPts.forEach((p,i) => i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Student lines
+  ORDER.forEach(k => {
+    const ch = CHARS[k];
+    const pts = Array.from({length: N}, (_, i) => ({x: xp(i+1), y: yp(TIMES[k][i])}));
+    // Draw animated line
+    if (N >= 2) {
+      const totalSegs = N - 1;
+      const drawn = prog * totalSegs;
+      const full = Math.floor(drawn);
+      const frac = drawn - full;
+      ctx.strokeStyle = ch.color; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 0; i < full && i < totalSegs; i++) ctx.lineTo(pts[i+1].x, pts[i+1].y);
+      if (full < totalSegs) {
+        const lx = pts[full].x + (pts[full+1].x - pts[full].x) * frac;
+        const ly = pts[full].y + (pts[full+1].y - pts[full].y) * frac;
+        ctx.lineTo(lx, ly);
+      }
+      ctx.stroke();
+    }
+    // Dots
+    pts.forEach((pt, i) => {
+      const thresh = N <= 1 ? 0 : i / (N-1);
+      if (prog < thresh - 0.01) return;
+      const dp = Math.min(1, (prog - thresh + 0.05) * 8);
+      ctx.fillStyle = ch.color;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 5.5 * dp, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 2.5 * dp, 0, Math.PI*2); ctx.fill();
+      // Label at final round
+      if (i === N-1 && prog > 0.85) {
+        const a = Math.min(1,(prog-0.85)/0.15);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = ch.color; ctx.font = 'bold 10px Nunito, sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(TIMES[k][N-1]+'s', pt.x+8, pt.y+4);
+        ctx.globalAlpha = 1;
+      }
+    });
+  });
+
+  // Legend
+  const lx = W - pad.r + 14;
+  ORDER.forEach((k, i) => {
+    const ch = CHARS[k]; const ly = pad.t + 14 + i * 26;
+    ctx.fillStyle = ch.color; ctx.fillRect(lx, ly-4, 18, 3);
+    ctx.beginPath(); ctx.arc(lx+9, ly-2.5, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.font = 'bold 11px Nunito, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(ch.name, lx+24, ly+2);
+  });
+  const avgLy = pad.t + 14 + ORDER.length * 26;
+  ctx.strokeStyle = 'rgba(120,120,120,.55)'; ctx.lineWidth = 1.5; ctx.setLineDash([7,4]);
+  ctx.beginPath(); ctx.moveTo(lx, avgLy-3); ctx.lineTo(lx+18, avgLy-3); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#777'; ctx.font = '10px Nunito, sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('Group avg', lx+24, avgLy+2);
+}
+</script>
+</body>
+</html>

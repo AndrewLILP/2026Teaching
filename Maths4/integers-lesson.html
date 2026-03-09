@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparing & Ordering Integers — Year 7 Maths</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 55%, #162032 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: #1a1a2e;
+  }
+
+  /* ── OUTER WRAPPER ── */
+  #app { width: 100%; max-width: 740px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  #topbar .subtitle {
+    color: rgba(224,224,224,0.65); font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  }
+  #topbar .title {
+    color: #f4c542; font-weight: 700; font-size: 15px; margin-top: 2px;
+    font-family: 'Lora', serif;
+  }
+  #chaptersBtn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #e0e0e0; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    font-size: 13px; font-family: 'DM Sans', sans-serif; transition: background 0.2s;
+  }
+  #chaptersBtn:hover { background: rgba(255,255,255,0.18); }
+
+  /* ── CHAPTER MENU ── */
+  #chapterMenu {
+    display: none; flex-wrap: wrap; gap: 8px;
+    background: rgba(255,255,255,0.07); border-radius: 12px; padding: 12px;
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  #chapterMenu.open { display: flex; }
+  .chapterBtn {
+    border-radius: 8px; padding: 7px 16px; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    transition: transform 0.1s, box-shadow 0.1s;
+    border: 2px solid transparent;
+  }
+  .chapterBtn:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+  /* ── MAIN CARD ── */
+  #card {
+    background: rgba(255,255,255,0.975);
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.55);
+    border: 3px solid #ccc;
+    transition: opacity 0.15s ease, border-color 0.3s;
+  }
+  #card.fade { opacity: 0; }
+
+  /* ── PHASE BANNER ── */
+  #phaseBanner {
+    padding: 11px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid #ccc;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  #phaseLabel { font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
+  #sceneCounter { font-size: 12px; color: #888; }
+
+  /* ── VISUAL AREA ── */
+  #visualArea {
+    padding: 16px 20px 4px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
+    display: none;
+  }
+  #visualArea.visible { display: block; }
+
+  /* number line */
+  .nl-wrap {
+    padding: 12px 6px 8px;
+    background: #fff; border-radius: 10px;
+    border: 2px solid #e0e0e0; margin: 4px 0 8px;
+  }
+  .nl-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; overflow-x: auto;
+  }
+  .nl-arrow { font-size: 18px; color: #888; flex-shrink: 0; padding: 0 4px; }
+  .nl-cell {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; flex-shrink: 0;
+  }
+  .nl-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: #333;
+    position: relative; z-index: 2;
+    transition: background 0.3s, color 0.3s;
+  }
+  .nl-num.zero { background: #e9ecef; border: 2px solid #adb5bd; font-weight: 700; }
+  .nl-num.lit  { background: #f4a261; border: 2px solid #e76f51; color: #c1440e; font-weight: 700; }
+  .nl-tick { height: 8px; width: 2px; background: #bbb; margin-top: -2px; }
+  .nl-line { position: absolute; left: 32px; top: 15px; height: 2px; width: 32px; background: #bbb; z-index: 1; }
+  .nl-label { text-align: center; font-size: 12px; color: #666; font-style: italic; margin-top: 4px; }
+
+  /* compare box */
+  .cmp-box {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    padding: 12px 22px; border-radius: 12px; margin: 6px 0;
+    font-size: 20px; font-weight: 700;
+  }
+  .cmp-box.correct { background: #d8f3dc; border: 2px solid #52b788; }
+  .cmp-box.wrong   { background: #fde8d8; border: 2px solid #e76f51; }
+  .cmp-val { background: #a8dadc; color: #1d3557; padding: 4px 16px; border-radius: 8px; }
+  .cmp-sym.correct { color: #2d6a4f; font-size: 26px; }
+  .cmp-sym.wrong   { color: #c1440e; font-size: 26px; }
+
+  /* temperature cards */
+  .temp-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 6px 0 10px; }
+  .temp-card {
+    text-align: center; border-radius: 12px; padding: 10px 16px; min-width: 76px;
+    border: 2px solid transparent;
+  }
+  .temp-card.cold  { background: #caf0f8; border-color: #90e0ef; }
+  .temp-card.warm  { background: #ffd6a5; border-color: #f4a261; }
+  .temp-card.zero  { background: #f0f0f0; border-color: #ccc; }
+  .temp-icon { font-size: 22px; }
+  .temp-val  { font-weight: 700; font-size: 18px; margin-top: 2px; }
+  .temp-city { font-size: 11px; color: #666; margin-top: 2px; }
+
+  /* vocab cards */
+  .vocab-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 6px 0 10px; }
+  .vocab-card {
+    background: #fffbe6; border: 2px solid #f4c542; border-radius: 10px;
+    padding: 8px 14px; max-width: 172px; text-align: center;
+  }
+  .vocab-term { font-weight: 700; color: #b45309; font-size: 13px; }
+  .vocab-def  { font-size: 12px; color: #555; margin-top: 4px; line-height: 1.4; }
+
+  /* ordering display */
+  .order-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+  .order-chip {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: #a8dadc; border: 2px solid #457b9d;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; color: #1d3557;
+  }
+  .order-result {
+    text-align: center; font-weight: 700; font-size: 15px; padding: 8px;
+    border-radius: 8px; margin-top: 4px;
+  }
+  .order-result.correct { background: #d8f3dc; color: #2d6a4f; border: 2px solid #52b788; }
+  .order-result.wrong   { background: #fde8d8; color: #c1440e; border: 2px solid #e76f51; }
+  .order-insight {
+    font-size: 12px; font-weight: 700; color: #2d6a4f;
+    text-align: center; margin-top: 6px;
+  }
+
+  /* independent practice */
+  .ip-box {
+    background: #f8f9fa; border: 2px dashed #adb5bd;
+    border-radius: 12px; padding: 12px 16px;
+  }
+  .ip-title { font-weight: 700; color: #495057; margin-bottom: 8px; }
+  .ip-q { font-size: 14px; color: #333; margin: 6px 0 6px 8px; }
+
+  /* ── DIALOGUE ── */
+  #dialogue { padding: 20px 24px 16px; }
+  #speakerRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  #speakerAvatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0; border: 3px solid #ccc;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  #speakerName { font-weight: 700; font-size: 15px; }
+  #speakerRole { font-size: 11px; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+  #dialogueBox {
+    border-left: 4px solid #ccc;
+    border-radius: 0 12px 12px 12px;
+    padding: 14px 18px;
+    font-size: 15px; line-height: 1.7;
+    white-space: pre-line;
+    min-height: 70px;
+    transition: background 0.3s, border-color 0.3s;
+    font-family: 'Lora', serif;
+  }
+
+  /* ── NAV ── */
+  #nav {
+    padding: 12px 24px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .nav-btn {
+    padding: 10px 22px; border-radius: 10px; border: none;
+    cursor: pointer; font-size: 14px; font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .nav-btn:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+  .nav-btn:active { transform: scale(0.96); }
+  #backBtn { background: #495057; color: #fff; }
+  #backBtn:disabled { background: #e9ecef; color: #adb5bd; cursor: default; box-shadow: none; }
+  #nextBtn { color: #fff; }
+  #restartBtn { background: linear-gradient(135deg,#f4c542,#f4a261); color: #333; }
+
+  /* progress bar */
+  #progressWrap { flex: 1; background: #e9ecef; border-radius: 10px; height: 8px; overflow: hidden; }
+  #progressBar  { height: 100%; border-radius: 10px; transition: width 0.3s ease, background 0.3s; }
+
+  /* ── PHASE PILLS (bottom) ── */
+  #phasePills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .pill {
+    font-size: 11px; padding: 4px 13px; border-radius: 20px;
+    border: 1px solid transparent; font-weight: 500;
+    transition: all 0.3s; color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.06);
+  }
+  .pill.active { font-weight: 700; }
+
+  /* keyboard hint */
+  #hint {
+    font-size: 11px; color: rgba(255,255,255,0.28);
+    text-align: center; margin-top: 4px; letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Top bar -->
+  <div id="topbar">
+    <div>
+      <div class="subtitle">NSW Mathematics 7–10 · Stage 4</div>
+      <div class="title">Comparing &amp; Ordering Integers</div>
+    </div>
+    <button id="chaptersBtn" onclick="toggleMenu()">☰ Chapters</button>
+  </div>
+
+  <!-- Chapter menu -->
+  <div id="chapterMenu"></div>
+
+  <!-- Main card -->
+  <div id="card">
+    <div id="phaseBanner">
+      <span id="phaseLabel"></span>
+      <span id="sceneCounter"></span>
+    </div>
+    <div id="visualArea"></div>
+    <div id="dialogue">
+      <div id="speakerRow">
+        <div id="speakerAvatar"></div>
+        <div>
+          <div id="speakerName"></div>
+          <div id="speakerRole"></div>
+        </div>
+      </div>
+      <div id="dialogueBox"></div>
+    </div>
+    <div id="nav">
+      <button class="nav-btn" id="backBtn" onclick="go(-1)">← Back</button>
+      <div id="progressWrap"><div id="progressBar"></div></div>
+      <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Phase pills -->
+  <div id="phasePills"></div>
+  <div id="hint">← → arrow keys or click to navigate</div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+
+const PHASES = {
+  IGNITION: "🔥 Ignition",
+  I_DO:     "📖 I Do",
+  WE_DO:    "🤝 We Do",
+  YOU_DO:   "✏️ You Do",
+};
+
+const CHARS = {
+  teacher:  { name:"Ms Rivera", role:"Teacher",  color:"#2d6a4f", bg:"#d8f3dc", emoji:"👩‍🏫" },
+  alex:     { name:"Alex",      role:"Student",  color:"#1d3557", bg:"#a8dadc", emoji:"😊" },
+  maya:     { name:"Maya",      role:"Student",  color:"#7b2d8b", bg:"#e9d8fd", emoji:"🤔" },
+  jordan:   { name:"Jordan",    role:"Student",  color:"#c1440e", bg:"#fde8d8", emoji:"😅" },
+  narrator: { name:"NARRATOR",  role:"",         color:"#555555", bg:"#f0f0f0", emoji:"📚" },
+};
+
+const PHASE_COLORS = {
+  [PHASES.IGNITION]: { bg:"#fff3e0", border:"#f4a261", text:"#b45309" },
+  [PHASES.I_DO]:     { bg:"#e3f2fd", border:"#64b5f6", text:"#1565c0" },
+  [PHASES.WE_DO]:    { bg:"#e8f5e9", border:"#66bb6a", text:"#2e7d32" },
+  [PHASES.YOU_DO]:   { bg:"#fce4ec", border:"#f48fb1", text:"#880e4f" },
+};
+
+// ─────────────────────────────────────────────
+//  VISUAL HTML BUILDERS
+// ─────────────────────────────────────────────
+
+function buildNumberLine(highlighted, label) {
+  const nums = [-5,-4,-3,-2,-1,0,1,2,3,4,5];
+  let cells = nums.map((n,i) => {
+    const cls = highlighted.includes(n) ? 'nl-num lit' : n===0 ? 'nl-num zero' : 'nl-num';
+    const line = i < nums.length-1 ? `<div class="nl-line"></div>` : '';
+    return `<div class="nl-cell">${line}<div class="${cls}">${n}</div><div class="nl-tick"></div></div>`;
+  }).join('');
+  const lbl = label ? `<div class="nl-label">${label}</div>` : '';
+  return `<div class="nl-wrap"><div class="nl-row"><span class="nl-arrow">←</span>${cells}<span class="nl-arrow">→</span></div>${lbl}</div>`;
+}
+
+function buildCompareBox(left, right, symbol, correct) {
+  const cls = correct ? 'correct' : 'wrong';
+  const icon = correct ? '✅' : '❌';
+  return `<div class="cmp-box ${cls}">
+    <span class="cmp-val">${left}</span>
+    <span class="cmp-sym ${cls}">${symbol}</span>
+    <span class="cmp-val">${right}</span>
+    <span>${icon}</span>
+  </div>`;
+}
+
+function buildTemps(arr) {
+  const cards = arr.map(({city,temp}) => {
+    const cls  = temp < 0 ? 'cold' : temp === 0 ? 'zero' : 'warm';
+    const icon = temp < 0 ? '🧊' : temp === 0 ? '❄️' : '☀️';
+    const val  = temp > 0 ? `+${temp}°C` : `${temp}°C`;
+    return `<div class="temp-card ${cls}"><div class="temp-icon">${icon}</div><div class="temp-val">${val}</div><div class="temp-city">${city}</div></div>`;
+  }).join('');
+  return `<div class="temp-row">${cards}</div>`;
+}
+
+function buildVocab() {
+  const items = [
+    {term:"Integer",     def:"Whole number (positive, negative, or zero)"},
+    {term:"Direction",   def:"Positive (+) or Negative (−) side of zero"},
+    {term:"Magnitude",   def:"Distance from zero"},
+    {term:"Number Line", def:"Visual tool — right = greater, left = lesser"},
+  ];
+  return '<div class="vocab-row">' + items.map(({term,def}) =>
+    `<div class="vocab-card"><div class="vocab-term">${term}</div><div class="vocab-def">${def}</div></div>`
+  ).join('') + '</div>';
+}
+
+function buildOrderChips(nums) {
+  return '<div class="order-row">' + nums.map(n=>`<div class="order-chip">${n}</div>`).join('') + '</div>';
+}
+
+// ─────────────────────────────────────────────
+//  VISUALS MAP  (keys → HTML strings)
+// ─────────────────────────────────────────────
+
+const VISUALS = {
+  temps_unsorted: buildTemps([
+    {city:"Sydney",temp:22},{city:"Tokyo",temp:-3},
+    {city:"Moscow",temp:-8},{city:"London",temp:5},{city:"Oslo",temp:-6}
+  ]),
+
+  vocab: buildVocab(),
+
+  numberline_blank: buildNumberLine([], "The number line — integers increase left → right"),
+
+  numberline_neg3: buildNumberLine([-3], "−3: direction = negative, magnitude = 3 → 3 steps LEFT of zero"),
+
+  compare_neg5_neg2:
+    buildNumberLine([-5,-2], "−2 is to the RIGHT of −5, so −2 &gt; −5") +
+    buildCompareBox("−5","−2","&lt;",true),
+
+  ordering_demo:
+    buildNumberLine([-4,-1,0,2,3]) +
+    `<div class="order-result correct">Ordered: −4 &lt; −1 &lt; 0 &lt; 2 &lt; 3 &nbsp;✓</div>`,
+
+  numberline_pos4: buildNumberLine([4], "4: direction = positive, magnitude = 4 → 4 steps RIGHT of zero"),
+
+  numberline_neg3_1: buildNumberLine([-3,1], "−3 is to the LEFT of 1 — so −3 is less than 1"),
+
+  compare_neg3_1:
+    buildNumberLine([-3,1]) +
+    buildCompareBox("−3","1","&lt;",true),
+
+  ordering_challenge:
+    `<div style="text-align:center;font-weight:700;color:#1d3557;margin-bottom:8px;font-size:15px;">Order from least to greatest:</div>` +
+    buildOrderChips([-2,5,-7,0,3]),
+
+  ordering_jordan_error:
+    buildNumberLine([-7,-2,0,3,5]) +
+    `<div class="order-result wrong">Jordan's answer: −2, −7, 0, 3, 5 &nbsp;❌</div>
+     <div class="nl-label" style="margin-top:6px;">Look: which of −7 and −2 sits further LEFT on the number line?</div>`,
+
+  ordering_correction:
+    buildNumberLine([-7,-2,0,3,5]) +
+    `<div class="order-result correct">Corrected order: −7 &lt; −2 &lt; 0 &lt; 3 &lt; 5 &nbsp;✅</div>
+     <div class="order-insight">Key insight: with negative integers, larger digit = smaller integer</div>`,
+
+  independent:
+    `<div class="ip-box">
+       <div class="ip-title">📝 Independent Practice</div>
+       <div class="ip-q">① Place {−4, 2, −1, 0, 3} on a number line</div>
+       <div class="ip-q">② Write &lt; or &gt; between: &nbsp; −6 &nbsp;☐&nbsp; −2</div>
+       <div class="ip-q">③ Order from least to greatest: {1, −3, 7, −5, 0}</div>
+     </div>`,
+
+  summary:
+    buildNumberLine([-5,-3,0,1,7], "Ordered: −5 &lt; −3 &lt; 0 &lt; 1 &lt; 7") +
+    buildCompareBox("−6","−2","&lt;",true),
+};
+
+// ─────────────────────────────────────────────
+//  SCRIPT
+// ─────────────────────────────────────────────
+
+const S = PHASES; // alias
+const SCRIPT = [
+  // IGNITION
+  { phase:S.IGNITION, speaker:"narrator", text:"📍 Year 7 Mathematics · Computation with Integers · Lesson 1\n\nMs Rivera's classroom. Morning. A new concept is about to begin.", visual:null },
+  { phase:S.IGNITION, speaker:"teacher",  text:"Good morning everyone! Before we dive in, I want you to think about something. Look at these city temperatures from last night's weather report.", visual:"temps_unsorted" },
+  { phase:S.IGNITION, speaker:"teacher",  text:"Which city was the coldest? Which was the warmest? How do you know? Take 30 seconds — discuss with your partner.", visual:"temps_unsorted" },
+  { phase:S.IGNITION, speaker:"alex",     text:"Moscow was the coldest — it was negative 8. Sydney was warmest at positive 22.", visual:"temps_unsorted" },
+  { phase:S.IGNITION, speaker:"teacher",  text:"Excellent reasoning, Alex. You've already used integers without realising it! Today we're going to formalise exactly what you just did — comparing and ordering integers.", visual:"temps_unsorted" },
+  { phase:S.IGNITION, speaker:"teacher",  text:"🎯 Learning Intentions:\n• Recognise positive and negative integers and describe their direction and magnitude\n• Represent integers on a number line\n• Compare integers using < and > symbols\n• Order a set of integers", visual:null },
+
+  // I DO
+  { phase:S.I_DO, speaker:"narrator", text:"Ms Rivera moves to the board. She begins the explicit teaching phase — modelling new concepts clearly before students attempt anything.", visual:null },
+  { phase:S.I_DO, speaker:"teacher",  text:"Key vocabulary first. An INTEGER is any whole number — positive, negative, or zero. No fractions, no decimals. Let me write that down for you.", visual:"vocab" },
+  { phase:S.I_DO, speaker:"teacher",  text:"Integers have two properties I want you to remember: DIRECTION and MAGNITUDE.\n\nDirection: Is it positive (above zero) or negative (below zero)?\nMagnitude: How far is it from zero?", visual:"vocab" },
+  { phase:S.I_DO, speaker:"teacher",  text:"Watch me place integers on a number line. I'll think aloud so you can follow my reasoning.", visual:"numberline_blank" },
+  { phase:S.I_DO, speaker:"teacher",  text:"I'm placing −3. The negative sign tells me direction — left of zero. The 3 tells me magnitude — 3 steps from zero. So I count 3 steps left from zero.", visual:"numberline_neg3" },
+  { phase:S.I_DO, speaker:"teacher",  text:"Now let me model comparing. Which is greater: −2 or −5?\n\nOn the number line, numbers increase as we move RIGHT. −2 is to the right of −5, so −2 is greater.\n\nI write: −5 < −2", visual:"compare_neg5_neg2" },
+  { phase:S.I_DO, speaker:"teacher",  text:"This trips people up! −2 feels 'smaller' because 2 is less than 5 — but the NEGATIVE sign changes everything. On the number line, −2 is always to the RIGHT of −5.", visual:"compare_neg5_neg2" },
+  { phase:S.I_DO, speaker:"teacher",  text:"Now I'll order a set: {3, −1, −4, 0, 2}\n\nI find each on the number line from left to right. Left = smallest. Right = greatest.\n\nOrdered: −4, −1, 0, 2, 3  ✓", visual:"ordering_demo" },
+
+  // WE DO
+  { phase:S.WE_DO, speaker:"narrator", text:"Ms Rivera transitions to guided practice. Students now attempt problems with teacher support — the 'We Do' phase.", visual:null },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Your turn — WITH me. Place the integer +4 on the number line. What's your direction, and what's your magnitude?", visual:"numberline_blank" },
+  { phase:S.WE_DO, speaker:"alex",     text:"Direction is positive — so we go right. Magnitude is 4, so 4 steps right from zero. It sits right here! ✓", visual:"numberline_pos4" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Perfect, Alex! You used the exact vocabulary. Now everyone — let's compare −3 and 1. Maya, what do you think?", visual:"numberline_neg3_1" },
+  { phase:S.WE_DO, speaker:"maya",     text:"Hmm... I think −3 is less than 1? But I'm not sure how to write the symbol. Which way does the < face again?", visual:"numberline_neg3_1" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Great question, Maya — this is really common! Think of it like a hungry crocodile mouth. The open end always faces the BIGGER number. The pointy end always points to the SMALLER number.\n\nSo: −3 < 1 (the pointy end aims at −3)", visual:"compare_neg3_1" },
+  { phase:S.WE_DO, speaker:"maya",     text:"Oh! The crocodile eats the bigger one. So −3 < 1 because 1 is bigger and the open mouth faces 1. Got it!", visual:"compare_neg3_1" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Exactly right, Maya. Now Jordan — can you order these integers from least to greatest?\n\n{−2, 5, −7, 0, 3}", visual:"ordering_challenge" },
+  { phase:S.WE_DO, speaker:"jordan",   text:"Okay... so I'll put the negatives first. −2, −7, then 0, 3, 5. My order is: −2, −7, 0, 3, 5.", visual:"ordering_jordan_error" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Jordan, I can see your thinking — you correctly identified the negatives come first. But look carefully at −2 and −7 on the number line. Which one is further LEFT?", visual:"ordering_jordan_error" },
+  { phase:S.WE_DO, speaker:"jordan",   text:"Oh... −7 is further left... so −7 is actually smaller than −2. I put them in the wrong order!", visual:"ordering_correction" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"That's the most common mistake with negatives, Jordan — and you worked it out yourself! Correct order: −7, −2, 0, 3, 5.\n\nRemember: with negative numbers, the bigger the digit, the SMALLER the integer.", visual:"ordering_correction" },
+  { phase:S.WE_DO, speaker:"jordan",   text:"That's actually backwards to what I expected. So −100 would be WAY less than −1, even though 100 is bigger than 1?", visual:"ordering_correction" },
+  { phase:S.WE_DO, speaker:"teacher",  text:"Exactly right! −100 < −1. You've just made an important generalisation, Jordan. That's Working Mathematically — reasoning beyond the immediate example.", visual:"ordering_correction" },
+
+  // YOU DO
+  { phase:S.YOU_DO, speaker:"narrator", text:"Students now work independently. Ms Rivera circulates, monitoring and providing feedback.", visual:null },
+  { phase:S.YOU_DO, speaker:"teacher",  text:"Your turn — independently now. Complete these three tasks in your workbook:\n\n① Place {−4, 2, −1, 0, 3} on a number line\n② Write < or > between: −6 ☐ −2\n③ Order from least to greatest: {1, −3, 7, −5, 0}", visual:"independent" },
+  { phase:S.YOU_DO, speaker:"narrator", text:"Students work quietly. Ms Rivera moves around checking responses, asking: 'How did you decide that?' and 'Can you explain using direction and magnitude?'", visual:"independent" },
+  { phase:S.YOU_DO, speaker:"teacher",  text:"Let's check together.\n\n① Number line: −4, −1, 0, 2, 3 placed correctly ✓\n② −6 < −2 (−6 is further LEFT on the number line) ✓\n③ Ordered: −5, −3, 0, 1, 7 ✓\n\nCould you explain WHY at each step? That's the reasoning skill.", visual:"summary" },
+  { phase:S.YOU_DO, speaker:"teacher",  text:"Today's key ideas:\n\n🔑 Integers have direction (positive/negative) and magnitude (distance from zero)\n🔑 On a number line, right = greater, left = lesser\n🔑 The < symbol's point aims at the smaller number\n🔑 With negatives: bigger digit = smaller integer", visual:"summary" },
+  { phase:S.YOU_DO, speaker:"teacher",  text:"Exit ticket before you go — on a sticky note, write one integer comparison using < or > and explain WHY it's true in one sentence.\n\nTry to use the words 'direction' or 'magnitude' if you can! 🎯", visual:null },
+];
+
+// ─────────────────────────────────────────────
+//  STATE & RENDER
+// ─────────────────────────────────────────────
+
+let step = 0;
+
+function render() {
+  const scene = SCRIPT[step];
+  const char  = CHARS[scene.speaker];
+  const pc    = PHASE_COLORS[scene.phase];
+  const progress = ((step+1)/SCRIPT.length*100).toFixed(1);
+
+  // Card border / phase banner
+  document.getElementById('card').style.borderColor = pc.border;
+  const banner = document.getElementById('phaseBanner');
+  banner.style.background   = pc.bg;
+  banner.style.borderColor  = pc.border;
+  document.getElementById('phaseLabel').style.color = pc.text;
+  document.getElementById('phaseLabel').textContent = scene.phase;
+  document.getElementById('sceneCounter').textContent = `Scene ${step+1} of ${SCRIPT.length}`;
+
+  // Visual area
+  const va = document.getElementById('visualArea');
+  if (scene.visual && VISUALS[scene.visual]) {
+    va.innerHTML = VISUALS[scene.visual];
+    va.classList.add('visible');
+  } else {
+    va.innerHTML = '';
+    va.classList.remove('visible');
+  }
+
+  // Speaker
+  const av = document.getElementById('speakerAvatar');
+  av.textContent     = char.emoji;
+  av.style.background    = char.bg;
+  av.style.borderColor   = char.color;
+  document.getElementById('speakerName').style.color  = char.color;
+  document.getElementById('speakerName').textContent  = char.name;
+  document.getElementById('speakerRole').textContent  = char.role.toUpperCase();
+
+  // Dialogue box
+  const db = document.getElementById('dialogueBox');
+  db.textContent       = scene.text;
+  db.style.borderLeftColor = char.color;
+  db.style.background  = scene.speaker === 'narrator' ? '#f5f5f5' : char.bg + '55';
+
+  // Progress
+  const pb = document.getElementById('progressBar');
+  pb.style.width      = progress + '%';
+  pb.style.background = `linear-gradient(90deg, ${pc.border}, ${pc.text})`;
+
+  // Back button
+  document.getElementById('backBtn').disabled = (step === 0);
+
+  // Next / Restart
+  const nb = document.getElementById('nextBtn');
+  if (step < SCRIPT.length - 1) {
+    nb.id        = 'nextBtn';
+    nb.className = 'nav-btn';
+    nb.style.background = `linear-gradient(135deg, ${pc.border}, ${pc.text})`;
+    nb.textContent = 'Next →';
+    nb.onclick = () => go(1);
+  } else {
+    nb.id        = 'nextBtn';
+    nb.className = 'nav-btn';
+    nb.style.background = 'linear-gradient(135deg,#f4c542,#f4a261)';
+    nb.style.color = '#333';
+    nb.textContent = '🔄 Restart';
+    nb.onclick = () => jumpTo(0);
+  }
+
+  // Phase pills
+  const pp = document.getElementById('phasePills');
+  pp.innerHTML = '';
+  Object.entries(PHASE_COLORS).forEach(([p,c]) => {
+    const pill = document.createElement('div');
+    pill.className = 'pill' + (scene.phase === p ? ' active' : '');
+    pill.textContent = p;
+    if (scene.phase === p) {
+      pill.style.background = c.bg;
+      pill.style.color      = c.text;
+      pill.style.borderColor = c.border;
+    }
+    pp.appendChild(pill);
+  });
+}
+
+function go(dir) {
+  const next = step + dir;
+  if (next < 0 || next >= SCRIPT.length) return;
+  const card = document.getElementById('card');
+  card.classList.add('fade');
+  setTimeout(() => {
+    step = next;
+    render();
+    card.classList.remove('fade');
+  }, 140);
+}
+
+function jumpTo(i) {
+  const card = document.getElementById('card');
+  card.classList.add('fade');
+  document.getElementById('chapterMenu').classList.remove('open');
+  setTimeout(() => {
+    step = i;
+    render();
+    card.classList.remove('fade');
+  }, 140);
+}
+
+// ─────────────────────────────────────────────
+//  CHAPTER MENU
+// ─────────────────────────────────────────────
+
+function buildMenu() {
+  const menu = document.getElementById('chapterMenu');
+  const seen = {};
+  SCRIPT.forEach((s,i) => { if (!seen[s.phase]) seen[s.phase] = i; });
+  Object.entries(seen).forEach(([phase, idx]) => {
+    const c   = PHASE_COLORS[phase];
+    const btn = document.createElement('button');
+    btn.className   = 'chapterBtn';
+    btn.textContent = phase;
+    btn.style.background   = c.bg;
+    btn.style.borderColor  = c.border;
+    btn.style.color        = c.text;
+    btn.onclick = () => jumpTo(idx);
+    menu.appendChild(btn);
+  });
+}
+
+function toggleMenu() {
+  document.getElementById('chapterMenu').classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────
+//  KEYBOARD
+// ─────────────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); go(-1); }
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+
+buildMenu();
+render();
+</script>
+</body>
+</html>

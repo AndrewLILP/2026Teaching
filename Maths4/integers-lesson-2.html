@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adding & Subtracting Integers — Year 7 Maths · Lesson 2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: linear-gradient(135deg, #12061f 0%, #1a0a2e 55%, #0d1b2a 100%);
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 16px; color: #1a1a2e;
+  }
+
+  #app { width: 100%; max-width: 740px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── TOPBAR ── */
+  #topbar { display: flex; align-items: center; justify-content: space-between; }
+  #topbar .subtitle { color: rgba(200,180,240,0.6); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+  #topbar .title { color: #c77dff; font-weight: 700; font-size: 15px; margin-top: 2px; font-family: 'Lora', serif; }
+  #chaptersBtn {
+    background: rgba(199,125,255,0.15); border: 1px solid rgba(199,125,255,0.3);
+    color: #ddb8ff; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    font-size: 13px; font-family: 'DM Sans', sans-serif; transition: background 0.2s;
+  }
+  #chaptersBtn:hover { background: rgba(199,125,255,0.25); }
+
+  /* ── CHAPTER MENU ── */
+  #chapterMenu {
+    display: none; flex-wrap: wrap; gap: 8px;
+    background: rgba(255,255,255,0.06); border-radius: 12px; padding: 12px;
+    border: 1px solid rgba(199,125,255,0.2);
+  }
+  #chapterMenu.open { display: flex; }
+  .chapterBtn {
+    border-radius: 8px; padding: 7px 16px; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    transition: transform 0.1s, box-shadow 0.1s; border: 2px solid transparent;
+  }
+  .chapterBtn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+
+  /* ── MAIN CARD ── */
+  #card {
+    background: rgba(255,255,255,0.975); border-radius: 20px; overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6); border: 3px solid #ccc;
+    transition: opacity 0.15s ease, border-color 0.3s;
+  }
+  #card.fade { opacity: 0; }
+
+  /* ── PHASE BANNER ── */
+  #phaseBanner {
+    padding: 11px 22px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid #ccc; transition: background 0.3s, border-color 0.3s;
+  }
+  #phaseLabel { font-weight: 700; font-size: 14px; letter-spacing: 0.5px; }
+  #sceneCounter { font-size: 12px; color: #888; }
+
+  /* ── VISUAL AREA ── */
+  #visualArea { padding: 16px 20px 4px; background: #fafafa; border-bottom: 1px solid #eee; display: none; }
+  #visualArea.visible { display: block; }
+
+  /* ── NUMBER LINE WITH ARROW ── */
+  .nl-wrap { padding: 10px 6px 8px; background: #fff; border-radius: 10px; border: 2px solid #e0e0e0; margin: 4px 0 8px; overflow-x: auto; }
+  .nl-row { display: flex; align-items: center; justify-content: center; gap: 0; min-width: 400px; }
+  .nl-arrow-end { font-size: 18px; color: #888; flex-shrink: 0; padding: 0 4px; }
+  .nl-cell { display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
+  .nl-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: #333; position: relative; z-index: 2;
+  }
+  .nl-num.zero    { background: #e9ecef; border: 2px solid #adb5bd; font-weight: 700; }
+  .nl-num.start   { background: #a8dadc; border: 2px solid #457b9d; color: #1d3557; font-weight: 700; }
+  .nl-num.end     { background: #95d5b2; border: 2px solid #52b788; color: #1b4332; font-weight: 700; }
+  .nl-num.lit     { background: #f4a261; border: 2px solid #e76f51; color: #9d2c00; font-weight: 700; }
+  .nl-num.neg-lit { background: #f4a261; border: 2px solid #e76f51; color: #9d2c00; font-weight: 700; }
+  .nl-tick { height: 8px; width: 2px; background: #bbb; margin-top: -2px; }
+  .nl-line-seg { position: absolute; left: 32px; top: 15px; height: 2px; width: 32px; background: #bbb; z-index: 1; }
+  .nl-label { text-align: center; font-size: 12px; color: #555; font-style: italic; margin-top: 4px; padding: 0 4px; }
+
+  /* movement arc label */
+  .nl-move-label {
+    text-align: center; font-size: 13px; font-weight: 700; margin: 6px 0 4px;
+    padding: 5px 14px; border-radius: 8px; display: inline-block;
+  }
+  .move-right { background: #d8f3dc; color: #1b4332; border: 2px solid #52b788; }
+  .move-left  { background: #fde8d8; color: #7f2704; border: 2px solid #e76f51; }
+  .nl-move-wrap { display: flex; justify-content: center; margin-bottom: 6px; }
+
+  /* ── EQUATION DISPLAY ── */
+  .eq-row {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 26px; font-weight: 700; padding: 10px 12px; border-radius: 12px;
+    margin: 6px 0; flex-wrap: wrap;
+  }
+  .eq-row.result-pos { background: #d8f3dc; border: 2px solid #52b788; }
+  .eq-row.result-neg { background: #fde8d8; border: 2px solid #e76f51; }
+  .eq-row.neutral    { background: #e3f2fd; border: 2px solid #64b5f6; }
+  .eq-num  { color: #1d3557; background: #a8dadc; padding: 3px 14px; border-radius: 8px; font-size: 22px; }
+  .eq-op   { color: #555; font-size: 28px; }
+  .eq-neg  { color: #c1440e; }
+  .eq-pos  { color: #1b5e20; }
+  .eq-ans  { color: #1b4332; background: #95d5b2; padding: 3px 14px; border-radius: 8px; font-size: 22px; }
+  .eq-ans.neg { color: #7f2704; background: #f4a261; }
+  .eq-equals { color: #555; font-size: 26px; }
+
+  /* ── SIGN MEANING TABLE ── */
+  .sign-table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 14px; }
+  .sign-table th {
+    padding: 8px 12px; text-align: center; font-weight: 700; font-size: 12px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .sign-table td { padding: 8px 12px; text-align: center; border-top: 1px solid #e9ecef; }
+  .sign-table tr:nth-child(even) td { background: #f8f9fa; }
+  .sign-badge {
+    display: inline-block; font-size: 20px; font-weight: 900; width: 36px; height: 36px;
+    border-radius: 8px; line-height: 36px; text-align: center;
+  }
+  .sign-badge.plus  { background: #d8f3dc; color: #1b4332; border: 2px solid #52b788; }
+  .sign-badge.minus { background: #fde8d8; color: #7f2704;  border: 2px solid #e76f51; }
+  .meaning-pos  { color: #1b5e20; font-weight: 600; }
+  .meaning-neg  { color: #b71c1c; font-weight: 600; }
+  .meaning-op   { color: #0d47a1; font-weight: 600; }
+
+  /* ── DIRECTED SENTENCE BUILDER ── */
+  .dsb-wrap { background: #fff; border-radius: 12px; border: 2px solid #e0e0e0; overflow: hidden; margin: 6px 0 10px; }
+  .dsb-header { background: #ede7f6; padding: 8px 14px; font-weight: 700; font-size: 13px; color: #4a148c; border-bottom: 2px solid #b39ddb; }
+  .dsb-body { padding: 10px 14px; }
+  .dsb-context { font-size: 14px; color: #333; margin-bottom: 8px; padding: 8px; background: #fafafa; border-radius: 8px; border-left: 4px solid #9c27b0; line-height: 1.55; }
+  .dsb-arrow-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0; flex-wrap: wrap; }
+  .dsb-box {
+    padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: 700;
+    text-align: center; min-width: 90px;
+  }
+  .dsb-box.context-part { background: #ede7f6; color: #4a148c; border: 2px solid #b39ddb; }
+  .dsb-box.math-part    { background: #e3f2fd; color: #0d47a1; border: 2px solid #64b5f6; font-size: 18px; }
+  .dsb-box.result-part  { background: #d8f3dc; color: #1b4332; border: 2px solid #52b788; font-size: 18px; }
+  .dsb-arrow { color: #888; font-size: 20px; }
+
+  /* ── BANK / ELEVATOR CARDS ── */
+  .context-cards { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 6px 0 10px; }
+  .ctx-card {
+    border-radius: 14px; padding: 12px 18px; min-width: 120px; text-align: center;
+    border: 2px solid transparent;
+  }
+  .ctx-card.bank { background: #e3f2fd; border-color: #64b5f6; }
+  .ctx-card.elev { background: #f3e5f5; border-color: #ba68c8; }
+  .ctx-card.temp { background: #fff3e0; border-color: #ffb74d; }
+  .ctx-icon { font-size: 26px; }
+  .ctx-val  { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .ctx-lbl  { font-size: 11px; color: #666; margin-top: 3px; }
+
+  /* ── ERROR / CORRECT CALLOUTS ── */
+  .callout {
+    border-radius: 10px; padding: 10px 16px; margin: 6px 0; font-size: 14px;
+    border-left: 5px solid transparent; line-height: 1.5;
+  }
+  .callout.error   { background: #fde8d8; border-left-color: #e76f51; }
+  .callout.correct { background: #d8f3dc; border-left-color: #52b788; }
+  .callout.info    { background: #e3f2fd; border-left-color: #64b5f6; }
+  .callout.warn    { background: #fffde7; border-left-color: #f9a825; }
+  .callout-title   { font-weight: 700; margin-bottom: 4px; }
+
+  /* ── INDEPENDENT PRACTICE ── */
+  .ip-box { background: #f8f9fa; border: 2px dashed #adb5bd; border-radius: 12px; padding: 12px 16px; }
+  .ip-title { font-weight: 700; color: #495057; margin-bottom: 8px; }
+  .ip-q { font-size: 14px; color: #333; margin: 6px 0 6px 8px; }
+
+  /* ── SUMMARY GRID ── */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 6px 0 10px; }
+  .sum-card { border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+  .sum-card .rule { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .sum-card .eg   { font-family: 'Lora', serif; color: #555; font-size: 13px; }
+  .sum-card.a { background: #d8f3dc; border: 2px solid #52b788; color: #1b4332; }
+  .sum-card.b { background: #fde8d8; border: 2px solid #e76f51; color: #7f2704; }
+  .sum-card.c { background: #e3f2fd; border: 2px solid #64b5f6; color: #0d47a1; }
+  .sum-card.d { background: #ede7f6; border: 2px solid #b39ddb; color: #4a148c; }
+
+  /* ── DIALOGUE ── */
+  #dialogue { padding: 20px 24px 16px; }
+  #speakerRow { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  #speakerAvatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0; border: 3px solid #ccc;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  #speakerName { font-weight: 700; font-size: 15px; transition: color 0.3s; }
+  #speakerRole { font-size: 11px; color: #888; letter-spacing: 1px; text-transform: uppercase; margin-top: 1px; }
+  #dialogueBox {
+    border-left: 4px solid #ccc; border-radius: 0 12px 12px 12px;
+    padding: 14px 18px; font-size: 15px; line-height: 1.7;
+    white-space: pre-line; min-height: 70px;
+    transition: background 0.3s, border-color 0.3s;
+    font-family: 'Lora', serif;
+  }
+
+  /* ── NAV ── */
+  #nav { padding: 12px 24px 20px; display: flex; align-items: center; gap: 12px; }
+  .nav-btn {
+    padding: 10px 22px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .nav-btn:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
+  .nav-btn:active { transform: scale(0.96); }
+  #backBtn { background: #495057; color: #fff; }
+  #backBtn:disabled { background: #e9ecef; color: #adb5bd; cursor: default; box-shadow: none; }
+  #progressWrap { flex: 1; background: #e9ecef; border-radius: 10px; height: 8px; overflow: hidden; }
+  #progressBar  { height: 100%; border-radius: 10px; transition: width 0.3s ease, background 0.3s; }
+
+  /* ── PHASE PILLS ── */
+  #phasePills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .pill {
+    font-size: 11px; padding: 4px 13px; border-radius: 20px;
+    border: 1px solid transparent; font-weight: 500;
+    transition: all 0.3s; color: rgba(220,180,255,0.35);
+    background: rgba(255,255,255,0.05);
+  }
+  .pill.active { font-weight: 700; }
+  #hint { font-size: 11px; color: rgba(200,160,255,0.3); text-align: center; margin-top: 4px; letter-spacing: 0.5px; }
+
+  /* lesson badge */
+  .lesson-badge {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; background: rgba(199,125,255,0.2); color: #ddb8ff;
+    padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(199,125,255,0.3);
+    margin-bottom: 2px;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div>
+      <div class="lesson-badge">Lesson 2 of 2</div>
+      <div class="subtitle">NSW Mathematics 7–10 · Stage 4 · Computation with Integers</div>
+      <div class="title">Adding &amp; Subtracting Integers</div>
+    </div>
+    <button id="chaptersBtn" onclick="toggleMenu()">☰ Chapters</button>
+  </div>
+
+  <div id="chapterMenu"></div>
+
+  <div id="card">
+    <div id="phaseBanner">
+      <span id="phaseLabel"></span>
+      <span id="sceneCounter"></span>
+    </div>
+    <div id="visualArea"></div>
+    <div id="dialogue">
+      <div id="speakerRow">
+        <div id="speakerAvatar"></div>
+        <div>
+          <div id="speakerName"></div>
+          <div id="speakerRole"></div>
+        </div>
+      </div>
+      <div id="dialogueBox"></div>
+    </div>
+    <div id="nav">
+      <button class="nav-btn" id="backBtn" onclick="go(-1)">← Back</button>
+      <div id="progressWrap"><div id="progressBar"></div></div>
+      <button class="nav-btn" id="nextBtn" onclick="go(1)">Next →</button>
+    </div>
+  </div>
+
+  <div id="phasePills"></div>
+  <div id="hint">← → arrow keys or click to navigate</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  PHASES & CHARACTERS
+// ═══════════════════════════════════════════════════
+const PHASES = {
+  IGNITION: "🔥 Ignition",
+  I_DO:     "📖 I Do",
+  WE_DO:    "🤝 We Do",
+  YOU_DO:   "✏️ You Do",
+};
+
+const CHARS = {
+  teacher:  { name:"Ms Rivera", role:"Teacher",  color:"#2d6a4f", bg:"#d8f3dc", emoji:"👩‍🏫" },
+  alex:     { name:"Alex",      role:"Student",  color:"#1d3557", bg:"#a8dadc", emoji:"😊" },
+  maya:     { name:"Maya",      role:"Student",  color:"#7b2d8b", bg:"#e9d8fd", emoji:"🤔" },
+  jordan:   { name:"Jordan",    role:"Student",  color:"#c1440e", bg:"#fde8d8", emoji:"😅" },
+  narrator: { name:"NARRATOR",  role:"",         color:"#555555", bg:"#f0f0f0", emoji:"📚" },
+};
+
+const PHASE_COLORS = {
+  [PHASES.IGNITION]: { bg:"#fff3e0", border:"#f4a261", text:"#b45309" },
+  [PHASES.I_DO]:     { bg:"#ede7f6", border:"#9c27b0", text:"#4a148c" },
+  [PHASES.WE_DO]:    { bg:"#e8f5e9", border:"#66bb6a", text:"#2e7d32" },
+  [PHASES.YOU_DO]:   { bg:"#fce4ec", border:"#f48fb1", text:"#880e4f" },
+};
+
+// ═══════════════════════════════════════════════════
+//  VISUAL HTML BUILDERS
+// ═══════════════════════════════════════════════════
+
+function buildNL(highlighted, startNum, endNum, direction, label) {
+  const nums = [-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7];
+  let cells = nums.map((n,i) => {
+    let cls = 'nl-num';
+    if (n === startNum) cls = 'nl-num start';
+    else if (n === endNum) cls = 'nl-num end';
+    else if (highlighted && highlighted.includes(n)) cls = 'nl-num lit';
+    else if (n === 0) cls = 'nl-num zero';
+    const line = i < nums.length-1 ? `<div class="nl-line-seg"></div>` : '';
+    return `<div class="nl-cell">${line}<div class="${cls}">${n}</div><div class="nl-tick"></div></div>`;
+  }).join('');
+  let moveLabel = '';
+  if (direction === 'right') moveLabel = `<div class="nl-move-wrap"><span class="nl-move-label move-right">➡️ Move RIGHT (${startNum} → ${endNum})</span></div>`;
+  if (direction === 'left')  moveLabel = `<div class="nl-move-wrap"><span class="nl-move-label move-left">⬅️ Move LEFT (${startNum} → ${endNum})</span></div>`;
+  const lbl = label ? `<div class="nl-label">${label}</div>` : '';
+  return `${moveLabel}<div class="nl-wrap"><div class="nl-row"><span class="nl-arrow-end">←</span>${cells}<span class="nl-arrow-end">→</span></div>${lbl}</div>`;
+}
+
+function buildEq(parts, resultClass) {
+  // parts: array of {val, cls} — cls: 'num'|'op'|'neg'|'pos'|'ans'|'ans-neg'|'equals'|'paren-open'|'paren-close'
+  const inner = parts.map(p => {
+    if (p.type === 'num')        return `<span class="eq-num">${p.val}</span>`;
+    if (p.type === 'op')         return `<span class="eq-op">${p.val}</span>`;
+    if (p.type === 'neg')        return `<span class="eq-op eq-neg">${p.val}</span>`;
+    if (p.type === 'pos')        return `<span class="eq-op eq-pos">${p.val}</span>`;
+    if (p.type === 'ans')        return `<span class="eq-ans">${p.val}</span>`;
+    if (p.type === 'ans-neg')    return `<span class="eq-ans neg">${p.val}</span>`;
+    if (p.type === 'equals')     return `<span class="eq-equals">=</span>`;
+    if (p.type === 'plain')      return `<span class="eq-op" style="font-size:18px;color:#888">${p.val}</span>`;
+    return `<span>${p.val}</span>`;
+  }).join('');
+  return `<div class="eq-row ${resultClass || 'neutral'}">${inner}</div>`;
+}
+
+function buildSignTable() {
+  return `<table class="sign-table">
+    <thead style="background:#f8f9fa;">
+      <tr>
+        <th style="color:#555;">Sign</th>
+        <th style="color:#0d47a1;">Meaning as POSITION<br><small style="font-weight:400;">(what the number IS)</small></th>
+        <th style="color:#6a1b9a;">Meaning as OPERATION<br><small style="font-weight:400;">(what we DO)</small></th>
+        <th style="color:#555;">Example</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="sign-badge plus">+</span></td>
+        <td><span class="meaning-pos">Positive integer<br>(above zero)</span></td>
+        <td><span class="meaning-op">Add<br>(move right ➡️)</span></td>
+        <td style="font-weight:600;">+5 &nbsp;or&nbsp; 3 + 2</td>
+      </tr>
+      <tr>
+        <td><span class="sign-badge minus">−</span></td>
+        <td><span class="meaning-neg">Negative integer<br>(below zero)</span></td>
+        <td><span class="meaning-op">Subtract<br>(move left ⬅️)</span></td>
+        <td style="font-weight:600;">−5 &nbsp;or&nbsp; 3 − 2</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="callout info" style="margin-top:6px;">
+    <div class="callout-title">Key insight</div>
+    In <strong>3 + (−2)</strong> the first + is an <em>operation</em> (add) and the − is a <em>position</em> (negative). Context tells you which meaning applies!
+  </div>`;
+}
+
+function buildDSB(context, parts, sentence, result) {
+  const arrowParts = parts.map(p => `<div class="dsb-box context-part">${p}</div>`).join(`<span class="dsb-arrow">→</span>`);
+  return `<div class="dsb-wrap">
+    <div class="dsb-header">📐 Directed Number Sentence Builder</div>
+    <div class="dsb-body">
+      <div class="dsb-context">🌍 Context: ${context}</div>
+      <div class="dsb-arrow-row">${arrowParts}</div>
+      <div class="dsb-arrow-row">
+        <div class="dsb-box math-part">${sentence}</div>
+        <span class="dsb-arrow">=</span>
+        <div class="dsb-box result-part">${result}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function buildContextCards(cards) {
+  return '<div class="context-cards">' + cards.map(({icon,val,lbl,type}) =>
+    `<div class="ctx-card ${type}"><div class="ctx-icon">${icon}</div><div class="ctx-val">${val}</div><div class="ctx-lbl">${lbl}</div></div>`
+  ).join('') + '</div>';
+}
+
+function buildSummaryGrid() {
+  return `<div class="summary-grid">
+    <div class="sum-card a">
+      <div class="rule">➕ Adding a positive</div>
+      <div class="eg">Move RIGHT on number line</div>
+      <div class="eg" style="margin-top:4px;">−2 + 5 = 3</div>
+    </div>
+    <div class="sum-card b">
+      <div class="rule">➕ Adding a negative</div>
+      <div class="eg">Move LEFT on number line</div>
+      <div class="eg" style="margin-top:4px;">3 + (−4) = −1</div>
+    </div>
+    <div class="sum-card c">
+      <div class="rule">➖ Subtracting a positive</div>
+      <div class="eg">Move LEFT on number line</div>
+      <div class="eg" style="margin-top:4px;">2 − 6 = −4</div>
+    </div>
+    <div class="sum-card d">
+      <div class="rule">➖ Subtracting a negative</div>
+      <div class="eg">= Adding the positive → RIGHT</div>
+      <div class="eg" style="margin-top:4px;">1 − (−3) = 4</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+//  VISUALS MAP
+// ═══════════════════════════════════════════════════
+const VISUALS = {
+
+  // IGNITION
+  bank_hook: buildContextCards([
+    {icon:"🏦", val:"$5",  lbl:"Your balance",  type:"bank"},
+    {icon:"🛒", val:"−$8", lbl:"You spend...",   type:"bank"},
+    {icon:"❓", val:"= ?", lbl:"What happens?",  type:"bank"},
+  ]) + `<div class="callout warn" style="margin-top:2px;">
+    <div class="callout-title">Think about it...</div>
+    You start with $5 and spend $8. You don't have enough. What does your balance become? How would you write that mathematically?
+  </div>`,
+
+  bank_reveal: buildContextCards([
+    {icon:"🏦", val:"$5",  lbl:"Start",    type:"bank"},
+    {icon:"🛒", val:"−$8", lbl:"Spend",    type:"bank"},
+    {icon:"💸", val:"−$3", lbl:"Balance",  type:"bank"},
+  ]) +
+  buildEq([
+    {type:'num',val:'5'},{type:'op',val:'−'},{type:'num',val:'8'},{type:'equals'},{type:'ans-neg',val:'−3'}
+  ], 'result-neg') +
+  buildNL(null, 5, -3, 'left', 'Start at 5, subtract 8 → move 8 steps LEFT → land on −3'),
+
+  // SIGN TABLE
+  sign_meanings: buildSignTable(),
+
+  // I DO — adding a positive integer
+  add_pos_demo:
+    buildEq([{type:'num',val:'−2'},{type:'pos',val:'+5'},{type:'equals'},{type:'ans',val:'3'}], 'result-pos') +
+    buildNL(null, -2, 3, 'right', 'Start at −2. Adding +5 → move 5 steps RIGHT → land on 3'),
+
+  // I DO — adding a negative integer
+  add_neg_demo:
+    buildEq([{type:'num',val:'3'},{type:'op',val:'+'},{type:'neg',val:'(−4)'},{type:'equals'},{type:'ans-neg',val:'−1'}], 'result-neg') +
+    buildNL(null, 3, -1, 'left', 'Start at 3. Adding (−4) → move 4 steps LEFT → land on −1') +
+    `<div class="callout info"><div class="callout-title">Rule</div>Adding a negative is the same as subtracting that positive: &nbsp; 3 + (−4) = 3 − 4</div>`,
+
+  // I DO — subtracting a positive
+  sub_pos_demo:
+    buildEq([{type:'num',val:'2'},{type:'op',val:'−'},{type:'num',val:'6'},{type:'equals'},{type:'ans-neg',val:'−4'}], 'result-neg') +
+    buildNL(null, 2, -4, 'left', 'Start at 2. Subtracting 6 → move 6 steps LEFT → land on −4'),
+
+  // I DO — subtracting a negative (the big one)
+  sub_neg_demo:
+    buildEq([{type:'num',val:'1'},{type:'op',val:'−'},{type:'neg',val:'(−3)'},{type:'equals'},{type:'ans',val:'4'}], 'result-pos') +
+    buildNL(null, 1, 4, 'right', 'Start at 1. Subtracting (−3) → same as adding 3 → move 3 steps RIGHT → land on 4') +
+    `<div class="callout correct"><div class="callout-title">The double-negative rule</div>
+    Subtracting a negative = adding the positive. &nbsp;− (−) → + <br>
+    Think: "Taking away a debt removes the negative → you gain!"</div>`,
+
+  // DSB — temperature drop
+  dsb_temp:
+    buildDSB(
+      "The temperature was 4°C. Overnight it dropped by 7 degrees. What is the new temperature?",
+      ["Start: 4°C", "Change: drop 7°C = subtract 7", "Operation: 4 − 7"],
+      "4 − 7", "= −3°C"
+    ) + buildNL(null, 4, -3, 'left', '4 − 7 = −3°C'),
+
+  // DSB — debt
+  dsb_debt:
+    buildDSB(
+      "Sam's bank account is −$6 (overdrawn). He deposits $10. What is his new balance?",
+      ["Start: −6", "Change: deposit $10 = add +10", "Operation: −6 + 10"],
+      "−6 + 10", "= +4"
+    ) + buildNL(null, -6, 4, 'right', '−6 + 10 = 4 (back in profit!)'),
+
+  // DSB — elevator
+  dsb_elevator:
+    buildDSB(
+      "An elevator is on floor −2 (basement). It goes up 5 floors. Which floor does it reach?",
+      ["Start: −2", "Change: up 5 = add +5", "Operation: −2 + 5"],
+      "−2 + 5", "= 3"
+    ) + buildNL(null, -2, 3, 'right', '−2 + 5 = 3rd floor'),
+
+  // WE DO — Alex correct
+  we_do_alex:
+    buildEq([{type:'num',val:'−5'},{type:'pos',val:'+8'},{type:'equals'},{type:'ans',val:'3'}], 'result-pos') +
+    buildNL(null, -5, 3, 'right', 'Start at −5. Adding +8 → move 8 steps RIGHT → land on 3 ✓'),
+
+  // WE DO — Maya's question about sub neg
+  we_do_maya_q:
+    buildEq([{type:'num',val:'−2'},{type:'op',val:'−'},{type:'neg',val:'(−5)'},{type:'equals'},{type:'plain',val:'?'}], 'neutral'),
+
+  // WE DO — Maya worked through
+  we_do_maya_answer:
+    buildEq([{type:'num',val:'−2'},{type:'op',val:'−'},{type:'neg',val:'(−5)'},{type:'equals'},{type:'ans',val:'3'}], 'result-pos') +
+    `<div class="callout correct"><div class="callout-title">Step-by-step:</div>
+      1. See − (−5) → flip to + 5<br>
+      2. Rewrite as: −2 + 5<br>
+      3. Start at −2, move 5 RIGHT → land on 3 ✅
+    </div>` +
+    buildNL(null, -2, 3, 'right', '−2 − (−5) = −2 + 5 = 3'),
+
+  // WE DO — Jordan's error
+  jordan_error:
+    buildDSB(
+      "It was −3°C. The temperature rose by 4°C. What is the new temperature?",
+      ["Start: −3°C", "Rose 4°C = ???", "Jordan wrote:"],
+      "−3 − 4", "= −7 ❌"
+    ) +
+    `<div class="callout error"><div class="callout-title">Jordan's thinking (incorrect)</div>
+    "Rose by 4" — I saw 4 and just put − 4 because negatives were involved.</div>`,
+
+  jordan_correction:
+    buildDSB(
+      "It was −3°C. The temperature rose by 4°C. What is the new temperature?",
+      ["Start: −3°C", "'Rose' = increase = ADD positive", "Correct:"],
+      "−3 + 4", "= 1°C ✅"
+    ) +
+    buildNL(null, -3, 1, 'right', '−3 + 4 = 1°C (a rise always means move RIGHT)') +
+    `<div class="callout correct"><div class="callout-title">Key: read the context word carefully</div>
+      Rise / increase / deposit / up / gain → <strong>ADD a positive</strong> (+)<br>
+      Fall / decrease / withdraw / down / lose → <strong>SUBTRACT</strong> (−)
+    </div>`,
+
+  // YOU DO
+  independent: `<div class="ip-box">
+    <div class="ip-title">📝 Independent Practice</div>
+    <div class="ip-q">① Calculate: &nbsp; −4 + 7</div>
+    <div class="ip-q">② Calculate: &nbsp; 2 − 9</div>
+    <div class="ip-q">③ Calculate: &nbsp; −3 − (−6)</div>
+    <div class="ip-q">④ Write a directed number sentence: <em>A submarine is at −15 m. It rises 8 m.</em></div>
+    <div class="ip-q">⑤ Write a directed number sentence: <em>It was 2°C. The temperature fell 5 degrees.</em></div>
+  </div>`,
+
+  you_do_answers:
+    buildEq([{type:'plain',val:'① −4 + 7'},{type:'equals'},{type:'ans',val:'3'}], 'result-pos') +
+    buildEq([{type:'plain',val:'② 2 − 9'},{type:'equals'},{type:'ans-neg',val:'−7'}], 'result-neg') +
+    buildEq([{type:'plain',val:'③ −3 − (−6) = −3 + 6'},{type:'equals'},{type:'ans',val:'3'}], 'result-pos') +
+    `<div class="callout correct" style="margin-top:6px;">
+      <div class="callout-title">④ Submarine: −15 + 8 = −7 m &nbsp;✅</div>
+      <div class="callout-title" style="margin-top:6px;">⑤ Temperature: 2 − 5 = −3°C &nbsp;✅</div>
+    </div>`,
+
+  summary: buildSummaryGrid(),
+};
+
+// ═══════════════════════════════════════════════════
+//  SCRIPT
+// ═══════════════════════════════════════════════════
+const S = PHASES;
+const SCRIPT = [
+
+  // ── IGNITION ────────────────────────────────────
+  { phase:S.IGNITION, speaker:"narrator",
+    text:"📍 Year 7 Mathematics · Computation with Integers · Lesson 2\n\nLast lesson we compared and ordered integers on a number line. Today we use them in calculations.", visual:null },
+
+  { phase:S.IGNITION, speaker:"teacher",
+    text:"Morning everyone. Quick scenario before we start. You have $5 in your bank account. You buy lunch for $8. What happens to your balance?",
+    visual:"bank_hook" },
+
+  { phase:S.IGNITION, speaker:"jordan",
+    text:"You go… negative? Like you owe the bank $3?",
+    visual:"bank_hook" },
+
+  { phase:S.IGNITION, speaker:"teacher",
+    text:"Exactly right, Jordan. Your balance becomes −$3. And that's a subtraction that crosses zero. Look at how we'd write and visualise that.",
+    visual:"bank_reveal" },
+
+  { phase:S.IGNITION, speaker:"teacher",
+    text:"That's what today is all about — adding and subtracting integers that might push us across zero into negative territory, or pull us back above it.\n\n🎯 Learning Intentions:\n• Add and subtract positive and negative integers\n• Recognise + and − as either position signs or operation signs\n• Write a directed number sentence from a real-world context", visual:null },
+
+  // ── I DO ────────────────────────────────────────
+  { phase:S.I_DO, speaker:"narrator",
+    text:"Ms Rivera moves to the board. The I Do phase begins — explicit modelling with think-aloud reasoning before students attempt anything independently.", visual:null },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Before we calculate, we need to be clear about something important. The + and − signs can mean TWO different things. Watch this.",
+    visual:"sign_meanings" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"In the expression 3 + (−4), that first + is an OPERATION — it means 'add'. The − before the 4 is a POSITION — it tells us 4 is negative.\n\nContext determines meaning. If a sign is stuck to a number, it's position. If it sits between two numbers, it's an operation.",
+    visual:"sign_meanings" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Now — adding integers. My rule is simple: the number line is my tool. I start at the first number, then move.\n\nAdding a positive → move RIGHT.\nAdding a negative → move LEFT.\n\nWatch: −2 + 5",
+    visual:"add_pos_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"I start at −2. I'm adding +5, so I move 5 steps to the RIGHT. I land on 3. Answer: −2 + 5 = 3.\n\nNotice we crossed zero — that's normal with integers. The number line handles it perfectly.",
+    visual:"add_pos_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Now — adding a NEGATIVE. Watch: 3 + (−4).\n\nI start at 3. Adding (−4) means move 4 steps LEFT. I land on −1.",
+    visual:"add_neg_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Here's the key insight: 3 + (−4) gives the same answer as 3 − 4. Adding a negative is identical to subtracting that positive. Keep that in your toolkit.",
+    visual:"add_neg_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Subtracting a positive. This one you've seen before but let's push past zero: 2 − 6.\n\nStart at 2. Subtract 6 → move 6 LEFT. I cross zero and land on −4.",
+    visual:"sub_pos_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Now the one that surprises people — subtracting a NEGATIVE. Watch: 1 − (−3).\n\nTwo negatives together flip to a positive. So − (−3) becomes + 3.\n\nI start at 1, add 3, move RIGHT, land on 4.",
+    visual:"sub_neg_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Why does subtracting a negative become adding? Think of it this way: if someone takes away your debt, your financial position improves — that's a positive change. The mathematics works the same way.",
+    visual:"sub_neg_demo" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Finally — constructing directed number sentences from real contexts. Three steps:\n1. Identify the starting value\n2. Identify the change — is it positive (up/gain/rise) or negative (down/loss/fall)?\n3. Write the operation",
+    visual:"dsb_temp" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Temperature example: 4°C drops by 7. Start: 4. Change: drop = subtract. Magnitude: 7. So: 4 − 7 = −3°C. I always confirm on the number line.",
+    visual:"dsb_temp" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Bank example: account is at −$6, deposit $10. Start: −6. Change: deposit = add positive. So: −6 + 10 = +4. Back in credit!",
+    visual:"dsb_debt" },
+
+  { phase:S.I_DO, speaker:"teacher",
+    text:"Elevator example: floor −2, goes up 5. Start: −2. Change: up = add positive. So: −2 + 5 = 3. Third floor.",
+    visual:"dsb_elevator" },
+
+  // ── WE DO ───────────────────────────────────────
+  { phase:S.WE_DO, speaker:"narrator",
+    text:"Guided practice begins. Students attempt problems alongside Ms Rivera — the We Do phase. Responsibility is gradually released.", visual:null },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Let's do these together. First one — WITH me. Use the number line in your head. Calculate: −5 + 8.\n\nAlex, talk me through it.",
+    visual:"we_do_alex" },
+
+  { phase:S.WE_DO, speaker:"alex",
+    text:"Right — adding a positive, so I move RIGHT. Start at −5, move 8 steps right… that takes me past zero to +3. So −5 + 8 = 3.",
+    visual:"we_do_alex" },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Perfect, Alex — and you named the direction before you moved. That's exactly the reasoning I want to see. Now a harder one.\n\nEveryone try: −2 − (−5). Maya, what's your first step?",
+    visual:"we_do_maya_q" },
+
+  { phase:S.WE_DO, speaker:"maya",
+    text:"Hmm, I can see there are two minus signs. Do they cancel? I'm not sure if I flip them both or just the second one.",
+    visual:"we_do_maya_q" },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Good instinct, Maya. Only the OPERATION changes — not the position of the first number. The rule is: − (−5) flips to +5. So we rewrite as −2 + 5. The −2 stays as our starting point.",
+    visual:"we_do_maya_answer" },
+
+  { phase:S.WE_DO, speaker:"maya",
+    text:"Oh okay — so I only flip the thing I'm subtracting, not where I start. So −2 + 5... start at −2, move 5 right, land on 3. Got it! ✓",
+    visual:"we_do_maya_answer" },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Exactly right. Now a directed sentence problem. Jordan — listen carefully to the context and write the number sentence:\n\n'The temperature was −3°C. It rose by 4 degrees.'",
+    visual:"jordan_error" },
+
+  { phase:S.WE_DO, speaker:"jordan",
+    text:"Okay... temperature and negatives... I wrote −3 − 4 = −7.",
+    visual:"jordan_error" },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Jordan, I can see your reasoning — you spotted −3 and kept it negative, which is right. But go back to the context word: 'rose'. What does rising mean on a number line?",
+    visual:"jordan_error" },
+
+  { phase:S.WE_DO, speaker:"jordan",
+    text:"Oh — rising means it gets warmer, so... that's moving RIGHT. So it should be adding, not subtracting. It should be −3 + 4 = 1.",
+    visual:"jordan_correction" },
+
+  { phase:S.WE_DO, speaker:"teacher",
+    text:"Spot on correction, Jordan. The trap is letting the negative starting value pull you into subtracting. The context word 'rose' always means add positive, regardless of where you start.\n\nThis is a great generalisation — write it down.",
+    visual:"jordan_correction" },
+
+  // ── YOU DO ──────────────────────────────────────
+  { phase:S.YOU_DO, speaker:"narrator",
+    text:"Students now work fully independently. Ms Rivera circulates, observing written working and asking for explanations of reasoning.", visual:null },
+
+  { phase:S.YOU_DO, speaker:"teacher",
+    text:"Five questions — show your working, draw a number line for at least two of them, and for questions ④ and ⑤ write the full directed number sentence before calculating.",
+    visual:"independent" },
+
+  { phase:S.YOU_DO, speaker:"narrator",
+    text:"The class works quietly. Ms Rivera checks working, noting who is drawing number lines, who is jumping straight to answers, and who may need a prompt on the directed sentence questions.", visual:"independent" },
+
+  { phase:S.YOU_DO, speaker:"teacher",
+    text:"Let's go through the answers. Check your working — the number sentences for ④ and ⑤ are just as important as the final values.",
+    visual:"you_do_answers" },
+
+  { phase:S.YOU_DO, speaker:"teacher",
+    text:"Four rules to remember from today:\n\n🔑 + and − can mean POSITION or OPERATION — context decides\n🔑 Adding a negative → move LEFT (same as subtracting)\n🔑 Subtracting a negative → move RIGHT (same as adding)\n🔑 Context words (rise/fall, deposit/withdraw, up/down) tell you the operation sign",
+    visual:"summary" },
+
+  { phase:S.YOU_DO, speaker:"teacher",
+    text:"Exit ticket: On a sticky note, write a two-sentence real-world story that produces the calculation −4 − (−2). Solve it and draw a number line to confirm your answer.\n\nBonus: write it a second way — using context words that lead to the equivalent addition instead. 🎯", visual:null },
+];
+
+// ═══════════════════════════════════════════════════
+//  STATE & RENDER
+// ═══════════════════════════════════════════════════
+let step = 0;
+
+function render() {
+  const scene  = SCRIPT[step];
+  const char   = CHARS[scene.speaker];
+  const pc     = PHASE_COLORS[scene.phase];
+  const pct    = ((step+1)/SCRIPT.length*100).toFixed(1);
+
+  document.getElementById('card').style.borderColor = pc.border;
+
+  const banner = document.getElementById('phaseBanner');
+  banner.style.background  = pc.bg;
+  banner.style.borderColor = pc.border;
+  document.getElementById('phaseLabel').style.color = pc.text;
+  document.getElementById('phaseLabel').textContent = scene.phase;
+  document.getElementById('sceneCounter').textContent = `Scene ${step+1} of ${SCRIPT.length}`;
+
+  const va = document.getElementById('visualArea');
+  if (scene.visual && VISUALS[scene.visual]) {
+    va.innerHTML = VISUALS[scene.visual];
+    va.classList.add('visible');
+  } else {
+    va.innerHTML = '';
+    va.classList.remove('visible');
+  }
+
+  const av = document.getElementById('speakerAvatar');
+  av.textContent           = char.emoji;
+  av.style.background      = char.bg;
+  av.style.borderColor     = char.color;
+  document.getElementById('speakerName').style.color = char.color;
+  document.getElementById('speakerName').textContent = char.name;
+  document.getElementById('speakerRole').textContent = char.role.toUpperCase();
+
+  const db = document.getElementById('dialogueBox');
+  db.textContent           = scene.text;
+  db.style.borderLeftColor = char.color;
+  db.style.background      = scene.speaker === 'narrator' ? '#f5f5f5' : char.bg + '55';
+
+  document.getElementById('progressBar').style.width      = pct + '%';
+  document.getElementById('progressBar').style.background = `linear-gradient(90deg, ${pc.border}, ${pc.text})`;
+
+  document.getElementById('backBtn').disabled = (step === 0);
+
+  const nb = document.getElementById('nextBtn');
+  if (step < SCRIPT.length - 1) {
+    nb.style.background = `linear-gradient(135deg, ${pc.border}, ${pc.text})`;
+    nb.style.color      = '#fff';
+    nb.textContent      = 'Next →';
+    nb.onclick          = () => go(1);
+  } else {
+    nb.style.background = 'linear-gradient(135deg,#c77dff,#7b2fff)';
+    nb.style.color      = '#fff';
+    nb.textContent      = '🔄 Restart';
+    nb.onclick          = () => jumpTo(0);
+  }
+
+  // pills
+  const pp = document.getElementById('phasePills');
+  pp.innerHTML = '';
+  Object.entries(PHASE_COLORS).forEach(([p,c]) => {
+    const pill = document.createElement('div');
+    pill.className = 'pill' + (scene.phase === p ? ' active' : '');
+    pill.textContent = p;
+    if (scene.phase === p) {
+      pill.style.background   = c.bg;
+      pill.style.color        = c.text;
+      pill.style.borderColor  = c.border;
+    }
+    pp.appendChild(pill);
+  });
+}
+
+function go(dir) {
+  const next = step + dir;
+  if (next < 0 || next >= SCRIPT.length) return;
+  const card = document.getElementById('card');
+  card.classList.add('fade');
+  setTimeout(() => { step = next; render(); card.classList.remove('fade'); }, 140);
+}
+
+function jumpTo(i) {
+  document.getElementById('chapterMenu').classList.remove('open');
+  const card = document.getElementById('card');
+  card.classList.add('fade');
+  setTimeout(() => { step = i; render(); card.classList.remove('fade'); }, 140);
+}
+
+function toggleMenu() {
+  document.getElementById('chapterMenu').classList.toggle('open');
+}
+
+function buildMenu() {
+  const menu = document.getElementById('chapterMenu');
+  const seen = {};
+  SCRIPT.forEach((s,i) => { if (!seen[s.phase]) seen[s.phase] = i; });
+  Object.entries(seen).forEach(([phase, idx]) => {
+    const c   = PHASE_COLORS[phase];
+    const btn = document.createElement('button');
+    btn.className   = 'chapterBtn';
+    btn.textContent = phase;
+    btn.style.background  = c.bg;
+    btn.style.borderColor = c.border;
+    btn.style.color       = c.text;
+    btn.onclick = () => jumpTo(idx);
+    menu.appendChild(btn);
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1);  }
+  if (e.key === 'ArrowLeft')                    { e.preventDefault(); go(-1); }
+});
+
+buildMenu();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mario Kart Data Challenge – Visual Novel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0a1a;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;font-family:'Nunito',sans-serif;padding:16px;}
+h1.page-title{color:#FBD000;font-family:'Press Start 2P',monospace;font-size:11px;text-align:center;margin-bottom:12px;letter-spacing:1px;text-shadow:2px 2px 0 #7a6000;}
+
+#game{width:900px;height:580px;position:relative;overflow:hidden;border-radius:14px;border:3px solid #FBD000;box-shadow:0 0 60px rgba(251,208,0,.25),0 0 120px rgba(4,156,216,.12);}
+
+/* ====== SCREENS ====== */
+.screen{position:absolute;inset:0;display:none;}
+.screen.active{display:block;}
+#s-title.active,#s-syllabus.active,#s-questions.active{display:flex;}
+
+/* ====== TITLE ====== */
+#s-title{background:linear-gradient(155deg,#1a1a2e 0%,#0f3460 55%,#1a1a2e 100%);flex-direction:column;align-items:center;justify-content:center;gap:22px;overflow:hidden;}
+#s-title::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.6) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;animation:stars 120s linear infinite;}
+@keyframes stars{from{background-position:0 0}to{background-position:480px 480px}}
+.title-checkers{position:absolute;bottom:0;left:0;right:0;height:28px;background-image:repeating-conic-gradient(rgba(255,255,255,.15) 0% 25%,transparent 0% 50%);background-size:14px 14px;}
+.t-flag{font-size:44px;animation:wave 2s ease-in-out infinite;z-index:1;}
+@keyframes wave{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.t-head{text-align:center;z-index:1;}
+.t-h1{font-family:'Press Start 2P',monospace;font-size:22px;color:#FBD000;text-shadow:3px 3px 0 #7a6000;line-height:1.6;}
+.t-h1 span{color:#E52222;text-shadow:3px 3px 0 #7a0000;}
+.t-sub{font-size:13px;font-weight:700;color:#a0c4ff;letter-spacing:3px;text-transform:uppercase;margin-top:8px;}
+.t-chars{display:flex;gap:14px;z-index:1;}
+.t-av{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;border:3px solid rgba(255,255,255,.35);animation:bob .9s ease-in-out infinite alternate;}
+.t-av:nth-child(1){background:#049CD8;animation-delay:0s;}
+.t-av:nth-child(2){background:#E91E8C;animation-delay:.2s;}
+.t-av:nth-child(3){background:#27AE60;animation-delay:.4s;}
+.t-av:nth-child(4){background:#9B59B6;animation-delay:.6s;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+.btn-start{font-family:'Press Start 2P',monospace;font-size:10px;background:#E52222;color:white;border:none;padding:13px 26px;border-radius:8px;cursor:pointer;z-index:1;box-shadow:0 5px 0 #7a0000;animation:glowbtn 1.6s ease-in-out infinite;transition:transform .1s,box-shadow .1s;}
+.btn-start:hover{transform:translateY(3px);box-shadow:0 2px 0 #7a0000;}
+@keyframes glowbtn{0%,100%{box-shadow:0 5px 0 #7a0000,0 0 20px rgba(229,34,34,.25)}50%{box-shadow:0 5px 0 #7a0000,0 0 40px rgba(229,34,34,.6)}}
+
+/* ====== MAIN VN SCREEN ====== */
+#s-main{cursor:pointer;}
+#prog{position:absolute;top:0;left:0;height:3px;background:linear-gradient(90deg,#FBD000,#E52222);transition:width .3s;z-index:10;}
+#scene-bg{position:absolute;inset:0;bottom:190px;transition:background .5s ease;}
+.bg-classroom{background:linear-gradient(180deg,#87CEEB 0%,#87CEEB 28%,#ede0c8 28%,#ede0c8 66%,#b8924a 66%,#b8924a 100%);}
+.bg-track{background:linear-gradient(180deg,#5ba3e8 0%,#87CEEB 28%,#5a8a3f 28%,#5a8a3f 44%,#606060 44%,#606060 56%,#5a8a3f 56%,#5a8a3f 100%);}
+/* Dashed center line on track */
+.bg-track::after{content:'';position:absolute;top:44%;left:0;right:0;height:12%;background:repeating-linear-gradient(90deg,transparent 0,transparent 40px,rgba(255,255,255,.35) 40px,rgba(255,255,255,.35) 70px);}
+
+/* Character sprite */
+#char-area{position:absolute;left:0;right:0;bottom:190px;top:0;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;}
+.c-sprite{display:flex;flex-direction:column;align-items:center;animation:spritein .4s ease-out;}
+@keyframes spritein{from{transform:scale(.88) translateY(18px);opacity:.4}to{transform:scale(1) translateY(0);opacity:1}}
+.c-head{width:108px;height:108px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:52px;border:5px solid white;position:relative;z-index:2;transition:background .3s;}
+.c-body{width:158px;height:130px;border-radius:22px 22px 0 0;transition:background .3s;}
+
+/* Dialogue box */
+#dlg{position:absolute;bottom:0;left:0;right:0;height:190px;background:rgba(6,6,20,.96);border-top:3px solid #FBD000;padding:14px 26px 12px;display:flex;flex-direction:column;gap:7px;backdrop-filter:blur(6px);}
+#d-name{height:28px;display:flex;align-items:center;}
+.name-badge{display:inline-flex;align-items:center;gap:8px;padding:3px 18px;border-radius:20px;font-weight:900;font-size:17px;color:white;transition:background .3s;}
+#d-text{flex:1;font-size:16px;font-weight:600;color:#f0f0f0;line-height:1.68;overflow:hidden;}
+#d-hint{font-size:12px;color:rgba(255,255,255,.35);text-align:right;animation:blink 1.3s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.1}}
+
+/* ====== TABLE SCREEN ====== */
+#s-table{background:#f4f6f9;flex-direction:column;align-items:center;padding:20px 28px;gap:14px;}
+#s-table.active{display:flex;}
+.scr-head{font-family:'Press Start 2P',monospace;font-size:11px;color:#1a1a2e;text-align:center;}
+.excel-win{width:100%;max-width:680px;border-radius:10px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.2);border:1px solid #bbb;}
+.excel-bar{background:#217346;padding:9px 16px;color:white;font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px;}
+.excel-tabs{background:#1b5e34;padding:4px 14px;display:flex;}
+.excel-tab{background:#f0f0f0;color:#333;font-size:11px;font-weight:700;padding:3px 12px;border-radius:4px 4px 0 0;}
+table.xls{width:100%;border-collapse:collapse;background:white;font-size:13px;}
+table.xls th{background:#e0e0e0;border:1px solid #bbb;padding:9px 18px;font-weight:800;text-align:center;color:#222;}
+table.xls td{border:1px solid #d0d0d0;padding:9px 18px;text-align:center;color:#333;}
+.rn{background:#e8e8e8;color:#888;font-weight:700;width:36px;}
+.la{text-align:left!important;}
+.tr-data{opacity:0;transform:translateX(-24px);transition:opacity .55s,transform .55s;}
+.tr-data.show{opacity:1;transform:translateX(0);}
+.cj{color:#049CD8;font-weight:800;}.ce{color:#E91E8C;font-weight:800;}.cc{color:#9B59B6;font-weight:800;}.cm{color:#27AE60;font-weight:800;}
+.hi{background:#fffde7!important;}.fo{color:#27AE60;font-style:italic;}
+.tip-box{background:#1a1a2e;color:white;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;max-width:680px;width:100%;display:flex;align-items:center;gap:10px;}
+.nxt{font-family:'Press Start 2P',monospace;font-size:9px;padding:11px 22px;border-radius:8px;cursor:pointer;border:none;color:white;transition:transform .1s,box-shadow .1s;}
+.nxt:hover{transform:translateY(2px);}
+.ng{background:#27AE60;box-shadow:0 4px 0 #145a2e;}.nb{background:#049CD8;box-shadow:0 4px 0 #025f8a;}.nr{background:#E52222;box-shadow:0 4px 0 #7a0000;}
+
+/* ====== GRAPH SCREEN ====== */
+#s-graph{background:#f4f6f9;flex-direction:column;align-items:center;padding:20px 28px;gap:12px;}
+#s-graph.active{display:flex;}
+.chart-win{width:100%;max-width:680px;background:white;border-radius:10px;padding:22px 28px;box-shadow:0 8px 28px rgba(0,0,0,.14);border:1px solid #ddd;}
+.chart-h{font-weight:900;font-size:15px;text-align:center;color:#333;margin-bottom:16px;}
+canvas#chart{display:block;width:100%;}
+
+/* ====== SYLLABUS SCREEN ====== */
+#s-syllabus{background:linear-gradient(140deg,#1a1a2e 0%,#0f3460 100%);flex-direction:column;padding:18px 24px;gap:12px;overflow-y:auto;}
+.syl-title{font-family:'Press Start 2P',monospace;font-size:9px;color:#FBD000;text-align:center;line-height:1.9;}
+.syl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;}
+.syl-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-left:4px solid;border-radius:10px;padding:13px 15px;}
+.syl-card h3{font-size:12px;font-weight:900;margin-bottom:7px;display:flex;align-items:center;gap:5px;}
+.syl-card p,.syl-card li{font-size:11px;color:rgba(255,255,255,.78);line-height:1.65;}
+.syl-card ul{margin-left:14px;}.syl-card li{margin-bottom:3px;}
+.ct{border-left-color:#FBD000;}.ct h3{color:#FBD000;}
+.cm2{border-left-color:#4dd0e1;}.cm2 h3{color:#4dd0e1;}
+.cc2{border-left-color:#81C784;}.cc2 h3{color:#81C784;}
+.cd{border-left-color:#CE93D8;}.cd h3{color:#CE93D8;}
+
+/* ====== QUESTIONS SCREEN ====== */
+#s-questions{background:linear-gradient(140deg,#1a1a2e 0%,#0f3460 100%);flex-direction:column;justify-content:center;align-items:center;padding:26px 40px;gap:18px;}
+.q-title{font-family:'Press Start 2P',monospace;font-size:10px;color:#FBD000;text-align:center;line-height:1.9;}
+.q-list{display:flex;flex-direction:column;gap:12px;width:100%;}
+.q-card{background:rgba(255,255,255,.07);border-radius:12px;padding:15px 20px;display:flex;gap:16px;align-items:flex-start;border:2px solid;}
+.q-card:nth-child(1){border-color:#049CD8;}.q-card:nth-child(2){border-color:#E91E8C;}.q-card:nth-child(3){border-color:#9B59B6;}
+.qn{font-family:'Press Start 2P',monospace;font-size:22px;flex-shrink:0;line-height:1;}
+.q-card:nth-child(1) .qn{color:#049CD8;}.q-card:nth-child(2) .qn{color:#E91E8C;}.q-card:nth-child(3) .qn{color:#9B59B6;}
+.qq{font-size:14px;font-weight:800;color:white;line-height:1.5;}
+.qh{font-size:12px;color:rgba(255,255,255,.52);margin-top:4px;font-style:italic;}
+</style>
+</head>
+<body>
+<h1 class="page-title">🏁 Mario Kart Data Challenge — Technology 7–8 Visual Novel</h1>
+
+<div id="game">
+
+  <!-- ===== TITLE ===== -->
+  <div id="s-title" class="screen active">
+    <div class="t-flag">🏁</div>
+    <div class="t-head">
+      <div class="t-h1"><span>Mario Kart</span><br>Data Challenge</div>
+      <div class="t-sub">Technology 7–8 · Stage 4 Learning Activity</div>
+    </div>
+    <div class="t-chars">
+      <div class="t-av">🎮</div>
+      <div class="t-av">⭐</div>
+      <div class="t-av">🏎️</div>
+      <div class="t-av">🎨</div>
+    </div>
+    <button class="btn-start" onclick="startGame()">▶ START ACTIVITY</button>
+    <div class="title-checkers"></div>
+  </div>
+
+  <!-- ===== MAIN VN ===== -->
+  <div id="s-main" class="screen">
+    <div id="prog" style="width:0%"></div>
+    <div id="scene-bg" class="bg-classroom"></div>
+    <div id="char-area">
+      <div id="csprite" class="c-sprite">
+        <div id="chead" class="c-head" style="background:#F5A623">📊</div>
+        <div id="cbody" class="c-body" style="background:linear-gradient(180deg,#F5A623,#8B6000)"></div>
+      </div>
+    </div>
+    <div id="dlg">
+      <div id="d-name"><span id="nbadge" class="name-badge" style="background:#F5A623">Ms Rodriguez</span></div>
+      <div id="d-text"></div>
+      <div id="d-hint">▼ click anywhere to continue</div>
+    </div>
+  </div>
+
+  <!-- ===== TABLE ===== -->
+  <div id="s-table" class="screen">
+    <div class="scr-head">📗 Our Completed Spreadsheet</div>
+    <div class="excel-win">
+      <div class="excel-bar">📗 &nbsp;MarioKart_TimeTrials_Group1.xlsx</div>
+      <div class="excel-tabs"><div class="excel-tab">Sheet1 ✓</div></div>
+      <table class="xls">
+        <tr><th class="rn"></th><th>A</th><th>B</th><th>C</th></tr>
+        <tr><td class="rn">1</td><td class="la"><strong>Student Name</strong></td><td><strong>Time (seconds)</strong></td><td><strong>Notes</strong></td></tr>
+        <tr class="tr-data" id="rj"><td class="rn">2</td><td class="la cj">🎮 Jake</td><td class="cj hi">112.34</td><td style="color:#666;font-size:12px">Mushroom Gorge — fastest! 🏆</td></tr>
+        <tr class="tr-data" id="re"><td class="rn">3</td><td class="la ce">⭐ Emily</td><td class="ce">123.17</td><td style="color:#666;font-size:12px">First time tracking lap times</td></tr>
+        <tr class="tr-data" id="rc"><td class="rn">4</td><td class="la cc">🎨 Chloe</td><td class="cc">118.42</td><td style="color:#666;font-size:12px">2nd fastest — strong finish!</td></tr>
+        <tr class="tr-data" id="rm"><td class="rn">5</td><td class="la cm">🏎️ Marcus</td><td class="cm">135.08</td><td style="color:#666;font-size:12px">Strategist — room to improve</td></tr>
+        <tr class="tr-data" id="rs"><td class="rn">6</td><td class="la" style="color:#999;font-style:italic;font-size:12px">Group Average</td><td class="fo">=AVERAGE(B2:B5)</td><td style="color:#27AE60;font-weight:700;font-size:12px">→ 122.25 seconds</td></tr>
+      </table>
+    </div>
+    <div class="tip-box">💡 <span>Converting times to <strong>seconds</strong> makes Excel treat them as numbers — enabling averages, formulas and graphs to work correctly!</span></div>
+    <button class="nxt ng" onclick="showGraph()">▶ SEE THE GRAPH</button>
+  </div>
+
+  <!-- ===== GRAPH ===== -->
+  <div id="s-graph" class="screen">
+    <div class="scr-head">📊 Our Data Visualisation</div>
+    <div class="chart-win">
+      <div class="chart-h">Mario Kart Time Trial Results — Group 1 (seconds)</div>
+      <canvas id="chart" width="624" height="230"></canvas>
+    </div>
+    <div class="tip-box">💡 <span>The <strong>column graph</strong> makes it instantly clear who was fastest. For <em>multiple</em> trials, a <strong>line graph</strong> would reveal improvement trends over time!</span></div>
+    <button class="nxt nb" onclick="showSyllabus()">▶ SYLLABUS CONNECTIONS</button>
+  </div>
+
+  <!-- ===== SYLLABUS ===== -->
+  <div id="s-syllabus" class="screen">
+    <div class="syl-title">📋 How This Activity Addresses the Syllabus</div>
+    <div class="syl-grid">
+      <div class="syl-card ct">
+        <h3>🔧 Technology 7–8 (2023)</h3>
+        <p>Addresses key Stage 4 outcomes through authentic project work:</p>
+        <ul>
+          <li><strong>TE4-SDP-01</strong> — Students explain relationships between design and production; recording and analysing data is core to evaluating a technology solution</li>
+          <li><strong>TE4-DIG-01 / TE4-DIG-02</strong> — Students use digital technologies (Switch, Excel) and store/share data when designing or producing project work</li>
+          <li>Supports the <em>Digital &amp; Communication Technologies</em> focus area — students <em>research, collect and share information using digital tools</em></li>
+        </ul>
+      </div>
+      <div class="syl-card cm2">
+        <h3>📐 Cross-KLA: Data Representation</h3>
+        <p>Directly aligns with the NSW cross-curriculum data literacy requirements (Stage 4):</p>
+        <ul>
+          <li>Students <strong>record and organise data</strong> in tables with correct units (minutes → seconds conversion)</li>
+          <li>Students <strong>create column graphs</strong> — a core Stage 4 graphing skill across Technology, Maths and Science</li>
+          <li>Students <strong>interpret graphs</strong> to identify trends and compare values</li>
+          <li>Students use digital tools to calculate the group <strong>AVERAGE formula</strong></li>
+        </ul>
+      </div>
+      <div class="syl-card cc2">
+        <h3>🤝 Collaborative Learning &amp; Peer Support</h3>
+        <p>The group structure embeds collaborative learning design:</p>
+        <ul>
+          <li>Students <em>work collaboratively to plan and share information</em> — a stated expectation in the Researching &amp; Planning content</li>
+          <li>Peer scaffolding is modelled: Jake explains unit conversion to Emily; Marcus and Chloe receive teacher-guided instruction</li>
+          <li>Mixed ability grouping supports expert/novice discourse patterns naturally</li>
+          <li>One shared spreadsheet supports <strong>collaborative data production</strong></li>
+        </ul>
+      </div>
+      <div class="syl-card cd">
+        <h3>💻 ICT &amp; Digital Literacy Skills</h3>
+        <p>Students develop essential digital capabilities:</p>
+        <ul>
+          <li>Spreadsheet data entry, formatting and formula use</li>
+          <li>Chart creation, customisation (colours, labels, titles) in Excel</li>
+          <li>Understanding <strong>axes, scales, data labels</strong> and chart titles</li>
+          <li>Selecting appropriate chart types: <strong>column vs. line graph</strong></li>
+          <li>Numeracy integration: unit conversion (m:ss.ms → seconds)</li>
+        </ul>
+      </div>
+    </div>
+    <button class="nxt nr" onclick="showQuestions()">▶ REFLECTION QUESTIONS</button>
+  </div>
+
+  <!-- ===== QUESTIONS ===== -->
+  <div id="s-questions" class="screen">
+    <div class="q-title">🤔 Three Questions for You, Teacher!</div>
+    <div class="q-list">
+      <div class="q-card">
+        <div class="qn">1</div>
+        <div>
+          <div class="qq">Would you keep groups of four, or adjust the group size based on your class dynamics and available devices?</div>
+          <div class="qh">Think about Nintendo Switch availability, screen visibility in the room, and whether you'd want more or less peer interaction built in.</div>
+        </div>
+      </div>
+      <div class="q-card">
+        <div class="qn">2</div>
+        <div>
+          <div class="qq">Should the visual novel include a second scene showing a line graph across multiple trials — for example, each student doing three time trials to track their improvement?</div>
+          <div class="qh">Chloe raised this idea in the dialogue. It would deepen the data literacy content and connect to Stage 4 trend analysis.</div>
+        </div>
+      </div>
+      <div class="q-card">
+        <div class="qn">3</div>
+        <div>
+          <div class="qq">Which phase of the activity would you most like the visual novel to expand on: data collection, Excel entry, graph creation, or data interpretation and analysis?</div>
+          <div class="qh">The current version touches all phases briefly. A deeper dive into one area could make this a more targeted teaching tool for your class.</div>
+        </div>
+      </div>
+    </div>
+    <button class="nxt nr" onclick="restartGame()">↩ RESTART ACTIVITY</button>
+  </div>
+
+</div><!-- end #game -->
+
+<script>
+// ======= CHARACTER DATA =======
+const CHARS = {
+  teacher:{name:'Ms Rodriguez',color:'#F5A623',body:'linear-gradient(180deg,#F5A623,#8B6000)',emoji:'📊'},
+  jake:{name:'Jake',color:'#049CD8',body:'linear-gradient(180deg,#049CD8,#01579B)',emoji:'🎮'},
+  emily:{name:'Emily',color:'#E91E8C',body:'linear-gradient(180deg,#E91E8C,#880E4F)',emoji:'⭐'},
+  marcus:{name:'Marcus',color:'#27AE60',body:'linear-gradient(180deg,#27AE60,#1B5E20)',emoji:'🏎️'},
+  chloe:{name:'Chloe',color:'#9B59B6',body:'linear-gradient(180deg,#9B59B6,#4A148C)',emoji:'🎨'},
+};
+
+// ======= SCENE SCRIPT =======
+const SCENES=[
+  // INTRO
+  {c:'teacher',bg:'classroom',t:"Welcome everyone! Today we have a very special activity — you're going to use your Mario Kart skills for real data science! 🏁"},
+  {c:'teacher',bg:'classroom',t:"You'll each complete a time trial on the Nintendo Switch, record your lap times in an Excel spreadsheet, then create a data visualisation as a group."},
+  {c:'jake',bg:'classroom',t:"WAIT — we're actually playing Mario Kart?! In class?! This is genuinely the best day of my entire life! 🎉🎉🎉"},
+  {c:'teacher',bg:'classroom',t:"Ha! Yes Jake — but this is also serious data work. Since you're so enthusiastic, you go first. Head to the Switch!"},
+
+  // JAKE
+  {c:'jake',bg:'track',t:"Okay everyone, watch and learn... I've been practising Mushroom Gorge ALL week. I'm going for under 2 minutes. 👀"},
+  {c:'jake',bg:'track',t:"⚡ *intense racing sounds* ... BLUE SHELL — NO! ... Okay, recovered... boost boost boost... FINISH LINE!! ⚡"},
+  {c:'jake',bg:'track',t:"1 minute, 52 seconds and 34 milliseconds! That's 112.34 seconds — a NEW personal best!! 🏆 Let's GOOOO!"},
+  {c:'jake',bg:'classroom',t:"Ms Rodriguez — I'm recording it as 112.34 in the 'Time (seconds)' column. Converting to total seconds makes it easier to graph later. Done! ✅"},
+
+  // EMILY
+  {c:'teacher',bg:'classroom',t:"Excellent effort Jake! Great thinking on the unit conversion too. Emily — you're up next!"},
+  {c:'emily',bg:'classroom',t:"Okay... I'm going to stay focused. I've played Mario Kart before but I've never actually timed myself properly."},
+  {c:'emily',bg:'track',t:"🏁 *concentrating hard* ... there's a shortcut here somewhere... almost... 2 minutes, 3 seconds and 17 milliseconds!"},
+  {c:'emily',bg:'classroom',t:"So that's... 123.17 seconds? Um, Ms Rodriguez — I want to record this correctly but I'm not sure about the format or which column to use?"},
+  {c:'teacher',bg:'classroom',t:"Great question Emily! Use column B — 'Time (seconds)'. Type 123.17 as a plain number so Excel can calculate averages and build graphs from it."},
+  {c:'emily',bg:'classroom',t:"Oh — keeping it as a plain number makes so much sense! Same unit for everyone means we can compare fairly. 123.17 recorded! ✅"},
+  {c:'emily',bg:'classroom',t:"Jake, how did you convert yours so quickly?"},
+  {c:'jake',bg:'classroom',t:"Easy! 1 minute = 60 seconds, so 1:52.34 is 60 + 52.34 = 112.34. Once you know the formula it takes two seconds! 😄"},
+
+  // MARCUS
+  {c:'teacher',bg:'classroom',t:"Well explained Jake — great peer support! Marcus, you're up!"},
+  {c:'marcus',bg:'classroom',t:"Right, here goes. I'm more of a strategist than a speedster... but I'll give it everything I've got."},
+  {c:'marcus',bg:'track',t:"🏎️ *racing* ... taking the outer line on the bend... smooth through the corner... 2 minutes, 15 seconds and 8 milliseconds!"},
+  {c:'marcus',bg:'classroom',t:"That's 135.08 seconds. Entered into column B. ✅  But Ms Rodriguez — how do I actually make the graph? I've never created one in Excel before."},
+  {c:'teacher',bg:'classroom',t:"No worries! Select column A (names) and column B (times) together — hold Ctrl and click both columns. Then: Insert tab → Charts → Column Chart. Try it!"},
+  {c:'marcus',bg:'classroom',t:"Oh!! It just... made one automatically! The names are on the X-axis and the times are on the Y-axis. That's exactly what I hoped!"},
+  {c:'teacher',bg:'classroom',t:"Exactly right! The independent variable — student names — goes on the X-axis. The dependent variable — the measured time — goes on the Y-axis."},
+  {c:'marcus',bg:'classroom',t:"This is actually really powerful. You can see instantly who was fastest by bar height alone — no need to read all the individual numbers. Amazing! 😲"},
+
+  // CHLOE
+  {c:'teacher',bg:'classroom',t:"I love that insight Marcus! The graph communicates data visually. Last but not least — Chloe, your turn!"},
+  {c:'chloe',bg:'classroom',t:"I've been watching everyone carefully and taking notes. I think I've got my race strategy AND my data entry sorted! 📝"},
+  {c:'chloe',bg:'track',t:"🎯 *racing* ... using the mushroom boost on the uphill section... clean lap... 1 minute, 58 seconds and 42 milliseconds!"},
+  {c:'chloe',bg:'classroom',t:"That's 118.42 seconds — second fastest in the group! ✅  Ms Rodriguez, I've entered my data but my graph looks really plain. Can I make it look more professional?"},
+  {c:'teacher',bg:'classroom',t:"Absolutely! Click the chart → 'Chart Title' to add a title. Right-click each bar to change its colour individually. Then use 'Add Data Labels' to show values above each bar."},
+  {c:'chloe',bg:'classroom',t:"Oh this looks SO much better now! I gave each student their own colour. Ms Rodriguez — could we do a line graph if we each did three trials, to track our improvement?"},
+  {c:'teacher',bg:'classroom',t:"Brilliant thinking Chloe! A line graph would show improvement over multiple trials — perfect for identifying trends. You're thinking like a real data analyst! 📈"},
+  {c:'chloe',bg:'classroom',t:"We could also compare different tracks using a compound bar graph — like Mushroom Gorge vs Rainbow Road for each student! The data possibilities are endless!"},
+
+  // WRAP UP
+  {c:'teacher',bg:'classroom',t:"Fantastic ideas Chloe! Excellent work everyone — you've collected real data, organised it in a spreadsheet, and created your first data visualisation. Let's look at the results together! 🎊"},
+];
+
+// ======= STATE =======
+let scene=0,typing=false,timer=null;
+
+// ======= TITLE → GAME =======
+function startGame(){
+  document.getElementById('s-title').classList.remove('active');
+  document.getElementById('s-main').classList.add('active');
+  scene=0; renderScene();
+}
+
+function renderScene(){
+  if(scene>=SCENES.length){
+    document.getElementById('s-main').classList.remove('active');
+    document.getElementById('s-table').classList.add('active');
+    animateTable(); return;
+  }
+  const s=SCENES[scene], ch=CHARS[s.c];
+  document.getElementById('prog').style.width=(scene/SCENES.length*100)+'%';
+  document.getElementById('scene-bg').className='bg-'+s.bg;
+
+  // Reanimate sprite
+  const sp=document.getElementById('csprite');
+  sp.style.animation='none'; sp.offsetHeight;
+  sp.style.animation='spritein .4s ease-out';
+
+  const hd=document.getElementById('chead');
+  hd.textContent=ch.emoji; hd.style.background=ch.color;
+  hd.style.boxShadow=`0 0 50px ${ch.color}66`;
+  document.getElementById('cbody').style.background=ch.body;
+
+  const nb=document.getElementById('nbadge');
+  nb.textContent=ch.name; nb.style.background=ch.color;
+
+  typeText(s.t);
+}
+
+function typeText(txt){
+  clearInterval(timer); typing=true;
+  const el=document.getElementById('d-text'); el.textContent=''; let i=0;
+  timer=setInterval(()=>{el.textContent+=txt[i++]; if(i>=txt.length){clearInterval(timer);typing=false;}},20);
+}
+
+function advance(){
+  if(typing){
+    clearInterval(timer); typing=false;
+    document.getElementById('d-text').textContent=SCENES[scene].t; return;
+  }
+  scene++; renderScene();
+}
+document.getElementById('s-main').addEventListener('click',advance);
+
+// ======= TABLE ANIMATION =======
+function animateTable(){
+  ['rj','re','rc','rm','rs'].forEach((id,i)=>{
+    setTimeout(()=>document.getElementById(id).classList.add('show'),350+i*550);
+  });
+}
+
+// ======= GRAPH =======
+function showGraph(){
+  document.getElementById('s-table').classList.remove('active');
+  document.getElementById('s-graph').classList.add('active');
+  document.fonts.ready.then(()=>animateChart());
+}
+
+function animateChart(){
+  const canvas=document.getElementById('chart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  const pad={t:36,r:24,b:58,l:64};
+  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const maxY=160;
+
+  const data=[
+    {label:'Jake',val:112.34,color:'#049CD8'},
+    {label:'Chloe',val:118.42,color:'#9B59B6'},
+    {label:'Emily',val:123.17,color:'#E91E8C'},
+    {label:'Marcus',val:135.08,color:'#27AE60'},
+  ];
+
+  const slotW=cW/data.length;
+  const barW=slotW*0.55;
+  const barX=i=>pad.l+slotW*i+(slotW-barW)/2;
+
+  function draw(prog){
+    ctx.clearRect(0,0,W,H);
+
+    // Chart background
+    ctx.fillStyle='#fafafa';
+    ctx.fillRect(pad.l,pad.t,cW,cH);
+
+    // Grid lines + Y labels
+    const ySteps=[0,40,80,120,160];
+    ctx.font='11px Nunito, Arial, sans-serif';
+    ctx.textAlign='right';
+    ySteps.forEach(y=>{
+      const yp=pad.t+cH-(y/maxY)*cH;
+      ctx.strokeStyle=y===0?'#999':'#e8e8e8';
+      ctx.lineWidth=y===0?2:1;
+      ctx.setLineDash(y===0?[]:[4,4]);
+      ctx.beginPath(); ctx.moveTo(pad.l,yp); ctx.lineTo(pad.l+cW,yp); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#999';
+      ctx.fillText(y+'s',pad.l-6,yp+4);
+    });
+
+    // Y axis line
+    ctx.strokeStyle='#999'; ctx.lineWidth=2; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+cH); ctx.stroke();
+
+    // Y axis title
+    ctx.save(); ctx.translate(14,pad.t+cH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#666'; ctx.font='bold 11px Nunito, Arial, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('Time (seconds)',0,0); ctx.restore();
+
+    // Bars
+    const ease=t=>1-Math.pow(1-t,3);
+    const ep=ease(prog);
+    data.forEach((d,i)=>{
+      const x=barX(i);
+      const fullH=(d.val/maxY)*cH;
+      const h=fullH*ep;
+      const y=pad.t+cH-h;
+
+      // Bar shadow
+      ctx.shadowColor=d.color+'55'; ctx.shadowBlur=12;
+      // Rounded top
+      const r=6;
+      ctx.fillStyle=d.color;
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.lineTo(x+barW-r,y);
+      ctx.arcTo(x+barW,y,x+barW,y+r,r);
+      ctx.lineTo(x+barW,pad.t+cH);
+      ctx.lineTo(x,pad.t+cH);
+      ctx.arcTo(x,y,x+r,y,r);
+      ctx.closePath(); ctx.fill();
+      ctx.shadowBlur=0;
+
+      // Value label (appears when nearly done)
+      if(prog>0.85){
+        const alpha=Math.min(1,(prog-0.85)/0.15);
+        ctx.globalAlpha=alpha;
+        ctx.fillStyle='#333'; ctx.font='bold 12px Nunito, Arial, sans-serif';
+        ctx.textAlign='center';
+        ctx.fillText(d.val+'s',x+barW/2,y-8);
+        ctx.globalAlpha=1;
+      }
+
+      // X axis label
+      ctx.fillStyle=d.color; ctx.font='bold 13px Nunito, Arial, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(d.label,x+barW/2,pad.t+cH+20);
+    });
+
+    // Chart title reference line (avg)
+    if(prog>0.9){
+      const avg=122.25;
+      const avgY=pad.t+cH-(avg/maxY)*cH;
+      ctx.strokeStyle='rgba(229,34,34,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.moveTo(pad.l,avgY); ctx.lineTo(pad.l+cW,avgY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(229,34,34,0.85)'; ctx.font='bold 11px Nunito, Arial, sans-serif';
+      ctx.textAlign='right';
+      ctx.fillText('avg: 122.25s',pad.l+cW-4,avgY-4);
+    }
+  }
+
+  let start=null;
+  function frame(ts){
+    if(!start)start=ts;
+    const prog=Math.min((ts-start)/1400,1);
+    draw(prog);
+    if(prog<1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ======= NAVIGATION =======
+function showSyllabus(){
+  document.getElementById('s-graph').classList.remove('active');
+  document.getElementById('s-syllabus').classList.add('active');
+}
+function showQuestions(){
+  document.getElementById('s-syllabus').classList.remove('active');
+  document.getElementById('s-questions').classList.add('active');
+}
+function restartGame(){
+  document.getElementById('s-questions').classList.remove('active');
+  document.getElementById('s-title').classList.add('active');
+  scene=0;
+  document.querySelectorAll('.tr-data').forEach(r=>r.classList.remove('show'));
+}
+</script>
+</body>
+</html>
