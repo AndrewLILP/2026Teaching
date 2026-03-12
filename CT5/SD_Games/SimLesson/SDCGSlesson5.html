@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 5 — Design Decisions</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c12; --bg2:#111420; --panel:rgba(12,16,26,0.92);
+  --border:rgba(80,200,255,0.18); --accent:#38e2ff; --text:#e2eaf8; --muted:#8899bb;
+  --t-col:#38e2ff; --s1-col:#f472b6; --s2-col:#22c55e; --s3-col:#f59e0b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;height:100vh;overflow:hidden;user-select:none}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999}
+#scene{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#bg{position:absolute;inset:0;background:linear-gradient(160deg,#080c18 0%,#0d1124 60%,#090e1a 100%);transition:background 1s}
+#bg::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(56,226,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(56,226,255,0.04) 1px,transparent 1px);background-size:60px 60px;background-position:center 40%;transform:perspective(500px) rotateX(30deg) translateY(20%);opacity:0.5}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.18;pointer-events:none;transition:all 1.2s ease}
+#orb1{width:500px;height:500px;background:#38e2ff;top:-100px;left:-100px}
+#orb2{width:400px;height:400px;background:#7c3aed;bottom:-100px;right:-80px}
+#orb3{width:300px;height:300px;background:#f59e0b;top:30%;right:15%;opacity:0;transition:all 1.2s}
+.desk-screen{position:absolute;border:1px solid rgba(56,226,255,0.15);border-radius:4px;background:rgba(20,30,55,0.8);box-shadow:0 0 20px rgba(56,226,255,0.08),inset 0 0 30px rgba(0,0,0,0.5);overflow:hidden}
+.screen-glow{position:absolute;inset:0;background:linear-gradient(135deg,rgba(56,226,255,0.05),transparent 60%)}
+.screen-code{padding:8px;font-family:'Space Mono',monospace;font-size:7px;color:rgba(56,226,255,0.4);line-height:1.6}
+#nav-bar{position:absolute;top:0;left:0;right:0;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(10,12,18,0.7);border-bottom:1px solid rgba(56,226,255,0.1);backdrop-filter:blur(10px);z-index:60}
+.nav-back{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.2em;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:8px;transition:color 0.2s}
+.nav-back:hover{color:var(--accent)}
+.nav-lesson-title{font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--text);letter-spacing:0.05em}
+.nav-next{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.2em;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:8px;transition:color 0.2s;pointer-events:none;opacity:0.3}
+.nav-next.ready{pointer-events:auto;opacity:1;color:var(--accent)}
+.nav-next:hover.ready{color:#fff}
+#chapter-tag{position:absolute;top:60px;left:50%;transform:translateX(-50%);font-family:'Syne Mono',monospace;font-size:11px;letter-spacing:0.3em;color:var(--muted);text-transform:uppercase;opacity:0;transition:opacity 0.5s;z-index:50}
+#characters{position:absolute;bottom:220px;left:0;right:0;display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.character{display:flex;flex-direction:column;align-items:center;position:absolute;bottom:0;transition:all 0.6s cubic-bezier(0.4,0,0.2,1);transform-origin:bottom center}
+.char-wrap{position:relative;transition:filter 0.5s,transform 0.5s}
+.char-wrap.dim{filter:brightness(0.28) saturate(0.15);transform:scale(0.95)}
+.char-wrap.active{filter:brightness(1) saturate(1);transform:scale(1.04) translateY(-8px)}
+svg.char-svg{display:block;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.7))}
+#dialogue-area{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:0 40px 32px}
+#namebox{display:inline-flex;align-items:center;gap:10px;height:38px;padding:0 20px;margin-bottom:-2px;border-radius:4px 4px 0 0;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:#fff;transition:background 0.3s,box-shadow 0.3s}
+#namebox::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+#dialogue-box{background:var(--panel);border:1px solid var(--border);border-radius:0 8px 8px 8px;backdrop-filter:blur(20px);padding:28px 36px 24px;min-height:130px;position:relative;box-shadow:0 -4px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04);cursor:pointer}
+#dialogue-box::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,0.02),transparent 50%);pointer-events:none}
+#dialogue-text{font-family:'Syne',sans-serif;font-size:17px;line-height:1.75;color:var(--text);min-height:60px}
+.code-inline{font-family:'Space Mono',monospace;font-size:13px;background:rgba(56,226,255,0.1);border:1px solid rgba(56,226,255,0.2);color:var(--accent);padding:1px 6px;border-radius:3px}
+#advance-cue{position:absolute;bottom:20px;right:28px;display:flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--muted);opacity:0;animation:blink-cue 1.2s ease-in-out infinite}
+#advance-cue .cue-key{border:1px solid rgba(255,255,255,0.15);border-radius:3px;padding:2px 6px;font-size:9px;color:rgba(255,255,255,0.3)}
+@keyframes blink-cue{0%,100%{opacity:0.4}50%{opacity:1}}
+#progress{position:absolute;top:60px;right:20px;display:flex;gap:5px;z-index:50;flex-wrap:wrap;max-width:200px;justify-content:flex-end}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.12);transition:all 0.3s}
+.dot.done{background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.dot.active{background:#fff;box-shadow:0 0 8px #fff;transform:scale(1.4)}
+.badge{position:absolute;top:60px;left:20px;display:flex;align-items:center;gap:8px;z-index:50;opacity:0;transition:opacity 0.4s;pointer-events:none}
+.badge-pill{padding:4px 12px;border-radius:20px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.15em;font-weight:700;text-transform:uppercase}
+.badge-basic{background:rgba(244,114,182,0.15);border:1px solid #f472b6;color:#f472b6}
+.badge-inter{background:rgba(34,197,94,0.15);border:1px solid #22c55e;color:#22c55e}
+.badge-advanced{background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#f59e0b}
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9000;transition:opacity 0.1s}
+</style>
+
+</head>
+<body>
+<div id="flash"></div>
+<div id="scene">
+  <div id="bg">
+    <div class="orb" id="orb1"></div>
+    <div class="orb" id="orb2"></div>
+    <div class="orb" id="orb3"></div>
+    <div class="desk-screen" style="width:180px;height:120px;top:18%;left:4%;opacity:0.5;transform:perspective(400px) rotateY(8deg)">
+      <div class="screen-glow"></div>
+      <div class="screen-code">using UnityEngine;<br>public class Lap<br>  Timer : Mono<br>  Behaviour {<br>  float start;<br>  int count = 0;<br>  void Start() {<br>    start=Time.time;<br>  }</div>
+    </div>
+    <div class="desk-screen" style="width:150px;height:100px;top:22%;right:5%;opacity:0.4;transform:perspective(400px) rotateY(-8deg)">
+      <div class="screen-glow"></div>
+      <div class="screen-code">Assets/<br>  Scenes/<br>  Models/<br>    Vehicle/<br>  Scripts/<br>  Materials/</div>
+    </div>
+    <div class="desk-screen" style="width:120px;height:75px;top:55%;left:2%;opacity:0.22">
+      <div class="screen-glow"></div>
+      <div class="screen-code">Tris: 2,840<br>Draw: 14<br>FPS: 127<br>Build: 48MB</div>
+    </div>
+  </div>
+
+  <nav id="nav-bar">
+    <a class="nav-back" href="index.html">← INDEX</a>
+    <span class="nav-lesson-title">LESSON 5 — DESIGN DECISIONS</span>
+    <a class="nav-next" id="nav-next" href="SDCGSlesson6.html">LESSON 6 →</a>
+  </nav>
+
+  <div id="chapter-tag"></div>
+  <div id="progress"></div>
+
+  <div class="badge" id="badge-basic"><div class="badge-pill badge-basic">⬜ Basic</div><div class="badge-pill" style="background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.3);color:#f472b6;font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;letter-spacing:0.12em">Student 1</div></div>
+  <div class="badge" id="badge-inter"><div class="badge-pill badge-inter">🔷 Intermediate</div><div class="badge-pill" style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;letter-spacing:0.12em">Student 2</div></div>
+  <div class="badge" id="badge-advanced"><div class="badge-pill badge-advanced">🔶 Advanced</div><div class="badge-pill" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;font-family:'Space Mono',monospace;font-size:10px;padding:4px 10px;border-radius:20px;letter-spacing:0.12em">Student 3</div></div>
+
+  <div id="characters">
+    <div class="character" id="char-teacher" style="left:50%;transform:translateX(-50%)">
+      <div class="char-wrap" id="wrap-teacher"><svg class="char-svg" width="160" height="340" viewBox="0 0 160 340">
+  <defs><linearGradient id="tSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="white" stop-opacity="0.06"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient></defs>
+  <rect x="35" y="165" width="90" height="130" rx="8" fill="#1d4ed8"/>
+  <rect x="35" y="165" width="90" height="130" rx="8" fill="url(#tSheen)"/>
+  <polygon points="70,165 80,195 90,165" fill="#e2eaf8"/>
+  <polygon points="35,165 60,165 70,200 45,220" fill="#1a3eb0"/>
+  <polygon points="125,165 100,165 90,200 115,220" fill="#1a3eb0"/>
+  <rect x="10" y="165" width="30" height="90" rx="15" fill="#1d4ed8"/>
+  <rect x="120" y="165" width="30" height="90" rx="15" fill="#1d4ed8"/>
+  <ellipse cx="25" cy="258" rx="13" ry="11" fill="#f5d0a9"/>
+  <ellipse cx="135" cy="258" rx="13" ry="11" fill="#f5d0a9"/>
+  <rect x="138" y="248" width="4" height="28" rx="2" fill="#e2c090" transform="rotate(-20,140,250)"/>
+  <rect x="45" y="290" width="30" height="50" rx="6" fill="#0f2655"/>
+  <rect x="85" y="290" width="30" height="50" rx="6" fill="#0f2655"/>
+  <ellipse cx="60" cy="336" rx="18" ry="7" fill="#1a1a2e"/>
+  <ellipse cx="100" cy="336" rx="18" ry="7" fill="#1a1a2e"/>
+  <rect x="68" y="143" width="24" height="26" rx="8" fill="#f0c090"/>
+  <ellipse cx="80" cy="120" rx="42" ry="46" fill="#f5d0a9"/>
+  <path d="M38 105 Q38 66 80 64 Q122 66 122 105 Q118 80 80 78 Q42 80 38 105Z" fill="#2a1a0a"/>
+  <path d="M38 105 Q30 100 32 115 Q36 125 42 118 Q38 108 42 105Z" fill="#2a1a0a"/>
+  <path d="M122 105 Q130 100 128 115 Q124 125 118 118 Q122 108 118 105Z" fill="#2a1a0a"/>
+  <circle cx="80" cy="66" r="14" fill="#2a1a0a"/>
+  <rect x="52" y="108" width="24" height="16" rx="6" fill="none" stroke="#8899bb" stroke-width="2.5"/>
+  <rect x="84" y="108" width="24" height="16" rx="6" fill="none" stroke="#8899bb" stroke-width="2.5"/>
+  <line x1="76" y1="116" x2="84" y2="116" stroke="#8899bb" stroke-width="2"/>
+  <line x1="30" y1="114" x2="52" y2="114" stroke="#8899bb" stroke-width="2"/>
+  <line x1="108" y1="114" x2="130" y2="114" stroke="#8899bb" stroke-width="2"/>
+  <circle cx="64" cy="116" r="4" fill="#2a1a0a"/>
+  <circle cx="96" cy="116" r="4" fill="#2a1a0a"/>
+  <circle cx="66" cy="114" r="1.5" fill="white" opacity="0.8"/>
+  <circle cx="98" cy="114" r="1.5" fill="white" opacity="0.8"/>
+  <path d="M70 136 Q80 142 90 136" stroke="#c0765a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="38" cy="122" r="4" fill="#38e2ff" opacity="0.8"/>
+  <circle cx="122" cy="122" r="4" fill="#38e2ff" opacity="0.8"/>
+  <rect x="52" y="185" width="56" height="22" rx="3" fill="rgba(255,255,255,0.15)"/>
+  <rect x="52" y="185" width="56" height="22" rx="3" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="none"/>
+</svg></div>
+    </div>
+    <div class="character" id="char-student1" style="left:18%;transform:translateX(-50%)">
+      <div class="char-wrap dim" id="wrap-student1"><svg class="char-svg" width="140" height="310" viewBox="0 0 140 310">
+  <defs><linearGradient id="s1Sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="white" stop-opacity="0.08"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient></defs>
+  <rect x="28" y="155" width="84" height="120" rx="8" fill="#db2777"/>
+  <rect x="28" y="155" width="84" height="120" rx="8" fill="url(#s1Sheen)"/>
+  <rect x="42" y="200" width="56" height="30" rx="6" fill="#be185d"/>
+  <rect x="5" y="155" width="28" height="80" rx="14" fill="#db2777"/>
+  <rect x="107" y="155" width="28" height="80" rx="14" fill="#db2777"/>
+  <ellipse cx="19" cy="237" rx="12" ry="10" fill="#f9c784"/>
+  <rect x="100" y="232" width="18" height="26" rx="4" fill="#1a1a2e"/>
+  <rect x="102" y="234" width="14" height="20" rx="3" fill="#38e2ff" opacity="0.5"/>
+  <ellipse cx="109" cy="240" rx="10" ry="9" fill="#f9c784"/>
+  <rect x="36" y="270" width="28" height="42" rx="6" fill="#1e3a5f"/>
+  <rect x="76" y="270" width="28" height="42" rx="6" fill="#1e3a5f"/>
+  <ellipse cx="50" cy="308" rx="17" ry="7" fill="#f472b6"/>
+  <ellipse cx="90" cy="308" rx="17" ry="7" fill="#f472b6"/>
+  <rect x="60" y="136" width="20" height="22" rx="7" fill="#f5c070"/>
+  <ellipse cx="70" cy="114" rx="38" ry="42" fill="#f9c784"/>
+  <path d="M32 100 Q32 64 70 62 Q108 64 108 100 Q104 76 70 74 Q36 76 32 100Z" fill="#2a1a0a"/>
+  <rect x="32" y="98" width="14" height="80" rx="7" fill="#2a1a0a"/>
+  <rect x="94" y="98" width="14" height="80" rx="7" fill="#2a1a0a"/>
+  <circle cx="57" cy="110" r="6" fill="white"/>
+  <circle cx="83" cy="110" r="6" fill="white"/>
+  <circle cx="58" cy="111" r="3.5" fill="#2a1a0a"/>
+  <circle cx="84" cy="111" r="3.5" fill="#2a1a0a"/>
+  <circle cx="59" cy="109" r="1.2" fill="white" opacity="0.9"/>
+  <circle cx="85" cy="109" r="1.2" fill="white" opacity="0.9"/>
+  <path d="M50 101 Q57 97 64 101" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M76 101 Q83 97 90 101" stroke="#2a1a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M60 126 Q70 124 80 126" stroke="#c0765a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="110" cy="70" r="18" fill="rgba(244,114,182,0.15)" stroke="rgba(244,114,182,0.4)" stroke-width="1"/>
+  <text x="104" y="77" font-family="Syne, sans-serif" font-size="20" fill="#f472b6" font-weight="800">?</text>
+</svg></div>
+    </div>
+    <div class="character" id="char-student2" style="right:20%;transform:translateX(50%)">
+      <div class="char-wrap dim" id="wrap-student2"><svg class="char-svg" width="145" height="320" viewBox="0 0 145 320">
+  <defs><linearGradient id="s2Sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="white" stop-opacity="0.06"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient></defs>
+  <rect x="30" y="158" width="85" height="122" rx="8" fill="#15803d"/>
+  <rect x="30" y="158" width="85" height="122" rx="8" fill="url(#s2Sheen)"/>
+  <polygon points="65,158 72.5,182 80,158" fill="#e2eaf8"/>
+  <rect x="6" y="158" width="28" height="82" rx="14" fill="#15803d"/>
+  <rect x="111" y="158" width="28" height="82" rx="14" fill="#15803d"/>
+  <rect x="2" y="232" width="30" height="38" rx="4" fill="#1a1a2e"/>
+  <rect x="4" y="234" width="26" height="30" rx="3" fill="#38e2ff" opacity="0.25"/>
+  <rect x="6" y="236" width="16" height="2" rx="1" fill="#38e2ff" opacity="0.7"/>
+  <rect x="6" y="240" width="20" height="2" rx="1" fill="#38e2ff" opacity="0.5"/>
+  <rect x="6" y="244" width="14" height="2" rx="1" fill="#38e2ff" opacity="0.5"/>
+  <ellipse cx="16" cy="244" rx="12" ry="10" fill="#d4956a"/>
+  <ellipse cx="125" cy="242" rx="12" ry="10" fill="#d4956a"/>
+  <rect x="38" y="275" width="28" height="46" rx="6" fill="#1c1917"/>
+  <rect x="79" y="275" width="28" height="46" rx="6" fill="#1c1917"/>
+  <ellipse cx="52" cy="317" rx="18" ry="7" fill="#22c55e"/>
+  <ellipse cx="93" cy="317" rx="18" ry="7" fill="#22c55e"/>
+  <rect x="61" y="140" width="23" height="22" rx="7" fill="#c07840"/>
+  <ellipse cx="72.5" cy="116" rx="40" ry="44" fill="#d4956a"/>
+  <path d="M32 104 Q34 62 72.5 60 Q111 62 113 104 Q108 78 72.5 76 Q37 78 32 104Z" fill="#1a0a0a"/>
+  <circle cx="59" cy="113" r="5.5" fill="white"/>
+  <circle cx="86" cy="113" r="5.5" fill="white"/>
+  <circle cx="60" cy="114" r="3.5" fill="#1a0a0a"/>
+  <circle cx="87" cy="114" r="3.5" fill="#1a0a0a"/>
+  <circle cx="61" cy="112" r="1.2" fill="white" opacity="0.9"/>
+  <circle cx="88" cy="112" r="1.2" fill="white" opacity="0.9"/>
+  <path d="M52 104 Q59 101 66 104" stroke="#1a0a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M79 104 Q86 101 93 104" stroke="#1a0a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M62 130 Q72.5 136 83 130" stroke="#a05c3a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="115" cy="76" r="20" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.4)" stroke-width="1"/>
+  <text x="101" y="82" font-family="Space Mono, monospace" font-size="11" fill="#22c55e">2840</text>
+  <text x="105" y="93" font-family="Space Mono, monospace" font-size="9" fill="#22c55e" opacity="0.6">tris</text>
+</svg></div>
+    </div>
+    <div class="character" id="char-student3" style="right:2%;transform:translateX(0%)">
+      <div class="char-wrap dim" id="wrap-student3"><svg class="char-svg" width="145" height="315" viewBox="0 0 145 315">
+  <defs><linearGradient id="s3Sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="white" stop-opacity="0.05"/><stop offset="100%" stop-color="white" stop-opacity="0"/></linearGradient></defs>
+  <rect x="28" y="155" width="89" height="125" rx="8" fill="#78350f"/>
+  <rect x="28" y="155" width="89" height="125" rx="8" fill="url(#s3Sheen)"/>
+  <line x1="65" y1="155" x2="60" y2="200" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+  <line x1="80" y1="155" x2="85" y2="200" stroke="#92400e" stroke-width="3" stroke-linecap="round"/>
+  <rect x="4" y="155" width="28" height="85" rx="14" fill="#78350f"/>
+  <rect x="113" y="155" width="28" height="85" rx="14" fill="#78350f"/>
+  <ellipse cx="18" cy="242" rx="12" ry="10" fill="#c2a17a"/>
+  <ellipse cx="127" cy="242" rx="12" ry="10" fill="#c2a17a"/>
+  <rect x="30" y="248" width="85" height="52" rx="4" fill="#1a1a2e"/>
+  <rect x="32" y="250" width="81" height="44" rx="3" fill="#0a0c18"/>
+  <rect x="34" y="252" width="77" height="38" rx="2" fill="rgba(56,226,255,0.12)"/>
+  <rect x="36" y="254" width="40" height="2" rx="1" fill="#f59e0b" opacity="0.8"/>
+  <rect x="36" y="258" width="55" height="2" rx="1" fill="#38e2ff" opacity="0.6"/>
+  <rect x="40" y="262" width="48" height="2" rx="1" fill="#22c55e" opacity="0.7"/>
+  <rect x="40" y="266" width="35" height="2" rx="1" fill="#38e2ff" opacity="0.5"/>
+  <rect x="36" y="270" width="30" height="2" rx="1" fill="#f472b6" opacity="0.6"/>
+  <rect x="36" y="276" width="28" height="40" rx="6" fill="#1c1917"/>
+  <rect x="81" y="276" width="28" height="40" rx="6" fill="#1c1917"/>
+  <ellipse cx="50" cy="312" rx="17" ry="7" fill="#f59e0b"/>
+  <ellipse cx="95" cy="312" rx="17" ry="7" fill="#f59e0b"/>
+  <rect x="60" y="138" width="25" height="21" rx="7" fill="#b08050"/>
+  <ellipse cx="72.5" cy="114" rx="40" ry="44" fill="#c2a17a"/>
+  <path d="M32 110 Q32 66 72.5 64 Q113 66 113 110" stroke="#1a0a0a" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <rect x="25" y="104" width="16" height="24" rx="8" fill="#333"/>
+  <rect x="104" y="104" width="16" height="24" rx="8" fill="#333"/>
+  <rect x="27" y="106" width="12" height="18" rx="6" fill="#f59e0b" opacity="0.4"/>
+  <rect x="106" y="106" width="12" height="18" rx="6" fill="#f59e0b" opacity="0.4"/>
+  <path d="M42 100 Q44 76 72.5 74 Q101 76 103 100 Q98 84 72.5 82 Q47 84 42 100Z" fill="#1a0a0a"/>
+  <circle cx="59" cy="112" r="6" fill="white"/>
+  <circle cx="86" cy="112" r="6" fill="white"/>
+  <circle cx="60" cy="113" r="4" fill="#1a0a0a"/>
+  <circle cx="87" cy="113" r="4" fill="#1a0a0a"/>
+  <circle cx="61" cy="111" r="1.5" fill="white" opacity="0.9"/>
+  <circle cx="88" cy="111" r="1.5" fill="white" opacity="0.9"/>
+  <path d="M52 101 Q59 98 66 102" stroke="#1a0a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M79 101 Q86 98 93 102" stroke="#1a0a0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M59 130 Q72.5 140 86 130" stroke="#8a5c3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="115" cy="74" r="18" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.4)" stroke-width="1"/>
+  <text x="108" y="82" font-family="Syne, sans-serif" font-size="22" fill="#f59e0b">!</text>
+</svg></div>
+    </div>
+  </div>
+
+  <div id="dialogue-area">
+    <div id="namebox">Teacher</div>
+    <div id="dialogue-box">
+      <div id="dialogue-text"></div>
+      <div id="advance-cue"><span class="cue-key">SPACE</span><span>/ CLICK</span></div>
+    </div>
+  </div>
+</div>
+<script>
+
+const CHARS = {"teacher":{"label":"Teacher","col":"#38e2ff","bg":"rgba(56,226,255,0.12)"},"student1":{"label":"Student 1","col":"#f472b6","bg":"rgba(244,114,182,0.12)"},"student2":{"label":"Student 2","col":"#22c55e","bg":"rgba(34,197,94,0.12)"},"student3":{"label":"Student 3","col":"#f59e0b","bg":"rgba(245,158,11,0.12)"}};
+const scenes = [{"speaker":"teacher","active":["teacher"],"badge":null,"chapter":"LESSON 5 — DESIGN DECISIONS","text":"Today is different. There's less technical instruction and more creative thinking. Your job is to make three decisions: which vehicle, what track layout, where the collectibles go. And document every decision."},{"speaker":"teacher","active":["teacher"],"badge":null,"chapter":null,"text":"Quick class question before we start — what makes a racing game feel fun rather than frustrating? Shout some ideas out."},{"speaker":"teacher","active":["teacher"],"badge":null,"chapter":null,"text":"I'm hearing: challenge, fairness, speed, tight controls, satisfying corners, rewards for skill. Hold onto those — they should drive your design choices today."},{"speaker":"teacher","active":["teacher","student1"],"badge":"basic","chapter":"STUDENT 1 · BASIC","text":"Which vehicle did your group pick?"},{"speaker":"student1","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"The blue sports car. It looks cool. Is that okay?"},{"speaker":"teacher","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"It's okay — but I want to know why beyond \"it looks cool\". Does it fit the mood of your world? Check the triangle count — is it within your budget from Lesson 2?"},{"speaker":"student1","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"The sports car is 11,400 triangles and my budget was 3,000 for the vehicle. That's way over. But the buggy is only 2,840 and it's under budget."},{"speaker":"teacher","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"So now you have a real decision — aesthetics vs performance. What do you choose, and what's your reason? Write both options in your notebook and explain the trade-off."},{"speaker":"student1","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"I'm going buggy. It's under budget and it fits the outdoor terrain vibe better. The sports car looks like it belongs on a city track."},{"speaker":"teacher","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"Good reasoning — you connected the asset to the world. Now place it at the start line and scatter at least five collectibles. Take a screenshot as evidence."},{"speaker":"student1","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"Done! I put two coins on the straight, two on the hill, and one at the top of the valley. Should they be evenly spaced?"},{"speaker":"teacher","active":["teacher","student1"],"badge":"basic","chapter":null,"text":"Not necessarily. Write a sentence about why you placed each group where you did. Even basic placement benefits from intention."},{"speaker":"teacher","active":["teacher","student2"],"badge":"inter","chapter":"STUDENT 2 · INTERMEDIATE","text":"I can see you've built a criteria table for the vehicle. Walk me through it."},{"speaker":"student2","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"Three criteria: visual fit with the terrain style, triangle count vs budget, and pivot point quality. I scored each vehicle out of five for all three criteria."},{"speaker":"teacher","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"What was the result?"},{"speaker":"student2","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"Buggy scored 4, 5, 5. Sports car scored 3, 1, 4. Buggy wins clearly. And the reasoning is in the table — not just the score."},{"speaker":"teacher","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"That table is excellent evidence. Now tell me about the track. Where does it start, what's the route, where's the finish line?"},{"speaker":"student2","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"Start and finish are at the flat area near the house. The track runs down through the valley, curves around the hill, climbs back up on the other side. One lap. About 600 metres I think."},{"speaker":"teacher","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"Mark a start/finish line with an asset or a bright-coloured plane. And describe your collectible placement strategy — are they rewarding skill or just scattered?"},{"speaker":"student2","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"I put a cluster of three coins on the inside of the big curve — you have to slow down properly to collect them. If you're going too fast you miss them. It rewards clean cornering."},{"speaker":"teacher","active":["teacher","student2"],"badge":"inter","chapter":null,"text":"Write that in your notebook. \"Rewards clean cornering\" is a design principle — you've connected placement to player behaviour. That's sophisticated."},{"speaker":"teacher","active":["teacher","student3"],"badge":"advanced","chapter":"STUDENT 3 · ADVANCED","text":"Track's blocked, vehicle's placed, collectibles are staged — and you've already committed to GitHub?"},{"speaker":"student3","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"Commit message: \"Sprint 5: buggy placed at start, rough track blocked with 8 sections, 5 collectibles staged.\" I also drew a paper top-down diagram of the whole track."},{"speaker":"teacher","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"Tell me about the diagram. What did you annotate?"},{"speaker":"student3","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"Slow section, fast straight, technical hairpin, where the house is as a landmark, and a note on each corner about what the player experience should feel like. I labelled one \"breathe here\" and one \"danger zone.\""},{"speaker":"teacher","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"Game designers call that a grey-box diagram. The annotations are exactly right — player experience at each point, not just geometry. That sketch goes in your notebook."},{"speaker":"student3","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"I also designed a risk-reward moment. Turn two has a cluster of three coins on the risky outside line. If you take the fast inside line — better lap time. If you go wide — you get the coins but lose time. The player has to choose."},{"speaker":"teacher","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"That's a mechanic you'd find in Mario Kart or F-Zero. Write it up and name the principle — risk-reward trade-off. Then write one paragraph about your game's most ambitious goal for the semester project."},{"speaker":"student3","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"I want to implement a ghost lap system — record the player's best lap and replay it as a semi-transparent ghost car. Is that realistic?"},{"speaker":"teacher","active":["teacher","student3"],"badge":"advanced","chapter":null,"text":"It's ambitious, which is exactly what I want to see. Write it as your goal, note what you'd need to learn to achieve it, and what might stop you. Ambitious thinking with honest constraints — that's an A-grade response."},{"speaker":"teacher","active":["teacher","student1","student2","student3"],"badge":null,"chapter":"LESSON WRAP-UP","text":"Your scenes have personality now. You've made decisions and documented reasons. Last lesson tomorrow — we look at the code that makes the collectibles work and the timer tick."}];
+const lessonNum = 5;
+const totalLessons = 6;
+
+let currentScene = 0, typing = false, typeTimeout = null, fullText = '', shownChars = 0;
+
+const dialogueText = document.getElementById('dialogue-text');
+const namebox = document.getElementById('namebox');
+const advanceCue = document.getElementById('advance-cue');
+const chapterTag = document.getElementById('chapter-tag');
+const flashEl = document.getElementById('flash');
+const progressEl = document.getElementById('progress');
+const navNext = document.getElementById('nav-next');
+
+const CHAR_IDS = ['teacher','student1','student2','student3'];
+
+function buildProgress() {
+  progressEl.innerHTML = '';
+  scenes.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot'; d.id = 'dot-' + i;
+    progressEl.appendChild(d);
+  });
+}
+
+function updateProgress(idx) {
+  scenes.forEach((_, i) => {
+    const d = document.getElementById('dot-' + i);
+    if (!d) return;
+    d.className = 'dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  });
+  if (idx >= scenes.length - 1) {
+    navNext.classList.add('ready');
+  }
+}
+
+function setActive(activeList) {
+  CHAR_IDS.forEach(id => {
+    const wrap = document.getElementById('wrap-' + id);
+    if (!wrap) return;
+    if (activeList.includes(id)) {
+      wrap.classList.remove('dim'); wrap.classList.add('active');
+    } else {
+      wrap.classList.remove('active'); wrap.classList.add('dim');
+    }
+  });
+}
+
+function showBadge(type) {
+  ['basic','inter','advanced'].forEach(b => {
+    const el = document.getElementById('badge-' + b);
+    if (!el) return;
+    el.style.opacity = (type === b) ? '1' : '0';
+  });
+}
+
+function typeText(text) {
+  typing = true; advanceCue.style.opacity = '0';
+  dialogueText.innerHTML = ''; fullText = text; shownChars = 0;
+  function renderChars(count) {
+    let raw = fullText.substring(0, count).replace(/`([^`]+)`/g, '<span class="code-inline">$1</span>');
+    dialogueText.innerHTML = raw + (count < fullText.length ? '<span style="display:inline-block;width:2px;height:1.1em;background:var(--accent);vertical-align:text-bottom;margin-left:2px;animation:blink-cue 0.8s step-end infinite"></span>' : '');
+  }
+  function tick() {
+    shownChars++;
+    renderChars(shownChars);
+    if (shownChars < fullText.length) { typeTimeout = setTimeout(tick, 20); }
+    else { typing = false; advanceCue.style.opacity = '1'; }
+  }
+  tick();
+}
+
+function skipType() {
+  if (typeTimeout) clearTimeout(typeTimeout);
+  dialogueText.innerHTML = fullText.replace(/`([^`]+)`/g, '<span class="code-inline">$1</span>');
+  typing = false; advanceCue.style.opacity = '1';
+}
+
+function showScene(idx) {
+  if (idx >= scenes.length) { return; }
+  const s = scenes[idx]; currentScene = idx;
+  updateProgress(idx);
+  setActive(s.active || ['teacher']);
+  const char = CHARS[s.speaker];
+  namebox.textContent = char.label;
+  namebox.style.background = char.bg;
+  namebox.style.boxShadow = '0 0 20px ' + char.col + '33';
+  namebox.style.color = char.col;
+  showBadge(s.badge);
+  if (s.chapter) { chapterTag.textContent = s.chapter; chapterTag.style.opacity = '1'; }
+  else { chapterTag.style.opacity = '0'; }
+  const orb3 = document.getElementById('orb3');
+  if (s.active.includes('student3') && !s.active.includes('student1') && !s.active.includes('student2')) { orb3.style.opacity='0.15'; orb3.style.background='#f59e0b'; }
+  else if (s.active.includes('student2') && !s.active.includes('student1')) { orb3.style.opacity='0.12'; orb3.style.background='#22c55e'; }
+  else if (s.active.includes('student1') && !s.active.includes('student2') && !s.active.includes('student3')) { orb3.style.opacity='0.12'; orb3.style.background='#f472b6'; }
+  else { orb3.style.opacity='0.06'; orb3.style.background='#38e2ff'; }
+  typeText(s.text);
+}
+
+function advance() {
+  if (typing) { skipType(); return; }
+  flashEl.style.opacity = '0.06';
+  setTimeout(() => { flashEl.style.opacity = '0'; }, 80);
+  if (currentScene < scenes.length - 1) { showScene(currentScene + 1); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'Enter') { e.preventDefault(); advance(); }
+});
+document.getElementById('dialogue-box').addEventListener('click', advance);
+buildProgress();
+showScene(0);
+
+</script>
+</body>
+</html>
