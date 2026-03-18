@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 4 — Design, Data Planning & Privacy | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Design alternatives, data dictionaries, desk checking and data privacy in games.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg-void: #080510; --purple-500: #6d28d9; --purple-400: #8b5cf6;
+      --purple-200: #c4b5fd; --gold: #f59e0b; --gold-light: #fde68a;
+      --cyan: #22d3ee; --pink: #f472b6; --emerald: #86efac; --sky: #38bdf8;
+      --amber: #fb923c;
+      --text-bright: #f8f6ff; --text-mid: #c4b5fd; --text-muted: #7c6b9e;
+      --dlg-bg: rgba(8,4,20,0.92); --dlg-border: rgba(139,92,246,0.5);
+      --dlg-corner: rgba(139,92,246,0.8); --radius: 12px; --radius-sm: 6px;
+      --phase2-col: #a3e635;
+      --transition-bg: 1800ms ease;
+    }
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+    canvas#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 60% 40%, #1a2a3a 0%, #080c14 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+      pointer-events: none;
+    }
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header {
+      height: 62px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; border-bottom: 1px solid rgba(163,230,53,0.2);
+      background: rgba(8,4,20,0.7); backdrop-filter: blur(10px); flex-shrink: 0;
+    }
+    #phase-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase2-col);
+      border: 1px solid rgba(163,230,53,0.3); border-radius: 20px; padding: 5px 14px;
+    }
+    #phase-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--phase2-col); box-shadow: 0 0 8px var(--phase2-col); flex-shrink: 0; }
+    #header-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.04em; text-align: center; }
+    #header-title span { color: var(--purple-200); font-weight: 400; }
+    #scene-counter { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right; }
+
+    /* PROGRESS */
+    #progress-track { height: 5px; background: rgba(163,230,53,0.12); flex-shrink: 0; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, #4d7c0f, var(--phase2-col)); border-radius: 0 3px 3px 0; transition: width 500ms cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(163,230,53,0.5); width: 3%; }
+
+    /* MAIN + SCENES */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn 400ms ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INTRO */
+    #intro-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+    #intro-view.active { display: flex; }
+    .intro-card {
+      width: 100%; max-width: 780px; background: rgba(8,4,20,0.82);
+      border: 1px solid rgba(163,230,53,0.35); border-radius: var(--radius);
+      padding: 40px 48px 36px; backdrop-filter: blur(16px);
+      clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px));
+    }
+    .intro-lesson-num { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase2-col); margin-bottom: 10px; }
+    .intro-title { font-family: 'Cinzel', serif; font-size: clamp(22px,3vw,34px); font-weight: 700; line-height: 1.2; color: var(--text-bright); margin-bottom: 6px; }
+    .intro-subtitle { font-family: 'Lora', serif; font-size: 17px; font-style: italic; color: var(--purple-200); margin-bottom: 28px; }
+    .intro-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(163,230,53,0.4),transparent); margin-bottom: 24px; }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.05em; }
+    .intro-meta-item strong { color: var(--purple-200); font-weight: 600; }
+    .intro-intentions-label { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase2-col); margin-bottom: 14px; }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start; }
+    .intro-intentions li::before { content: '◆'; color: var(--phase2-col); font-size: 10px; margin-top: 6px; flex-shrink: 0; }
+    .intro-prompt { margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* DIALOGUE */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+    #char-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #char-halo { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 5.5rem; line-height: 1; background: rgba(163,230,53,0.05); border: 2px solid transparent; transition: border-color 300ms, box-shadow 300ms; animation: charFloat 4s ease-in-out infinite; }
+    @keyframes charFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    #char-name-badge { margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 20px; border-radius: 20px; border: 1px solid transparent; transition: color 300ms, border-color 300ms, background 300ms; }
+    #dialogue-box { flex-shrink: 0; padding: 0 24px; }
+    #dialogue-inner { background: var(--dlg-bg); border: 1px solid var(--dlg-border); border-radius: var(--radius); padding: 24px 32px 20px; position: relative; min-height: 130px; backdrop-filter: blur(16px); clip-path: polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px)); }
+    #dialogue-inner::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius); box-shadow: inset 0 0 40px rgba(109,40,217,0.15); pointer-events: none; }
+    #dialogue-inner::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner); border-radius: 0 var(--radius-sm) 0 0; }
+    .dlg-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner); border-radius: 0 0 0 var(--radius-sm); }
+    #speaker-label { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms; }
+    #dialogue-text { font-family: 'Lora', serif; font-size: 21px; line-height: 1.65; color: var(--text-bright); min-height: 72px; }
+    #cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--purple-400); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.85s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ACTIVITY */
+    #activity-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #activity-view.active { display: flex; }
+    .activity-card { flex: 1; border-radius: var(--radius); border: 1px solid transparent; display: flex; flex-direction: column; overflow: hidden; }
+    .activity-header { padding: 18px 28px 16px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .activity-type-badge { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0; }
+    .activity-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--text-bright); }
+    .activity-body { flex: 1; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: rgba(163,230,53,0.3) transparent; }
+    .activity-desc { font-family: 'Lora', serif; font-size: 18px; line-height: 1.6; color: var(--purple-200); margin-bottom: 20px; font-style: italic; }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step { display: grid; grid-template-columns: 210px 1fr; gap: 0; border-radius: 8px; overflow: hidden; }
+    .step-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center; background: rgba(0,0,0,0.3); }
+    .step-value { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.15); }
+    .activity-footer { font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid; line-height: 1.5; color: var(--text-bright); }
+    .act-ido .activity-card  { background: rgba(5,46,22,0.75); border-color: rgba(134,239,172,0.3); }
+    .act-ido .activity-header { background: rgba(5,46,22,0.9); }
+    .act-ido .activity-type-badge { color: var(--emerald); border-color: var(--emerald); }
+    .act-ido .step-label { color: var(--emerald); }
+    .act-ido .activity-footer { background: rgba(134,239,172,0.07); border-color: var(--emerald); }
+    .act-wedo .activity-card  { background: rgba(7,28,55,0.75); border-color: rgba(34,211,238,0.3); }
+    .act-wedo .activity-header { background: rgba(7,28,55,0.9); }
+    .act-wedo .activity-type-badge { color: var(--cyan); border-color: var(--cyan); }
+    .act-wedo .step-label { color: var(--cyan); }
+    .act-wedo .activity-footer { background: rgba(34,211,238,0.07); border-color: var(--cyan); }
+    .act-youdo .activity-card  { background: rgba(30,8,60,0.75); border-color: rgba(139,92,246,0.4); }
+    .act-youdo .activity-header { background: rgba(30,8,60,0.9); }
+    .act-youdo .activity-type-badge { color: var(--purple-400); border-color: var(--purple-400); }
+    .act-youdo .step-label { color: var(--purple-400); }
+    .act-youdo .activity-footer { background: rgba(139,92,246,0.08); border-color: var(--purple-400); }
+
+    /* NOTEBOOK */
+    #notebook-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #notebook-view.active { display: flex; }
+    .notebook-card { flex: 1; background: rgba(30,15,5,0.85); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(245,158,11,0.06) 31px,rgba(245,158,11,0.06) 32px); }
+    .notebook-header { background: rgba(30,15,5,0.95); padding: 18px 28px 16px; border-bottom: 1px solid rgba(245,158,11,0.25); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+    .notebook-body { flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px; scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent; border-left: 3px solid rgba(245,158,11,0.2); margin-left: 20px; }
+    .notebook-intro { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--gold-light); font-style: italic; margin-bottom: 22px; }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li { display: flex; gap: 14px; align-items: flex-start; font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright); }
+    .task-num { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); border-radius: 50%; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .notebook-reminder { margin-top: 22px; padding: 14px 18px; background: rgba(245,158,11,0.08); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5; }
+
+    /* NAV */
+    #nav-bar { flex-shrink: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: rgba(8,4,20,0.65); border-top: 1px solid rgba(163,230,53,0.15); backdrop-filter: blur(12px); }
+    .nav-btn { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px; border-radius: var(--radius); border: 2px solid rgba(139,92,246,0.5); background: rgba(109,40,217,0.15); color: var(--purple-200); cursor: pointer; transition: all 200ms ease; min-width: 120px; }
+    .nav-btn:hover:not(:disabled) { background: rgba(109,40,217,0.4); border-color: var(--purple-400); color: var(--text-bright); box-shadow: 0 0 16px rgba(109,40,217,0.4); transform: translateY(-1px); }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(109,40,217,0.3); border-color: rgba(139,92,246,0.7); }
+    .nav-btn#btn-next:hover:not(:disabled) { background: rgba(109,40,217,0.6); box-shadow: 0 0 20px rgba(139,92,246,0.5); }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; }
+    #nav-hint { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em; }
+    .skip-link { position: absolute; top: -999px; left: 8px; background: var(--purple-500); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px; z-index: 9999; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
+    @media (max-width: 640px) { #header-title { font-size: 14px; } #dialogue-text { font-size: 18px; } .activity-step { grid-template-columns: 140px 1fr; } .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; } .intro-card { padding: 28px 24px 24px; } }
+    @media (max-height: 600px) { #char-halo { width: 110px; height: 110px; font-size: 4rem; } #char-area { padding: 8px; } #dialogue-text { font-size: 19px; min-height: 60px; } }
+  </style>
+</head>
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 2: Researching and Planning">Phase 2 — Researching &amp; Planning</div>
+      <h1 id="header-title"><span>Lesson 4</span> — Design, Data Planning &amp; Privacy</h1>
+      <div id="scene-counter" aria-live="polite">1 of 35</div>
+    </header>
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">Design, Data Planning &amp; Privacy</h2>
+            <p class="intro-subtitle">Lesson 4 &nbsp;·&nbsp; Researching &amp; Planning</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>2 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Generate and evaluate alternative designs, then select a preferred design for your game</li>
+              <li>Build a data dictionary that maps key variables to appropriate C# data types</li>
+              <li>Validate a simple algorithm using a trace table — the desk-checking technique</li>
+              <li>Investigate what data games collect, who owns it, and how it must be protected under privacy and cybersecurity principles</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Notebook Checkpoint — Lesson 4</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 35</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+  <script>
+    /* Lesson 4 — Students: S1=female, S2=male, S3=female */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)' },
+      student1: { name: 'Student 1', emoji: '🙋‍♀️', color: '#22d3ee', glow: 'rgba(34,211,238,0.4)'  },
+      student2: { name: 'Student 2', emoji: '🧑‍💻', color: '#fb923c', glow: 'rgba(251,146,60,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♀️', color: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
+    };
+    const BG = {
+      deep:    'radial-gradient(ellipse at 60% 40%, #1a2a3a 0%, #080c14 65%)',
+      design:  'radial-gradient(ellipse at 35% 55%, #1a1a3a 0%, #080818 65%)',
+      matrix:  'radial-gradient(ellipse at 65% 35%, #0a2a1a 0%, #040e08 65%)',
+      data:    'radial-gradient(ellipse at 50% 45%, #1a2a40 0%, #060e18 65%)',
+      desk:    'radial-gradient(ellipse at 40% 60%, #2a1a40 0%, #0e0818 65%)',
+      privacy: 'radial-gradient(ellipse at 55% 35%, #2a1410 0%, #0e0806 65%)',
+      ido:     'radial-gradient(ellipse at 40% 40%, #14532d 0%, #071c0f 65%)',
+      wedo:    'radial-gradient(ellipse at 60% 40%, #1e3a5f 0%, #070e1a 65%)',
+      youdo:   'radial-gradient(ellipse at 50% 60%, #3b0764 0%, #0f0420 65%)',
+      notebook:'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+    const SCENES = [
+      /* 0 */ { type:'intro', bg:BG.deep },
+      /* Hook */
+      { type:'dialogue', bg:BG.deep, char:'teacher',
+        text:'We\'ve researched the technology landscape and evaluated what makes a game work. Today is a pivotal lesson — we\'re making decisions. By the end of this lesson, your design direction is locked and your data architecture is planned. Then we can build.' },
+      { type:'dialogue', bg:BG.deep, char:'student1',
+        text:'I\'ve been sketching my game idea in my notebook since Lesson 1. I have two pretty different directions and I genuinely can\'t decide which to go with. Is there a structured way to choose, or is it just instinct?' },
+      { type:'dialogue', bg:BG.deep, char:'teacher',
+        text:'Structured evaluation, not instinct. You assess both alternatives against the same criteria — your requirements from Lesson 2. Feasibility, alignment with your stated purpose, aesthetics, accessibility. The requirements you wrote aren\'t just documentation — they\'re your decision-making filter.' },
+      { type:'dialogue', bg:BG.deep, char:'student2',
+        text:'Does the "better" design always win? What if the simpler design scores lower but is actually more achievable given our time and skills this term?' },
+      { type:'dialogue', bg:BG.deep, char:'teacher',
+        text:'Feasibility is a legitimate criterion — it belongs in your evaluation matrix. A design that scores nine out of ten on paper but is undeliverable in the time available is not the better design for YOU right now. Professional designers make this trade-off constantly.' },
+      /* Design alternatives */
+      { type:'dialogue', bg:BG.design, char:'teacher',
+        text:'I\'m going to show you two alternative scene layout concepts for a demo world — Sketch A is a linear race track that teleports you to a town, Sketch B is an open world where both car and walking coexist. I\'ll evaluate them against the demo requirements using a decision matrix.' },
+      { type:'dialogue', bg:BG.design, char:'student3',
+        text:'What does a decision matrix actually look like? Is it just a table where you score each option against each requirement?' },
+      { type:'dialogue', bg:BG.design, char:'teacher',
+        text:'Exactly. Rows are your evaluation criteria — drawn from your requirements. Columns are your alternative designs. Each cell gets a score, say one to five. Sum the columns — higher total suggests better alignment. But the matrix is a tool for thinking, not a replacement for it. You still need to interrogate the scores.' },
+      { type:'dialogue', bg:BG.design, char:'student1',
+        text:'What if two criteria conflict? Like, the design that best meets the gameplay requirement makes the accessibility requirement much harder to achieve?' },
+      { type:'dialogue', bg:BG.design, char:'teacher',
+        text:'That\'s exactly the kind of design tension you need to surface and document. Note the conflict in your evaluation. Explain how you resolved it — which criteria took priority and why. That reasoning is evidence of design thinking. It\'s more valuable to your assessment than a clean matrix with no tension.' },
+      /* 10 — I DO: Decision Matrix */
+      { type:'activity', actType:'ido', bg:BG.ido,
+        activityType:'I DO',
+        title:'Teacher Models: Design Alternatives Decision Matrix',
+        desc:'Evaluating two scene layout sketches against requirements — live, on screen. Watch the evaluation reasoning, not just the scores.',
+        steps:[
+          { label:'Criterion 1',       value:'Player can drive a vehicle — Sketch A scores 5 (dedicated track), Sketch B scores 4 (open area works but less defined)' },
+          { label:'Criterion 2',       value:'Player can switch between modes — Sketch A scores 3 (requires teleport trigger), Sketch B scores 5 (modes coexist naturally)' },
+          { label:'Criterion 3',       value:'Aesthetics match game concept — Sketch A scores 4, Sketch B scores 5 (richer world feels more immersive)' },
+          { label:'Criterion 4',       value:'Feasible in 10-week term — Sketch A scores 5 (simpler to build), Sketch B scores 3 (open world has more scope creep risk)' },
+          { label:'Criterion 5',       value:'Accessible to diverse players — both score 4, no significant difference on this criterion' },
+          { label:'Result & Rationale',value:'Sketch B wins on total but Sketch A wins on feasibility. Decision: choose Sketch B layout but constrain scope — define a smaller open area to reduce risk. Note the constraint in the design.' },
+        ],
+        footer:'Your preferred design selection should include: the winning design, the key scores that drove the decision, AND any trade-offs or scope constraints you are consciously accepting.',
+      },
+      /* Data Dictionary */
+      { type:'dialogue', bg:BG.data, char:'teacher',
+        text:'Once your design is chosen, you need to plan your data. Every value your game stores — speed, score, player health, NPC state — needs a name, a data type, a purpose, an initial value, and a valid range. This is your data dictionary.' },
+      { type:'dialogue', bg:BG.data, char:'student2',
+        text:'Why does the data type matter so much? Can\'t you just use a float for almost everything to be safe?' },
+      { type:'dialogue', bg:BG.data, char:'teacher',
+        text:'Type matters for three reasons: memory efficiency — a bool uses one bit, a float uses 32 bits; precision — int stores whole numbers exactly where float introduces floating-point rounding errors; and clarity — using bool isGrounded instead of int isGrounded makes your code self-documenting. Choosing int for a lap counter and float for speed is not arbitrary — it\'s intentional design.' },
+      { type:'dialogue', bg:BG.data, char:'student3',
+        text:'What about strings — when would you use a string in a game? Scene names? Player names? Or are those usually avoided for performance reasons?' },
+      { type:'dialogue', bg:BG.data, char:'teacher',
+        text:'Scene names in SceneManager.LoadScene, player profile names, dialogue text, localisation keys — strings appear more than you might think. The general rule: use the most specific type that accurately represents your data. Don\'t use a string when an enum captures the possible states more safely and clearly.' },
+      /* 16 — WE DO: Data Dictionary */
+      { type:'activity', actType:'wedo', bg:BG.wedo,
+        activityType:'WE DO',
+        title:'Class Activity: Build a Data Dictionary Together',
+        desc:'Collaboratively build a data dictionary for a hypothetical racing game — teacher records on board, students contribute each row.',
+        steps:[
+          { label:'Variable 1',    value:'lapCount — data type: int — purpose: tracks completed laps — initial value: 0 — valid range: 0 to maxLaps' },
+          { label:'Variable 2',    value:'currentSpeed — data type: float — purpose: real-time vehicle speed — initial value: 0.0f — valid range: 0.0 to maxSpeed' },
+          { label:'Variable 3',    value:'isGrounded — data type: bool — purpose: whether car contacts terrain — initial value: true — valid: true/false' },
+          { label:'Variable 4',    value:'playerName — data type: string — purpose: display name for leaderboard — initial value: "" — valid: 1–20 characters' },
+          { label:'Variable 5',    value:'gameState — data type: enum (Racing/Paused/Finished) — purpose: controls active game logic — initial: Racing' },
+          { label:'Your Turn',     value:'Contribute one variable from YOUR game concept to the shared dictionary. State the name, type, purpose, initial value, and valid range.' },
+        ],
+        footer:'A data dictionary is a contract with your future self. Every variable you use in your scripts should appear here. If you can\'t describe a variable\'s purpose, you probably don\'t need it.',
+      },
+      /* Desk Checking */
+      { type:'dialogue', bg:BG.desk, char:'teacher',
+        text:'Now we\'re going to manually verify an algorithm before we ever run it. This is called desk checking — you trace through the algorithm step by step with specific inputs, tracking how each variable changes, and compare the final output to what you expected.' },
+      { type:'dialogue', bg:BG.desk, char:'student1',
+        text:'Is this the same as a trace table? I\'ve seen that term in some resources and wasn\'t sure if it was different from desk checking.' },
+      { type:'dialogue', bg:BG.desk, char:'teacher',
+        text:'They\'re the same process, slightly different names. The trace table is the recording format — columns for each variable, rows for each step of execution. Desk checking is the activity. You manually simulate the computer\'s execution, which is the point: you find logical errors before you\'ve written a single line of code.' },
+      { type:'dialogue', bg:BG.desk, char:'student2',
+        text:'Can you actually catch real bugs this way? It seems like something a beginner would do before they know how to use a debugger properly.' },
+      { type:'dialogue', bg:BG.desk, char:'teacher',
+        text:'Professional developers still desk-check algorithms — especially complex ones. A debugger shows you what happened. A trace table forces you to predict what should happen. That prediction is where you catch logical errors — off-by-one mistakes in loops, incorrect boundary conditions, wrong operator choices. The debugger confirms; the trace table reveals.' },
+      { type:'dialogue', bg:BG.desk, char:'student3',
+        text:'So if my trace table and my actual program output the same wrong answer, I\'ve made the same logical error in both my algorithm and my code?' },
+      { type:'dialogue', bg:BG.desk, char:'teacher',
+        text:'Exactly — and that\'s a common and important insight. The trace table reveals the flaw in your logic before you blame the code. Fix the algorithm first; then implement it. The order matters.' },
+      /* Privacy */
+      { type:'dialogue', bg:BG.privacy, char:'teacher',
+        text:'Final topic today — and it connects back to our very first lesson. Every time you play a game, data is being collected. Your movement patterns, purchase history, session length, location, device identifiers, and in some cases, biometric data from VR headsets. As game developers, you need to understand this landscape.' },
+      { type:'dialogue', bg:BG.privacy, char:'student1',
+        text:'Who actually owns that data? Like — if I build up a huge inventory in a game over three years and then the studio shuts down, do I own those items? Or do I own nothing at all?' },
+      { type:'dialogue', bg:BG.privacy, char:'teacher',
+        text:'Under most End User Licence Agreements — those walls of text most people click through — you own nothing. You purchased a licence to access content, not the content itself. This is a contested legal and ethical space. Some jurisdictions are starting to legislate around digital property rights, but Australian law hasn\'t caught up yet.' },
+      { type:'dialogue', bg:BG.privacy, char:'student2',
+        text:'What about the data the game collects about me specifically? Under Australian privacy law, do I have any rights? Like the right to know what\'s collected, or to have it deleted?' },
+      { type:'dialogue', bg:BG.privacy, char:'teacher',
+        text:'Yes — under the Australian Privacy Act, organisations above a certain size must comply with the Australian Privacy Principles. You have the right to know what personal information is collected, why, and who it\'s shared with. The challenge is enforcement — and the fact that most major game studios are headquartered overseas.' },
+      { type:'dialogue', bg:BG.privacy, char:'student3',
+        text:'So when we design our own games this term, should we be thinking about this too? Even though we\'re just building something for class?' },
+      { type:'dialogue', bg:BG.privacy, char:'teacher',
+        text:'Absolutely — and it\'s not hypothetical. Your game could collect player scores, session times, or save data. Even in a school context, you should be able to specify: what data your game collects, where it\'s stored, who has access, and how a player could request its deletion. That\'s professional practice, not bureaucracy.' },
+      /* 28 — YOU DO */
+      { type:'activity', actType:'youdo', bg:BG.youdo,
+        activityType:'YOU DO',
+        title:'Design Decision + Data Dictionary + Privacy Statement',
+        desc:'Three connected tasks that conclude your Researching & Planning phase. Work systematically through each.',
+        steps:[
+          { label:'🟦 Basic',        value:'Draw two rough design sketches for your game world or level layout. Write two sentences comparing them against one requirement each. State which you prefer and one reason why.' },
+          { label:'🟩 Intermediate', value:'Complete a decision matrix with at least 4 criteria. Select your preferred design with a written rationale referencing your requirements from Lesson 2. Build a data dictionary with 6 variables including at least one enum.' },
+          { label:'🟧 Advanced',     value:'Full decision matrix, preferred design rationale, data dictionary with 8+ variables. Write pseudocode for your core game mechanic, then desk-check it with a 5-row trace table. Write a one-paragraph privacy statement for your game specifying what data is collected, why, and how it is protected.' },
+        ],
+        footer:'💡 Connection: your preferred design, data dictionary, and privacy statement will all become sections of your final assessment. Doing them well now means less rework later.',
+      },
+      /* Wrap up */
+      { type:'dialogue', bg:BG.deep, char:'teacher',
+        text:'The Researching and Planning phase is now complete. You have evaluated alternatives and made a reasoned design decision. You have planned your data architecture. And you\'ve begun thinking about the privacy responsibilities that come with building software that handles user data.' },
+      { type:'dialogue', bg:BG.deep, char:'student1',
+        text:'I feel like I actually have a real project now — not just a vague idea. The decision matrix forced me to commit, and committing made everything feel more concrete.' },
+      { type:'dialogue', bg:BG.deep, char:'student3',
+        text:'The data dictionary surprised me — I had no idea how many variables a relatively simple game needs. And realising that my choice of data type actually matters for performance and clarity... I\'ll think about that every time I name a variable now.' },
+      { type:'dialogue', bg:BG.deep, char:'teacher',
+        text:'That mindset shift — from "just make a variable" to "design a variable" — is exactly what separates thoughtful developers from ones who write code that works but nobody can maintain. Next lesson we open Blender. You\'ll be building the world you just designed. Notebooks ready.' },
+      /* Notebook */
+      { type:'notebook', bg:BG.notebook,
+        intro:'This is the final notebook checkpoint for Phase 2 — Researching and Planning. Your entries here are evidence of design thinking, not just task completion. Be specific and honest.',
+        tasks:[
+          'Both design alternative sketches with brief annotation, your completed decision matrix, and your preferred design selection with written rationale',
+          'Your data dictionary: at least 6 variables with name, data type, purpose, initial value, and valid range',
+          'Your data type justification: why is each type the right choice? Name at least two cases where you chose a specific type deliberately over a more generic one',
+          'Your desk-check trace table for a simple algorithm (at least 4 rows, at least 3 variables tracked)',
+          'Advanced: your pseudocode and the trace table validating it — side by side so the correspondence is visible',
+          'Your privacy statement: what data your game collects, why, where it is stored, and how a user could request its deletion',
+          'A reflection: which decision made in Phase 2 will most affect how you build in Phase 3? What trade-off are you consciously accepting?',
+        ],
+        reminder:'Phase 2 closes here. From Lesson 5 onwards you are building. Your design decisions are now commitments — document any changes you make and why. That\'s what iterative design looks like.',
+      },
+    ];
+
+    /* ENGINE */
+    let currentIndex=0, isTyping=false, typeTimer=null, fullText='';
+    const els = {
+      bgLayer:document.getElementById('bg-layer'), progressFill:document.getElementById('progress-fill'),
+      progressTrack:document.getElementById('progress-track'), sceneCounter:document.getElementById('scene-counter'),
+      navSceneInfo:document.getElementById('nav-scene-info'), introView:document.getElementById('intro-view'),
+      dialogueView:document.getElementById('dialogue-view'), activityView:document.getElementById('activity-view'),
+      notebookView:document.getElementById('notebook-view'), charHalo:document.getElementById('char-halo'),
+      charEmoji:document.getElementById('char-emoji'), charNameBadge:document.getElementById('char-name-badge'),
+      speakerLabel:document.getElementById('speaker-label'), dialogueText:document.getElementById('dialogue-text'),
+      activityInner:document.getElementById('activity-inner'), nbIntro:document.getElementById('nb-intro'),
+      nbTasks:document.getElementById('nb-tasks'), nbReminder:document.getElementById('nb-reminder'),
+      btnBack:document.getElementById('btn-back'), btnNext:document.getElementById('btn-next'),
+    };
+    (function initStarfield(){
+      const canvas=document.getElementById('starfield'), ctx=canvas.getContext('2d');
+      function draw(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; ctx.clearRect(0,0,canvas.width,canvas.height); for(let i=0;i<220;i++){ const x=Math.random()*canvas.width,y=Math.random()*canvas.height,r=Math.random()<0.75?0.8:1.4,a=0.25+Math.random()*0.65; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${a})`; ctx.fill(); } }
+      draw(); window.addEventListener('resize',draw);
+    })();
+    function stopTyping(){ if(typeTimer){clearInterval(typeTimer);typeTimer=null;} isTyping=false; }
+    function showViews(type){ ['intro','dialogue','activity','notebook'].forEach(v=>{ const el=document.getElementById(`${v}-view`); el.classList.remove('active','scene-fade-in'); }); const active=document.getElementById(`${type}-view`); active.classList.add('active'); void active.offsetWidth; active.classList.add('scene-fade-in'); }
+    function applyCharacter(k){ const c=CHAR[k]; els.charEmoji.textContent=c.emoji; els.charNameBadge.textContent=c.name; els.charNameBadge.style.color=c.color; els.charNameBadge.style.borderColor=`${c.color}55`; els.charNameBadge.style.background=`${c.color}12`; els.charHalo.style.borderColor=`${c.color}55`; els.charHalo.style.boxShadow=`0 0 40px ${c.glow},0 0 80px ${c.glow}`; els.speakerLabel.textContent=c.name; els.speakerLabel.style.color=c.color; }
+    function typeText(text,instant){ const p=els.dialogueText; if(instant){p.textContent=text;return;} p.textContent=''; const cursor=document.createElement('span'); cursor.id='cursor'; cursor.setAttribute('aria-hidden','true'); p.appendChild(cursor); let i=0; isTyping=true; fullText=text; typeTimer=setInterval(()=>{ if(i<text.length){cursor.insertAdjacentText('beforebegin',text[i]);i++;}else{stopTyping();cursor.classList.add('hidden');} },28); }
+    function completeTyping(){ stopTyping(); const cursor=document.getElementById('cursor'); if(cursor)cursor.remove(); els.dialogueText.textContent=fullText; }
+    function renderActivity(sc){ const actClass=`act-${sc.actType}`; const html=`<div class="activity-card" role="article"><div class="activity-header"><div class="activity-type-badge">${sc.activityType}</div><div class="activity-title">${sc.title}</div></div><div class="activity-body"><p class="activity-desc">${sc.desc}</p><div class="activity-steps" role="list">${sc.steps.map(s=>`<div class="activity-step" role="listitem"><div class="step-label">${s.label}</div><div class="step-value">${s.value}</div></div>`).join('')}</div><div class="activity-footer">${sc.footer}</div></div></div>`; els.activityView.className=`scene-view ${actClass}`; els.activityInner.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden;'; els.activityInner.innerHTML=html; }
+    function renderNotebook(sc){ els.nbIntro.textContent=sc.intro; els.nbTasks.innerHTML=sc.tasks.map((t,i)=>`<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`).join(''); els.nbReminder.textContent=sc.reminder; }
+    function showScene(index,direction){
+      stopTyping(); const sc=SCENES[index],total=SCENES.length;
+      const pct=Math.max(3,Math.round(((index+1)/total)*100)); els.progressFill.style.width=`${pct}%`; els.progressTrack.setAttribute('aria-valuenow',pct);
+      els.sceneCounter.textContent=`${index+1} of ${total}`; els.navSceneInfo.textContent=`Scene ${index+1} of ${total}`;
+      els.btnBack.disabled=index===0; els.btnNext.disabled=index===total-1; els.btnNext.textContent=index===total-1?'Finish':'Next ▶';
+      els.bgLayer.style.background=sc.bg;
+      if(sc.type==='intro') showViews('intro');
+      else if(sc.type==='dialogue'){ showViews('dialogue'); applyCharacter(sc.char); typeText(sc.text,direction==='back'); }
+      else if(sc.type==='activity'){ renderActivity(sc); showViews('activity'); void els.activityView.offsetWidth; els.activityView.classList.add('scene-fade-in'); }
+      else if(sc.type==='notebook'){ renderNotebook(sc); showViews('notebook'); }
+    }
+    function goNext(){ if(isTyping){completeTyping();return;} if(currentIndex<SCENES.length-1){currentIndex++;showScene(currentIndex,'forward');} }
+    function goBack(){ if(currentIndex>0){currentIndex--;showScene(currentIndex,'back');} }
+    els.btnNext.addEventListener('click',goNext);
+    els.btnBack.addEventListener('click',goBack);
+    document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();} if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goBack();} });
+    showScene(0,'forward');
+  </script>
+</body>
+</html>

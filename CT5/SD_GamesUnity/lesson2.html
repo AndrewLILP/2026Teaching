@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 2 — OOP, System Analysis & Requirements | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Visual novel lesson exploring object-oriented programming, IPO analysis and game requirements specification.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── RESET & BASE ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ── DESIGN TOKENS ────────────────────────────────────────────── */
+    :root {
+      --bg-void:      #080510;
+      --bg-deep:      #0f0a1e;
+      --purple-900:   #1a0f3c;
+      --purple-700:   #3b1f7a;
+      --purple-500:   #6d28d9;
+      --purple-400:   #8b5cf6;
+      --purple-200:   #c4b5fd;
+      --purple-100:   #ede9fe;
+
+      --gold:         #f59e0b;
+      --gold-light:   #fde68a;
+      --cyan:         #22d3ee;
+      --pink:         #f472b6;
+      --emerald:      #86efac;
+      --sky:          #38bdf8;
+      --amber:        #fb923c;
+
+      --text-bright:  #f8f6ff;
+      --text-mid:     #c4b5fd;
+      --text-muted:   #7c6b9e;
+
+      --char-teacher: var(--gold);
+      --char-s1:      var(--pink);
+      --char-s2:      var(--sky);
+      --char-s3:      var(--emerald);
+
+      --phase1-col:   #38bdf8;
+
+      --dlg-bg:       rgba(8, 4, 20, 0.92);
+      --dlg-border:   rgba(139, 92, 246, 0.5);
+      --dlg-corner:   rgba(139, 92, 246, 0.8);
+
+      --radius:       12px;
+      --radius-sm:    6px;
+
+      --transition-scene: 400ms ease;
+      --transition-bg:    1800ms ease;
+    }
+
+    /* ── LAYERS ───────────────────────────────────────────────────── */
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+
+    canvas#starfield {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 25% 50%, #2d1b69 0%, #0f0a1e 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px,
+        rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+      pointer-events: none;
+    }
+
+    /* ── APP SHELL ────────────────────────────────────────────────── */
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── HEADER ───────────────────────────────────────────────────── */
+    #header {
+      height: 62px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 28px;
+      border-bottom: 1px solid rgba(139, 92, 246, 0.25);
+      background: rgba(8, 4, 20, 0.7); backdrop-filter: blur(10px); flex-shrink: 0;
+    }
+    #phase-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--phase1-col); border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 20px; padding: 5px 14px;
+    }
+    #phase-badge::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--phase1-col); box-shadow: 0 0 8px var(--phase1-col); flex-shrink: 0;
+    }
+    #header-title {
+      font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600;
+      color: var(--text-bright); letter-spacing: 0.04em; text-align: center;
+    }
+    #header-title span { color: var(--purple-200); font-weight: 400; }
+    #scene-counter {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right;
+    }
+
+    /* ── PROGRESS BAR ─────────────────────────────────────────────── */
+    #progress-track { height: 5px; background: rgba(139, 92, 246, 0.15); flex-shrink: 0; position: relative; }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple-500), var(--sky));
+      border-radius: 0 3px 3px 0;
+      transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 10px rgba(139, 92, 246, 0.6); width: 3%;
+    }
+
+    /* ── MAIN ─────────────────────────────────────────────────────── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+    /* ── SCENE VIEWS ──────────────────────────────────────────────── */
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn var(--transition-scene) ease forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /*  INTRO VIEW                                                    */
+    /* ══════════════════════════════════════════════════════════════ */
+    #intro-view {
+      flex: 1; display: none; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px;
+    }
+    #intro-view.active { display: flex; }
+
+    .intro-card {
+      width: 100%; max-width: 780px;
+      background: rgba(8, 4, 20, 0.82);
+      border: 1px solid rgba(139, 92, 246, 0.4); border-radius: var(--radius);
+      padding: 40px 48px 36px; backdrop-filter: blur(16px);
+      clip-path: polygon(0 18px, 18px 0, calc(100% - 18px) 0, 100% 18px,
+        100% calc(100% - 18px), calc(100% - 18px) 100%, 18px 100%, 0 calc(100% - 18px));
+    }
+    .intro-lesson-num {
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase1-col); margin-bottom: 10px;
+    }
+    .intro-title {
+      font-family: 'Cinzel', serif; font-size: clamp(22px, 3vw, 34px); font-weight: 700;
+      line-height: 1.2; color: var(--text-bright); margin-bottom: 6px;
+    }
+    .intro-subtitle {
+      font-family: 'Lora', serif; font-size: 17px; font-style: italic;
+      color: var(--purple-200); margin-bottom: 28px;
+    }
+    .intro-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent);
+      margin-bottom: 24px;
+    }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item {
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.05em;
+    }
+    .intro-meta-item strong { color: var(--purple-200); font-weight: 600; }
+    .intro-intentions-label {
+      font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase1-col); margin-bottom: 14px;
+    }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li {
+      font-family: 'Lora', serif; font-size: 17px; line-height: 1.5;
+      color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start;
+    }
+    .intro-intentions li::before {
+      content: '◆'; color: var(--purple-400); font-size: 10px; margin-top: 6px; flex-shrink: 0;
+    }
+    .intro-prompt {
+      margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif;
+      font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em;
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+    @keyframes pulseGlow { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /*  DIALOGUE VIEW                                                 */
+    /* ══════════════════════════════════════════════════════════════ */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+
+    #char-area {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 20px; position: relative;
+    }
+    #char-halo {
+      width: 160px; height: 160px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 5.5rem; line-height: 1; position: relative;
+      background: rgba(139, 92, 246, 0.08); border: 2px solid transparent;
+      transition: border-color 300ms, box-shadow 300ms;
+      animation: charFloat 4s ease-in-out infinite;
+    }
+    @keyframes charFloat {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-10px); }
+    }
+    #char-name-badge {
+      margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 6px 20px; border-radius: 20px; border: 1px solid transparent;
+      transition: color 300ms, border-color 300ms, background 300ms;
+    }
+
+    /* ── DIALOGUE BOX ─────────────────────────────────────────────── */
+    #dialogue-box { flex-shrink: 0; padding: 0 24px 0; position: relative; }
+    #dialogue-inner {
+      background: var(--dlg-bg); border: 1px solid var(--dlg-border);
+      border-radius: var(--radius); padding: 24px 32px 20px; position: relative;
+      min-height: 130px; backdrop-filter: blur(16px);
+      clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px,
+        100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
+    }
+    #dialogue-inner::before {
+      content: ''; position: absolute; inset: 0; border-radius: var(--radius);
+      box-shadow: inset 0 0 40px rgba(109, 40, 217, 0.15); pointer-events: none;
+    }
+    #dialogue-inner::after {
+      content: ''; position: absolute; top: -1px; right: -1px;
+      width: 30px; height: 30px;
+      border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner);
+      border-radius: 0 var(--radius-sm) 0 0;
+    }
+    .dlg-corner-bl {
+      position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px;
+      border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner);
+      border-radius: 0 0 0 var(--radius-sm);
+    }
+    #speaker-label {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms;
+    }
+    #dialogue-text {
+      font-family: 'Lora', serif; font-size: 21px; line-height: 1.65;
+      color: var(--text-bright); min-height: 72px; transition: opacity 200ms;
+    }
+    #cursor {
+      display: inline-block; width: 2px; height: 1.1em; background: var(--purple-400);
+      margin-left: 2px; vertical-align: text-bottom;
+      animation: blink 0.85s step-end infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ── CODE CALLOUT (inline code style within dialogue) ─────────── */
+    .code-term {
+      font-family: 'Courier New', monospace; font-size: 0.92em;
+      background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 4px; padding: 1px 6px; color: var(--purple-200);
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /*  ACTIVITY VIEW                                                 */
+    /* ══════════════════════════════════════════════════════════════ */
+    #activity-view {
+      flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden;
+    }
+    #activity-view.active { display: flex; }
+
+    .activity-card {
+      flex: 1; border-radius: var(--radius); border: 1px solid transparent;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .activity-header {
+      padding: 18px 28px 16px; display: flex; align-items: center;
+      gap: 16px; flex-shrink: 0;
+    }
+    .activity-type-badge {
+      font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0;
+    }
+    .activity-title {
+      font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600;
+      line-height: 1.3; color: var(--text-bright);
+    }
+    .activity-body {
+      flex: 1; overflow-y: auto; padding: 0 28px 20px;
+      scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.4) transparent;
+    }
+    .activity-desc {
+      font-family: 'Lora', serif; font-size: 18px; line-height: 1.6;
+      color: var(--purple-200); margin-bottom: 20px; font-style: italic;
+    }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step {
+      display: grid; grid-template-columns: 210px 1fr; gap: 0;
+      border-radius: 8px; overflow: hidden;
+    }
+    .step-label {
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700;
+      letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center;
+      background: rgba(0,0,0,0.3);
+    }
+    .step-value {
+      font-family: 'Lora', serif; font-size: 17px; line-height: 1.5;
+      padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.15);
+    }
+    .step-value code {
+      font-family: 'Courier New', monospace; font-size: 0.9em;
+      background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: 4px; padding: 1px 6px; color: var(--purple-200);
+    }
+    .activity-footer {
+      font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic;
+      padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid;
+      line-height: 1.5; color: var(--text-bright);
+    }
+
+    /* ido = forest green */
+    .act-ido .activity-card  { background: rgba(5, 46, 22, 0.75); border-color: rgba(134, 239, 172, 0.3); }
+    .act-ido .activity-header { background: rgba(5, 46, 22, 0.9); }
+    .act-ido .activity-type-badge { color: var(--emerald); border-color: var(--emerald); }
+    .act-ido .step-label { color: var(--emerald); }
+    .act-ido .activity-footer { background: rgba(134,239,172,0.07); border-color: var(--emerald); }
+
+    /* wedo = ocean blue */
+    .act-wedo .activity-card  { background: rgba(7, 28, 55, 0.75); border-color: rgba(34, 211, 238, 0.3); }
+    .act-wedo .activity-header { background: rgba(7, 28, 55, 0.9); }
+    .act-wedo .activity-type-badge { color: var(--cyan); border-color: var(--cyan); }
+    .act-wedo .step-label { color: var(--cyan); }
+    .act-wedo .activity-footer { background: rgba(34,211,238,0.07); border-color: var(--cyan); }
+
+    /* youdo = vivid purple */
+    .act-youdo .activity-card  { background: rgba(30, 8, 60, 0.75); border-color: rgba(139, 92, 246, 0.4); }
+    .act-youdo .activity-header { background: rgba(30, 8, 60, 0.9); }
+    .act-youdo .activity-type-badge { color: var(--purple-400); border-color: var(--purple-400); }
+    .act-youdo .step-label { color: var(--purple-400); }
+    .act-youdo .activity-footer { background: rgba(139,92,246,0.08); border-color: var(--purple-400); }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /*  NOTEBOOK VIEW                                                 */
+    /* ══════════════════════════════════════════════════════════════ */
+    #notebook-view {
+      flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden;
+    }
+    #notebook-view.active { display: flex; }
+
+    .notebook-card {
+      flex: 1; background: rgba(30, 15, 5, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius);
+      overflow: hidden; display: flex; flex-direction: column;
+      background-image: repeating-linear-gradient(
+        transparent, transparent 31px,
+        rgba(245, 158, 11, 0.06) 31px, rgba(245, 158, 11, 0.06) 32px
+      );
+    }
+    .notebook-header {
+      background: rgba(30, 15, 5, 0.95); padding: 18px 28px 16px;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+      display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+    }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title {
+      font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold);
+    }
+    .notebook-body {
+      flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px;
+      scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent;
+      border-left: 3px solid rgba(245, 158, 11, 0.2); margin-left: 20px;
+    }
+    .notebook-intro {
+      font-family: 'Lora', serif; font-size: 17px; line-height: 1.65;
+      color: var(--gold-light); font-style: italic; margin-bottom: 22px;
+    }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li {
+      display: flex; gap: 14px; align-items: flex-start;
+      font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright);
+    }
+    .task-num {
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700;
+      color: var(--gold); background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 50%;
+      min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .notebook-reminder {
+      margin-top: 22px; padding: 14px 18px;
+      background: rgba(245, 158, 11, 0.08); border-left: 3px solid var(--gold);
+      border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif;
+      font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /*  NAV BAR                                                       */
+    /* ══════════════════════════════════════════════════════════════ */
+    #nav-bar {
+      flex-shrink: 0; height: 70px; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 24px;
+      background: rgba(8, 4, 20, 0.65); border-top: 1px solid rgba(139, 92, 246, 0.2);
+      backdrop-filter: blur(12px);
+    }
+    .nav-btn {
+      font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px;
+      border-radius: var(--radius); border: 2px solid rgba(139, 92, 246, 0.5);
+      background: rgba(109, 40, 217, 0.15); color: var(--purple-200);
+      cursor: pointer; transition: all 200ms ease; min-width: 120px;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: rgba(109, 40, 217, 0.4); border-color: var(--purple-400);
+      color: var(--text-bright); box-shadow: 0 0 16px rgba(109, 40, 217, 0.4);
+      transform: translateY(-1px);
+    }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(109, 40, 217, 0.3); border-color: rgba(139, 92, 246, 0.7); }
+    .nav-btn#btn-next:hover:not(:disabled) {
+      background: rgba(109, 40, 217, 0.6); box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+    }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info {
+      font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500;
+      color: var(--text-muted); letter-spacing: 0.08em;
+    }
+    #nav-hint {
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em;
+    }
+
+    /* ── LESSON NAV LINK ──────────────────────────────────────────── */
+    .lesson-link {
+      position: absolute; top: 0; right: 0;
+      display: flex; align-items: center; gap: 6px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.06em; color: var(--text-muted);
+      text-decoration: none; padding: 8px 14px;
+      border-radius: 0 0 0 var(--radius);
+      background: rgba(8,4,20,0.6);
+      transition: color 200ms;
+    }
+    .lesson-link:hover { color: var(--purple-200); }
+
+    /* ── SKIP LINK ─────────────────────────────────────────────────── */
+    .skip-link {
+      position: absolute; top: -999px; left: 8px; background: var(--purple-500);
+      color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px;
+      z-index: 9999; text-decoration: none;
+    }
+    .skip-link:focus { top: 8px; }
+
+    /* ── RESPONSIVE ────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      #header-title { font-size: 14px; }
+      #phase-badge { font-size: 11px; padding: 4px 10px; }
+      #dialogue-text { font-size: 18px; }
+      .intro-title { font-size: 22px; }
+      .activity-step { grid-template-columns: 140px 1fr; }
+      .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; }
+      .intro-card { padding: 28px 24px 24px; }
+    }
+    @media (min-height: 800px) {
+      #char-halo { width: 180px; height: 180px; font-size: 6.5rem; }
+    }
+    @media (max-height: 600px) {
+      #char-halo { width: 110px; height: 110px; font-size: 4rem; }
+      #char-area { padding: 8px; }
+      #dialogue-text { font-size: 19px; min-height: 60px; }
+    }
+  </style>
+</head>
+
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+
+  <div id="app">
+    <!-- HEADER -->
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 1: Identifying and Defining">
+        Phase 1 — Identifying &amp; Defining
+      </div>
+      <h1 id="header-title">
+        <span>Lesson 2</span> — OOP, System Analysis &amp; Requirements
+      </h1>
+      <div id="scene-counter" aria-live="polite" aria-label="Scene progress">1 of 34</div>
+    </header>
+
+    <!-- PROGRESS -->
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+
+    <!-- MAIN -->
+    <main id="main" tabindex="-1">
+
+      <!-- ── INTRO VIEW ── -->
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">OOP, System Analysis &amp; Requirements</h2>
+            <p class="intro-subtitle">Lesson 2 &nbsp;·&nbsp; Identifying &amp; Defining</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>1 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Describe the features of an object-oriented programming language using C# and Unity examples</li>
+              <li>Identify inputs, storage, transmission, processes and outputs in a Unity game</li>
+              <li>Specify functional and non-functional requirements for your own game or simulation</li>
+              <li>Develop use cases and test cases as part of your requirements document</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DIALOGUE VIEW ── -->
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACTIVITY VIEW ── -->
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+
+      <!-- ── NOTEBOOK VIEW ── -->
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Notebook Checkpoint — Lesson 2</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- NAV BAR -->
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 34</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+
+  <script>
+    /* ════════════════════════════════════════════════════════════════
+       CHARACTERS — Lesson 2: Student 1 & 3 = girls, Student 2 = boy
+    ════════════════════════════════════════════════════════════════ */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)' },
+      student1: { name: 'Student 1', emoji: '🙋‍♀️', color: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
+      student2: { name: 'Student 2', emoji: '🧑‍💻', color: '#38bdf8', glow: 'rgba(56,189,248,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♀️', color: '#86efac', glow: 'rgba(134,239,172,0.4)' },
+    };
+
+    /* ════════════════════════════════════════════════════════════════
+       BACKGROUNDS
+    ════════════════════════════════════════════════════════════════ */
+    const BG = {
+      deep:    'radial-gradient(ellipse at 25% 50%, #2d1b69 0%, #0f0a1e 65%)',
+      code:    'radial-gradient(ellipse at 30% 40%, #0d3321 0%, #050f08 65%)',
+      ipo:     'radial-gradient(ellipse at 65% 35%, #0c2a4a 0%, #050c18 65%)',
+      req:     'radial-gradient(ellipse at 50% 60%, #1a2d4a 0%, #060d1a 65%)',
+      usecase: 'radial-gradient(ellipse at 40% 55%, #1a0f3c 0%, #0a0516 65%)',
+      ido:     'radial-gradient(ellipse at 40% 40%, #14532d 0%, #071c0f 65%)',
+      wedo:    'radial-gradient(ellipse at 60% 40%, #1e3a5f 0%, #070e1a 65%)',
+      youdo:   'radial-gradient(ellipse at 50% 60%, #3b0764 0%, #0f0420 65%)',
+      notebook:'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+
+    /* ════════════════════════════════════════════════════════════════
+       SCENES
+    ════════════════════════════════════════════════════════════════ */
+    const SCENES = [
+
+      /* 0 — INTRO */
+      { type: 'intro', bg: BG.deep },
+
+      /* ── HOOK: From last lesson to today ── */
+      { type: 'dialogue', bg: BG.deep, char: 'teacher',
+        text: 'Last lesson we explored why games and simulations matter — the big picture. Today we go inside. We\'re going to open an actual C# script from Unity\'s car controller and read it like a document, not a mystery.' },
+      { type: 'dialogue', bg: BG.deep, char: 'student1',
+        text: 'Will it just look like a wall of incomprehensible code? Because I\'ve tried to read scripts online before and just felt completely lost.' },
+      { type: 'dialogue', bg: BG.deep, char: 'teacher',
+        text: 'That\'s because some tutorials throw you into code without giving you the mental model first. We\'re doing it differently — framework first, then code. By the end of today, you\'ll be able to look at any C# script and identify its structure.' },
+      { type: 'dialogue', bg: BG.deep, char: 'student2',
+        text: 'We used JavaScript last term for the web app project. Is C# really that different? Or is it the same ideas in a different syntax?' },
+      { type: 'dialogue', bg: BG.deep, char: 'teacher',
+        text: 'Much more similar than it is different. Variables, loops, conditions, functions — all still there. The main shift is that C# is primarily an object-oriented language by design. In JavaScript, OOP is optional. In C#, it\'s the whole architecture. Let me show you.' },
+
+      /* ── OOP CONCEPTS ── */
+      { type: 'dialogue', bg: BG.code, char: 'teacher',
+        text: 'Here\'s the car controller on screen. Look at the very first line after the imports: public class CarController : MonoBehaviour. That\'s the class declaration. Everything inside it belongs to this one blueprint.' },
+      { type: 'dialogue', bg: BG.code, char: 'student1',
+        text: 'So a class is like a template? Like, it describes what a car controller IS and what it can DO — but it\'s not actually a car controller yet?' },
+      { type: 'dialogue', bg: BG.code, char: 'teacher',
+        text: 'Exactly. The class is the blueprint. When Unity runs the scene and attaches this script to the car GameObject, it creates an object — an instance — from that blueprint. That specific, living car controller in your scene, with its own values, is the object.' },
+      { type: 'dialogue', bg: BG.code, char: 'student2',
+        text: 'What are all those lines at the top inside the class — the ones with float and bool and public? Are those the properties?' },
+      { type: 'dialogue', bg: BG.code, char: 'teacher',
+        text: 'Fields or properties, yes. float moveSpeed = 10f declares a property that stores the car\'s movement speed as a decimal number. public means it\'s visible in the Unity Inspector. private keeps it hidden — internal use only. These store the object\'s state.' },
+      { type: 'dialogue', bg: BG.code, char: 'student3',
+        text: 'What about the Start() and Awake() functions? I\'ve seen those in every Unity script but I\'m not sure what they actually do.' },
+      { type: 'dialogue', bg: BG.code, char: 'teacher',
+        text: 'Those are Unity\'s constructor equivalents — they run when the object is first created in the scene. Awake() runs first, even if the object is disabled. Start() runs just before the first frame, after all objects are awake. After that, Update() runs every single frame — that\'s your game loop.' },
+      { type: 'dialogue', bg: BG.code, char: 'student1',
+        text: 'And MonoBehaviour — the thing after the colon in the class declaration. What is that? Is it something the class is extending?' },
+      { type: 'dialogue', bg: BG.code, char: 'teacher',
+        text: 'Yes — that\'s inheritance. CarController extends MonoBehaviour, which means it inherits all of Unity\'s built-in script functionality: the ability to attach to GameObjects, receive Update() calls, respond to physics events. Without that inheritance, your class would be a plain C# class with no Unity powers.' },
+
+      /* 13 — I DO ACTIVITY */
+      {
+        type: 'activity', actType: 'ido', bg: BG.ido,
+        activityType: 'I DO',
+        title: 'Teacher Models: Annotating the Car Controller Script',
+        desc: 'Watch as the teacher annotates each section of the car controller script live, naming each OOP concept and its role.',
+        steps: [
+          { label: 'Class Declaration',  value: 'public class CarController : MonoBehaviour — blueprint name + inherits from MonoBehaviour' },
+          { label: 'Fields / Properties',value: 'public float moveSpeed = 10f; — stores state, visible in Inspector; private bool isGrounded; — internal only' },
+          { label: 'Constructor',        value: 'void Awake() — runs first on scene load; void Start() — runs before first frame, initialises variables' },
+          { label: 'Methods',            value: 'void Update() — called every frame (game loop); void FixedUpdate() — called at fixed 50Hz steps (physics loop)' },
+          { label: 'Encapsulation',      value: 'private void ApplyBrakes() — logic hidden from other scripts; exposed only via public methods when needed' },
+          { label: 'Inheritance',        value: ': MonoBehaviour gives the class Unity\'s event system, GetComponent<T>(), transform access, and more' },
+          { label: 'IPO at a glance',    value: 'Input: arrow keys / WASD → Process: AddForce(), velocity clamping → Output: car moves, audio plays, UI updates' },
+        ],
+        footer: 'When you look at any new C# script, your first scan should identify these six elements before you try to understand what the code actually does.',
+      },
+
+      /* ── IPO & SYSTEM THINKING ── */
+      { type: 'dialogue', bg: BG.ipo, char: 'teacher',
+        text: 'Now I want to zoom out from the code and think about the whole system. Every computing system — games included — can be understood as: Inputs, Storage, Transmission, Processes, and Outputs. This is your IPO framework.' },
+      { type: 'dialogue', bg: BG.ipo, char: 'student3',
+        text: 'For the car game: input is the keyboard, output is the car moving and sounds playing... but what\'s the storage and transmission part? Those feel more like database concepts to me.' },
+      { type: 'dialogue', bg: BG.ipo, char: 'teacher',
+        text: 'Great question. Storage in a game includes variables holding position, score, health — data that persists across frames. In C#, float speed is storage. Transmission is how data moves between components — a collision event transmitting to a health script, or player score updating the UI text.' },
+      { type: 'dialogue', bg: BG.ipo, char: 'student2',
+        text: 'So the whole game is basically a massive, very fast data pipeline. Input arrives, gets processed, updates stored values, which get transmitted to the right components, which produce outputs.' },
+      { type: 'dialogue', bg: BG.ipo, char: 'teacher',
+        text: 'That\'s exactly it. And when you\'re designing YOUR game, you need to be able to describe all five parts before writing a single line of code. That description is part of what we call specifying requirements.' },
+
+      /* ── REQUIREMENTS ── */
+      { type: 'dialogue', bg: BG.req, char: 'teacher',
+        text: 'A functional requirement describes what the system must do. It\'s specific, testable, and written from the user\'s perspective. For example: "The player shall be able to accelerate the vehicle by pressing the Up arrow key."' },
+      { type: 'dialogue', bg: BG.req, char: 'student1',
+        text: 'Why does it need to be that specific? Can\'t you just say "the car should move when you press a key"?' },
+      { type: 'dialogue', bg: BG.req, char: 'teacher',
+        text: 'Because vague requirements produce vague systems. "The car should move" could mean anything. A specific requirement tells you exactly what to build, and more importantly, exactly how to TEST whether you built it correctly. We\'ll use these as our test cases later.' },
+      { type: 'dialogue', bg: BG.req, char: 'student3',
+        text: 'What are non-functional requirements then? Are those things like the game looking good, or running smoothly?' },
+      { type: 'dialogue', bg: BG.req, char: 'teacher',
+        text: 'Precisely. Non-functional requirements describe how well the system performs rather than what it does. Frame rate must be at least 30fps. Load time under five seconds. The UI must be readable at 1080p. Colour contrast must meet accessibility standards for colourblind users.' },
+      { type: 'dialogue', bg: BG.req, char: 'student2',
+        text: 'Accessibility in a game? I hadn\'t thought of that as a requirement you\'d formally specify. But it makes sense — it connects directly to what we discussed last lesson about inclusive design.' },
+      { type: 'dialogue', bg: BG.req, char: 'teacher',
+        text: 'Exactly — the connection is intentional. If you specify in Lesson 1 that colourblind players are part of your target audience, then accessibility becomes a non-functional requirement in Lesson 2. Design decisions cascade through the whole project.' },
+
+      /* 22 — WE DO ACTIVITY */
+      {
+        type: 'activity', actType: 'wedo', bg: BG.wedo,
+        activityType: 'WE DO',
+        title: 'Class Analysis: Third-Person Controller + Shared IPO Chart',
+        desc: 'Together we\'ll analyse the third-person character controller and build a shared IPO chart and use case on the board.',
+        steps: [
+          { label: 'Step 1 — Find It',  value: 'Open the third-person controller script. Find: the class declaration, two fields, and the Update() method. Share what you find.' },
+          { label: 'Step 2 — IPO Map',  value: 'Class contributes to a shared IPO table: Input (keyboard axes), Storage (position, speed floats), Process (character movement logic), Output (animation, position change). Teacher records on board.' },
+          { label: 'Step 3 — Use Case', value: 'Build a use case together: Actor = Player | Goal = Walk through the environment | Steps: enter scene → press WASD → character moves → reaches destination.' },
+          { label: 'Step 4 — Test Case',value: 'Write a matching test case: Input = W key pressed | Expected Output = character moves forward at moveSpeed units/sec | Pass condition = movement observed in-scene.' },
+          { label: 'Non-Functional',    value: 'What non-functional requirements matter most for this controller? Suggest two and justify why to a partner.' },
+        ],
+        footer: 'A use case describes what a user wants to achieve. A test case checks whether the system delivers it. Together they form the backbone of your requirements document.',
+      },
+
+      /* ── USE CASES & TEST CASES ── */
+      { type: 'dialogue', bg: BG.usecase, char: 'student1',
+        text: 'How detailed does a test case need to be? Like, do you need to write a test case for every single button?' },
+      { type: 'dialogue', bg: BG.usecase, char: 'teacher',
+        text: 'Focus on the core interactions first — the things your game absolutely depends on. Every functional requirement should have at least one test case. For complex requirements, you\'ll want multiple — including edge cases.' },
+      { type: 'dialogue', bg: BG.usecase, char: 'student2',
+        text: 'What\'s an edge case? Is that like when something weird happens that you didn\'t plan for?' },
+      { type: 'dialogue', bg: BG.usecase, char: 'teacher',
+        text: 'Exactly. An edge case is an unusual input or condition at the boundary of what your system was designed to handle. What happens if the player drives the car off the edge of the map? What if they press both accelerate and brake simultaneously? Your test cases should include these.' },
+      { type: 'dialogue', bg: BG.usecase, char: 'student3',
+        text: 'So when I write requirements for my own game, I should be thinking from the very start: what could go wrong? Not just what should work, but what might break?' },
+      { type: 'dialogue', bg: BG.usecase, char: 'teacher',
+        text: 'Yes — that mindset is the difference between a beginner developer and a professional one. Professionals plan for failure. They write test cases for the things they expect to break, not just the happy path. And then they build to handle those cases gracefully.' },
+
+      /* 29 — YOU DO ACTIVITY */
+      {
+        type: 'activity', actType: 'youdo', bg: BG.youdo,
+        activityType: 'YOU DO',
+        title: 'Your Requirements Document — Game or Simulation Concept',
+        desc: 'Draft your requirements specification in your project notebook. Use the concept you started last lesson.',
+        steps: [
+          { label: '🟦 Basic',         value: 'Use the requirements template (SEQTA). Write your game title, a 2-sentence purpose statement, and 3 functional requirements using the format: "The player shall be able to..."' },
+          { label: '🟩 Intermediate',  value: 'Complete all of the above independently — no template. Add 2 non-functional requirements with specific, measurable targets (e.g. "The game shall maintain a minimum of 30fps on school hardware"). Write 2 use case scenarios.' },
+          { label: '🟧 Advanced',      value: 'Full requirements document: 4+ functional, 3+ non-functional, 2 use cases with actor/goal/steps, and 2 test cases with input / expected output / pass condition. Identify one edge case for each test case.' },
+        ],
+        footer: '💡 Tip: Look back at your Lesson 1 notebook entry. Your target users and ethical consideration should directly influence at least one non-functional requirement.',
+      },
+
+      /* ── WRAP UP ── */
+      { type: 'dialogue', bg: BG.deep, char: 'teacher',
+        text: 'Let\'s consolidate. You\'ve looked inside a real C# script and named its OOP structure. You\'ve mapped a game system using the IPO framework. And you\'ve drafted the requirements that will guide everything you build this term.' },
+      { type: 'dialogue', bg: BG.deep, char: 'student1',
+        text: 'I didn\'t expect the requirements document to feel useful this early. But I can already see that if I had started coding my game idea without thinking this through, I would have ended up with something completely vague.' },
+      { type: 'dialogue', bg: BG.deep, char: 'student2',
+        text: 'The OOP stuff makes more sense than I expected. I think the key thing for me is that a class is the blueprint and the object in the scene is the actual thing — that distinction clicked when you showed it in the Inspector.' },
+      { type: 'dialogue', bg: BG.deep, char: 'teacher',
+        text: 'That distinction will matter every single time you write a script this term. One last thought: your requirements document isn\'t a form to fill in and forget. It\'s a living contract with your future self. Revisit it every sprint. If your design changes, update it. Now — notebooks open.' },
+
+      /* 33 — NOTEBOOK CHECKPOINT */
+      {
+        type: 'notebook', bg: BG.notebook,
+        intro: 'Update your project notebook with today\'s work. Include both the conceptual understanding and your requirements document — these are the foundations of your assessment project.',
+        tasks: [
+          'Your annotated OOP diagram: class, object, field, constructor, method, encapsulation, inheritance — each labelled with a C# example',
+          'An IPO table for YOUR game concept: 3 inputs, at least 2 storage variables (with data types), 2 processes, and 2 outputs',
+          'Your requirements document: game title, purpose statement, 3+ functional requirements, 2+ non-functional requirements',
+          'Two use case scenarios for your game written as: Actor | Goal | Steps',
+          'Two test cases: Input | Expected Output | Pass Condition. Advanced: add one edge case per test.',
+          'A reflection: How did your target users from Lesson 1 influence one of your non-functional requirements?',
+        ],
+        reminder: 'Your requirements don\'t need to be perfect — they need to be honest about what you\'re trying to build. You\'ll refine them as the unit progresses.',
+      },
+    ];
+
+    /* ════════════════════════════════════════════════════════════════
+       ENGINE (identical to Lesson 1)
+    ════════════════════════════════════════════════════════════════ */
+    let currentIndex = 0;
+    let isTyping     = false;
+    let typeTimer    = null;
+    let fullText     = '';
+
+    const els = {
+      bgLayer:       document.getElementById('bg-layer'),
+      progressFill:  document.getElementById('progress-fill'),
+      progressTrack: document.getElementById('progress-track'),
+      sceneCounter:  document.getElementById('scene-counter'),
+      navSceneInfo:  document.getElementById('nav-scene-info'),
+      introView:     document.getElementById('intro-view'),
+      dialogueView:  document.getElementById('dialogue-view'),
+      activityView:  document.getElementById('activity-view'),
+      notebookView:  document.getElementById('notebook-view'),
+      charHalo:      document.getElementById('char-halo'),
+      charEmoji:     document.getElementById('char-emoji'),
+      charNameBadge: document.getElementById('char-name-badge'),
+      speakerLabel:  document.getElementById('speaker-label'),
+      dialogueText:  document.getElementById('dialogue-text'),
+      activityInner: document.getElementById('activity-inner'),
+      nbIntro:       document.getElementById('nb-intro'),
+      nbTasks:       document.getElementById('nb-tasks'),
+      nbReminder:    document.getElementById('nb-reminder'),
+      btnBack:       document.getElementById('btn-back'),
+      btnNext:       document.getElementById('btn-next'),
+    };
+
+    /* ── STARFIELD ────────────────────────────────────────────────── */
+    (function initStarfield() {
+      const canvas = document.getElementById('starfield');
+      const ctx    = canvas.getContext('2d');
+      function draw() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < 220; i++) {
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const r = Math.random() < 0.75 ? 0.8 : 1.4;
+          const a = 0.25 + Math.random() * 0.65;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255,255,255,${a})`;
+          ctx.fill();
+        }
+      }
+      draw();
+      window.addEventListener('resize', draw);
+    })();
+
+    /* ── HELPERS ──────────────────────────────────────────────────── */
+    function stopTyping() {
+      if (typeTimer) { clearInterval(typeTimer); typeTimer = null; }
+      isTyping = false;
+    }
+
+    function showViews(type) {
+      ['intro','dialogue','activity','notebook'].forEach(v => {
+        const el = document.getElementById(`${v}-view`);
+        el.classList.remove('active', 'scene-fade-in');
+      });
+      const active = document.getElementById(`${type}-view`);
+      active.classList.add('active');
+      void active.offsetWidth;
+      active.classList.add('scene-fade-in');
+    }
+
+    function applyCharacter(charKey) {
+      const c = CHAR[charKey];
+      els.charEmoji.textContent     = c.emoji;
+      els.charNameBadge.textContent = c.name;
+      els.charNameBadge.style.color       = c.color;
+      els.charNameBadge.style.borderColor = `${c.color}55`;
+      els.charNameBadge.style.background  = `${c.color}12`;
+      els.charHalo.style.borderColor      = `${c.color}55`;
+      els.charHalo.style.boxShadow        = `0 0 40px ${c.glow}, 0 0 80px ${c.glow}`;
+      els.speakerLabel.textContent  = c.name;
+      els.speakerLabel.style.color  = c.color;
+    }
+
+    function typeText(text, instant) {
+      const p = els.dialogueText;
+      if (instant) { p.textContent = text; return; }
+      p.textContent = '';
+      const cursor = document.createElement('span');
+      cursor.id = 'cursor'; cursor.setAttribute('aria-hidden','true');
+      p.appendChild(cursor);
+      let i = 0;
+      isTyping  = true;
+      fullText  = text;
+      typeTimer = setInterval(() => {
+        if (i < text.length) {
+          cursor.insertAdjacentText('beforebegin', text[i]); i++;
+        } else {
+          stopTyping(); cursor.classList.add('hidden');
+        }
+      }, 28);
+    }
+
+    function completeTyping() {
+      stopTyping();
+      const cursor = document.getElementById('cursor');
+      if (cursor) cursor.remove();
+      els.dialogueText.textContent = fullText;
+    }
+
+    function renderActivity(sc) {
+      const actClass = `act-${sc.actType}`;
+      const html = `
+        <div class="activity-card" role="article">
+          <div class="activity-header">
+            <div class="activity-type-badge">${sc.activityType}</div>
+            <div class="activity-title">${sc.title}</div>
+          </div>
+          <div class="activity-body">
+            <p class="activity-desc">${sc.desc}</p>
+            <div class="activity-steps" role="list">
+              ${sc.steps.map(s => `
+                <div class="activity-step" role="listitem">
+                  <div class="step-label">${s.label}</div>
+                  <div class="step-value">${s.value}</div>
+                </div>`).join('')}
+            </div>
+            <div class="activity-footer">${sc.footer}</div>
+          </div>
+        </div>`;
+      els.activityView.className = `scene-view ${actClass}`;
+      els.activityInner.style.cssText = 'flex:1;display:flex;flex-direction:column;overflow:hidden;';
+      els.activityInner.innerHTML     = html;
+    }
+
+    function renderNotebook(sc) {
+      els.nbIntro.textContent  = sc.intro;
+      els.nbTasks.innerHTML    = sc.tasks.map((t, i) =>
+        `<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`
+      ).join('');
+      els.nbReminder.textContent = sc.reminder;
+    }
+
+    function showScene(index, direction) {
+      stopTyping();
+      const sc    = SCENES[index];
+      const total = SCENES.length;
+
+      const pct = Math.max(3, Math.round(((index + 1) / total) * 100));
+      els.progressFill.style.width = `${pct}%`;
+      els.progressTrack.setAttribute('aria-valuenow', pct);
+
+      const counterText = `${index + 1} of ${total}`;
+      els.sceneCounter.textContent  = counterText;
+      els.navSceneInfo.textContent  = `Scene ${index + 1} of ${total}`;
+
+      els.btnBack.disabled      = index === 0;
+      els.btnNext.disabled      = index === total - 1;
+      els.btnNext.textContent   = index === total - 1 ? 'Finish' : 'Next ▶';
+
+      els.bgLayer.style.background = sc.bg;
+
+      if      (sc.type === 'intro')    { showViews('intro'); }
+      else if (sc.type === 'dialogue') { showViews('dialogue'); applyCharacter(sc.char); typeText(sc.text, direction === 'back'); }
+      else if (sc.type === 'activity') { renderActivity(sc); showViews('activity'); void els.activityView.offsetWidth; els.activityView.classList.add('scene-fade-in'); }
+      else if (sc.type === 'notebook') { renderNotebook(sc); showViews('notebook'); }
+    }
+
+    /* ── NAVIGATION ───────────────────────────────────────────────── */
+    function goNext() {
+      if (isTyping) { completeTyping(); return; }
+      if (currentIndex < SCENES.length - 1) { currentIndex++; showScene(currentIndex, 'forward'); }
+    }
+    function goBack() {
+      if (currentIndex > 0) { currentIndex--; showScene(currentIndex, 'back'); }
+    }
+
+    els.btnNext.addEventListener('click', goNext);
+    els.btnBack.addEventListener('click', goBack);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goNext(); }
+      if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); goBack(); }
+    });
+
+    /* ── INIT ─────────────────────────────────────────────────────── */
+    showScene(0, 'forward');
+  </script>
+</body>
+</html>

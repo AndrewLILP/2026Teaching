@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 10 — Testing, Peer Evaluation & Careers | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Test a game build against requirements, evaluate a peer's project, consider ethical responsibilities, and explore game development careers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg-void: #08060e;
+      --purple-500: #6d28d9; --purple-400: #8b5cf6; --purple-200: #c4b5fd;
+      --gold: #f59e0b; --gold-light: #fde68a;
+      --cyan: #22d3ee; --pink: #f472b6; --emerald: #86efac; --sky: #38bdf8;
+      --rose: #fb7185; --rose-light: #fecdd3;
+      --text-bright: #fff7f7; --text-mid: #fecdd3; --text-muted: #7a4a52;
+      --dlg-bg: rgba(8,6,14,0.94); --dlg-border: rgba(251,113,133,0.42);
+      --dlg-corner: rgba(251,113,133,0.72); --radius: 12px; --radius-sm: 6px;
+      --phase4-col: #fb7185;
+      --transition-bg: 1800ms ease;
+    }
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+    canvas#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 50% 40%, #2a0a14 0%, #08060e 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+      pointer-events: none;
+    }
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid rgba(251,113,133,0.22); background: rgba(8,6,14,0.78); backdrop-filter: blur(10px); flex-shrink: 0; }
+    #phase-badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase4-col); border: 1px solid rgba(251,113,133,0.35); border-radius: 20px; padding: 5px 14px; }
+    #phase-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--phase4-col); box-shadow: 0 0 8px var(--phase4-col); flex-shrink: 0; }
+    #header-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.04em; text-align: center; }
+    #header-title span { color: var(--rose-light); font-weight: 400; }
+    #scene-counter { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right; }
+
+    /* PROGRESS */
+    #progress-track { height: 5px; background: rgba(251,113,133,0.12); flex-shrink: 0; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, #9f1239, var(--phase4-col)); border-radius: 0 3px 3px 0; transition: width 500ms cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(251,113,133,0.5); width: 3%; }
+
+    /* MAIN + SCENES */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn 400ms ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INTRO */
+    #intro-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+    #intro-view.active { display: flex; }
+    .intro-card { width: 100%; max-width: 780px; background: rgba(8,6,14,0.88); border: 1px solid rgba(251,113,133,0.4); border-radius: var(--radius); padding: 40px 48px 36px; backdrop-filter: blur(16px); clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px)); }
+    .intro-lesson-num { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase4-col); margin-bottom: 10px; }
+    .intro-title { font-family: 'Cinzel', serif; font-size: clamp(22px,3vw,34px); font-weight: 700; line-height: 1.2; color: var(--text-bright); margin-bottom: 6px; }
+    .intro-subtitle { font-family: 'Lora', serif; font-size: 17px; font-style: italic; color: var(--rose-light); margin-bottom: 28px; }
+    .intro-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(251,113,133,0.5),transparent); margin-bottom: 24px; }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.05em; }
+    .intro-meta-item strong { color: var(--rose-light); font-weight: 600; }
+    .intro-intentions-label { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase4-col); margin-bottom: 14px; }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start; }
+    .intro-intentions li::before { content: '◆'; color: var(--phase4-col); font-size: 10px; margin-top: 6px; flex-shrink: 0; }
+    .intro-prompt { margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* DIALOGUE */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+    #char-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #char-halo { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 5.5rem; line-height: 1; background: rgba(251,113,133,0.05); border: 2px solid transparent; transition: border-color 300ms, box-shadow 300ms; animation: charFloat 4s ease-in-out infinite; }
+    @keyframes charFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    #char-name-badge { margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 20px; border-radius: 20px; border: 1px solid transparent; transition: color 300ms, border-color 300ms, background 300ms; }
+    #dialogue-box { flex-shrink: 0; padding: 0 24px; }
+    #dialogue-inner { background: var(--dlg-bg); border: 1px solid var(--dlg-border); border-radius: var(--radius); padding: 24px 32px 20px; position: relative; min-height: 130px; backdrop-filter: blur(16px); clip-path: polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px)); }
+    #dialogue-inner::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius); box-shadow: inset 0 0 40px rgba(251,113,133,0.07); pointer-events: none; }
+    #dialogue-inner::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner); border-radius: 0 var(--radius-sm) 0 0; }
+    .dlg-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner); border-radius: 0 0 0 var(--radius-sm); }
+    #speaker-label { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms; }
+    #dialogue-text { font-family: 'Lora', serif; font-size: 21px; line-height: 1.65; color: var(--text-bright); min-height: 72px; }
+    #cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--rose); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.85s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ACTIVITY */
+    #activity-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #activity-view.active { display: flex; }
+    .activity-card { flex: 1; border-radius: var(--radius); border: 1px solid transparent; display: flex; flex-direction: column; overflow: hidden; }
+    .activity-header { padding: 18px 28px 16px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .activity-type-badge { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0; }
+    .activity-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--text-bright); }
+    .activity-body { flex: 1; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: rgba(251,113,133,0.35) transparent; }
+    .activity-desc { font-family: 'Lora', serif; font-size: 18px; line-height: 1.6; color: var(--rose-light); margin-bottom: 20px; font-style: italic; }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step { display: grid; grid-template-columns: 210px 1fr; gap: 0; border-radius: 8px; overflow: hidden; }
+    .step-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center; background: rgba(0,0,0,0.35); }
+    .step-value { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.18); }
+    .activity-footer { font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid; line-height: 1.5; color: var(--text-bright); }
+    .act-ido .activity-card  { background: rgba(40,6,16,0.82); border-color: rgba(251,113,133,0.32); }
+    .act-ido .activity-header { background: rgba(40,6,16,0.96); }
+    .act-ido .activity-type-badge { color: var(--rose); border-color: var(--rose); }
+    .act-ido .step-label { color: var(--rose); }
+    .act-ido .activity-footer { background: rgba(251,113,133,0.07); border-color: var(--rose); }
+    .act-wedo .activity-card  { background: rgba(4,18,34,0.78); border-color: rgba(56,189,248,0.3); }
+    .act-wedo .activity-header { background: rgba(4,18,34,0.94); }
+    .act-wedo .activity-type-badge { color: var(--sky); border-color: var(--sky); }
+    .act-wedo .step-label { color: var(--sky); }
+    .act-wedo .activity-footer { background: rgba(56,189,248,0.07); border-color: var(--sky); }
+    .act-youdo .activity-card  { background: rgba(30,8,60,0.78); border-color: rgba(139,92,246,0.4); }
+    .act-youdo .activity-header { background: rgba(30,8,60,0.94); }
+    .act-youdo .activity-type-badge { color: var(--purple-400); border-color: var(--purple-400); }
+    .act-youdo .step-label { color: var(--purple-400); }
+    .act-youdo .activity-footer { background: rgba(139,92,246,0.08); border-color: var(--purple-400); }
+
+    /* NOTEBOOK */
+    #notebook-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #notebook-view.active { display: flex; }
+    .notebook-card { flex: 1; background: rgba(30,15,5,0.85); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(245,158,11,0.06) 31px,rgba(245,158,11,0.06) 32px); }
+    .notebook-header { background: rgba(30,15,5,0.95); padding: 18px 28px 16px; border-bottom: 1px solid rgba(245,158,11,0.25); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+    .notebook-body { flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px; scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent; border-left: 3px solid rgba(245,158,11,0.2); margin-left: 20px; }
+    .notebook-intro { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--gold-light); font-style: italic; margin-bottom: 22px; }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li { display: flex; gap: 14px; align-items: flex-start; font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright); }
+    .task-num { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); border-radius: 50%; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .notebook-reminder { margin-top: 22px; padding: 14px 18px; background: rgba(245,158,11,0.08); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5; }
+
+    /* NAV */
+    #nav-bar { flex-shrink: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: rgba(8,6,14,0.72); border-top: 1px solid rgba(251,113,133,0.15); backdrop-filter: blur(12px); }
+    .nav-btn { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px; border-radius: var(--radius); border: 2px solid rgba(251,113,133,0.38); background: rgba(251,113,133,0.07); color: var(--rose-light); cursor: pointer; transition: all 200ms ease; min-width: 120px; }
+    .nav-btn:hover:not(:disabled) { background: rgba(251,113,133,0.22); border-color: var(--rose); color: var(--text-bright); box-shadow: 0 0 16px rgba(251,113,133,0.3); transform: translateY(-1px); }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(251,113,133,0.13); border-color: rgba(251,113,133,0.58); }
+    .nav-btn#btn-next:hover:not(:disabled) { background: rgba(251,113,133,0.34); box-shadow: 0 0 20px rgba(251,113,133,0.4); }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; }
+    #nav-hint { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em; }
+    .skip-link { position: absolute; top: -999px; left: 8px; background: var(--rose); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px; z-index: 9999; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
+    @media (max-width: 640px) { #header-title { font-size: 14px; } #dialogue-text { font-size: 18px; } .activity-step { grid-template-columns: 140px 1fr; } .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; } .intro-card { padding: 28px 24px 24px; } }
+    @media (max-height: 600px) { #char-halo { width: 110px; height: 110px; font-size: 4rem; } #char-area { padding: 8px; } #dialogue-text { font-size: 19px; min-height: 60px; } }
+  </style>
+</head>
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 4: Testing and Evaluating">Phase 4 — Testing &amp; Evaluating</div>
+      <h1 id="header-title"><span>Lesson 10</span> — Testing, Peer Evaluation &amp; Careers</h1>
+      <div id="scene-counter" aria-live="polite">1 of 37</div>
+    </header>
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">Testing, Peer Evaluation &amp; Careers</h2>
+            <p class="intro-subtitle">Lesson 10 &nbsp;·&nbsp; Testing &amp; Evaluating</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>4 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Test a game or simulation build against functional and non-functional requirements using a formal test results table</li>
+              <li>Evaluate a peer's project using predetermined MDA criteria and provide specific, evidence-based feedback</li>
+              <li>Evaluate social, ethical and cybersecurity considerations in games and simulations</li>
+              <li>Explore careers in game and simulation design and development, and set three personal project targets</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Final Notebook Checkpoint — Lesson 10</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 37</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+  <script>
+    /* Lesson 10 — S1=male, S2=female, S3=male */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)'  },
+      student1: { name: 'Student 1', emoji: '🧑‍💻', color: '#fb7185', glow: 'rgba(251,113,133,0.4)' },
+      student2: { name: 'Student 2', emoji: '🙋‍♀️', color: '#38bdf8', glow: 'rgba(56,189,248,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♂️', color: '#86efac', glow: 'rgba(134,239,172,0.4)' },
+    };
+    const BG = {
+      intro:    'radial-gradient(ellipse at 50% 40%, #2a0a14 0%, #08060e 65%)',
+      testing:  'radial-gradient(ellipse at 40% 50%, #200810 0%, #080408 65%)',
+      testable: 'radial-gradient(ellipse at 60% 40%, #1a0810 0%, #060408 65%)',
+      peer:     'radial-gradient(ellipse at 45% 55%, #0a0a2a 0%, #040410 65%)',
+      feedback: 'radial-gradient(ellipse at 55% 40%, #0a1828 0%, #040810 65%)',
+      ethics:   'radial-gradient(ellipse at 50% 45%, #1a0a20 0%, #080610 65%)',
+      cyber:    'radial-gradient(ellipse at 40% 60%, #1a0808 0%, #080402 65%)',
+      careers:  'radial-gradient(ellipse at 55% 35%, #0a1a2a 0%, #040810 65%)',
+      targets:  'radial-gradient(ellipse at 50% 50%, #1a0a1a 0%, #080408 65%)',
+      ido:      'radial-gradient(ellipse at 40% 40%, #2a0a12 0%, #0e0408 65%)',
+      wedo:     'radial-gradient(ellipse at 60% 40%, #041428 0%, #020810 65%)',
+      youdo:    'radial-gradient(ellipse at 50% 60%, #200640 0%, #0a0218 65%)',
+      notebook: 'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+    const SCENES = [
+      /* 0 */ { type:'intro', bg:BG.intro },
+
+      /* Hook — Phase 4 begins */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Welcome to Phase 4 — and to the final lesson of this teaching unit. You have planned, designed, built and debugged. Now you do the thing that makes all of that work meaningful: you find out whether it actually achieved what you set out to achieve. Testing and evaluation is not the end of the process — it\'s the beginning of the next iteration.' },
+      { type:'dialogue', bg:BG.testing, char:'student1',
+        text:'Is there a difference between testing and evaluating? I\'ve used both words but I\'m not sure if they mean different things in a formal sense, or if they\'re basically the same activity.' },
+      { type:'dialogue', bg:BG.testing, char:'teacher',
+        text:'There\'s a precise distinction. Testing is objective verification — you run a test case, observe the output, record pass or fail. It answers the question: does this specific function work? Evaluation is analytical judgement — you assess the overall quality, fitness for purpose and impact of the solution. It answers the question: is this a good solution? Both are required, but they\'re different modes of thinking.' },
+      { type:'dialogue', bg:BG.testing, char:'student2',
+        text:'So my test results table from Lesson 9 is testing. But when I write a paragraph explaining whether my game achieves its purpose for its intended users — that\'s evaluation?' },
+      { type:'dialogue', bg:BG.testing, char:'teacher',
+        text:'Exactly. And good evaluation always references the test evidence. "The game meets its core functional requirements as demonstrated by the test results, however the response time for scene transitions exceeded the non-functional target by two seconds, which would impact users with slow hardware." That\'s evaluation: evidence-grounded, criteria-referenced, honest.' },
+
+      /* What makes testing effective */
+      { type:'dialogue', bg:BG.testable, char:'teacher',
+        text:'Before you test, you need to know what you\'re testing against. Go back to your requirements from Lesson 2. Each functional requirement should generate at least one test case. Each non-functional requirement needs a measurable test — frame rate, load time, font size, colour contrast. Requirements without measurable tests are untestable, and untestable requirements are design failures.' },
+      { type:'dialogue', bg:BG.testable, char:'student3',
+        text:'What if I wrote a requirement that\'s impossible to test properly? Like "the game should be fun." That clearly can\'t be measured objectively.' },
+      { type:'dialogue', bg:BG.testable, char:'teacher',
+        text:'Then you rewrite it into something testable before you evaluate. "Fun" is an aesthetic outcome — in MDA terms, it\'s the result of your dynamics. So you test the mechanics that produce those dynamics: "the car must reach a minimum of 40 units per second when the player holds accelerate for three seconds." That\'s testable. It also more precisely describes what you actually designed.' },
+      { type:'dialogue', bg:BG.testable, char:'student1',
+        text:'I noticed some of my requirements were really about me as a developer — things like "the code should be modular." Is that a proper requirement, or is that an implementation detail that shouldn\'t be in the requirements document at all?' },
+      { type:'dialogue', bg:BG.testable, char:'teacher',
+        text:'Code maintainability is a legitimate non-functional requirement. The test: "each Update() method contains fewer than ten lines of direct logic." Or: "every public method has an XML summary comment." Those are testable and they matter to anyone who needs to maintain the code — including your future self in three weeks, working on your assessment project.' },
+
+      /* 9 — I DO: Testing live */
+      { type:'activity', actType:'ido', bg:BG.ido,
+        activityType:'I DO',
+        title:'Teacher Models: Formal Testing Against Requirements',
+        desc:'Watch a requirements document tested against a live Unity build — one requirement at a time, recording pass/fail with evidence.',
+        steps:[
+          { label:'Test 1 — Functional',   value:'Requirement: "The player shall switch from the driving scene to the walking scene when they drive through the portal trigger." Test: drive car through portal. Expected: WalkingScene loads within 3 seconds. Result: PASS — scene loads in 1.8s. Evidence: screen recording timestamp.' },
+          { label:'Test 2 — Non-Functional',value:'Requirement: "The game shall maintain a minimum of 30fps on school hardware." Test: open Scene Stats panel during active gameplay on a school computer. Expected: Frames ≥30. Result: PASS — Scene Stats shows 47fps with all assets loaded.' },
+          { label:'Test 3 — Edge Case',     value:'Requirement: "The score counter shall not exceed a maximum value of 9999." Test: repeatedly collect items until score reaches limit. Expected: score displays 9999 and stops incrementing. Result: FAIL — score wraps to negative. Bug: int overflow. Action: clamp score with Mathf.Clamp(score, 0, 9999).' },
+          { label:'Test 4 — Accessibility', value:'Requirement: "All HUD text shall be readable at minimum 28pt." Test: screenshot UI at 1080p, measure font size in inspector. Result: score label is 24pt — FAIL. Action: increase to 30pt and retest.' },
+          { label:'Documentation',          value:'Every test row: requirement tested | input / action used | expected output | actual output | pass or fail | if fail: action taken. The action column is critical — an unresolved fail with no action is worse than a noted fail with a documented plan.' },
+        ],
+        footer:'A test results table with honest failures and documented actions is stronger evidence of professional practice than a perfect table with no failures. Real testing finds problems. That\'s the point.',
+      },
+
+      /* Peer evaluation */
+      { type:'dialogue', bg:BG.peer, char:'teacher',
+        text:'Now we shift to peer evaluation. You\'ll swap projects and spend five minutes playing a partner\'s game. Then you\'ll complete a peer evaluation form using the criteria we\'ve established throughout this unit — functional requirements, MDA, accessibility, and code quality where visible in the project notebook.' },
+      { type:'dialogue', bg:BG.peer, char:'student2',
+        text:'How specific does peer feedback need to be? I want to be honest but I also don\'t want to hurt anyone\'s feelings if I find something that doesn\'t work well.' },
+      { type:'dialogue', bg:BG.peer, char:'teacher',
+        text:'The professional standard: specific, criteria-referenced, actionable. Not "the NPC was a bit weird" — but "the NPC patrol stopped when I walked near it, which may indicate the state machine isn\'t transitioning back to patrol correctly after the player leaves range." Specific observations tied to criteria, with a suggested focus area. That\'s useful feedback. General impressions are not.' },
+      { type:'dialogue', bg:BG.peer, char:'student3',
+        text:'What\'s the best thing to do if someone\'s game has a serious functional failure — like a scene that doesn\'t load at all? Do I still complete the form?' },
+      { type:'dialogue', bg:BG.peer, char:'teacher',
+        text:'Yes — you document what you observed: "Scene B trigger fires but the walking scene fails to load — runtime error visible in Console. Unable to evaluate walking world mechanics as a result." That honest documentation is valuable to the developer. And it models the professional practice of writing clear bug reports rather than just saying "it\'s broken."' },
+
+      /* 16 — WE DO: Peer evaluation rotation */
+      { type:'activity', actType:'wedo', bg:BG.wedo,
+        activityType:'WE DO',
+        title:'Peer Evaluation Rotation — Play, Observe, Feed Back',
+        desc:'Swap seats with a partner. Play their build for five minutes with the evaluation form open. Then write your feedback using the criteria below.',
+        steps:[
+          { label:'Play (5 min)',          value:'Explore the game as a first-time player. Drive if driving exists, walk if walking exists, interact with everything you can find. Note what works, what surprises you, and what breaks or confuses you.' },
+          { label:'Functional Check',      value:'Pick two requirements from your partner\'s requirements document (SEQTA). Did the game meet them? Record: requirement, what you tested, what you observed, pass or fail.' },
+          { label:'MDA Evaluation',        value:'Name one mechanic you observed. Describe the dynamic it produced during your playthrough. Name the aesthetic response it created in you as a player. Be specific — not "it was fun" but "racing the timer created urgency that made me crash twice trying to cut corners."' },
+          { label:'Accessibility',         value:'Was the UI text readable? Were controls intuitive without instructions? Would a first-time player understand what to do? Note one thing that worked well and one that could be improved.' },
+          { label:'Constructive Action',   value:'Write one actionable suggestion: something specific the developer could do to improve one aspect of the game. Frame it as "consider..." or "one possible improvement would be..." — not as criticism, as possibility.' },
+        ],
+        footer:'When you receive your peer feedback: read it, say thank you, ask one clarifying question if needed — then decide independently what to act on. Not all feedback requires action. Evaluating feedback is itself a skill.',
+      },
+
+      /* Social and ethical */
+      { type:'dialogue', bg:BG.ethics, char:'teacher',
+        text:'We\'ve built something. Now we ask: should we have built it this way? Does our game represent its users respectfully? Does it collect data responsibly? Does it depict culture, community or identity with care? These are evaluation questions — and the syllabus requires you to address them explicitly in your assessment.' },
+      { type:'dialogue', bg:BG.ethics, char:'student1',
+        text:'My game has an NPC character based loosely on a historical figure from a specific culture. I didn\'t think much about it when I designed it — I just thought it was an interesting character concept. Now I\'m wondering if I should have.' },
+      { type:'dialogue', bg:BG.ethics, char:'teacher',
+        text:'The fact that you\'re wondering is exactly the right instinct — and the right time to ask is in evaluation, while you can still act on it. The question to work through: is this character depicted with knowledge and respect? Was that community consulted? Does the depiction risk perpetuating stereotypes? If the answer to any of those is uncertain, document it in your evaluation and propose what more careful design would look like.' },
+      { type:'dialogue', bg:BG.ethics, char:'student2',
+        text:'What about the data side — if my game doesn\'t collect any player data at all, do I still need to address the cybersecurity requirements in my evaluation?' },
+      { type:'dialogue', bg:BG.ethics, char:'teacher',
+        text:'Yes — because "no data collected" is itself a design decision that should be stated and justified. Your privacy statement from Lesson 4 should say: "This game collects no personal data. No network connections are made. Player progress is stored locally in PlayerPrefs and is not transmitted." That statement is evidence of conscious design. Silence on the topic is not.' },
+      { type:'dialogue', bg:BG.cyber, char:'student3',
+        text:'What cybersecurity considerations even apply to a single-player Unity game that doesn\'t go online? It feels like this category doesn\'t really apply to what we built.' },
+      { type:'dialogue', bg:BG.cyber, char:'teacher',
+        text:'Even offline games have cybersecurity considerations. Save file manipulation — can a player edit their score file to cheat? Input validation — could a player name with special characters break your string handling? If you ever distribute a game build, what dependencies does it carry? And: if this game were extended to have an online leaderboard — which is a realistic extension — what would you need to design in from the start? Addressing those hypotheticals shows genuine thinking.' },
+
+      /* Careers */
+      { type:'dialogue', bg:BG.careers, char:'teacher',
+        text:'Let\'s end the teaching unit where we began — with the bigger picture. The Australian game industry employs thousands of people across roles that require exactly the skills you\'ve developed. Programmer, Technical Artist, Game Designer, UI/UX Designer, QA Test Engineer, Simulation Engineer, 3D Environment Artist, Audio Designer. Let me describe each.' },
+      { type:'dialogue', bg:BG.careers, char:'student1',
+        text:'Where does a QA Test Engineer fit in? I always assumed QA was just playing games for a job — but I\'m guessing from today\'s lesson that it\'s much more structured than that?' },
+      { type:'dialogue', bg:BG.careers, char:'teacher',
+        text:'QA is rigorous, technical work. QA engineers write test plans, execute regression tests, file detailed bug reports with reproducible steps, and track issues through resolution. What you\'ve practised today — formal test tables, specific bug documentation, systematic verification against requirements — that\'s QA methodology. It\'s a highly valued, often overlooked entry point into the industry.' },
+      { type:'dialogue', bg:BG.careers, char:'student2',
+        text:'What about simulation engineer? I didn\'t realise that was a separate career — I thought simulations were just games made for training purposes.' },
+      { type:'dialogue', bg:BG.careers, char:'teacher',
+        text:'Simulation engineering is one of the fastest-growing specialisations — defence, healthcare, mining, aviation, architecture, climate science. The skills overlap heavily with game development: 3D environments, physics engines, scripted behaviours, real-time rendering. But the domain knowledge is different. A mining simulation engineer needs to understand ore extraction processes as well as Unity. The combination of technical and domain expertise is extremely valuable.' },
+      { type:'dialogue', bg:BG.careers, char:'student3',
+        text:'Is there a path from what we\'ve done this term — Unity, C#, Blender — directly to industry, or do you need a specific degree first?' },
+      { type:'dialogue', bg:BG.careers, char:'teacher',
+        text:'Multiple paths exist. Undergraduate degrees in game design, computer science or software engineering are common routes. TAFE certificates in 3D animation or interactive media are another. And portfolio-first hiring is increasingly common — studios care about what you can build, evidenced by projects exactly like this one. A well-documented, well-tested, original game or simulation is more valuable than a transcript.' },
+
+      /* 28 — YOU DO */
+      { type:'activity', actType:'youdo', bg:BG.youdo,
+        activityType:'YOU DO',
+        title:'Self-Evaluation, Test Results and Three Project Targets',
+        desc:'Complete your formal evaluation, process your peer feedback, and set three specific targets for your assessment project phase.',
+        steps:[
+          { label:'🟦 Basic',        value:'Complete your test results table for three functional requirements (pass/fail + evidence). Write two sentences of peer feedback you received that you will act on and explain why. State one career pathway that interests you and one skill from this unit that connects to it.' },
+          { label:'🟩 Intermediate', value:'Complete test results table for all requirements. Write a one-paragraph written evaluation of your game covering: functional requirements met, one non-functional shortfall, and one social or ethical consideration. Document peer feedback received and which items you will or won\'t act on, with reasons.' },
+          { label:'🟧 Advanced',     value:'Full test results table, full written evaluation (300+ words covering functional, non-functional, MDA, social/ethical and cybersecurity considerations). Reflect on one design decision you would change with hindsight and describe what the revised design would look like. Set three SMART project targets for the assessment phase with measurable success criteria.' },
+        ],
+        footer:'Your three project targets should be SMART: Specific, Measurable, Achievable, Relevant, Time-bound. "Make it better" is not a target. "Add a working pause menu with Resume and Quit buttons before Week 3 of the assessment phase" is.',
+      },
+
+      /* Wrap up — the full unit arc closes */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Ten lessons ago you walked in and we talked about why games matter in the world. About society shaping technology, and technology shaping society. About who is included and who is not. About the responsibilities that come with building something that others will experience.' },
+      { type:'dialogue', bg:BG.intro, char:'student1',
+        text:'And since then we\'ve designed, built, scripted, debugged, documented, and now evaluated. It feels like those aren\'t separate activities — they\'re all one continuous process.' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'They are. The four phases — Identifying and Defining, Researching and Planning, Producing and Implementing, Testing and Evaluating — aren\'t a linear sequence you move through once. They\'re a cycle. Your evaluation today identifies new things to define. Your test failures reveal new things to plan. The process never ends — it just produces increasingly better solutions.' },
+      { type:'dialogue', bg:BG.intro, char:'student2',
+        text:'I\'m actually excited about the assessment project now rather than anxious about it. The unit gave me a toolkit — requirements documents, pseudocode, test tables, MDA, data dictionaries. I know what to do and I know why I\'m doing it.' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'That confidence — grounded in method rather than assumption — is exactly what I hoped you\'d leave with. You\'re not just students who can use Unity. You\'re developers who understand why design decisions matter, how to verify whether they worked, and how to communicate about them precisely. That transfers far beyond this classroom.' },
+      { type:'dialogue', bg:BG.targets, char:'student3',
+        text:'One last question — the careers discussion made me realise: is the game we\'re building for our assessment actually something we could put in a portfolio? Or is it too basic to show an employer or university?' },
+      { type:'dialogue', bg:BG.targets, char:'teacher',
+        text:'A well-documented, original project with a clear design rationale, evidence of iterative development, honest evaluation, and clean modular code is exactly what a portfolio entry should look like. The scope doesn\'t need to be enormous. What matters is that you can explain every decision, show the development process, and demonstrate that you built something with intent. Your notebook is your evidence. Your build is your product. Your evaluation is your professional voice.' },
+
+      /* Final notebook */
+      { type:'notebook', bg:BG.notebook,
+        intro:'This is the final notebook checkpoint of the teaching unit. It is the bridge between the ten lessons you have just completed and the assessment project that follows. Be honest, specific and forward-looking.',
+        tasks:[
+          'Your completed test results table — all requirements tested, with input, expected output, actual output, pass/fail, and action for any failures.',
+          'Your written self-evaluation — functional requirements met, non-functional shortfalls, one social/ethical consideration, and one thing you would design differently with hindsight.',
+          'Peer feedback summary — what you received, what you will act on, what you won\'t act on and why. Your evaluation of the feedback is itself evidence of analytical thinking.',
+          'Your three SMART project targets for the assessment phase — each with a specific measurable success criterion and a target date.',
+          'The career pathway that most interests you from today\'s discussion — what skills from this unit connect to it, and what would you need to develop further to pursue it.',
+          'Advanced: a 300-word written evaluation addressing functional requirements, non-functional requirements, MDA, social/ethical considerations, cybersecurity, and your revised design proposal.',
+        ],
+        reminder:'Your project notebook is submitted as part of your assessment. Every entry across all ten lessons is evidence of your thinking process — not just your final answers. The most valuable entries are the honest ones that show you changed your mind, solved a problem, or identified something you still need to improve.',
+      },
+    ];
+
+    /* ENGINE */
+    let ci=0,it=false,tt=null,ft='';
+    const els={bgLayer:document.getElementById('bg-layer'),progressFill:document.getElementById('progress-fill'),progressTrack:document.getElementById('progress-track'),sceneCounter:document.getElementById('scene-counter'),navSceneInfo:document.getElementById('nav-scene-info'),introView:document.getElementById('intro-view'),dialogueView:document.getElementById('dialogue-view'),activityView:document.getElementById('activity-view'),notebookView:document.getElementById('notebook-view'),charHalo:document.getElementById('char-halo'),charEmoji:document.getElementById('char-emoji'),charNameBadge:document.getElementById('char-name-badge'),speakerLabel:document.getElementById('speaker-label'),dialogueText:document.getElementById('dialogue-text'),activityInner:document.getElementById('activity-inner'),nbIntro:document.getElementById('nb-intro'),nbTasks:document.getElementById('nb-tasks'),nbReminder:document.getElementById('nb-reminder'),btnBack:document.getElementById('btn-back'),btnNext:document.getElementById('btn-next')};
+    (function(){const c=document.getElementById('starfield'),x=c.getContext('2d');function d(){c.width=window.innerWidth;c.height=window.innerHeight;x.clearRect(0,0,c.width,c.height);for(let i=0;i<220;i++){const a=Math.random()*c.width,b=Math.random()*c.height,r=Math.random()<0.75?0.8:1.4,o=0.25+Math.random()*0.65;x.beginPath();x.arc(a,b,r,0,Math.PI*2);x.fillStyle=`rgba(255,255,255,${o})`;x.fill();}}d();window.addEventListener('resize',d);})();
+    function stopT(){if(tt){clearInterval(tt);tt=null;}it=false;}
+    function showV(t){['intro','dialogue','activity','notebook'].forEach(v=>{const e=document.getElementById(`${v}-view`);e.classList.remove('active','scene-fade-in');});const a=document.getElementById(`${t}-view`);a.classList.add('active');void a.offsetWidth;a.classList.add('scene-fade-in');}
+    function applyC(k){const c=CHAR[k];els.charEmoji.textContent=c.emoji;els.charNameBadge.textContent=c.name;els.charNameBadge.style.color=c.color;els.charNameBadge.style.borderColor=`${c.color}55`;els.charNameBadge.style.background=`${c.color}12`;els.charHalo.style.borderColor=`${c.color}55`;els.charHalo.style.boxShadow=`0 0 40px ${c.glow},0 0 80px ${c.glow}`;els.speakerLabel.textContent=c.name;els.speakerLabel.style.color=c.color;}
+    function typeT(text,instant){const p=els.dialogueText;if(instant){p.textContent=text;return;}p.textContent='';const cur=document.createElement('span');cur.id='cursor';cur.setAttribute('aria-hidden','true');p.appendChild(cur);let i=0;it=true;ft=text;tt=setInterval(()=>{if(i<text.length){cur.insertAdjacentText('beforebegin',text[i]);i++;}else{stopT();cur.classList.add('hidden');}},28);}
+    function compT(){stopT();const c=document.getElementById('cursor');if(c)c.remove();els.dialogueText.textContent=ft;}
+    function renderA(sc){const ac=`act-${sc.actType}`;const h=`<div class="activity-card" role="article"><div class="activity-header"><div class="activity-type-badge">${sc.activityType}</div><div class="activity-title">${sc.title}</div></div><div class="activity-body"><p class="activity-desc">${sc.desc}</p><div class="activity-steps" role="list">${sc.steps.map(s=>`<div class="activity-step" role="listitem"><div class="step-label">${s.label}</div><div class="step-value">${s.value}</div></div>`).join('')}</div><div class="activity-footer">${sc.footer}</div></div></div>`;els.activityView.className=`scene-view ${ac}`;els.activityInner.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden;';els.activityInner.innerHTML=h;}
+    function renderN(sc){els.nbIntro.textContent=sc.intro;els.nbTasks.innerHTML=sc.tasks.map((t,i)=>`<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`).join('');els.nbReminder.textContent=sc.reminder;}
+    function showS(idx,dir){stopT();const sc=SCENES[idx],tot=SCENES.length;const pct=Math.max(3,Math.round(((idx+1)/tot)*100));els.progressFill.style.width=`${pct}%`;els.progressTrack.setAttribute('aria-valuenow',pct);els.sceneCounter.textContent=`${idx+1} of ${tot}`;els.navSceneInfo.textContent=`Scene ${idx+1} of ${tot}`;els.btnBack.disabled=idx===0;els.btnNext.disabled=idx===tot-1;els.btnNext.textContent=idx===tot-1?'Finish ✦':'Next ▶';els.bgLayer.style.background=sc.bg;if(sc.type==='intro')showV('intro');else if(sc.type==='dialogue'){showV('dialogue');applyC(sc.char);typeT(sc.text,dir==='back');}else if(sc.type==='activity'){renderA(sc);showV('activity');void els.activityView.offsetWidth;els.activityView.classList.add('scene-fade-in');}else if(sc.type==='notebook'){renderN(sc);showV('notebook');}}
+    function goNext(){if(it){compT();return;}if(ci<SCENES.length-1){ci++;showS(ci,'forward');}}
+    function goBack(){if(ci>0){ci--;showS(ci,'back');}}
+    els.btnNext.addEventListener('click',goNext);
+    els.btnBack.addEventListener('click',goBack);
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goBack();}});
+    showS(0,'forward');
+  </script>
+</body>
+</html>

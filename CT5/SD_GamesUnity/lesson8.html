@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 8 — Scene Management, Level Switching & UI | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Implement scene switching with triggers, build TMP Pro UI, manage game state across scenes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg-void: #020510;
+      --purple-500: #6d28d9; --purple-400: #8b5cf6; --purple-200: #c4b5fd;
+      --gold: #f59e0b; --gold-light: #fde68a;
+      --cyan: #22d3ee; --pink: #f472b6; --emerald: #86efac; --sky: #38bdf8;
+      --indigo: #6366f1; --indigo-light: #c7d2fe;
+      --text-bright: #eef2ff; --text-mid: #c7d2fe; --text-muted: #4a537a;
+      --dlg-bg: rgba(2,5,16,0.93); --dlg-border: rgba(99,102,241,0.45);
+      --dlg-corner: rgba(99,102,241,0.75); --radius: 12px; --radius-sm: 6px;
+      --phase3-col: #818cf8;
+      --transition-bg: 1800ms ease;
+    }
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+    canvas#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 55% 40%, #0e0a40 0%, #020510 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+      pointer-events: none;
+    }
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid rgba(99,102,241,0.22); background: rgba(2,5,16,0.78); backdrop-filter: blur(10px); flex-shrink: 0; }
+    #phase-badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase3-col); border: 1px solid rgba(99,102,241,0.35); border-radius: 20px; padding: 5px 14px; }
+    #phase-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--phase3-col); box-shadow: 0 0 8px var(--phase3-col); flex-shrink: 0; }
+    #header-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.04em; text-align: center; }
+    #header-title span { color: var(--indigo-light); font-weight: 400; }
+    #scene-counter { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right; }
+
+    /* PROGRESS */
+    #progress-track { height: 5px; background: rgba(99,102,241,0.12); flex-shrink: 0; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, #3730a3, var(--phase3-col)); border-radius: 0 3px 3px 0; transition: width 500ms cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(99,102,241,0.5); width: 3%; }
+
+    /* MAIN + SCENES */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn 400ms ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INTRO */
+    #intro-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+    #intro-view.active { display: flex; }
+    .intro-card { width: 100%; max-width: 780px; background: rgba(2,5,16,0.88); border: 1px solid rgba(99,102,241,0.4); border-radius: var(--radius); padding: 40px 48px 36px; backdrop-filter: blur(16px); clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px)); }
+    .intro-lesson-num { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 10px; }
+    .intro-title { font-family: 'Cinzel', serif; font-size: clamp(22px,3vw,34px); font-weight: 700; line-height: 1.2; color: var(--text-bright); margin-bottom: 6px; }
+    .intro-subtitle { font-family: 'Lora', serif; font-size: 17px; font-style: italic; color: var(--indigo-light); margin-bottom: 28px; }
+    .intro-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(99,102,241,0.5),transparent); margin-bottom: 24px; }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.05em; }
+    .intro-meta-item strong { color: var(--indigo-light); font-weight: 600; }
+    .intro-intentions-label { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 14px; }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start; }
+    .intro-intentions li::before { content: '◆'; color: var(--phase3-col); font-size: 10px; margin-top: 6px; flex-shrink: 0; }
+    .intro-prompt { margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* DIALOGUE */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+    #char-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #char-halo { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 5.5rem; line-height: 1; background: rgba(99,102,241,0.06); border: 2px solid transparent; transition: border-color 300ms, box-shadow 300ms; animation: charFloat 4s ease-in-out infinite; }
+    @keyframes charFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    #char-name-badge { margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 20px; border-radius: 20px; border: 1px solid transparent; transition: color 300ms, border-color 300ms, background 300ms; }
+    #dialogue-box { flex-shrink: 0; padding: 0 24px; }
+    #dialogue-inner { background: var(--dlg-bg); border: 1px solid var(--dlg-border); border-radius: var(--radius); padding: 24px 32px 20px; position: relative; min-height: 130px; backdrop-filter: blur(16px); clip-path: polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px)); }
+    #dialogue-inner::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius); box-shadow: inset 0 0 40px rgba(99,102,241,0.08); pointer-events: none; }
+    #dialogue-inner::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner); border-radius: 0 var(--radius-sm) 0 0; }
+    .dlg-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner); border-radius: 0 0 0 var(--radius-sm); }
+    #speaker-label { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms; }
+    #dialogue-text { font-family: 'Lora', serif; font-size: 21px; line-height: 1.65; color: var(--text-bright); min-height: 72px; }
+    #cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--indigo); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.85s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ACTIVITY */
+    #activity-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #activity-view.active { display: flex; }
+    .activity-card { flex: 1; border-radius: var(--radius); border: 1px solid transparent; display: flex; flex-direction: column; overflow: hidden; }
+    .activity-header { padding: 18px 28px 16px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .activity-type-badge { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0; }
+    .activity-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--text-bright); }
+    .activity-body { flex: 1; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.35) transparent; }
+    .activity-desc { font-family: 'Lora', serif; font-size: 18px; line-height: 1.6; color: var(--indigo-light); margin-bottom: 20px; font-style: italic; }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step { display: grid; grid-template-columns: 210px 1fr; gap: 0; border-radius: 8px; overflow: hidden; }
+    .step-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center; background: rgba(0,0,0,0.35); }
+    .step-value { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.18); }
+    .activity-footer { font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid; line-height: 1.5; color: var(--text-bright); }
+    .act-ido .activity-card  { background: rgba(10,10,50,0.82); border-color: rgba(99,102,241,0.35); }
+    .act-ido .activity-header { background: rgba(10,10,50,0.96); }
+    .act-ido .activity-type-badge { color: var(--phase3-col); border-color: var(--phase3-col); }
+    .act-ido .step-label { color: var(--phase3-col); }
+    .act-ido .activity-footer { background: rgba(99,102,241,0.08); border-color: var(--phase3-col); }
+    .act-wedo .activity-card  { background: rgba(4,22,40,0.78); border-color: rgba(56,189,248,0.3); }
+    .act-wedo .activity-header { background: rgba(4,22,40,0.94); }
+    .act-wedo .activity-type-badge { color: var(--sky); border-color: var(--sky); }
+    .act-wedo .step-label { color: var(--sky); }
+    .act-wedo .activity-footer { background: rgba(56,189,248,0.07); border-color: var(--sky); }
+    .act-youdo .activity-card  { background: rgba(30,8,60,0.78); border-color: rgba(139,92,246,0.4); }
+    .act-youdo .activity-header { background: rgba(30,8,60,0.94); }
+    .act-youdo .activity-type-badge { color: var(--purple-400); border-color: var(--purple-400); }
+    .act-youdo .step-label { color: var(--purple-400); }
+    .act-youdo .activity-footer { background: rgba(139,92,246,0.08); border-color: var(--purple-400); }
+
+    /* NOTEBOOK */
+    #notebook-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #notebook-view.active { display: flex; }
+    .notebook-card { flex: 1; background: rgba(30,15,5,0.85); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(245,158,11,0.06) 31px,rgba(245,158,11,0.06) 32px); }
+    .notebook-header { background: rgba(30,15,5,0.95); padding: 18px 28px 16px; border-bottom: 1px solid rgba(245,158,11,0.25); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+    .notebook-body { flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px; scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent; border-left: 3px solid rgba(245,158,11,0.2); margin-left: 20px; }
+    .notebook-intro { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--gold-light); font-style: italic; margin-bottom: 22px; }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li { display: flex; gap: 14px; align-items: flex-start; font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright); }
+    .task-num { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); border-radius: 50%; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .notebook-reminder { margin-top: 22px; padding: 14px 18px; background: rgba(245,158,11,0.08); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5; }
+
+    /* NAV */
+    #nav-bar { flex-shrink: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: rgba(2,5,16,0.72); border-top: 1px solid rgba(99,102,241,0.15); backdrop-filter: blur(12px); }
+    .nav-btn { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px; border-radius: var(--radius); border: 2px solid rgba(99,102,241,0.4); background: rgba(99,102,241,0.08); color: var(--indigo-light); cursor: pointer; transition: all 200ms ease; min-width: 120px; }
+    .nav-btn:hover:not(:disabled) { background: rgba(99,102,241,0.24); border-color: var(--indigo); color: var(--text-bright); box-shadow: 0 0 16px rgba(99,102,241,0.32); transform: translateY(-1px); }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(99,102,241,0.14); border-color: rgba(99,102,241,0.6); }
+    .nav-btn#btn-next:hover:not(:disabled) { background: rgba(99,102,241,0.36); box-shadow: 0 0 20px rgba(99,102,241,0.42); }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; }
+    #nav-hint { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em; }
+    .skip-link { position: absolute; top: -999px; left: 8px; background: var(--indigo); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px; z-index: 9999; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
+    @media (max-width: 640px) { #header-title { font-size: 14px; } #dialogue-text { font-size: 18px; } .activity-step { grid-template-columns: 140px 1fr; } .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; } .intro-card { padding: 28px 24px 24px; } }
+    @media (max-height: 600px) { #char-halo { width: 110px; height: 110px; font-size: 4rem; } #char-area { padding: 8px; } #dialogue-text { font-size: 19px; min-height: 60px; } }
+  </style>
+</head>
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 3: Producing and Implementing">Phase 3 — Producing &amp; Implementing</div>
+      <h1 id="header-title"><span>Lesson 8</span> — Scene Management, Level Switching &amp; UI</h1>
+      <div id="scene-counter" aria-live="polite">1 of 36</div>
+    </header>
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">Scene Management, Level Switching &amp; UI with TMP Pro</h2>
+            <p class="intro-subtitle">Lesson 8 &nbsp;·&nbsp; Producing &amp; Implementing</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>3 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Switch between Unity scenes using SceneManager.LoadScene() triggered by a collision event</li>
+              <li>Explain how OnTriggerEnter() is an example of event-driven programming</li>
+              <li>Build a TextMesh Pro Canvas UI with a score counter, scene label and instructions text</li>
+              <li>Manage game state data that persists or resets across scene transitions using a static GameManager</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Notebook Checkpoint — Lesson 8</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 36</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+  <script>
+    /* Lesson 8 — S1=male, S2=female, S3=male */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)'  },
+      student1: { name: 'Student 1', emoji: '🧑‍💻', color: '#818cf8', glow: 'rgba(129,140,248,0.4)' },
+      student2: { name: 'Student 2', emoji: '🙋‍♀️', color: '#38bdf8', glow: 'rgba(56,189,248,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♂️', color: '#86efac', glow: 'rgba(134,239,172,0.4)' },
+    };
+    const BG = {
+      intro:   'radial-gradient(ellipse at 55% 40%, #0e0a40 0%, #020510 65%)',
+      scenes:  'radial-gradient(ellipse at 40% 50%, #0a0a38 0%, #020410 65%)',
+      trigger: 'radial-gradient(ellipse at 60% 40%, #0c0832 0%, #040212 65%)',
+      event:   'radial-gradient(ellipse at 45% 55%, #0e1030 0%, #040610 65%)',
+      tmp:     'radial-gradient(ellipse at 55% 35%, #08082e 0%, #020210 65%)',
+      canvas:  'radial-gradient(ellipse at 35% 60%, #060c28 0%, #020408 65%)',
+      state:   'radial-gradient(ellipse at 50% 45%, #0c0a30 0%, #040210 65%)',
+      loop:    'radial-gradient(ellipse at 60% 55%, #0a1230 0%, #040810 65%)',
+      ido:     'radial-gradient(ellipse at 40% 40%, #0c0840 0%, #040218 65%)',
+      wedo:    'radial-gradient(ellipse at 60% 40%, #041422 0%, #01070e 65%)',
+      youdo:   'radial-gradient(ellipse at 50% 60%, #200640 0%, #0a0218 65%)',
+      notebook:'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+    const SCENES = [
+      /* 0 */ { type:'intro', bg:BG.intro },
+
+      /* Hook */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Our world is built, our simulations are running. Now we need to connect the pieces. Right now your game has separate scenes that don\'t talk to each other, and no way for the player to know what\'s happening. Today we fix both: scene switching on trigger events and a TMP Pro UI that displays live game data.' },
+      { type:'dialogue', bg:BG.scenes, char:'student1',
+        text:'How many scenes does a real Unity game typically have? Is it one giant scene with everything, or dozens of small ones?' },
+      { type:'dialogue', bg:BG.scenes, char:'teacher',
+        text:'Both approaches are used. Small, focused games might use one scene with areas activated and deactivated. Large games use scene streaming — loading and unloading areas dynamically. For our purposes, we\'re using separate scenes for the driving world and the walking world — clean, simple, and teaches the scene management concept clearly.' },
+      { type:'dialogue', bg:BG.scenes, char:'student2',
+        text:'When a new scene loads, does everything from the old scene just disappear? Like, if I had a score counter running in Scene A and I load Scene B, is my score gone?' },
+      { type:'dialogue', bg:BG.scenes, char:'teacher',
+        text:'By default, yes — every object in the old scene is destroyed when the new one loads. This is why we need a GameManager. A static class with static variables lives in memory independently of any scene. It carries data across transitions. We\'ll build one together today.' },
+
+      /* Build Settings */
+      { type:'dialogue', bg:BG.scenes, char:'teacher',
+        text:'Before any scene switching works, every scene you want to load must be registered in the Build Settings. File menu, Build Settings, click Add Open Scenes for each. Unity assigns each an index number — zero, one, two. SceneManager.LoadScene(0) loads by index. LoadScene("DrivingScene") loads by name. I prefer names — they\'re readable and don\'t break if you reorder scenes.' },
+      { type:'dialogue', bg:BG.scenes, char:'student3',
+        text:'What if I forget to add a scene to Build Settings and try to load it? What happens? Does Unity give you a helpful error or just silently do nothing?' },
+      { type:'dialogue', bg:BG.scenes, char:'teacher',
+        text:'You get a runtime error in the Console: "Scene could not be loaded because it has not been added to the build settings." Informative message — but it only appears at runtime, not when you write the code. This is a classic runtime error that unit testing or careful checklists prevent. I\'ll put a Build Settings checklist in your SEQTA resources.' },
+
+      /* Trigger colliders */
+      { type:'dialogue', bg:BG.trigger, char:'teacher',
+        text:'Now for the trigger. Select a GameObject at the end of the race track — or create an empty GameObject, position it there. Add a Box Collider component. In the Inspector, tick "Is Trigger." A trigger collider doesn\'t stop physics objects — it calls a C# method when something enters its volume. That method is OnTriggerEnter.' },
+      { type:'dialogue', bg:BG.trigger, char:'student1',
+        text:'So a trigger is different from a regular collider in that it\'s invisible to physics — things pass straight through it — but it still detects when something enters its space and fires a callback?' },
+      { type:'dialogue', bg:BG.trigger, char:'teacher',
+        text:'Exactly. Regular collider: blocks movement, causes bounce and friction responses. Trigger collider: invisible to physics, fires OnTriggerEnter, OnTriggerStay, OnTriggerExit callbacks. For a level switch — door zone, finish line, area transition — you almost always want a trigger, not a solid collider.' },
+      { type:'dialogue', bg:BG.trigger, char:'student2',
+        text:'How does the script know that it was the player who entered the trigger, and not a random cloud prefab or NPC drifting through the zone?' },
+      { type:'dialogue', bg:BG.trigger, char:'teacher',
+        text:'Tags. In the Inspector on your player GameObject, set the Tag to "Player." In the trigger script, check: if (other.CompareTag("Player")). This is the filter. Only when a tagged Player object enters does the scene switch fire. Any untagged object — cloud, NPC, physics prop — is ignored by that condition.' },
+
+      /* 10 — I DO: Full trigger + scene switch pipeline */
+      { type:'activity', actType:'ido', bg:BG.ido,
+        activityType:'I DO',
+        title:'Teacher Models: Trigger Zone → Scene Switch → Two-Way Loop',
+        desc:'Watch the complete scene-switching pipeline built live — trigger setup, LevelSwitcher script, Build Settings, and the return trigger in the second scene.',
+        steps:[
+          { label:'Step 1 — Tag Player',   value:'Select your car/character GameObject → Inspector → Tag dropdown → Add Tag → type "Player" → save. Select the object again → Tag → Player. All trigger scripts will use this tag.' },
+          { label:'Step 2 — Trigger Zone', value:'Create Empty GameObject at track end. Rename "DrivingPortal". Add Box Collider → tick Is Trigger. Scale it to cover the portal area. Assign a visible Synty portal prop as a child object so players can see where to drive.' },
+          { label:'Step 3 — LevelSwitcher.cs', value:'Add script: using UnityEngine.SceneManagement; public class LevelSwitcher : MonoBehaviour { public string targetScene = "WalkingScene"; void OnTriggerEnter(Collider other) { if (other.CompareTag("Player")) SceneManager.LoadScene(targetScene); } }' },
+          { label:'Step 4 — Build Settings', value:'File → Build Settings → Open both scenes in editor → Add Open Scenes for each. Confirm both appear in the list with index 0 and 1. Test: Drive into trigger. Scene switches.' },
+          { label:'Step 5 — Return Trigger',value:'In WalkingScene: add a second trigger zone. Same LevelSwitcher script, targetScene = "DrivingScene". Now you have a full loop: drive → walk → drive. Test the complete loop before adding anything else.' },
+          { label:'Step 6 — Verify',        value:'Common problems: (1) Tag not set → trigger fires for nothing or everything. (2) Scene not in Build Settings → runtime error. (3) Collider not set to Is Trigger → object blocked physically, OnTriggerEnter never fires.' },
+        ],
+        footer:'Always test the trigger loop — both directions — before adding UI or GameManager. A broken loop with UI on top is twice as hard to debug. Build in layers and test each layer.',
+      },
+
+      /* Event-driven programming */
+      { type:'dialogue', bg:BG.event, char:'teacher',
+        text:'Let\'s name what just happened. OnTriggerEnter is not called by your code — it\'s called by Unity\'s physics engine when a collision event occurs. You wrote a method; Unity calls it when the event fires. This is the definition of event-driven programming: the flow of the program is determined by events, not by a sequential top-to-bottom execution.' },
+      { type:'dialogue', bg:BG.event, char:'student3',
+        text:'So the game loop runs Update every frame — that\'s sequential and predictable. But OnTriggerEnter, OnCollisionEnter, button clicks in the UI — those are all event-driven, firing only when the triggering condition occurs?' },
+      { type:'dialogue', bg:BG.event, char:'teacher',
+        text:'Exactly. Unity uses a hybrid model — a fixed game loop for frame-by-frame logic, and an event system for discrete, unpredictable occurrences. Most games need both: physics simulations, animations and time-based logic go in the loop; player interactions, triggers, and UI responses go in event handlers.' },
+      { type:'dialogue', bg:BG.event, char:'student1',
+        text:'Is the button click in TMP Pro UI also event-driven? Like, when the player clicks a pause button, is that the same pattern as OnTriggerEnter?' },
+      { type:'dialogue', bg:BG.event, char:'teacher',
+        text:'Same pattern, different event source. Button.onClick is a Unity Event — a delegate you subscribe methods to. When the button is clicked, the event fires and calls all subscribed methods. The OnTriggerEnter method is subscribed by Unity\'s physics system automatically when you implement it. The pattern is identical: event occurs, handler is called.' },
+
+      /* TMP Pro UI */
+      { type:'dialogue', bg:BG.tmp, char:'teacher',
+        text:'Time to add the UI layer. TextMesh Pro is Unity\'s professional text rendering package — far sharper and more flexible than Unity\'s legacy UI Text. In Unity 6 it\'s included by default. We\'ll create a Canvas — the 2D overlay surface — and add TMP text elements to it.' },
+      { type:'dialogue', bg:BG.tmp, char:'student2',
+        text:'What\'s the difference between Screen Space Overlay and World Space canvas render modes? I\'ve seen both options but I\'m not sure which to use.' },
+      { type:'dialogue', bg:BG.tmp, char:'teacher',
+        text:'Screen Space Overlay renders the canvas on top of everything, always in front, in screen coordinates. This is correct for a HUD — score, health, level name — that always appears regardless of where the camera looks. World Space renders the canvas as a 3D object in your scene — used for floating damage numbers, interactive signs, name tags above characters. For a standard game HUD, always start with Screen Space Overlay.' },
+      { type:'dialogue', bg:BG.canvas, char:'teacher',
+        text:'To create it: GameObject menu, UI, Canvas. Unity automatically adds a Canvas Scaler and Graphic Raycaster. Inside the Canvas, add your first TMP text: right-click the Canvas in the Hierarchy, UI, TextMeshPro – Text. A text element appears. In the Inspector, set the text, font size, colour, and anchor point.' },
+      { type:'dialogue', bg:BG.canvas, char:'student3',
+        text:'What font size should we use for a game HUD? I\'ve seen games where the UI text is almost unreadably small. Is there a recommended minimum?' },
+      { type:'dialogue', bg:BG.canvas, char:'teacher',
+        text:'For a game running at 1080p, aim for a minimum of 28 to 32 points for body text — anything a player needs to read during gameplay. Labels and secondary information can be smaller, but nothing that conveys critical information should be under 24 points. This connects directly to your accessibility non-functional requirements. If a colourblind player or a player with low vision is in your target audience, generous text size is not optional.' },
+
+      /* GameManager / state */
+      { type:'dialogue', bg:BG.state, char:'teacher',
+        text:'Now we tackle the persistent score problem. Create a new C# script: GameManager. Make it a static class — or more precisely, use the Singleton pattern with a static instance. The key insight: a static variable belongs to the class, not to any object instance. It exists in memory from the moment it\'s first accessed until the application closes.' },
+      { type:'dialogue', bg:BG.state, char:'student1',
+        text:'So if I write public static int score = 0 in GameManager, I can access GameManager.score from any script in any scene without needing a reference to a specific GameObject?' },
+      { type:'dialogue', bg:BG.state, char:'teacher',
+        text:'Exactly. No GetComponent, no FindObjectOfType — just GameManager.score. The variable persists across scene loads because it\'s not attached to any GameObject that gets destroyed. It lives in the class definition itself. You can also use DontDestroyOnLoad on a GameObject-attached GameManager, but static variables are simpler for data that doesn\'t need GameObject lifecycle management.' },
+      { type:'dialogue', bg:BG.state, char:'student2',
+        text:'What about resetting the score when the player starts a new game? If the static variable persists forever, doesn\'t it carry the old score into a new game session?' },
+      { type:'dialogue', bg:BG.state, char:'teacher',
+        text:'Yes — and that\'s an important design decision you\'ll need to document. On your main menu or game-start scene, explicitly call GameManager.ResetData() — a static method that sets all variables back to their initial values. The reset happens at a defined point in your game flow. Design it intentionally. "Data persists until explicitly reset" is a feature, not a bug — but only if you planned it.' },
+
+      /* 22 — WE DO */
+      { type:'activity', actType:'wedo', bg:BG.wedo,
+        activityType:'WE DO',
+        title:'Class Activity: Build GameManager + Wire Score to TMP UI',
+        desc:'Together we build a GameManager static class, add a score counter, and wire it to a TMP text element that updates live during play.',
+        steps:[
+          { label:'Step 1 — GameManager',   value:'Create GameManager.cs. Add: public static class GameManager { public static int score = 0; public static string currentLevel = "Driving"; public static void ResetData() { score = 0; currentLevel = "Driving"; } }' },
+          { label:'Step 2 — Increment Score',value:'In your car controller or a CollectibleItem script, add: void OnTriggerEnter(Collider other) { if (other.CompareTag("Player")) { GameManager.score += 10; Destroy(gameObject); } } — collecting an item adds to the static score.' },
+          { label:'Step 3 — TMP Score Display',value:'Create a TMP text element anchored top-right. Create ScoreDisplay.cs: using TMPro; public class ScoreDisplay : MonoBehaviour { public TextMeshProUGUI scoreText; void Update() { scoreText.text = "Score: " + GameManager.score; } } — drag the TMP element into the scoreText field.' },
+          { label:'Step 4 — Level Label',    value:'Add a second TMP element top-centre. LevelDisplay.cs: scoreText.text = GameManager.currentLevel; — update GameManager.currentLevel in LevelSwitcher.cs when each scene loads.' },
+          { label:'Debug Together',          value:'Common issues: (1) Text not showing — check Canvas Render Mode is Screen Space Overlay. (2) Score not updating — check ScoreDisplay is in the scene and scoreText field is assigned. (3) "TMPro" namespace not found — check TextMeshPro package is installed in Package Manager.' },
+        ],
+        footer:'The Update() loop polling GameManager.score every frame is simple and works well for most games. For high-performance games you\'d use events (C# event/delegate or UnityEvent) to update UI only when score changes. Either approach is valid — document your choice.',
+      },
+
+      /* Putting it all together */
+      { type:'dialogue', bg:BG.loop, char:'student3',
+        text:'So right now the flow is: player drives → enters trigger → OnTriggerEnter fires → scene loads → new scene has its own TMP UI reading from the same static GameManager. The score carries across because it\'s static. That\'s actually a complete game loop.' },
+      { type:'dialogue', bg:BG.loop, char:'teacher',
+        text:'It is — and you designed it. Trigger event fires the transition. Static data carries state. TMP UI reflects state. That\'s the three-layer architecture of game flow, data management, and presentation. Most commercial games use variations of this exact pattern, just with more complexity.' },
+      { type:'dialogue', bg:BG.loop, char:'student1',
+        text:'What about the Escape key for a pause menu? You mentioned that as the Advanced extension. How different is that from what we\'ve already built?' },
+      { type:'dialogue', bg:BG.loop, char:'teacher',
+        text:'Very similar. In Update(), check Input.GetKeyDown(KeyCode.Escape). Toggle a bool isPaused. If paused, set Time.timeScale to zero — this freezes all physics and Update logic. Show a Canvas with your pause menu TMP buttons. Un-pause: set timeScale back to one, hide the canvas. The pause state is event-driven input detection rather than a physical trigger, but the pattern is the same.' },
+
+      /* 28 — YOU DO */
+      { type:'activity', actType:'youdo', bg:BG.youdo,
+        activityType:'YOU DO',
+        title:'Build Scene Switching + TMP UI + GameManager for Your Game',
+        desc:'Implement all three systems in your own project, connected to your own game concept\'s scenes and data.',
+        steps:[
+          { label:'🟦 Basic',        value:'Implement one trigger zone that switches between two scenes (both in Build Settings). Add a TMP Canvas with at least one text element showing the current level name sourced from GameManager.currentLevel.' },
+          { label:'🟩 Intermediate', value:'Two-way scene switching (both directions working). TMP Canvas with scene label AND a score counter that persists across scenes via static GameManager. At least one in-scene collectible that increments the score via trigger. Test the full loop three times and record results.' },
+          { label:'🟧 Advanced',     value:'All of Intermediate plus: three connected scenes (drive → walk → end screen). Animated TMP text on the end screen (use a coroutine to fade in "Game Over" or "Level Complete" text). An Escape-key pause menu with a Resume button wired via UnityEvent. Document the event-driven architecture for each interaction in your notebook.' },
+        ],
+        footer:'💡 Test systematically: trigger fires → correct scene loads → score persists → UI displays correct value → return trigger works. Each step is a test case from your Lesson 2 requirements document. Check them off as you go.',
+      },
+
+      /* Wrap up */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Look at what exists now. A world built from Blender assets and Synty props. Simulations running in that world. Scenes connected by trigger events. A persistent score tracked by a static GameManager. A TMP UI that reflects live game state. This is a game. Not complete — but architecturally sound.' },
+      { type:'dialogue', bg:BG.intro, char:'student2',
+        text:'The thing that surprised me most is how much event-driven programming connects everything. I thought it was just one technique for one situation. But triggers, UI buttons, input detection — they\'re all the same pattern with different event sources.' },
+      { type:'dialogue', bg:BG.intro, char:'student3',
+        text:'I also finally understand why we spent two lessons on requirements before touching Unity. Knowing that my non-functional requirement said "score must persist across scene transitions" meant I knew exactly why I needed a static GameManager. The requirement told me what to build.' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'That connection — from requirement to implementation — is exactly what differentiates a designed system from code that just happens to work. Two more lessons to go. Lesson 9 is about making your code maintainable. Lesson 10 is about evaluating whether you actually built what you set out to build. Notebook time.' },
+
+      /* Notebook */
+      { type:'notebook', bg:BG.notebook,
+        intro:'Your notebook entry today documents connected systems — show the architecture, not just the individual pieces. A scene flow diagram is required for all students.',
+        tasks:[
+          'Scene flow diagram: boxes for each scene, arrows for each trigger transition, labels showing which script fires each transition. This is your system architecture diagram.',
+          'Your LevelSwitcher.cs code excerpt with inline comments. Identify and label: which line is the event handler, which line is the tag check (branching), which line is the scene load.',
+          'Explanation of why OnTriggerEnter is event-driven programming — in your own words, contrasting it with the Update() game loop approach.',
+          'Screenshot of your TMP Canvas UI in Play Mode showing live data (score and/or scene label visible). Note the Canvas Render Mode you used and why.',
+          'Your GameManager static variables listed — name, type, purpose, and whether they persist or reset on scene transition. Include your ResetData() method design.',
+          'Advanced: document the pause menu implementation — how timeScale = 0 freezes the game, how the Escape key event triggers the pause state, and how UnityEvent wires the Resume button to the un-pause method.',
+        ],
+        reminder:'Your scene flow diagram is evidence of system design thinking. If your diagram and your actual Unity project disagree — a trigger that fires differently than your diagram shows — update the diagram and note why the design changed. That honest record of iteration is exactly what your assessment values.',
+      },
+    ];
+
+    /* ENGINE */
+    let ci=0,it=false,tt=null,ft='';
+    const els={bgLayer:document.getElementById('bg-layer'),progressFill:document.getElementById('progress-fill'),progressTrack:document.getElementById('progress-track'),sceneCounter:document.getElementById('scene-counter'),navSceneInfo:document.getElementById('nav-scene-info'),introView:document.getElementById('intro-view'),dialogueView:document.getElementById('dialogue-view'),activityView:document.getElementById('activity-view'),notebookView:document.getElementById('notebook-view'),charHalo:document.getElementById('char-halo'),charEmoji:document.getElementById('char-emoji'),charNameBadge:document.getElementById('char-name-badge'),speakerLabel:document.getElementById('speaker-label'),dialogueText:document.getElementById('dialogue-text'),activityInner:document.getElementById('activity-inner'),nbIntro:document.getElementById('nb-intro'),nbTasks:document.getElementById('nb-tasks'),nbReminder:document.getElementById('nb-reminder'),btnBack:document.getElementById('btn-back'),btnNext:document.getElementById('btn-next')};
+    (function(){const c=document.getElementById('starfield'),x=c.getContext('2d');function d(){c.width=window.innerWidth;c.height=window.innerHeight;x.clearRect(0,0,c.width,c.height);for(let i=0;i<220;i++){const a=Math.random()*c.width,b=Math.random()*c.height,r=Math.random()<0.75?0.8:1.4,o=0.25+Math.random()*0.65;x.beginPath();x.arc(a,b,r,0,Math.PI*2);x.fillStyle=`rgba(255,255,255,${o})`;x.fill();}}d();window.addEventListener('resize',d);})();
+    function stopT(){if(tt){clearInterval(tt);tt=null;}it=false;}
+    function showV(t){['intro','dialogue','activity','notebook'].forEach(v=>{const e=document.getElementById(`${v}-view`);e.classList.remove('active','scene-fade-in');});const a=document.getElementById(`${t}-view`);a.classList.add('active');void a.offsetWidth;a.classList.add('scene-fade-in');}
+    function applyC(k){const c=CHAR[k];els.charEmoji.textContent=c.emoji;els.charNameBadge.textContent=c.name;els.charNameBadge.style.color=c.color;els.charNameBadge.style.borderColor=`${c.color}55`;els.charNameBadge.style.background=`${c.color}12`;els.charHalo.style.borderColor=`${c.color}55`;els.charHalo.style.boxShadow=`0 0 40px ${c.glow},0 0 80px ${c.glow}`;els.speakerLabel.textContent=c.name;els.speakerLabel.style.color=c.color;}
+    function typeT(text,instant){const p=els.dialogueText;if(instant){p.textContent=text;return;}p.textContent='';const cur=document.createElement('span');cur.id='cursor';cur.setAttribute('aria-hidden','true');p.appendChild(cur);let i=0;it=true;ft=text;tt=setInterval(()=>{if(i<text.length){cur.insertAdjacentText('beforebegin',text[i]);i++;}else{stopT();cur.classList.add('hidden');}},28);}
+    function compT(){stopT();const c=document.getElementById('cursor');if(c)c.remove();els.dialogueText.textContent=ft;}
+    function renderA(sc){const ac=`act-${sc.actType}`;const h=`<div class="activity-card" role="article"><div class="activity-header"><div class="activity-type-badge">${sc.activityType}</div><div class="activity-title">${sc.title}</div></div><div class="activity-body"><p class="activity-desc">${sc.desc}</p><div class="activity-steps" role="list">${sc.steps.map(s=>`<div class="activity-step" role="listitem"><div class="step-label">${s.label}</div><div class="step-value">${s.value}</div></div>`).join('')}</div><div class="activity-footer">${sc.footer}</div></div></div>`;els.activityView.className=`scene-view ${ac}`;els.activityInner.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden;';els.activityInner.innerHTML=h;}
+    function renderN(sc){els.nbIntro.textContent=sc.intro;els.nbTasks.innerHTML=sc.tasks.map((t,i)=>`<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`).join('');els.nbReminder.textContent=sc.reminder;}
+    function showS(idx,dir){stopT();const sc=SCENES[idx],tot=SCENES.length;const pct=Math.max(3,Math.round(((idx+1)/tot)*100));els.progressFill.style.width=`${pct}%`;els.progressTrack.setAttribute('aria-valuenow',pct);els.sceneCounter.textContent=`${idx+1} of ${tot}`;els.navSceneInfo.textContent=`Scene ${idx+1} of ${tot}`;els.btnBack.disabled=idx===0;els.btnNext.disabled=idx===tot-1;els.btnNext.textContent=idx===tot-1?'Finish':'Next ▶';els.bgLayer.style.background=sc.bg;if(sc.type==='intro')showV('intro');else if(sc.type==='dialogue'){showV('dialogue');applyC(sc.char);typeT(sc.text,dir==='back');}else if(sc.type==='activity'){renderA(sc);showV('activity');void els.activityView.offsetWidth;els.activityView.classList.add('scene-fade-in');}else if(sc.type==='notebook'){renderN(sc);showV('notebook');}}
+    function goNext(){if(it){compT();return;}if(ci<SCENES.length-1){ci++;showS(ci,'forward');}}
+    function goBack(){if(ci>0){ci--;showS(ci,'back');}}
+    els.btnNext.addEventListener('click',goNext);
+    els.btnBack.addEventListener('click',goBack);
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goBack();}});
+    showS(0,'forward');
+  </script>
+</body>
+</html>

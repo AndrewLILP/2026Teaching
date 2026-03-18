@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 7 — Scripting Simulations: Movement & NPCs | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Write simulation scripts using Time.deltaTime, implement NPC patrol with branching and iteration, and use GenAI responsibly.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg-void: #03060e;
+      --purple-500: #6d28d9; --purple-400: #8b5cf6; --purple-200: #c4b5fd;
+      --gold: #f59e0b; --gold-light: #fde68a;
+      --cyan: #22d3ee; --pink: #f472b6; --emerald: #86efac; --sky: #38bdf8;
+      --violet: #a78bfa; --violet-light: #ddd6fe;
+      --text-bright: #f5f0ff; --text-mid: #ddd6fe; --text-muted: #6b5a8a;
+      --dlg-bg: rgba(3,6,14,0.93); --dlg-border: rgba(167,139,250,0.45);
+      --dlg-corner: rgba(167,139,250,0.75); --radius: 12px; --radius-sm: 6px;
+      --phase3-col: #a78bfa;
+      --transition-bg: 1800ms ease;
+    }
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+    canvas#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 40% 40%, #1a0a3a 0%, #03060e 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+      pointer-events: none;
+    }
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header { height: 62px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid rgba(167,139,250,0.22); background: rgba(3,6,14,0.78); backdrop-filter: blur(10px); flex-shrink: 0; }
+    #phase-badge { display: inline-flex; align-items: center; gap: 8px; font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase3-col); border: 1px solid rgba(167,139,250,0.35); border-radius: 20px; padding: 5px 14px; }
+    #phase-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--phase3-col); box-shadow: 0 0 8px var(--phase3-col); flex-shrink: 0; }
+    #header-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.04em; text-align: center; }
+    #header-title span { color: var(--violet-light); font-weight: 400; }
+    #scene-counter { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right; }
+
+    /* PROGRESS */
+    #progress-track { height: 5px; background: rgba(167,139,250,0.12); flex-shrink: 0; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, #5b21b6, var(--phase3-col)); border-radius: 0 3px 3px 0; transition: width 500ms cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(167,139,250,0.5); width: 3%; }
+
+    /* MAIN + SCENES */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn 400ms ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INTRO */
+    #intro-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+    #intro-view.active { display: flex; }
+    .intro-card { width: 100%; max-width: 780px; background: rgba(3,6,14,0.88); border: 1px solid rgba(167,139,250,0.4); border-radius: var(--radius); padding: 40px 48px 36px; backdrop-filter: blur(16px); clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px)); }
+    .intro-lesson-num { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 10px; }
+    .intro-title { font-family: 'Cinzel', serif; font-size: clamp(22px,3vw,34px); font-weight: 700; line-height: 1.2; color: var(--text-bright); margin-bottom: 6px; }
+    .intro-subtitle { font-family: 'Lora', serif; font-size: 17px; font-style: italic; color: var(--violet-light); margin-bottom: 28px; }
+    .intro-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(167,139,250,0.5),transparent); margin-bottom: 24px; }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.05em; }
+    .intro-meta-item strong { color: var(--violet-light); font-weight: 600; }
+    .intro-intentions-label { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 14px; }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start; }
+    .intro-intentions li::before { content: '◆'; color: var(--phase3-col); font-size: 10px; margin-top: 6px; flex-shrink: 0; }
+    .intro-prompt { margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* DIALOGUE */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+    #char-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #char-halo { width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 5.5rem; line-height: 1; background: rgba(167,139,250,0.06); border: 2px solid transparent; transition: border-color 300ms, box-shadow 300ms; animation: charFloat 4s ease-in-out infinite; }
+    @keyframes charFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    #char-name-badge { margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 20px; border-radius: 20px; border: 1px solid transparent; transition: color 300ms, border-color 300ms, background 300ms; }
+    #dialogue-box { flex-shrink: 0; padding: 0 24px; }
+    #dialogue-inner { background: var(--dlg-bg); border: 1px solid var(--dlg-border); border-radius: var(--radius); padding: 24px 32px 20px; position: relative; min-height: 130px; backdrop-filter: blur(16px); clip-path: polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px)); }
+    #dialogue-inner::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius); box-shadow: inset 0 0 40px rgba(167,139,250,0.08); pointer-events: none; }
+    #dialogue-inner::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner); border-radius: 0 var(--radius-sm) 0 0; }
+    .dlg-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner); border-radius: 0 0 0 var(--radius-sm); }
+    #speaker-label { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms; }
+    #dialogue-text { font-family: 'Lora', serif; font-size: 21px; line-height: 1.65; color: var(--text-bright); min-height: 72px; }
+    #cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--violet); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.85s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ACTIVITY */
+    #activity-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #activity-view.active { display: flex; }
+    .activity-card { flex: 1; border-radius: var(--radius); border: 1px solid transparent; display: flex; flex-direction: column; overflow: hidden; }
+    .activity-header { padding: 18px 28px 16px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .activity-type-badge { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0; }
+    .activity-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--text-bright); }
+    .activity-body { flex: 1; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: rgba(167,139,250,0.35) transparent; }
+    .activity-desc { font-family: 'Lora', serif; font-size: 18px; line-height: 1.6; color: var(--violet-light); margin-bottom: 20px; font-style: italic; }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step { display: grid; grid-template-columns: 210px 1fr; gap: 0; border-radius: 8px; overflow: hidden; }
+    .step-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center; background: rgba(0,0,0,0.35); }
+    .step-value { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.18); }
+    .activity-footer { font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid; line-height: 1.5; color: var(--text-bright); }
+    .act-ido .activity-card  { background: rgba(20,8,45,0.82); border-color: rgba(167,139,250,0.32); }
+    .act-ido .activity-header { background: rgba(20,8,45,0.96); }
+    .act-ido .activity-type-badge { color: var(--violet); border-color: var(--violet); }
+    .act-ido .step-label { color: var(--violet); }
+    .act-ido .activity-footer { background: rgba(167,139,250,0.07); border-color: var(--violet); }
+    .act-wedo .activity-card  { background: rgba(4,22,40,0.78); border-color: rgba(34,211,238,0.3); }
+    .act-wedo .activity-header { background: rgba(4,22,40,0.94); }
+    .act-wedo .activity-type-badge { color: var(--cyan); border-color: var(--cyan); }
+    .act-wedo .step-label { color: var(--cyan); }
+    .act-wedo .activity-footer { background: rgba(34,211,238,0.07); border-color: var(--cyan); }
+    .act-youdo .activity-card  { background: rgba(5,28,18,0.78); border-color: rgba(134,239,172,0.35); }
+    .act-youdo .activity-header { background: rgba(5,28,18,0.94); }
+    .act-youdo .activity-type-badge { color: var(--emerald); border-color: var(--emerald); }
+    .act-youdo .step-label { color: var(--emerald); }
+    .act-youdo .activity-footer { background: rgba(134,239,172,0.07); border-color: var(--emerald); }
+
+    /* NOTEBOOK */
+    #notebook-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #notebook-view.active { display: flex; }
+    .notebook-card { flex: 1; background: rgba(30,15,5,0.85); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(245,158,11,0.06) 31px,rgba(245,158,11,0.06) 32px); }
+    .notebook-header { background: rgba(30,15,5,0.95); padding: 18px 28px 16px; border-bottom: 1px solid rgba(245,158,11,0.25); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+    .notebook-body { flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px; scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent; border-left: 3px solid rgba(245,158,11,0.2); margin-left: 20px; }
+    .notebook-intro { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--gold-light); font-style: italic; margin-bottom: 22px; }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li { display: flex; gap: 14px; align-items: flex-start; font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright); }
+    .task-num { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); border-radius: 50%; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .notebook-reminder { margin-top: 22px; padding: 14px 18px; background: rgba(245,158,11,0.08); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5; }
+
+    /* NAV */
+    #nav-bar { flex-shrink: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: rgba(3,6,14,0.72); border-top: 1px solid rgba(167,139,250,0.15); backdrop-filter: blur(12px); }
+    .nav-btn { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px; border-radius: var(--radius); border: 2px solid rgba(167,139,250,0.4); background: rgba(167,139,250,0.08); color: var(--violet-light); cursor: pointer; transition: all 200ms ease; min-width: 120px; }
+    .nav-btn:hover:not(:disabled) { background: rgba(167,139,250,0.24); border-color: var(--violet); color: var(--text-bright); box-shadow: 0 0 16px rgba(167,139,250,0.32); transform: translateY(-1px); }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(167,139,250,0.14); border-color: rgba(167,139,250,0.6); }
+    .nav-btn#btn-next:hover:not(:disabled) { background: rgba(167,139,250,0.36); box-shadow: 0 0 20px rgba(167,139,250,0.42); }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; }
+    #nav-hint { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em; }
+    .skip-link { position: absolute; top: -999px; left: 8px; background: var(--violet); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px; z-index: 9999; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
+    @media (max-width: 640px) { #header-title { font-size: 14px; } #dialogue-text { font-size: 18px; } .activity-step { grid-template-columns: 140px 1fr; } .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; } .intro-card { padding: 28px 24px 24px; } }
+    @media (max-height: 600px) { #char-halo { width: 110px; height: 110px; font-size: 4rem; } #char-area { padding: 8px; } #dialogue-text { font-size: 19px; min-height: 60px; } }
+  </style>
+</head>
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 3: Producing and Implementing">Phase 3 — Producing &amp; Implementing</div>
+      <h1 id="header-title"><span>Lesson 7</span> — Scripting Simulations: Movement &amp; NPCs</h1>
+      <div id="scene-counter" aria-live="polite">1 of 35</div>
+    </header>
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">Scripting Simulations: Movement &amp; NPCs</h2>
+            <p class="intro-subtitle">Lesson 7 &nbsp;·&nbsp; Producing &amp; Implementing</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>3 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Write simulation scripts using Update(), Time.deltaTime and Transform.Translate to move objects independently of frame rate</li>
+              <li>Implement an NPC patrol using branching (if/else) and iteration (while/for) — all three control structures in one script</li>
+              <li>Use the GenAI workflow responsibly: pseudocode first, then prompt, then critically review and document changes</li>
+              <li>Attach scripts to GameObjects and test simulation behaviour live in the Unity scene</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Notebook Checkpoint — Lesson 7</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 35</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+  <script>
+    /* Lesson 7 — S1=female, S2=male, S3=female */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)'  },
+      student1: { name: 'Student 1', emoji: '🙋‍♀️', color: '#a78bfa', glow: 'rgba(167,139,250,0.4)' },
+      student2: { name: 'Student 2', emoji: '🧑‍💻', color: '#22d3ee', glow: 'rgba(34,211,238,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♀️', color: '#86efac', glow: 'rgba(134,239,172,0.4)' },
+    };
+    const BG = {
+      intro:   'radial-gradient(ellipse at 40% 40%, #1a0a3a 0%, #03060e 65%)',
+      delta:   'radial-gradient(ellipse at 55% 35%, #150830 0%, #040210 65%)',
+      cloud:   'radial-gradient(ellipse at 35% 55%, #0c1a30 0%, #040810 65%)',
+      npc:     'radial-gradient(ellipse at 60% 45%, #0a2018 0%, #030a06 65%)',
+      patrol:  'radial-gradient(ellipse at 45% 55%, #0e1a08 0%, #040600 65%)',
+      genai:   'radial-gradient(ellipse at 50% 40%, #200a3a 0%, #080212 65%)',
+      attach:  'radial-gradient(ellipse at 40% 60%, #0a1e30 0%, #030810 65%)',
+      ido:     'radial-gradient(ellipse at 40% 40%, #200840 0%, #080214 65%)',
+      wedo:    'radial-gradient(ellipse at 60% 40%, #041a28 0%, #010a10 65%)',
+      youdo:   'radial-gradient(ellipse at 50% 60%, #051e10 0%, #010806 65%)',
+      notebook:'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+    const SCENES = [
+      /* 0 */ { type:'intro', bg:BG.intro },
+
+      /* Hook */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'We\'ve read existing code. Today we write our own — from scratch. And we\'re starting with something deceptively simple: making objects move. A cloud drifting across a sky, an NPC walking a patrol route. These are simulations. The rules are in your script. The world runs those rules every frame.' },
+      { type:'dialogue', bg:BG.intro, char:'student1',
+        text:'I\'ve been looking forward to actually writing scripts rather than just reading them. But I\'m worried I\'ll get the syntax wrong. Is it okay to look at reference examples while we write, or is that cheating?' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Not only okay — it\'s professional practice. Every developer I know has the Unity Scripting Reference open in a browser tab while they work. Knowing how to look things up efficiently is a skill in itself. What matters is that you understand what the code does after you\'ve written it, not that you wrote it from memory.' },
+      { type:'dialogue', bg:BG.intro, char:'student2',
+        text:'That connects to the GenAI workflow too, right? We\'re allowed to use it as a tool, but we need to understand and be able to explain what it generates?' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Exactly. The workflow is always: design the algorithm yourself first — pseudocode or flowchart. Then use whatever tool helps you implement it — reference docs, GenAI, a classmate\'s explanation. Then test, verify, and document. You own the thinking. The tool helps with syntax.' },
+
+      /* Time.deltaTime */
+      { type:'dialogue', bg:BG.delta, char:'teacher',
+        text:'Before we write our first script, we need to understand Time.deltaTime — because without it, every simulation script you write will behave differently on different machines. We talked about this in Lesson 6 with FixedUpdate. Time.deltaTime is the Transform.Translate equivalent of that principle.' },
+      { type:'dialogue', bg:BG.delta, char:'student3',
+        text:'So if I write transform.Translate(Vector3.right * speed), the cloud will move faster on a fast computer just because Update fires more often? That seems like a serious design flaw waiting to happen.' },
+      { type:'dialogue', bg:BG.delta, char:'teacher',
+        text:'It is — and it\'s one of the most common beginner mistakes in Unity scripting. The fix is one multiplication: transform.Translate(Vector3.right * speed * Time.deltaTime). Now speed is measured in units per second, not units per frame. The fast machine and the slow machine both move the cloud the same distance in one second.' },
+      { type:'dialogue', bg:BG.delta, char:'student1',
+        text:'So Time.deltaTime is always a tiny number — like zero-point-zero-one-six for sixty frames per second? And multiplying by it converts "per frame" speed into "per second" speed?' },
+      { type:'dialogue', bg:BG.delta, char:'teacher',
+        text:'Exactly right. At 60fps, deltaTime is approximately 0.0167 seconds — one sixtieth of a second. At 30fps it\'s about 0.033. Speed times deltaTime gives you consistent distance per second regardless of frame rate. Now — let me write the CloudMover script and you watch every line.' },
+
+      /* 9 — I DO: CloudMover + GenAI demo */
+      { type:'activity', actType:'ido', bg:BG.ido,
+        activityType:'I DO',
+        title:'Teacher Models: CloudMover.cs and the GenAI Workflow',
+        desc:'Watch the complete CloudMover script written live, then the GenAI workflow demonstrated for the NPC patrol — pseudocode first, always.',
+        steps:[
+          { label:'CloudMover.cs',       value:'using UnityEngine; public class CloudMover : MonoBehaviour { public float speed = 3f; public float resetX = -20f; public float startX = 20f; void Update() { transform.Translate(Vector3.left * speed * Time.deltaTime); if (transform.position.x < resetX) { Vector3 pos = transform.position; pos.x = startX; transform.position = pos; } } }' },
+          { label:'What each line does',  value:'speed: units per second (float, serialized). resetX: when cloud passes this x-position, it teleports back. startX: where it resets to. Translate moves it left each frame. The if-statement is the boundary check — this is your branching control structure.' },
+          { label:'GenAI — Step 1',       value:'Write pseudocode on paper first: BEGIN NPCPatrol | SET currentWaypoint = 0 | WHILE game is running | MOVE npc toward waypoints[currentWaypoint] | IF distance to waypoint < 0.5 | SET currentWaypoint = next waypoint | END IF | END WHILE | END' },
+          { label:'GenAI — Step 2',       value:'Open GenAI tool. Prompt: "Write a Unity C# script that moves an NPC between two waypoints stored in a Vector3 array. Use MoveTowards, check distance with Vector3.Distance, and cycle waypoints with modulo. Add XML summary comments." Paste pseudocode as context.' },
+          { label:'GenAI — Step 3',       value:'Read every line of the output before copying anything. Check: does it use Time.deltaTime? Are the variable names clear? Is there anything you don\'t understand? Change the things that don\'t match your design.' },
+          { label:'GenAI — Step 4',       value:'Document in notebook: exact prompt used, what the AI generated (paste excerpt), what you changed and why, result of first test. This documentation IS the evidence that you directed the tool — not the other way around.' },
+        ],
+        footer:'The rule is simple: if you cannot explain every line of code in your script to your teacher, it does not belong in your project. GenAI is a first draft, not a finished product.',
+      },
+
+      /* Attaching scripts */
+      { type:'dialogue', bg:BG.attach, char:'teacher',
+        text:'Scripts in Unity do nothing until they\'re attached to a GameObject. Select your cloud prefab in the Hierarchy. In the Inspector, click Add Component, type CloudMover, and select it. Your serialized fields — speed, resetX, startX — now appear as editable boxes in the Inspector. Change them without touching the script file.' },
+      { type:'dialogue', bg:BG.attach, char:'student2',
+        text:'If I have three cloud prefabs in the scene, do I add the CloudMover script to each one separately? Or is there a way to set it once on a prefab and have all instances share the settings?' },
+      { type:'dialogue', bg:BG.attach, char:'teacher',
+        text:'Add the script to the prefab asset in the Project window, not to an instance in the Hierarchy. Any GameObject created from that prefab will carry the script. If you then tweak the speed on one instance in the Hierarchy, it overrides the prefab value only for that instance — you\'ll see the override highlighted in bold in the Inspector. This is Unity\'s prefab override system.' },
+      { type:'dialogue', bg:BG.attach, char:'student3',
+        text:'What about the NPC patrol script — does it need a NavMesh Agent component too, or does the patrol script handle movement directly using Transform.MoveTowards?' },
+      { type:'dialogue', bg:BG.attach, char:'teacher',
+        text:'Good distinction. For a simple two-waypoint patrol using MoveTowards, you only need the script — it manipulates the transform directly. If you want obstacle avoidance, you\'d add a NavMeshAgent and call SetDestination() instead of using MoveTowards. Which approach fits your game depends on whether your patrol path needs to navigate around obstacles.' },
+
+      /* 14 — WE DO: Add CloudMover to scene together */
+      { type:'activity', actType:'wedo', bg:BG.wedo,
+        activityType:'WE DO',
+        title:'Class Activity: Bring the Sky to Life + Write NPC Pseudocode Together',
+        desc:'Together we add CloudMover to three cloud prefabs, then collaboratively write the NPC patrol pseudocode before students implement it individually.',
+        steps:[
+          { label:'Step 1 — Add Script',  value:'Drag three Synty cloud prefabs into the scene at different heights. Select each → Add Component → CloudMover. Set different speed values (1.5, 2.5, 3.5) so they move at different rates for visual depth.' },
+          { label:'Step 2 — Experiment',  value:'Press Play. Watch the clouds move. Try: change speed to 0 (clouds stop), change to a negative value (clouds move right), change resetX so clouds disappear before reaching the edge. What does each change reveal about the algorithm?' },
+          { label:'Step 3 — Sine Wave',   value:'Teacher shows extension: pos.y = originalY + Mathf.Sin(Time.time * frequency) * amplitude. Adds a smooth bobbing motion. Students identify: what is the iteration here? (Time.time increments every frame — Update IS the loop.)' },
+          { label:'Step 4 — NPC Pseudocode',value:'Class writes two-waypoint NPC patrol pseudocode together on the board. Teacher asks: where is the sequence? Where is the branching? Where is the iteration? Every student must identify all three before moving on.' },
+          { label:'Step 5 — Pair Share',  value:'Pairs compare their pseudocode. Does it handle the case where the NPC arrives at waypoint B and needs to return to waypoint A? Does it loop indefinitely or stop? Refine based on discussion.' },
+        ],
+        footer:'You cannot write good code from vague pseudocode. Every ambiguity in your pseudocode becomes a bug in your script. Spend the time here — it saves double the time in debugging.',
+      },
+
+      /* GenAI ethics */
+      { type:'dialogue', bg:BG.genai, char:'student1',
+        text:'I\'m curious about the line between using GenAI as a legitimate tool and just outsourcing my thinking. How do you know when you\'ve crossed it? When does using AI become academically dishonest?' },
+      { type:'dialogue', bg:BG.genai, char:'teacher',
+        text:'Here\'s the test I use: can you explain every line of code in your script to me right now, without looking at notes? If yes — you own it, regardless of how it was generated. If no — you\'ve outsourced your thinking and you\'re carrying code you don\'t understand into your project, which will break in ways you can\'t fix.' },
+      { type:'dialogue', bg:BG.genai, char:'student2',
+        text:'What if the AI generates something that works but uses a technique I haven\'t learned yet — like a coroutine or a lambda expression? Is it okay to use it if I research it and understand it afterwards?' },
+      { type:'dialogue', bg:BG.genai, char:'teacher',
+        text:'Yes — that\'s exactly the learning path. GenAI can expose you to patterns above your current knowledge. The condition is: you research it, you understand it, and you can explain it. Document in your notebook: "The AI used a coroutine here — I researched IEnumerator and WaitForSeconds and now understand why it\'s better than Update() for this timed behaviour." That note is valuable evidence.' },
+      { type:'dialogue', bg:BG.genai, char:'student3',
+        text:'So the notebook documentation of the GenAI workflow isn\'t just for the teacher to check — it\'s actually forcing you to process and understand what the AI gave you, which is the learning happening.' },
+      { type:'dialogue', bg:BG.genai, char:'teacher',
+        text:'Beautifully put. The documentation is the learning, not the proof of learning. When you write "I changed the AI\'s variable name from \'wp\' to \'waypointIndex\' because it\'s self-documenting," you\'ve demonstrated code quality judgement. The AI didn\'t make that decision. You did.' },
+
+      /* 22 — YOU DO */
+      { type:'activity', actType:'youdo', bg:BG.youdo,
+        activityType:'YOU DO',
+        title:'Write Your Simulation Script for Your Own Game Concept',
+        desc:'Create a script relevant to your own game using the skills from today. All three control structures must appear somewhere in your final script.',
+        steps:[
+          { label:'🟦 Basic',        value:'Modify the CloudMover script to create a bobbing motion using Mathf.Sin. Change the axis to match something in your game (e.g. floating platform, hovering object). Document in your notebook: what changed and why.' },
+          { label:'🟩 Intermediate', value:'Write pseudocode for an NPC patrol between three waypoints, then implement it in C#. Waypoints stored in a Vector3 array. Cycle with modulo operator (%). Uses MoveTowards and Vector3.Distance. All three control structures labelled with inline comments.' },
+          { label:'🟧 Advanced',     value:'Implement a Patrol/Chase/Return state machine NPC. Three states: patrol waypoints (iteration), chase player if within detectionRadius (branching), return to nearest waypoint when player leaves range. Use a C# enum for state. Use GenAI from your pseudocode prompt — document the full GenAI workflow in your notebook.' },
+        ],
+        footer:'💡 Every script you write this lesson should connect to your game concept. A floating platform script is more meaningful than a generic cloud script if your game has floating platforms. Use your design as the context.',
+      },
+
+      /* Wrap up */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Today you crossed from reading code to writing it. You built simulations — objects following rules you designed — and you experienced the full cycle: plan the algorithm, implement it, test it, and refine it. That cycle is the heartbeat of everything you\'ll do in Phase 3.' },
+      { type:'dialogue', bg:BG.intro, char:'student1',
+        text:'The Time.deltaTime thing clicked for me completely when I saw the cloud moving at totally different speeds on the classroom machines before and after I added it. Seeing the problem and then the fix in the same three minutes was more effective than any explanation.' },
+      { type:'dialogue', bg:BG.intro, char:'student3',
+        text:'I also found the GenAI documentation requirement more useful than I expected. Writing down what I changed in the AI output forced me to actually read every line instead of just pasting and hoping it worked.' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'That hope-it-works approach is extremely common and extremely risky. You end up with code you can\'t maintain, can\'t debug, and can\'t explain. Your documentation habit is the professional habit. Carry it through every script you write from here. Notebook time.' },
+
+      /* Notebook */
+      { type:'notebook', bg:BG.notebook,
+        intro:'Your notebook entry today documents your scripting process — the thinking before the code, the testing during, and the reflection after. Show all three.',
+        tasks:[
+          'Your pseudocode or flowchart for your simulation script — written BEFORE you opened a code editor. Label where sequence, branching and iteration appear.',
+          'Your completed script (key excerpt — not the whole file). Add inline comments explaining the purpose of each section, not just what it does syntactically.',
+          'Your Time.deltaTime explanation in your own words: what it is, why it matters, and what happens without it — illustrated with a concrete example from today.',
+          'Your test results: what value ranges did you try for your variables? What worked, what broke, and what did the break tell you about the algorithm\'s valid range?',
+          'Advanced — Full GenAI workflow documentation: your pseudocode, the exact prompt you sent, an excerpt of what the AI generated, what you changed and why, and the result of your first test.',
+          'Reflection: which part of writing your first simulation script was hardest — the algorithm design, the C# syntax, or attaching and testing it? What would you do differently next time?',
+        ],
+        reminder:'Your pseudocode should tell the same story as your script. If they diverge, one of them is wrong — update your pseudocode to reflect your final implementation, and note why the design changed.',
+      },
+    ];
+
+    /* ENGINE */
+    let ci=0,it=false,tt=null,ft='';
+    const els={bgLayer:document.getElementById('bg-layer'),progressFill:document.getElementById('progress-fill'),progressTrack:document.getElementById('progress-track'),sceneCounter:document.getElementById('scene-counter'),navSceneInfo:document.getElementById('nav-scene-info'),introView:document.getElementById('intro-view'),dialogueView:document.getElementById('dialogue-view'),activityView:document.getElementById('activity-view'),notebookView:document.getElementById('notebook-view'),charHalo:document.getElementById('char-halo'),charEmoji:document.getElementById('char-emoji'),charNameBadge:document.getElementById('char-name-badge'),speakerLabel:document.getElementById('speaker-label'),dialogueText:document.getElementById('dialogue-text'),activityInner:document.getElementById('activity-inner'),nbIntro:document.getElementById('nb-intro'),nbTasks:document.getElementById('nb-tasks'),nbReminder:document.getElementById('nb-reminder'),btnBack:document.getElementById('btn-back'),btnNext:document.getElementById('btn-next')};
+    (function(){const c=document.getElementById('starfield'),x=c.getContext('2d');function d(){c.width=window.innerWidth;c.height=window.innerHeight;x.clearRect(0,0,c.width,c.height);for(let i=0;i<220;i++){const a=Math.random()*c.width,b=Math.random()*c.height,r=Math.random()<0.75?0.8:1.4,o=0.25+Math.random()*0.65;x.beginPath();x.arc(a,b,r,0,Math.PI*2);x.fillStyle=`rgba(255,255,255,${o})`;x.fill();}}d();window.addEventListener('resize',d);})();
+    function stopT(){if(tt){clearInterval(tt);tt=null;}it=false;}
+    function showV(t){['intro','dialogue','activity','notebook'].forEach(v=>{const e=document.getElementById(`${v}-view`);e.classList.remove('active','scene-fade-in');});const a=document.getElementById(`${t}-view`);a.classList.add('active');void a.offsetWidth;a.classList.add('scene-fade-in');}
+    function applyC(k){const c=CHAR[k];els.charEmoji.textContent=c.emoji;els.charNameBadge.textContent=c.name;els.charNameBadge.style.color=c.color;els.charNameBadge.style.borderColor=`${c.color}55`;els.charNameBadge.style.background=`${c.color}12`;els.charHalo.style.borderColor=`${c.color}55`;els.charHalo.style.boxShadow=`0 0 40px ${c.glow},0 0 80px ${c.glow}`;els.speakerLabel.textContent=c.name;els.speakerLabel.style.color=c.color;}
+    function typeT(text,instant){const p=els.dialogueText;if(instant){p.textContent=text;return;}p.textContent='';const cur=document.createElement('span');cur.id='cursor';cur.setAttribute('aria-hidden','true');p.appendChild(cur);let i=0;it=true;ft=text;tt=setInterval(()=>{if(i<text.length){cur.insertAdjacentText('beforebegin',text[i]);i++;}else{stopT();cur.classList.add('hidden');}},28);}
+    function compT(){stopT();const c=document.getElementById('cursor');if(c)c.remove();els.dialogueText.textContent=ft;}
+    function renderA(sc){const ac=`act-${sc.actType}`;const h=`<div class="activity-card" role="article"><div class="activity-header"><div class="activity-type-badge">${sc.activityType}</div><div class="activity-title">${sc.title}</div></div><div class="activity-body"><p class="activity-desc">${sc.desc}</p><div class="activity-steps" role="list">${sc.steps.map(s=>`<div class="activity-step" role="listitem"><div class="step-label">${s.label}</div><div class="step-value">${s.value}</div></div>`).join('')}</div><div class="activity-footer">${sc.footer}</div></div></div>`;els.activityView.className=`scene-view ${ac}`;els.activityInner.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden;';els.activityInner.innerHTML=h;}
+    function renderN(sc){els.nbIntro.textContent=sc.intro;els.nbTasks.innerHTML=sc.tasks.map((t,i)=>`<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`).join('');els.nbReminder.textContent=sc.reminder;}
+    function showS(idx,dir){stopT();const sc=SCENES[idx],tot=SCENES.length;const pct=Math.max(3,Math.round(((idx+1)/tot)*100));els.progressFill.style.width=`${pct}%`;els.progressTrack.setAttribute('aria-valuenow',pct);els.sceneCounter.textContent=`${idx+1} of ${tot}`;els.navSceneInfo.textContent=`Scene ${idx+1} of ${tot}`;els.btnBack.disabled=idx===0;els.btnNext.disabled=idx===tot-1;els.btnNext.textContent=idx===tot-1?'Finish':'Next ▶';els.bgLayer.style.background=sc.bg;if(sc.type==='intro')showV('intro');else if(sc.type==='dialogue'){showV('dialogue');applyC(sc.char);typeT(sc.text,dir==='back');}else if(sc.type==='activity'){renderA(sc);showV('activity');void els.activityView.offsetWidth;els.activityView.classList.add('scene-fade-in');}else if(sc.type==='notebook'){renderN(sc);showV('notebook');}}
+    function goNext(){if(it){compT();return;}if(ci<SCENES.length-1){ci++;showS(ci,'forward');}}
+    function goBack(){if(ci>0){ci--;showS(ci,'back');}}
+    els.btnNext.addEventListener('click',goNext);
+    els.btnBack.addEventListener('click',goBack);
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goBack();}});
+    showS(0,'forward');
+  </script>
+</body>
+</html>

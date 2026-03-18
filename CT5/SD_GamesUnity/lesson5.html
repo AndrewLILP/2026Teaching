@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 5 — Blender Asset Creation: Building Houses | Computing Technology 7–10</title>
+  <meta name="description" content="Year 10 Computing Technology — Model a 3D house in Blender, export as FBX, import into Unity and build your game environment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg-void: #0a0604;
+      --purple-500: #6d28d9; --purple-400: #8b5cf6; --purple-200: #c4b5fd;
+      --gold: #f59e0b; --gold-light: #fde68a;
+      --cyan: #22d3ee; --pink: #f472b6; --emerald: #86efac; --sky: #38bdf8;
+      --orange: #f97316; --orange-light: #fed7aa;
+      --text-bright: #fdf8f4; --text-mid: #fed7aa; --text-muted: #92714a;
+      --dlg-bg: rgba(10,6,4,0.93); --dlg-border: rgba(249,115,22,0.45);
+      --dlg-corner: rgba(249,115,22,0.75); --radius: 12px; --radius-sm: 6px;
+      --phase3-col: #fb923c;
+      --transition-bg: 1800ms ease;
+    }
+    body { font-family: 'Exo 2', sans-serif; background: var(--bg-void); color: var(--text-bright); }
+    canvas#starfield { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    #bg-layer {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse at 30% 50%, #3a1a08 0%, #0a0604 65%);
+      transition: background var(--transition-bg);
+    }
+    #bg-layer::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+      pointer-events: none;
+    }
+    #app { position: relative; z-index: 2; width: 100%; height: 100vh; display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header {
+      height: 62px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; border-bottom: 1px solid rgba(249,115,22,0.25);
+      background: rgba(10,6,4,0.75); backdrop-filter: blur(10px); flex-shrink: 0;
+    }
+    #phase-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--phase3-col);
+      border: 1px solid rgba(249,115,22,0.35); border-radius: 20px; padding: 5px 14px;
+    }
+    #phase-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--phase3-col); box-shadow: 0 0 8px var(--phase3-col); flex-shrink: 0; }
+    #header-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 600; color: var(--text-bright); letter-spacing: 0.04em; text-align: center; }
+    #header-title span { color: var(--orange-light); font-weight: 400; }
+    #scene-counter { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.06em; min-width: 80px; text-align: right; }
+
+    /* PROGRESS */
+    #progress-track { height: 5px; background: rgba(249,115,22,0.15); flex-shrink: 0; }
+    #progress-fill { height: 100%; background: linear-gradient(90deg, #9a3412, var(--phase3-col)); border-radius: 0 3px 3px 0; transition: width 500ms cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 10px rgba(249,115,22,0.5); width: 3%; }
+
+    /* MAIN + SCENES */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .scene-view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+    .scene-view.active { display: flex; }
+    .scene-fade-in { animation: fadeIn 400ms ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* INTRO */
+    #intro-view { flex: 1; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
+    #intro-view.active { display: flex; }
+    .intro-card {
+      width: 100%; max-width: 780px; background: rgba(10,6,4,0.85);
+      border: 1px solid rgba(249,115,22,0.4); border-radius: var(--radius);
+      padding: 40px 48px 36px; backdrop-filter: blur(16px);
+      clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px));
+    }
+    .intro-lesson-num { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 10px; }
+    .intro-title { font-family: 'Cinzel', serif; font-size: clamp(22px,3vw,34px); font-weight: 700; line-height: 1.2; color: var(--text-bright); margin-bottom: 6px; }
+    .intro-subtitle { font-family: 'Lora', serif; font-size: 17px; font-style: italic; color: var(--orange-light); margin-bottom: 28px; }
+    .intro-divider { height: 1px; background: linear-gradient(90deg,transparent,rgba(249,115,22,0.5),transparent); margin-bottom: 24px; }
+    .intro-meta { display: flex; gap: 24px; margin-bottom: 24px; }
+    .intro-meta-item { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.05em; }
+    .intro-meta-item strong { color: var(--orange-light); font-weight: 600; }
+    .intro-intentions-label { font-family: 'Exo 2', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--phase3-col); margin-bottom: 14px; }
+    .intro-intentions { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .intro-intentions li { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; color: var(--text-bright); display: flex; gap: 12px; align-items: flex-start; }
+    .intro-intentions li::before { content: '◆'; color: var(--phase3-col); font-size: 10px; margin-top: 6px; flex-shrink: 0; }
+    .intro-prompt { margin-top: 28px; text-align: center; font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+    /* DIALOGUE */
+    #dialogue-view { flex: 1; display: none; flex-direction: column; }
+    #dialogue-view.active { display: flex; }
+    #char-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    #char-halo {
+      width: 160px; height: 160px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 5.5rem; line-height: 1;
+      background: rgba(249,115,22,0.06); border: 2px solid transparent;
+      transition: border-color 300ms, box-shadow 300ms;
+      animation: charFloat 4s ease-in-out infinite;
+    }
+    @keyframes charFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    #char-name-badge { margin-top: 16px; font-family: 'Exo 2', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 20px; border-radius: 20px; border: 1px solid transparent; transition: color 300ms, border-color 300ms, background 300ms; }
+    #dialogue-box { flex-shrink: 0; padding: 0 24px; }
+    #dialogue-inner {
+      background: var(--dlg-bg); border: 1px solid var(--dlg-border); border-radius: var(--radius);
+      padding: 24px 32px 20px; position: relative; min-height: 130px; backdrop-filter: blur(16px);
+      clip-path: polygon(0 14px,14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px));
+    }
+    #dialogue-inner::before { content: ''; position: absolute; inset: 0; border-radius: var(--radius); box-shadow: inset 0 0 40px rgba(249,115,22,0.1); pointer-events: none; }
+    #dialogue-inner::after { content: ''; position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; border-top: 2px solid var(--dlg-corner); border-right: 2px solid var(--dlg-corner); border-radius: 0 var(--radius-sm) 0 0; }
+    .dlg-corner-bl { position: absolute; bottom: -1px; left: -1px; width: 30px; height: 30px; border-bottom: 2px solid var(--dlg-corner); border-left: 2px solid var(--dlg-corner); border-radius: 0 0 0 var(--radius-sm); }
+    #speaker-label { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; transition: color 300ms; }
+    #dialogue-text { font-family: 'Lora', serif; font-size: 21px; line-height: 1.65; color: var(--text-bright); min-height: 72px; }
+    #cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--orange); margin-left: 2px; vertical-align: text-bottom; animation: blink 0.85s step-end infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    #cursor.hidden { display: none; }
+
+    /* ACTIVITY */
+    #activity-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #activity-view.active { display: flex; }
+    .activity-card { flex: 1; border-radius: var(--radius); border: 1px solid transparent; display: flex; flex-direction: column; overflow: hidden; }
+    .activity-header { padding: 18px 28px 16px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+    .activity-type-badge { font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 16px; border-radius: 20px; border: 2px solid; flex-shrink: 0; }
+    .activity-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 600; line-height: 1.3; color: var(--text-bright); }
+    .activity-body { flex: 1; overflow-y: auto; padding: 0 28px 20px; scrollbar-width: thin; scrollbar-color: rgba(249,115,22,0.35) transparent; }
+    .activity-desc { font-family: 'Lora', serif; font-size: 18px; line-height: 1.6; color: var(--orange-light); margin-bottom: 20px; font-style: italic; }
+    .activity-steps { display: flex; flex-direction: column; gap: 10px; }
+    .activity-step { display: grid; grid-template-columns: 210px 1fr; gap: 0; border-radius: 8px; overflow: hidden; }
+    .step-label { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 12px 16px; display: flex; align-items: center; background: rgba(0,0,0,0.35); }
+    .step-value { font-family: 'Lora', serif; font-size: 17px; line-height: 1.5; padding: 10px 16px; color: var(--text-bright); background: rgba(0,0,0,0.18); }
+    .activity-footer { font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; padding: 14px 18px; border-radius: 8px; margin-top: 16px; border-left: 3px solid; line-height: 1.5; color: var(--text-bright); }
+    .act-ido .activity-card  { background: rgba(46,22,5,0.8); border-color: rgba(249,115,22,0.3); }
+    .act-ido .activity-header { background: rgba(46,22,5,0.95); }
+    .act-ido .activity-type-badge { color: var(--phase3-col); border-color: var(--phase3-col); }
+    .act-ido .step-label { color: var(--phase3-col); }
+    .act-ido .activity-footer { background: rgba(249,115,22,0.07); border-color: var(--phase3-col); }
+    .act-wedo .activity-card  { background: rgba(7,28,55,0.75); border-color: rgba(34,211,238,0.3); }
+    .act-wedo .activity-header { background: rgba(7,28,55,0.9); }
+    .act-wedo .activity-type-badge { color: var(--cyan); border-color: var(--cyan); }
+    .act-wedo .step-label { color: var(--cyan); }
+    .act-wedo .activity-footer { background: rgba(34,211,238,0.07); border-color: var(--cyan); }
+    .act-youdo .activity-card  { background: rgba(30,8,60,0.75); border-color: rgba(139,92,246,0.4); }
+    .act-youdo .activity-header { background: rgba(30,8,60,0.9); }
+    .act-youdo .activity-type-badge { color: var(--purple-400); border-color: var(--purple-400); }
+    .act-youdo .step-label { color: var(--purple-400); }
+    .act-youdo .activity-footer { background: rgba(139,92,246,0.08); border-color: var(--purple-400); }
+
+    /* NOTEBOOK */
+    #notebook-view { flex: 1; display: none; flex-direction: column; padding: 20px 24px 0; overflow: hidden; }
+    #notebook-view.active { display: flex; }
+    .notebook-card { flex: 1; background: rgba(30,15,5,0.85); border: 1px solid rgba(245,158,11,0.35); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; background-image: repeating-linear-gradient(transparent,transparent 31px,rgba(245,158,11,0.06) 31px,rgba(245,158,11,0.06) 32px); }
+    .notebook-header { background: rgba(30,15,5,0.95); padding: 18px 28px 16px; border-bottom: 1px solid rgba(245,158,11,0.25); display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .notebook-icon { font-size: 2rem; line-height: 1; }
+    .notebook-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+    .notebook-body { flex: 1; overflow-y: auto; padding: 20px 28px 20px 48px; scrollbar-width: thin; scrollbar-color: rgba(245,158,11,0.3) transparent; border-left: 3px solid rgba(245,158,11,0.2); margin-left: 20px; }
+    .notebook-intro { font-family: 'Lora', serif; font-size: 17px; line-height: 1.65; color: var(--gold-light); font-style: italic; margin-bottom: 22px; }
+    .notebook-tasks { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+    .notebook-tasks li { display: flex; gap: 14px; align-items: flex-start; font-family: 'Lora', serif; font-size: 18px; line-height: 1.55; color: var(--text-bright); }
+    .task-num { font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); border-radius: 50%; min-width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .notebook-reminder { margin-top: 22px; padding: 14px 18px; background: rgba(245,158,11,0.08); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; font-family: 'Exo 2', sans-serif; font-size: 15px; font-style: italic; color: var(--gold-light); line-height: 1.5; }
+
+    /* NAV */
+    #nav-bar { flex-shrink: 0; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: rgba(10,6,4,0.7); border-top: 1px solid rgba(249,115,22,0.18); backdrop-filter: blur(12px); }
+    .nav-btn { font-family: 'Exo 2', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 12px 30px; border-radius: var(--radius); border: 2px solid rgba(249,115,22,0.4); background: rgba(249,115,22,0.1); color: var(--orange-light); cursor: pointer; transition: all 200ms ease; min-width: 120px; }
+    .nav-btn:hover:not(:disabled) { background: rgba(249,115,22,0.3); border-color: var(--phase3-col); color: var(--text-bright); box-shadow: 0 0 16px rgba(249,115,22,0.35); transform: translateY(-1px); }
+    .nav-btn:active:not(:disabled) { transform: translateY(0); }
+    .nav-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .nav-btn#btn-next { background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.6); }
+    .nav-btn#btn-next:hover:not(:disabled) { background: rgba(249,115,22,0.45); box-shadow: 0 0 20px rgba(249,115,22,0.45); }
+    #nav-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #nav-scene-info { font-family: 'Exo 2', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.08em; }
+    #nav-hint { font-family: 'Exo 2', sans-serif; font-size: 12px; color: var(--text-muted); opacity: 0.55; letter-spacing: 0.06em; }
+    .skip-link { position: absolute; top: -999px; left: 8px; background: var(--orange); color: #fff; padding: 8px 16px; border-radius: 4px; font-size: 16px; z-index: 9999; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
+    @media (max-width: 640px) { #header-title { font-size: 14px; } #dialogue-text { font-size: 18px; } .activity-step { grid-template-columns: 140px 1fr; } .nav-btn { padding: 10px 18px; font-size: 15px; min-width: 90px; } .intro-card { padding: 28px 24px 24px; } }
+    @media (max-height: 600px) { #char-halo { width: 110px; height: 110px; font-size: 4rem; } #char-area { padding: 8px; } #dialogue-text { font-size: 19px; min-height: 60px; } }
+  </style>
+</head>
+<body>
+  <a href="#nav-bar" class="skip-link">Skip to navigation</a>
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div id="bg-layer" aria-hidden="true"></div>
+  <div id="app">
+    <header id="header" role="banner">
+      <div id="phase-badge" aria-label="Phase 3: Producing and Implementing">Phase 3 — Producing &amp; Implementing</div>
+      <h1 id="header-title"><span>Lesson 5</span> — Blender Asset Creation: Building Houses</h1>
+      <div id="scene-counter" aria-live="polite">1 of 34</div>
+    </header>
+    <div id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3" aria-label="Lesson progress">
+      <div id="progress-fill"></div>
+    </div>
+    <main id="main" tabindex="-1">
+      <div id="intro-view" class="scene-view" role="region" aria-label="Lesson introduction">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px;">
+          <div class="intro-card">
+            <div class="intro-lesson-num">Computing Technology 7–10 &nbsp;/&nbsp; Stage 5 Year 10</div>
+            <h2 class="intro-title">Blender Asset Creation: Building Houses</h2>
+            <p class="intro-subtitle">Lesson 5 &nbsp;·&nbsp; Producing &amp; Implementing</p>
+            <div class="intro-divider"></div>
+            <div class="intro-meta">
+              <div class="intro-meta-item">⏱ Duration: <strong>60 minutes</strong></div>
+              <div class="intro-meta-item">📖 Phase: <strong>3 of 4</strong></div>
+            </div>
+            <div class="intro-intentions-label">Learning Intentions</div>
+            <ul class="intro-intentions" aria-label="Learning intentions">
+              <li>Use Blender to model a simple 3D house using extrude, scale and Boolean operations</li>
+              <li>Export a model as FBX with correct settings and import it cleanly into Unity 6</li>
+              <li>Configure a Mesh Collider and material on an imported custom asset</li>
+              <li>Use the Unity Terrain Tool to build and texture a game environment, placing your house alongside Synty assets</li>
+            </ul>
+            <div class="intro-prompt">Press <strong>Next ▶</strong> or the <strong>→</strong> key to begin</div>
+          </div>
+        </div>
+      </div>
+      <div id="dialogue-view" class="scene-view" role="region" aria-label="Story">
+        <div id="char-area" aria-hidden="true">
+          <div id="char-halo"><span id="char-emoji"></span></div>
+          <div id="char-name-badge" role="heading" aria-level="3"></div>
+        </div>
+        <div id="dialogue-box">
+          <div id="dialogue-inner">
+            <div class="dlg-corner-bl" aria-hidden="true"></div>
+            <div id="speaker-label" aria-hidden="true"></div>
+            <p id="dialogue-text" role="log" aria-live="polite" aria-label="Dialogue"></p>
+          </div>
+        </div>
+      </div>
+      <div id="activity-view" class="scene-view" role="region" aria-label="Classroom activity">
+        <div id="activity-inner"></div>
+      </div>
+      <div id="notebook-view" class="scene-view" role="region" aria-label="Notebook checkpoint">
+        <div class="notebook-card">
+          <div class="notebook-header">
+            <span class="notebook-icon" aria-hidden="true">📓</span>
+            <h2 class="notebook-title">Notebook Checkpoint — Lesson 5</h2>
+          </div>
+          <div class="notebook-body">
+            <p class="notebook-intro" id="nb-intro"></p>
+            <ul class="notebook-tasks" id="nb-tasks" aria-label="Notebook tasks"></ul>
+            <div class="notebook-reminder" id="nb-reminder"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <nav id="nav-bar" aria-label="Lesson navigation">
+      <button id="btn-back" class="nav-btn" aria-label="Go to previous scene" disabled>◀ Back</button>
+      <div id="nav-center" aria-hidden="true">
+        <div id="nav-scene-info">Scene 1 of 34</div>
+        <div id="nav-hint">← → arrow keys to navigate</div>
+      </div>
+      <button id="btn-next" class="nav-btn" aria-label="Go to next scene">Next ▶</button>
+    </nav>
+  </div>
+  <script>
+    /* Lesson 5 — S1=male, S2=female, S3=female */
+    const CHAR = {
+      teacher:  { name: 'Teacher',   emoji: '👩‍🏫', color: '#f59e0b', glow: 'rgba(245,158,11,0.4)' },
+      student1: { name: 'Student 1', emoji: '🧑‍💻', color: '#fb923c', glow: 'rgba(251,146,60,0.4)'  },
+      student2: { name: 'Student 2', emoji: '🙋‍♀️', color: '#22d3ee', glow: 'rgba(34,211,238,0.4)'  },
+      student3: { name: 'Student 3', emoji: '🙋‍♀️', color: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
+    };
+    const BG = {
+      intro:   'radial-gradient(ellipse at 30% 50%, #3a1a08 0%, #0a0604 65%)',
+      blender: 'radial-gradient(ellipse at 35% 45%, #2a1206 0%, #080400 65%)',
+      model:   'radial-gradient(ellipse at 60% 40%, #2e1508 0%, #0a0502 65%)',
+      export:  'radial-gradient(ellipse at 45% 55%, #1e0e04 0%, #060200 65%)',
+      unity:   'radial-gradient(ellipse at 55% 40%, #0c1e2e 0%, #040a10 65%)',
+      terrain: 'radial-gradient(ellipse at 40% 60%, #0a2010 0%, #030a04 65%)',
+      scene:   'radial-gradient(ellipse at 50% 45%, #1a2a12 0%, #060c04 65%)',
+      ido:     'radial-gradient(ellipse at 40% 40%, #3d1a05 0%, #120600 65%)',
+      wedo:    'radial-gradient(ellipse at 60% 40%, #1e3a5f 0%, #070e1a 65%)',
+      youdo:   'radial-gradient(ellipse at 50% 60%, #3b0764 0%, #0f0420 65%)',
+      notebook:'radial-gradient(ellipse at 50% 30%, #44220a 0%, #1c0e04 65%)',
+    };
+    const SCENES = [
+      /* 0 */ { type:'intro', bg:BG.intro },
+
+      /* Hook — Phase 3 begins */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'Welcome to Phase 3. The planning is done — now we build. Today we start with the world itself. Before any code runs, before any scripts are attached, you need an environment. And you\'re going to make part of that environment yourself, in Blender.' },
+      { type:'dialogue', bg:BG.blender, char:'student1',
+        text:'I\'ve opened Blender once before and immediately closed it. It felt completely overwhelming — a million buttons everywhere and I had no idea where to start. Is it really usable at beginner level?' },
+      { type:'dialogue', bg:BG.blender, char:'teacher',
+        text:'It is, with a clear starting point. And here\'s the perspective shift: we\'re not learning Blender — we\'re learning exactly three workflows in Blender. Model a house. Apply a texture. Export an FBX. That\'s it. Everything else in Blender is background noise for today.' },
+      { type:'dialogue', bg:BG.blender, char:'student2',
+        text:'Why do we need to make our own assets at all? The Synty pack has hundreds of props. Couldn\'t we just use those and skip Blender entirely?' },
+      { type:'dialogue', bg:BG.blender, char:'teacher',
+        text:'You could — and for many props, you will. But three things matter here. First, your design likely calls for something specific that Synty doesn\'t have. Second, understanding the modelling pipeline makes you a better developer when things break. Third, the syllabus asks you to produce original assets. A house you built is evidence of your design work. A downloaded one isn\'t.' },
+      { type:'dialogue', bg:BG.blender, char:'student3',
+        text:'What does FBX mean, and why that format specifically? I\'ve also seen OBJ files — are they the same thing?' },
+      { type:'dialogue', bg:BG.blender, char:'teacher',
+        text:'FBX — Filmbox — is Autodesk\'s format, and Unity handles it natively: geometry, materials, and optionally animations all in one file. OBJ is simpler and widely supported but doesn\'t carry material data inside the file itself. For a house going into Unity, FBX is the right choice. Now let me show you the complete pipeline.' },
+
+      /* 7 — I DO: Full Blender pipeline */
+      { type:'activity', actType:'ido', bg:BG.ido,
+        activityType:'I DO',
+        title:'Teacher Models: Blender → FBX → Unity Pipeline',
+        desc:'Watch the complete end-to-end workflow once before you attempt it. Notice the scale settings — getting these wrong is the single most common beginner mistake.',
+        steps:[
+          { label:'Step 1 — Start',     value:'Open Blender. Delete the default cube (X → Delete). Add a new cube: Shift+A → Mesh → Cube. Tab into Edit Mode.' },
+          { label:'Step 2 — Walls',     value:'Select all faces (A). Scale on Z axis (S → Z → 2 → Enter) to make the building taller. This is your wall volume.' },
+          { label:'Step 3 — Roof',      value:'Select top face only. Extrude inward (I) to inset. Then extrude upward (E → Z) to create a pitched roof peak. Or use a separate mesh object scaled as a pyramid on top.' },
+          { label:'Step 4 — Door gap',  value:'Select two front faces at ground level. Boolean modifier → Difference with a rectangular cutter object to punch a door opening.' },
+          { label:'Step 5 — Apply Scale',value:'CRITICAL: Ctrl+A → Apply → Scale. Without this, Unity will import with wrong proportions. The scale must be 1,1,1 before export.' },
+          { label:'Step 6 — Export FBX',value:'File → Export → FBX. Settings: Scale = 1.0, Forward = -Z Forward, Up = Y Up, check "Apply Transform". Name it house_v1.fbx and save.' },
+          { label:'Step 7 — Unity Import',value:'Drag FBX into Unity Project window. Select it → Inspector → Scale Factor = 1. Check "Generate Colliders" if you want auto-collider, OR add Mesh Collider component manually for control.' },
+        ],
+        footer:'The Apply Scale step (Ctrl+A) is non-negotiable. If you skip it, your house will appear the wrong size in Unity — sometimes a dot, sometimes a skyscraper. Do it every time before export.',
+      },
+
+      /* Blender interface orientation */
+      { type:'dialogue', bg:BG.model, char:'teacher',
+        text:'Before you open Blender, let me orient you to the interface. You\'ll work in three modes today. Object Mode is the default — you select and move whole objects. Edit Mode, reached with Tab, lets you select and modify individual vertices, edges and faces. Sculpt Mode we\'re not touching today.' },
+      { type:'dialogue', bg:BG.model, char:'student1',
+        text:'The middle mouse button controls the camera — rotating with hold, panning with Shift+hold. I remember that from a tutorial. But my laptop doesn\'t have a middle mouse button. Will that be a problem?' },
+      { type:'dialogue', bg:BG.model, char:'teacher',
+        text:'Good question — and good that you\'ve already looked it up. In Blender preferences, enable "Emulate 3 Button Mouse" and "Emulate Numpad." This maps Alt+Left Click to middle mouse and the keyboard top-row numbers to the numpad. All school machines should have this enabled already.' },
+      { type:'dialogue', bg:BG.model, char:'student3',
+        text:'When we add a material in Blender — does that come across to Unity automatically, or does Unity ignore it and use its own material system?' },
+      { type:'dialogue', bg:BG.model, char:'teacher',
+        text:'Partially. Unity will import the material name and some basic colour data from the FBX. But it converts to its own material format — URP Lit shader in our case. You\'ll need to assign the actual texture or Synty material in Unity after import. Think of the Blender material as a placeholder that tells Unity where each material slot is.' },
+
+      /* Export & Import deep dive */
+      { type:'dialogue', bg:BG.export, char:'teacher',
+        text:'Let\'s talk about the two most common import problems and how to fix them. Problem one: your house appears tiny — like a postage stamp in Unity. Root cause: scale wasn\'t applied in Blender. Fix: back in Blender, select the object, Ctrl+A, Apply Scale, re-export.' },
+      { type:'dialogue', bg:BG.export, char:'student2',
+        text:'And problem two? You said there were two common ones.' },
+      { type:'dialogue', bg:BG.export, char:'teacher',
+        text:'Problem two: your house is rotated 90 degrees — lying flat instead of standing upright. Root cause: mismatched axis conventions. Blender uses Z-up; Unity uses Y-up. Fix: in the FBX export settings, set Forward to minus-Z Forward and Up to Y Up. Or in Unity\'s import settings, check "Bake Axis Conversion." Either approach works.' },
+      { type:'dialogue', bg:BG.export, char:'student3',
+        text:'So the two settings I need to get right every single time are: apply the scale before exporting, and set the correct axis in the export dialogue. If I remember those two things, most problems won\'t happen at all?' },
+      { type:'dialogue', bg:BG.export, char:'teacher',
+        text:'Exactly. Write them in your notebook right now if you haven\'t already. They\'re worth more than memorising any shortcut. Now — Mesh Colliders. Once your house is in Unity, players will walk through the walls unless we add physics collision.' },
+
+      /* Unity side */
+      { type:'dialogue', bg:BG.unity, char:'teacher',
+        text:'Select your imported house in the Hierarchy. Add Component → Physics → Mesh Collider. Unity generates a collision mesh matching your 3D shape exactly. For a house, this is what you want. For a fast-moving car, you\'d use simpler Box or Capsule colliders — Mesh Collider is expensive for physics calculations.' },
+      { type:'dialogue', bg:BG.unity, char:'student1',
+        text:'How do we apply a material from the Synty pack to it? Do we drag the material onto the house in the scene?' },
+      { type:'dialogue', bg:BG.unity, char:'teacher',
+        text:'Yes — drag from the Project window directly onto the object in the Scene view. If your house has multiple material slots from Blender, each slot will appear as a separate element in the Mesh Renderer component. You can drag a different Synty material onto each slot — roof colour, wall colour, door frame.' },
+
+      /* 18 — WE DO: Terrain + scene build together */
+      { type:'activity', actType:'wedo', bg:BG.wedo,
+        activityType:'WE DO',
+        title:'Class Activity: Terrain Tool + Place House in Scene',
+        desc:'Together we\'ll build a terrain, texture it, and each student places their house into a shared starter scene. Focus on the process — troubleshoot together.',
+        steps:[
+          { label:'Step 1 — Terrain',    value:'GameObject → 3D Object → Terrain. In Terrain Inspector → Terrain Settings: set Width and Length to 100, Height to 30. Your terrain is now a flat green plane.' },
+          { label:'Step 2 — Sculpt',     value:'Select the Paint Height or Raise/Lower tool. Draw some gentle hills — don\'t over-sculpt. A mostly flat world with subtle features is better than a dramatic but unnavigable terrain.' },
+          { label:'Step 3 — Texture',    value:'Paint Texture tool → Add Layer → add two Synty-compatible textures (grass, dirt). Paint the grass base, then brush dirt paths and edges.' },
+          { label:'Step 4 — Place House',value:'Drag your imported house prefab from Project → Hierarchy. Use the Move tool (W) to position it on the terrain. Use the Rotate tool (E) to orient it. Scale if needed (R).' },
+          { label:'Peer Check',          value:'Swap seats with a partner. Can you walk their house without clipping through walls? Does it sit on the terrain correctly without floating or sinking? Report what you find.' },
+        ],
+        footer:'If your house floats above or sinks into the terrain, select it and manually adjust the Y position until it sits flush. Snap to grid (hold Ctrl while moving) helps with precise placement.',
+      },
+
+      /* Scene building */
+      { type:'dialogue', bg:BG.scene, char:'student2',
+        text:'Can we add Synty props around the house — trees, fences, that sort of thing? Or is that for later in the project?' },
+      { type:'dialogue', bg:BG.scene, char:'teacher',
+        text:'Now is exactly the right time. Drag any Synty prefab from the Project window into the scene. Position it with the Move tool. The key constraint: every prop must be navigable — don\'t block paths the player needs to walk. And keep performance in mind — check your Scene Stats panel and aim to stay under around 50,000 triangles for the whole scene.' },
+      { type:'dialogue', bg:BG.scene, char:'student1',
+        text:'Where do I find the Scene Stats panel? I\'ve never noticed it before.' },
+      { type:'dialogue', bg:BG.scene, char:'teacher',
+        text:'In the Scene view, top-right corner — there\'s a Stats button. It shows triangles, vertices, draw calls, and shadow-casting mesh count. These numbers matter because they directly affect frame rate. Your non-functional requirement from Lesson 2 said thirty frames per second minimum — the Scene Stats panel is how you monitor whether you\'re meeting it.' },
+      { type:'dialogue', bg:BG.scene, char:'student3',
+        text:'That\'s a really direct connection — I wrote that requirement two lessons ago and now I can actually see a number in the editor that tells me if I\'m meeting it. That makes the requirements document feel genuinely useful rather than just a worksheet.' },
+      { type:'dialogue', bg:BG.scene, char:'teacher',
+        text:'That connection is intentional. Every requirement you wrote should have a testable outcome in the engine. Frame rate: Scene Stats. Collision: play test with player walking. Load time: note the time from Play button press to playable scene. Your requirements are your checklist. Use them.' },
+
+      /* 26 — YOU DO */
+      { type:'activity', actType:'youdo', bg:BG.youdo,
+        activityType:'YOU DO',
+        title:'Build Your House, Import It, and Dress Your Scene',
+        desc:'Complete the full Blender → Unity pipeline for your own game\'s house asset. Then build and populate your environment.',
+        steps:[
+          { label:'🟦 Basic',        value:'Complete the house model with roof extrusion and at least one door opening using Boolean. Apply scale. Export FBX. Import into Unity, add Mesh Collider, assign one Synty material. Place on terrain.' },
+          { label:'🟩 Intermediate', value:'Complete house model, import, material assignment. Create at least two additional Blender props (e.g. fence section, letterbox, simple bench). Import all, place on terrain with Synty assets. Check Scene Stats — record triangle count.' },
+          { label:'🟧 Advanced',     value:'All of Intermediate, plus: optimise your house geometry to under 2,000 polygons (check in Blender bottom bar). Compare your poly count with a Synty asset\'s count (select it, check Stats). Document the trade-off between geometric detail and performance in your notebook.' },
+        ],
+        footer:'📸 Take screenshots or screen-record your Blender model (both wireframe and solid view) and your Unity scene. These go directly into your notebook as production evidence.',
+      },
+
+      /* Wrap up */
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'You\'ve crossed a threshold today. You started the lesson with a plan on paper, and you\'re ending it with a three-dimensional world in a game engine. That gap — from design to built environment — is what Phase 3 is all about.' },
+      { type:'dialogue', bg:BG.intro, char:'student2',
+        text:'Honestly I\'m surprised it worked. I expected my house to be broken or invisible in Unity, but the apply-scale step made the difference. It just appeared at the right size and orientation on the first try.' },
+      { type:'dialogue', bg:BG.intro, char:'student3',
+        text:'My Boolean for the door didn\'t work first time — I had to watch the teacher\'s screen again and realised I hadn\'t selected the right object for the difference operation. But fixing it myself made me feel like I actually understood it rather than just following steps.' },
+      { type:'dialogue', bg:BG.intro, char:'teacher',
+        text:'That troubleshooting experience — reading an error, forming a hypothesis, testing it, finding the fix — is one of the most transferable skills in computing. It works the same way whether you\'re debugging Blender, C# scripts, or a production server. Notebook checkpoint.' },
+
+      /* Notebook */
+      { type:'notebook', bg:BG.notebook,
+        intro:'Your notebook entry today is production evidence — screenshots and documented process are as important as written reflection. This is your iterative design record for Phase 3.',
+        tasks:[
+          'Screenshot of your Blender model: wireframe view (Tab to Edit Mode, Overlay → Wireframe) AND solid view. Label the key mesh features: walls, roof, door opening.',
+          'Your FBX export settings recorded: Scale value, Forward axis, Up axis. Note any problems encountered and how you resolved them.',
+          'Screenshot of your Unity scene with the house placed on terrain. Include the Inspector panel showing the Mesh Collider component.',
+          'Your Scene Stats: triangle count, vertex count, draw calls. Does your scene currently meet your frame-rate non-functional requirement? How do you know?',
+          'Advanced: polygon count comparison table — your house vs one Synty prop. What does the difference tell you about optimisation priorities?',
+          'Reflection: what was the hardest part of today\'s pipeline? What would you do differently on your next model based on what you learned?',
+        ],
+        reminder:'Your Blender model is a prototype — it doesn\'t need to be perfect. It needs to be yours, placed in your scene, and documented. Honest process notes are more valuable than a polished result you can\'t explain.',
+      },
+    ];
+
+    /* ENGINE */
+    let currentIndex=0, isTyping=false, typeTimer=null, fullText='';
+    const els={bgLayer:document.getElementById('bg-layer'),progressFill:document.getElementById('progress-fill'),progressTrack:document.getElementById('progress-track'),sceneCounter:document.getElementById('scene-counter'),navSceneInfo:document.getElementById('nav-scene-info'),introView:document.getElementById('intro-view'),dialogueView:document.getElementById('dialogue-view'),activityView:document.getElementById('activity-view'),notebookView:document.getElementById('notebook-view'),charHalo:document.getElementById('char-halo'),charEmoji:document.getElementById('char-emoji'),charNameBadge:document.getElementById('char-name-badge'),speakerLabel:document.getElementById('speaker-label'),dialogueText:document.getElementById('dialogue-text'),activityInner:document.getElementById('activity-inner'),nbIntro:document.getElementById('nb-intro'),nbTasks:document.getElementById('nb-tasks'),nbReminder:document.getElementById('nb-reminder'),btnBack:document.getElementById('btn-back'),btnNext:document.getElementById('btn-next')};
+    (function(){const c=document.getElementById('starfield'),x=c.getContext('2d');function d(){c.width=window.innerWidth;c.height=window.innerHeight;x.clearRect(0,0,c.width,c.height);for(let i=0;i<220;i++){const a=Math.random()*c.width,b=Math.random()*c.height,r=Math.random()<0.75?0.8:1.4,o=0.25+Math.random()*0.65;x.beginPath();x.arc(a,b,r,0,Math.PI*2);x.fillStyle=`rgba(255,255,255,${o})`;x.fill();}}d();window.addEventListener('resize',d);})();
+    function stopTyping(){if(typeTimer){clearInterval(typeTimer);typeTimer=null;}isTyping=false;}
+    function showViews(t){['intro','dialogue','activity','notebook'].forEach(v=>{const e=document.getElementById(`${v}-view`);e.classList.remove('active','scene-fade-in');});const a=document.getElementById(`${t}-view`);a.classList.add('active');void a.offsetWidth;a.classList.add('scene-fade-in');}
+    function applyChar(k){const c=CHAR[k];els.charEmoji.textContent=c.emoji;els.charNameBadge.textContent=c.name;els.charNameBadge.style.color=c.color;els.charNameBadge.style.borderColor=`${c.color}55`;els.charNameBadge.style.background=`${c.color}12`;els.charHalo.style.borderColor=`${c.color}55`;els.charHalo.style.boxShadow=`0 0 40px ${c.glow},0 0 80px ${c.glow}`;els.speakerLabel.textContent=c.name;els.speakerLabel.style.color=c.color;}
+    function typeText(text,instant){const p=els.dialogueText;if(instant){p.textContent=text;return;}p.textContent='';const cur=document.createElement('span');cur.id='cursor';cur.setAttribute('aria-hidden','true');p.appendChild(cur);let i=0;isTyping=true;fullText=text;typeTimer=setInterval(()=>{if(i<text.length){cur.insertAdjacentText('beforebegin',text[i]);i++;}else{stopTyping();cur.classList.add('hidden');}},28);}
+    function completeTyping(){stopTyping();const c=document.getElementById('cursor');if(c)c.remove();els.dialogueText.textContent=fullText;}
+    function renderActivity(sc){const ac=`act-${sc.actType}`;const h=`<div class="activity-card" role="article"><div class="activity-header"><div class="activity-type-badge">${sc.activityType}</div><div class="activity-title">${sc.title}</div></div><div class="activity-body"><p class="activity-desc">${sc.desc}</p><div class="activity-steps" role="list">${sc.steps.map(s=>`<div class="activity-step" role="listitem"><div class="step-label">${s.label}</div><div class="step-value">${s.value}</div></div>`).join('')}</div><div class="activity-footer">${sc.footer}</div></div></div>`;els.activityView.className=`scene-view ${ac}`;els.activityInner.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden;';els.activityInner.innerHTML=h;}
+    function renderNotebook(sc){els.nbIntro.textContent=sc.intro;els.nbTasks.innerHTML=sc.tasks.map((t,i)=>`<li><span class="task-num" aria-label="Task ${i+1}">${i+1}</span><span>${t}</span></li>`).join('');els.nbReminder.textContent=sc.reminder;}
+    function showScene(idx,dir){stopTyping();const sc=SCENES[idx],tot=SCENES.length;const pct=Math.max(3,Math.round(((idx+1)/tot)*100));els.progressFill.style.width=`${pct}%`;els.progressTrack.setAttribute('aria-valuenow',pct);els.sceneCounter.textContent=`${idx+1} of ${tot}`;els.navSceneInfo.textContent=`Scene ${idx+1} of ${tot}`;els.btnBack.disabled=idx===0;els.btnNext.disabled=idx===tot-1;els.btnNext.textContent=idx===tot-1?'Finish':'Next ▶';els.bgLayer.style.background=sc.bg;if(sc.type==='intro')showViews('intro');else if(sc.type==='dialogue'){showViews('dialogue');applyChar(sc.char);typeText(sc.text,dir==='back');}else if(sc.type==='activity'){renderActivity(sc);showViews('activity');void els.activityView.offsetWidth;els.activityView.classList.add('scene-fade-in');}else if(sc.type==='notebook'){renderNotebook(sc);showViews('notebook');}}
+    function goNext(){if(isTyping){completeTyping();return;}if(currentIndex<SCENES.length-1){currentIndex++;showScene(currentIndex,'forward');}}
+    function goBack(){if(currentIndex>0){currentIndex--;showScene(currentIndex,'back');}}
+    els.btnNext.addEventListener('click',goNext);
+    els.btnBack.addEventListener('click',goBack);
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goNext();}if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goBack();}});
+    showScene(0,'forward');
+  </script>
+</body>
+</html>
