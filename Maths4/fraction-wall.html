@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Fraction Wall</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2EDE3;
+  --card: #FFFFFF;
+  --slate-dark: #253E6A;
+  --amber: #C07A10;
+  --terra: #A84B2A;
+  --muted: #7A7A7A;
+  --shadow: 0 4px 28px rgba(0,0,0,0.09);
+  --sel-bg: #1A3560;
+  --sel-glow: #1A3560;
+  --eqv-bg: #B06A08;
+  --eqv-glow: #B06A08;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  padding: 28px 20px 48px;
+}
+
+/* ── HEADER ─────────────────────────────────── */
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.header h1 {
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: var(--slate-dark);
+  letter-spacing: -0.5px;
+}
+.header h1 em {
+  font-style: normal;
+  color: var(--amber);
+}
+.header p {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+/* ── WALL CARD ───────────────────────────────── */
+.wall-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 28px 32px 26px;
+  max-width: 980px;
+  margin: 0 auto;
+  box-shadow: var(--shadow);
+}
+
+/* ── ROW ─────────────────────────────────────── */
+.wall-row {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  margin-bottom: 5px;
+}
+.wall-row:last-child { margin-bottom: 0; }
+
+.row-label {
+  width: 86px;
+  min-width: 86px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 14px;
+  line-height: 1.3;
+}
+
+.pieces {
+  flex: 1;
+  display: flex;
+  gap: 3px;
+  height: 100%;
+}
+
+/* ── PIECE ───────────────────────────────────── */
+.piece {
+  flex: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: rgba(255,255,255,0.96);
+  transition:
+    transform 0.16s cubic-bezier(.34,1.56,.64,1),
+    box-shadow 0.16s ease,
+    opacity 0.2s ease,
+    filter 0.15s ease;
+  user-select: none;
+  position: relative;
+}
+.piece:hover:not(.selected):not(.equivalent):not(.faded) {
+  transform: translateY(-3px);
+  filter: brightness(1.14);
+}
+
+/* Row base colours — calm, harmonious set */
+[data-row="1"]  .piece { background: #4A6FA5; }
+[data-row="2"]  .piece { background: #C07B2E; }
+[data-row="3"]  .piece { background: #4E8A4E; }
+[data-row="4"]  .piece { background: #B85248; }
+[data-row="5"]  .piece { background: #7262A8; }
+[data-row="6"]  .piece { background: #298888; }
+[data-row="8"]  .piece { background: #A85272; }
+[data-row="10"] .piece { background: #6A922A; }
+[data-row="12"] .piece { background: #3870A8; }
+
+/* smaller text for dense rows */
+[data-row="8"]  .piece,
+[data-row="10"] .piece,
+[data-row="12"] .piece { font-size: 0.74rem; }
+
+/* ── STATES ──────────────────────────────────── */
+.piece.selected {
+  background: var(--sel-bg) !important;
+  color: #FFE580 !important;
+  box-shadow: 0 0 0 3px var(--sel-glow), 0 6px 20px rgba(26,53,96,0.5);
+  transform: translateY(-3px) scale(1.05);
+  z-index: 20;
+}
+.piece.equivalent {
+  background: var(--eqv-bg) !important;
+  color: #FFF3CC !important;
+  box-shadow: 0 0 0 3px var(--eqv-glow), 0 6px 20px rgba(176,106,8,0.45);
+  transform: translateY(-3px);
+  z-index: 10;
+}
+.piece.faded {
+  opacity: 0.22;
+  cursor: default;
+  transform: none;
+}
+
+/* ── INFO PANEL ──────────────────────────────── */
+.info-panel {
+  max-width: 980px;
+  margin: 16px auto 0;
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.equation-card {
+  flex: 1;
+  background: var(--card);
+  border-radius: 16px;
+  padding: 22px 32px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  transition: all 0.25s ease;
+}
+
+/* Empty state */
+.empty-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.empty-hint .nudge {
+  font-size: 1.8rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Equation */
+.eq-wrap { text-align: center; width: 100%; }
+.eq-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+.eq-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.eq-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  font-weight: 900;
+  min-width: 32px;
+}
+.eq-frac .n, .eq-frac .d {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+.eq-frac .bar {
+  width: 100%;
+  height: 3px;
+  background: currentColor;
+  border-radius: 2px;
+  margin: 3px 0;
+}
+.eq-frac.is-sel .n, .eq-frac.is-sel .d { color: #1A3560; }
+.eq-frac.is-eqv .n, .eq-frac.is-eqv .d { color: #B06A08; }
+.eq-equals {
+  font-size: 1.9rem;
+  font-weight: 900;
+  color: #CCCCCC;
+  line-height: 1;
+  padding-bottom: 2px;
+}
+.eq-note {
+  margin-top: 12px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.eq-noequiv {
+  text-align: center;
+}
+.eq-noequiv .frac-shown {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--sel-bg);
+  display: block;
+  margin-bottom: 8px;
+}
+.eq-noequiv p {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* ── SIDE ACTIONS ────────────────────────────── */
+.side-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btn {
+  padding: 0 22px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-clear { background: var(--terra); color: #fff; }
+.btn-clear:hover { background: #8A3A1E; }
+
+/* ── LEGEND ──────────────────────────────────── */
+.legend {
+  max-width: 980px;
+  margin: 12px auto 0;
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+}
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+.leg-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+/* ── TRY THESE CHIPS ─────────────────────────── */
+.try-these {
+  max-width: 980px;
+  margin: 16px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.try-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 2px solid #D0C8BC;
+  background: var(--card);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--slate-dark);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover {
+  background: var(--slate-dark);
+  color: white;
+  border-color: var(--slate-dark);
+  transform: translateY(-1px);
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Fraction <em>Wall</em></h1>
+  <p>Click any brick to see its equivalent fractions highlighted across the wall</p>
+</div>
+
+<div class="wall-card" id="wall-card"></div>
+
+<div class="info-panel">
+  <div class="equation-card" id="eq-card">
+    <div class="empty-hint">
+      <span class="nudge">👆</span>
+      Click any brick above to explore equal fractions
+    </div>
+  </div>
+  <div class="side-actions" id="side-actions" style="display:none">
+    <button class="btn btn-clear" onclick="clearSelection()">✕&nbsp; Clear</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="leg-item">
+    <div class="leg-dot" style="background:#1A3560; box-shadow:0 0 0 2px #1A3560;"></div>
+    Selected fraction
+  </div>
+  <div class="leg-item">
+    <div class="leg-dot" style="background:#B06A08; box-shadow:0 0 0 2px #B06A08;"></div>
+    Equivalent fractions
+  </div>
+</div>
+
+<div class="try-these" id="try-these">
+  <span class="try-label">Try clicking:</span>
+</div>
+
+<script>
+/* ─── DATA ─────────────────────────────────────── */
+const ROWS = [
+  { denom: 1,  name: '1 Whole'  },
+  { denom: 2,  name: 'Halves'   },
+  { denom: 3,  name: 'Thirds'   },
+  { denom: 4,  name: 'Quarters' },
+  { denom: 5,  name: 'Fifths'   },
+  { denom: 6,  name: 'Sixths'   },
+  { denom: 8,  name: 'Eighths'  },
+  { denom: 10, name: 'Tenths'   },
+  { denom: 12, name: 'Twelfths' },
+];
+
+// Fractions with rich equivalences to feature in "Try clicking" chips
+const FEATURED = [
+  { label: '½',   denom: 2,  idx: 1 },
+  { label: '⅓',   denom: 3,  idx: 1 },
+  { label: '¼',   denom: 4,  idx: 1 },
+  { label: '⅙',   denom: 6,  idx: 1 },
+  { label: '²⁄₃', denom: 3,  idx: 2 },
+  { label: '³⁄₄', denom: 4,  idx: 3 },
+  { label: '²⁄₅', denom: 5,  idx: 2 },
+];
+
+let selected = null; // { denom, idx }
+
+/* ─── BUILD WALL ───────────────────────────────── */
+function buildWall() {
+  const container = document.getElementById('wall-card');
+
+  ROWS.forEach(row => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'wall-row';
+    rowDiv.setAttribute('data-row', row.denom);
+
+    const label = document.createElement('div');
+    label.className = 'row-label';
+    label.textContent = row.name;
+    rowDiv.appendChild(label);
+
+    const pieces = document.createElement('div');
+    pieces.className = 'pieces';
+
+    for (let i = 1; i <= row.denom; i++) {
+      const p = document.createElement('div');
+      p.className = 'piece';
+      p.setAttribute('data-denom', row.denom);
+      p.setAttribute('data-idx', i);
+      // Label each brick with its unit fraction
+      p.textContent = row.denom === 1 ? '1' : `1\u2044${row.denom}`;
+      p.addEventListener('click', () => handleClick(row.denom, i));
+      pieces.appendChild(p);
+    }
+
+    rowDiv.appendChild(pieces);
+    container.appendChild(rowDiv);
+  });
+}
+
+/* ─── BUILD CHIPS ──────────────────────────────── */
+function buildChips() {
+  const container = document.getElementById('try-these');
+  FEATURED.forEach(f => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = f.label;
+    chip.title = `Click to select ${f.label}`;
+    chip.addEventListener('click', () => {
+      selected = { denom: f.denom, idx: f.idx };
+      refresh();
+    });
+    container.appendChild(chip);
+  });
+}
+
+/* ─── INTERACTION ──────────────────────────────── */
+function handleClick(denom, idx) {
+  if (selected && selected.denom === denom && selected.idx === idx) {
+    clearSelection();
+    return;
+  }
+  selected = { denom, idx };
+  refresh();
+}
+
+/**
+ * For piece at position idx (1-based) in row of `denom` pieces,
+ * find all pieces in all rows whose combined span [start, end]
+ * exactly matches [(idx-1)/denom, idx/denom].
+ *
+ * This is possible precisely when the other row m is a multiple of denom:
+ *   m = denom * k  →  highlight k consecutive pieces starting at (idx-1)*k + 1
+ */
+function getHighlights(denom, idx) {
+  const keys = new Set();
+  for (const row of ROWS) {
+    const m = row.denom;
+    if (m % denom === 0) {
+      const k = m / denom;
+      const start = (idx - 1) * k + 1;
+      const end   = idx * k;
+      for (let j = start; j <= end; j++) {
+        keys.add(`${m}-${j}`);
+      }
+    }
+  }
+  return keys;
+}
+
+function refresh() {
+  if (!selected) { clearSelection(); return; }
+  const { denom, idx } = selected;
+  const highlights = getHighlights(denom, idx);
+  const selKey = `${denom}-${idx}`;
+
+  document.querySelectorAll('.piece').forEach(p => {
+    const pd  = parseInt(p.dataset.denom);
+    const pi  = parseInt(p.dataset.idx);
+    const key = `${pd}-${pi}`;
+    p.classList.remove('selected', 'equivalent', 'faded');
+
+    if (key === selKey)          p.classList.add('selected');
+    else if (highlights.has(key)) p.classList.add('equivalent');
+    else                          p.classList.add('faded');
+  });
+
+  renderEquation(denom, idx);
+  document.getElementById('side-actions').style.display = 'flex';
+}
+
+/* ─── EQUATION PANEL ───────────────────────────── */
+function renderEquation(denom, idx) {
+  const card = document.getElementById('eq-card');
+
+  // Which rows are multiples of denom (and therefore show equivalences)?
+  const matchRows = ROWS.filter(r => r.denom % denom === 0);
+
+  if (matchRows.length <= 1) {
+    // No equivalents visible in this wall
+    card.innerHTML = `
+      <div class="eq-noequiv">
+        <span class="frac-shown">1&#x2044;${denom}</span>
+        <p>
+          No equivalent fractions appear in this wall for <strong>1/${denom}</strong>.<br>
+          Equivalents would appear in rows with ${denom * 2} or ${denom * 3} pieces.
+        </p>
+      </div>`;
+    return;
+  }
+
+  // Determine the "base" numerator from the selected position
+  // Each brick in a multiple-row represents 1 unit; k consecutive bricks = k/(denom×k) = 1/denom
+  // For the selected piece at position idx, equivalents in row m=denom×k span
+  //   numerator = k × (idx for display of full region)
+  // But the FRACTION SIZE equation is always: 1/denom = k/(denom×k)
+
+  // Build fraction equation parts
+  let partsHTML = '';
+  matchRows.forEach((row, i) => {
+    const k   = row.denom / denom;
+    const cls = row.denom === denom ? 'is-sel' : 'is-eqv';
+    if (i > 0) partsHTML += `<span class="eq-equals">=</span>`;
+    partsHTML += `
+      <div class="eq-frac ${cls}">
+        <div class="n">${k}</div>
+        <div class="bar"></div>
+        <div class="d">${row.denom}</div>
+      </div>`;
+  });
+
+  // Build a human-readable description
+  const selFrac = `1/${denom}`;
+  const equivDescriptions = matchRows
+    .filter(r => r.denom !== denom)
+    .map(r => {
+      const k = r.denom / denom;
+      return `${k}/${r.denom}`;
+    });
+
+  let noteText;
+  if (equivDescriptions.length === 0) {
+    noteText = '';
+  } else if (equivDescriptions.length === 1) {
+    noteText = `${selFrac} and ${equivDescriptions[0]} represent the same portion of the whole.`;
+  } else {
+    const last = equivDescriptions.pop();
+    noteText = `${selFrac}, ${equivDescriptions.join(', ')} and ${last} all represent the same portion of the whole.`;
+  }
+
+  card.innerHTML = `
+    <div class="eq-wrap">
+      <div class="eq-title">Equal Fractions</div>
+      <div class="eq-row">${partsHTML}</div>
+      ${noteText ? `<div class="eq-note">${noteText}</div>` : ''}
+    </div>`;
+}
+
+/* ─── CLEAR ────────────────────────────────────── */
+function clearSelection() {
+  selected = null;
+  document.querySelectorAll('.piece').forEach(p => {
+    p.classList.remove('selected', 'equivalent', 'faded');
+  });
+  document.getElementById('eq-card').innerHTML = `
+    <div class="empty-hint">
+      <span class="nudge">👆</span>
+      Click any brick above to explore equal fractions
+    </div>`;
+  document.getElementById('side-actions').style.display = 'none';
+}
+
+/* ─── INIT ─────────────────────────────────────── */
+buildWall();
+buildChips();
+</script>
+
+</body>
+</html>
