@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 02 — Data &amp; Algorithms | SE6-Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── CHAPTER-02 COMPONENT STYLES ─────────────────────────── */
+/* Number Base Converter */
+.converter-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+.conv-cell{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.conv-label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-m);margin-bottom:0.5rem;}
+.conv-input{width:100%;background:var(--bg-deep);border:1px solid var(--text-m);border-radius:5px;padding:0.6rem 0.75rem;color:var(--text-1);font-family:var(--font-mono);font-size:14px;font-weight:600;transition:border-color 0.15s;}
+.conv-input:focus{outline:none;border-color:var(--accent);}
+.conv-input.readonly{border-color:var(--border);color:var(--accent);cursor:default;background:var(--bg-surface);}
+.conv-base{font-family:var(--font-mono);font-size:9px;color:var(--text-m);margin-top:0.35rem;}
+.conv-bits{display:flex;gap:2px;flex-wrap:wrap;margin-top:0.75rem;}
+.bit{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:600;transition:all 0.2s;}
+.bit.one{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);}
+.bit.zero{background:var(--bg-card);color:var(--text-m);border:1px solid var(--border);}
+.conv-hint{font-size:11px;color:var(--text-m);margin-top:0.5rem;font-family:var(--font-mono);}
+
+/* Two's Complement */
+.tc-step{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:0.75rem;}
+.tc-step-label{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-m);margin-bottom:0.5rem;}
+.tc-bits{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:0.4rem;}
+.tc-bit{width:32px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:13px;font-weight:600;transition:all 0.3s;}
+.tc-bit.one{background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);}
+.tc-bit.zero{background:var(--bg-surface);color:var(--text-m);border:1px solid var(--border);}
+.tc-bit.flip{background:var(--accent2-dim);color:var(--accent2);border:1px solid var(--accent2);}
+.tc-bit.sign{background:var(--danger-dim);color:var(--danger);border:1px solid var(--danger);}
+.tc-val{font-family:var(--font-mono);font-size:12px;color:var(--text-2);margin-top:0.25rem;}
+.tc-input-row{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;}
+.tc-num-input{background:var(--bg-deep);border:1px solid var(--text-m);border-radius:5px;padding:0.55rem 0.85rem;color:var(--text-1);font-family:var(--font-mono);font-size:16px;font-weight:600;width:120px;transition:border-color 0.15s;}
+.tc-num-input:focus{outline:none;border-color:var(--accent);}
+.tc-range{display:flex;gap:0.5rem;align-items:center;font-family:var(--font-mono);font-size:11px;color:var(--text-m);}
+
+/* Data Types Table */
+.dt-grid{display:grid;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:1.5rem 0;}
+.dt-row{display:grid;grid-template-columns:140px 1fr 1fr;background:var(--bg-surface);}
+.dt-row.header{background:var(--bg-card);}
+.dt-cell{padding:0.65rem 0.9rem;font-size:13px;border-right:1px solid var(--border);}
+.dt-cell:last-child{border-right:none;}
+.dt-row.header .dt-cell{font-family:var(--font-mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-m);}
+.dt-type{font-family:var(--font-mono);font-size:12px;color:var(--accent);}
+.dt-desc{color:var(--text-2);}
+.dt-game{color:var(--gold);font-size:12px;}
+
+/* Data Dictionary */
+.dd-table-wrap{overflow-x:auto;margin:1.5rem 0;}
+.dd-table{width:100%;border-collapse:collapse;font-size:12px;}
+.dd-table th{background:var(--bg-card);color:var(--text-m);font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:0.6rem 0.75rem;border:1px solid var(--border);text-align:left;white-space:nowrap;}
+.dd-table td{padding:0.55rem 0.75rem;border:1px solid var(--border);color:var(--text-2);vertical-align:top;line-height:1.5;}
+.dd-table tr:nth-child(even) td{background:var(--bg-deep);}
+.dd-table td.mono{font-family:var(--font-mono);font-size:11px;color:var(--accent);}
+.dd-input{width:100%;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;padding:0.3rem 0.5rem;color:var(--text-1);font-family:var(--font-mono);font-size:11px;transition:border-color 0.15s;}
+.dd-input:focus{outline:none;border-color:var(--accent2);}
+.dd-input.correct{border-color:var(--accent);color:var(--accent);}
+.dd-input.wrong{border-color:var(--danger);color:var(--danger);}
+
+/* Data Structures Explorer */
+.ds-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+.ds-tab{padding:0.6rem 1.25rem;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-m);transition:all 0.15s;}
+.ds-tab:hover{color:var(--text-2);}
+.ds-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.ds-panel{display:none;}
+.ds-panel.active{display:block;}
+.ds-caption{font-size:13px;color:var(--text-2);margin-bottom:1rem;line-height:1.6;}
+.array-viz{display:flex;gap:0;margin:1rem 0;}
+.array-cell{min-width:60px;border:1px solid var(--border);background:var(--bg-card);display:flex;flex-direction:column;align-items:center;padding:0.5rem;}
+.array-cell:first-child{border-radius:6px 0 0 6px;}
+.array-cell:last-child{border-radius:0 6px 6px 0;}
+.array-val{font-family:var(--font-mono);font-size:14px;font-weight:600;color:var(--accent);margin-bottom:0.2rem;}
+.array-idx{font-family:var(--font-mono);font-size:9px;color:var(--text-m);}
+.record-viz{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:340px;}
+.record-header{background:var(--accent-dim);padding:0.5rem 1rem;font-family:var(--font-mono);font-size:11px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;}
+.record-field{display:flex;padding:0.45rem 1rem;border-top:1px solid var(--border);}
+.record-field-name{font-family:var(--font-mono);font-size:12px;color:var(--accent2);min-width:100px;}
+.record-field-val{font-family:var(--font-mono);font-size:12px;color:var(--text-2);}
+.record-field-type{font-family:var(--font-mono);font-size:10px;color:var(--text-m);margin-left:auto;}
+
+/* Responsive — chapter-specific only */
+@media(max-width:860px){
+  .converter-grid{grid-template-columns:1fr;}
+  .dt-row{grid-template-columns:110px 1fr;}
+  .dt-row .dt-cell:last-child{display:none;}
+}
+</style>
+<!-- Shared styles -->
+<link rel="stylesheet" href="../../assets/css/shared.css">
+<!-- Navigation engine -->
+<script src="../../assets/js/se-nav.js"></script>
+</head>
+<body>
+
+
+
+
+
+<!-- MAIN -->
+<main class="main">
+
+  <div class="ch-hero">
+    <div class="ch-hero-grid"></div>
+    <div class="ch-hero-glow"></div>
+    <div class="ch-hero-content">
+      <div class="breadcrumb">
+        <a href="../../index.html">Home</a><span>›</span>
+        <span>Year 11</span><span>›</span>
+        <span>Part 1 — Programming Fundamentals</span><span>›</span>
+        <span>Chapter 02</span>
+      </div>
+      <div class="ch-eyebrow">Chapter 02 · Programming Fundamentals</div>
+      <h1 class="ch-title">Data &amp; Algorithms</h1>
+      <p class="ch-intro">
+        Every game is built on data — player health, inventory items, leaderboard scores, map coordinates.
+        Before writing code, engineers must understand how computers store and represent that data.
+        This chapter covers the number systems, data types, and data structures that underpin all software.
+      </p>
+      <div class="ch-meta">
+        <div class="meta-pill"><strong>Focus Area:</strong>&nbsp;Programming Fundamentals</div>
+        <div class="meta-pill"><strong>Outcomes:</strong>&nbsp;SE-11-01 · SE-11-02 · SE-11-04</div>
+        <div class="meta-pill"><strong>Estimated time:</strong>&nbsp;7 hours</div>
+        <div class="meta-pill"><strong>Sections:</strong>&nbsp;6 + quiz</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-wrap">
+
+    <!-- 2.1 NUMBER SYSTEMS -->
+    <section class="content-section" id="numbers">
+      <div class="section-tag">Section 2.1</div>
+      <h2 class="section-heading">Number Systems</h2>
+
+      <p class="prose">
+        Computers store everything — images, sounds, code, player data — as sequences of
+        <strong>binary digits (bits)</strong>: ones and zeros. As a software engineer you need to
+        fluently read and convert between three number systems: <strong>binary (base 2)</strong>,
+        <strong>decimal (base 10)</strong>, and <strong>hexadecimal (base 16)</strong>.
+      </p>
+
+      <div class="callout">
+        <div class="callout-label">How Positional Number Systems Work</div>
+        <div class="callout-body">
+          In any positional number system, each digit's value depends on its <strong>position</strong>.
+          Moving left, the column value multiplies by the base.<br><br>
+          <strong>Decimal (base 10):</strong> columns are 1, 10, 100, 1000 …<br>
+          <strong>Binary (base 2):</strong> columns are 1, 2, 4, 8, 16, 32, 64, 128 …<br>
+          <strong>Hexadecimal (base 16):</strong> columns are 1, 16, 256, 4096 … using digits 0–9 then A–F
+        </div>
+      </div>
+
+      <p class="prose">
+        To convert binary to decimal, identify which bit columns are <code>1</code> and add their values.
+        For example, <code>10110101</code> in binary:
+      </p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Binary → Decimal Conversion</div></div>
+        <div class="code-body"><span class="cm">// Column values (powers of 2, right to left)</span>
+128  64  32  16   8   4   2   1
+  1   0   1   1   0   1   0   1
+
+<span class="cm">// Add the columns where bit = 1</span>
+128 + 32 + 16 + 4 + 1  =  <span class="num-lit">181</span>
+
+<span class="cm">// So 10110101 (binary) = 181 (decimal) = B5 (hex)</span></div>
+      </div>
+
+      <p class="prose">
+        Hexadecimal uses the letters <strong>A=10, B=11, C=12, D=13, E=14, F=15</strong> for values above 9.
+        One hex digit represents exactly 4 binary bits (a <em>nibble</em>), making hex a compact shorthand
+        for binary — which is why Unity and web colour codes like <code>#FF6347</code> are written in hex.
+      </p>
+
+      <div class="unity-banner">
+        <div class="unity-icon">🎮</div>
+        <div class="unity-banner-body">
+          <strong>Hex in Unity — Colours &amp; Flags</strong>
+          <p>Unity's <code>Color32</code> stores RGBA values as bytes (0–255). In the Unity Inspector
+          you'll see colours like <code>#39E8A2FF</code> — each pair of hex digits is one colour channel.
+          <code>39</code> = red (57), <code>E8</code> = green (232), <code>A2</code> = blue (162),
+          <code>FF</code> = alpha (255 = fully opaque). Bit flags in game state bitmasks also
+          use hex for compactness.</p>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE: NUMBER BASE CONVERTER -->
+      <div class="interactive-box">
+        <div class="ib-header">
+          <div class="ib-title">Activity 2.1 — Number Base Converter <span class="ib-badge">Interactive</span></div>
+        </div>
+        <div class="ib-body">
+          <div class="ib-instruction">Type a <strong>decimal</strong> number (0–255) in the first box. Binary and hexadecimal update live. Watch the bit pattern change.</div>
+          <div class="converter-grid">
+            <div class="conv-cell">
+              <div class="conv-label">Decimal</div>
+              <input class="conv-input" id="dec-in" type="number" min="0" max="255" value="57" oninput="convertFromDec()">
+              <div class="conv-base">Base 10 · digits 0–9</div>
+            </div>
+            <div class="conv-cell">
+              <div class="conv-label">Binary</div>
+              <input class="conv-input readonly" id="bin-out" readonly value="00111001">
+              <div class="conv-base">Base 2 · digits 0, 1</div>
+              <div class="conv-bits" id="bit-display"></div>
+              <div class="conv-hint" id="bit-hint"></div>
+            </div>
+            <div class="conv-cell">
+              <div class="conv-label">Hexadecimal</div>
+              <input class="conv-input readonly" id="hex-out" readonly value="39">
+              <div class="conv-base">Base 16 · digits 0–9, A–F</div>
+              <div style="margin-top:0.75rem;">
+                <div class="conv-label" style="margin-bottom:0.35rem;">ASCII Character</div>
+                <div id="ascii-out" style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--purple);min-height:30px;"></div>
+                <div class="conv-hint" id="ascii-hint"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+            <div class="ib-instruction" style="margin-bottom:0.5rem;">Try these common values:</div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <button class="ib-btn ghost" onclick="setDec(65)">65 = 'A'</button>
+              <button class="ib-btn ghost" onclick="setDec(97)">97 = 'a'</button>
+              <button class="ib-btn ghost" onclick="setDec(255)">255 = FF</button>
+              <button class="ib-btn ghost" onclick="setDec(0)">0 = null</button>
+              <button class="ib-btn ghost" onclick="setDec(32)">32 = space</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.2 TWO'S COMPLEMENT -->
+    <section class="content-section" id="twos">
+      <div class="section-tag">Section 2.2</div>
+      <h2 class="section-heading blue">Two's Complement</h2>
+
+      <p class="prose">
+        Plain binary can only represent <strong>positive</strong> integers. To represent
+        <strong>negative numbers</strong>, computers use <strong>two's complement</strong> —
+        the standard method for signed integers in virtually all modern processors.
+      </p>
+
+      <div class="callout blue">
+        <div class="callout-label">Two's Complement Method — 3 Steps</div>
+        <div class="callout-body">
+          To find the two's complement representation of a negative number −N:<br><br>
+          <strong>Step 1:</strong> Write the positive value N in binary (8 bits).<br>
+          <strong>Step 2:</strong> Flip all the bits (0→1, 1→0). This is called the <em>one's complement</em>.<br>
+          <strong>Step 3:</strong> Add 1 to the result.<br><br>
+          The <strong>most significant bit (MSB)</strong> — the leftmost bit — acts as the <em>sign bit</em>.
+          If it is <code>1</code>, the number is negative. If <code>0</code>, it is positive.
+        </div>
+      </div>
+
+      <p class="prose">
+        With 8-bit two's complement, you can represent integers from <strong>−128</strong> to
+        <strong>+127</strong>. The range is asymmetric because zero takes up one of the positive slots.
+      </p>
+
+      <!-- INTERACTIVE: TWO'S COMPLEMENT CALCULATOR -->
+      <div class="interactive-box">
+        <div class="ib-header">
+          <div class="ib-title">Activity 2.2 — Two's Complement Calculator <span class="ib-badge blue">Step-by-step</span></div>
+        </div>
+        <div class="ib-body">
+          <div class="ib-instruction">Enter a <strong>negative integer</strong> (−128 to −1) to see the two's complement method step by step.</div>
+          <div class="tc-input-row">
+            <input class="tc-num-input" id="tc-input" type="number" min="-128" max="-1" value="-57" oninput="calcTC()">
+            <div class="tc-range">Range: −128 to −1</div>
+          </div>
+          <div id="tc-steps"></div>
+        </div>
+      </div>
+
+      <p class="prose">
+        To <em>decode</em> a two's complement number: if the MSB is 1, apply the same process in reverse
+        (flip bits, add 1) to find the magnitude, then apply a negative sign.
+        If the MSB is 0, read it as a normal positive binary value.
+      </p>
+
+      <div class="callout gold">
+        <div class="callout-label">HSC Exam Tip</div>
+        <div class="callout-body">
+          Exam questions typically ask you to <strong>represent a negative integer</strong> in 8-bit
+          two's complement, or to <strong>determine the decimal value</strong> of a given two's complement
+          binary string. Always show your working — Step 1 (positive binary), Step 2 (flip bits),
+          Step 3 (add 1) — and identify the sign bit.
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.3 ASCII & UNICODE -->
+    <section class="content-section" id="ascii">
+      <div class="section-tag">Section 2.3</div>
+      <h2 class="section-heading purple">ASCII &amp; Unicode</h2>
+
+      <p class="prose">
+        Computers store text as numbers. <strong>ASCII</strong> (American Standard Code for Information
+        Interchange) assigns a number to each character. Standard ASCII uses 7 bits (128 characters),
+        covering uppercase A–Z (65–90), lowercase a–z (97–122), digits 0–9 (48–57), and control characters.
+      </p>
+
+      <div class="callout purple">
+        <div class="callout-label">Key ASCII Ranges to Know</div>
+        <div class="callout-body">
+          <strong>Uppercase A–Z:</strong> 65–90 &nbsp;·&nbsp; <code>ord('A') = 65</code><br>
+          <strong>Lowercase a–z:</strong> 97–122 &nbsp;·&nbsp; <code>ord('a') = 97</code><br>
+          <strong>Digits 0–9:</strong> 48–57 &nbsp;·&nbsp; <code>ord('0') = 48</code><br>
+          <strong>Space:</strong> 32 &nbsp;·&nbsp; <strong>Null:</strong> 0<br><br>
+          Notice: lowercase letters are exactly 32 higher than uppercase — you can change case
+          by adding or subtracting 32 from the ASCII value, or by flipping bit 5.
+        </div>
+      </div>
+
+      <p class="prose">
+        <strong>Unicode</strong> extends ASCII to cover every writing system in the world —
+        over 140,000 characters. The most common encoding is <strong>UTF-8</strong>, which uses
+        1–4 bytes per character and is backwards-compatible with ASCII (the first 128 characters
+        are identical). Python 3 strings are Unicode by default.
+      </p>
+
+      <div class="unity-banner">
+        <div class="unity-icon">🎮</div>
+        <div class="unity-banner-body">
+          <strong>ASCII in Game Development</strong>
+          <p>Simple encryption, text validation, and score encoding in games often exploit ASCII
+          arithmetic. A classic game trick: encode player initials for a high-score table using
+          ASCII values. In Unity, <code>System.Text.Encoding.UTF8</code> is used whenever
+          game data is serialised to/from text files or network packets.</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Python — ASCII &amp; Unicode</div></div>
+        <div class="code-body"><span class="cm"># Convert character to ASCII code</span>
+<span class="fn">print</span>(<span class="fn">ord</span>(<span class="st">'A'</span>))       <span class="cm"># → 65</span>
+<span class="fn">print</span>(<span class="fn">ord</span>(<span class="st">'a'</span>))       <span class="cm"># → 97  (32 higher than 'A')</span>
+
+<span class="cm"># Convert ASCII code to character</span>
+<span class="fn">print</span>(<span class="fn">chr</span>(<span class="num-lit">65</span>))        <span class="cm"># → 'A'</span>
+<span class="fn">print</span>(<span class="fn">chr</span>(<span class="num-lit">65</span> + <span class="num-lit">32</span>))  <span class="cm"># → 'a'  (to lowercase)</span>
+
+<span class="cm"># Uppercase without .upper() — flip bit 5</span>
+letter = <span class="st">'g'</span>
+upper  = <span class="fn">chr</span>(<span class="fn">ord</span>(letter) - <span class="num-lit">32</span>)
+<span class="fn">print</span>(upper)          <span class="cm"># → 'G'</span>
+
+<span class="cm"># Unicode — Python 3 strings are always Unicode</span>
+<span class="fn">print</span>(<span class="fn">len</span>(<span class="st">'café'</span>))    <span class="cm"># → 4 characters</span></div>
+      </div>
+    </section>
+
+    <!-- 2.4 DATA TYPES -->
+    <section class="content-section" id="datatypes">
+      <div class="section-tag">Section 2.4</div>
+      <h2 class="section-heading">Standard Data Types</h2>
+
+      <p class="prose">
+        A <strong>data type</strong> tells the computer how to interpret a value stored in memory —
+        how many bytes it needs, what operations are valid, and what range of values it can hold.
+        Choosing the correct data type is a core engineering decision that affects memory use,
+        performance, and correctness.
+      </p>
+
+      <div class="dt-grid">
+        <div class="dt-row header">
+          <div class="dt-cell">Data Type</div>
+          <div class="dt-cell">Description &amp; range</div>
+          <div class="dt-cell">Game example</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">Integer</div>
+          <div class="dt-cell dt-desc">Whole numbers, no decimal point. 32-bit int: −2,147,483,648 to +2,147,483,647.</div>
+          <div class="dt-cell dt-game">playerHealth, score, lives, ammoCount</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">Real / Float</div>
+          <div class="dt-cell dt-desc">Numbers with a decimal point. Single precision (32-bit float) gives ~7 decimal digits of precision.</div>
+          <div class="dt-cell dt-game">positionX, speed, gravity, jumpHeight</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">Boolean</div>
+          <div class="dt-cell dt-desc">True or False only. Stored as 1 bit logically (though typically 1 byte in memory).</div>
+          <div class="dt-cell dt-game">isAlive, hasKey, gameRunning, isPaused</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">Char</div>
+          <div class="dt-cell dt-desc">A single character. In Python, a string of length 1. In C#, a 16-bit Unicode character.</div>
+          <div class="dt-cell dt-game">playerInitial, direction ('N','S','E','W')</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">String</div>
+          <div class="dt-cell dt-desc">A sequence of characters. Variable length. Stored as an array of char values.</div>
+          <div class="dt-cell dt-game">playerName, itemDescription, dialogueText</div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-cell dt-type">Date &amp; Time</div>
+          <div class="dt-cell dt-desc">Always stored as 32 bits (4 bytes). Displayed in formats like DD/MM/YYYY or YYYY-MM-DD hh:mm:ss.</div>
+          <div class="dt-cell dt-game">saveTimestamp, achievementUnlocked, sessionStart</div>
+        </div>
+      </div>
+
+      <div class="callout gold">
+        <div class="callout-label">Single Precision Floating Point</div>
+        <div class="callout-body">
+          The syllabus specifically names <strong>single precision floating point</strong> (32-bit float).
+          It stores numbers in IEEE 754 format: 1 sign bit, 8 exponent bits, 23 mantissa bits.
+          This gives a range of approximately ±3.4 × 10³⁸ but only ~7 significant decimal digits.
+          Unity's <code>Vector3</code>, <code>transform.position</code>, and physics values all
+          use <code>float</code> — which is why precision errors can accumulate in very large game worlds.
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Python — Data Types in Practice</div></div>
+        <div class="code-body"><span class="cm"># Integer</span>
+playerHealth = <span class="num-lit">100</span>
+score        = <span class="num-lit">0</span>
+
+<span class="cm"># Real / Float</span>
+positionX    = <span class="num-lit">3.75</span>
+gravity      = <span class="num-lit">-9.81</span>
+
+<span class="cm"># Boolean</span>
+isAlive      = <span class="nm">True</span>
+hasKey       = <span class="nm">False</span>
+
+<span class="cm"># Char (Python: string of length 1)</span>
+direction    = <span class="st">'N'</span>
+
+<span class="cm"># String</span>
+playerName   = <span class="st">"Alex"</span>
+
+<span class="cm"># Check types</span>
+<span class="fn">print</span>(<span class="fn">type</span>(score))      <span class="cm"># &lt;class 'int'&gt;</span>
+<span class="fn">print</span>(<span class="fn">type</span>(positionX))  <span class="cm"># &lt;class 'float'&gt;</span>
+<span class="fn">print</span>(<span class="fn">type</span>(isAlive))    <span class="cm"># &lt;class 'bool'&gt;</span></div>
+      </div>
+    </section>
+
+    <!-- 2.5 DATA DICTIONARIES -->
+    <section class="content-section" id="dictionary">
+      <div class="section-tag">Section 2.5</div>
+      <h2 class="section-heading gold">Data Dictionaries</h2>
+
+      <p class="prose">
+        A <strong>data dictionary</strong> provides a structured description of every variable in a system.
+        It is a critical design document — written <em>before</em> coding begins — that ensures all
+        developers agree on how data is named, typed, formatted, and validated.
+      </p>
+
+      <div class="callout gold">
+        <div class="callout-label">HSC Data Dictionary Columns</div>
+        <div class="callout-body">
+          The NSW HSC format requires these columns for each variable:<br><br>
+          <strong>Variable name</strong> · <strong>Data type</strong> · <strong>Format for display</strong> ·
+          <strong>Size in bytes</strong> · <strong>Size for display</strong> ·
+          <strong>Description</strong> · <strong>Example</strong> · <strong>Validation</strong>
+        </div>
+      </div>
+
+      <p class="prose">
+        Below is a complete data dictionary for a game player record. Study the format carefully —
+        this exact structure is expected in assessment tasks.
+      </p>
+
+      <div class="dd-table-wrap">
+        <table class="dd-table">
+          <thead>
+            <tr>
+              <th>Variable</th><th>Data Type</th><th>Format</th>
+              <th>Bytes</th><th>Display</th><th>Description</th>
+              <th>Example</th><th>Validation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">playerName</td>
+              <td>String</td><td>XX..XX</td>
+              <td>1 per char</td><td>20 chars</td>
+              <td>Player's username for leaderboard display</td>
+              <td>ShadowAce</td>
+              <td>3–20 chars, alphanumeric only</td>
+            </tr>
+            <tr>
+              <td class="mono">score</td>
+              <td>Integer</td><td>NNNNNNN</td>
+              <td>4</td><td>7</td>
+              <td>Current game score, incremented on enemy defeat</td>
+              <td>14750</td>
+              <td>Integer ≥ 0, max 9,999,999</td>
+            </tr>
+            <tr>
+              <td class="mono">playerHealth</td>
+              <td>Integer</td><td>NNN</td>
+              <td>4</td><td>3</td>
+              <td>Current health points. Game ends when this reaches 0</td>
+              <td>75</td>
+              <td>Integer 0–100</td>
+            </tr>
+            <tr>
+              <td class="mono">positionX</td>
+              <td>Real (float)</td><td>NNN.NN</td>
+              <td>4</td><td>6</td>
+              <td>Player's horizontal position in world units</td>
+              <td>-14.35</td>
+              <td>Float within world bounds</td>
+            </tr>
+            <tr>
+              <td class="mono">isAlive</td>
+              <td>Boolean</td><td>X</td>
+              <td>1 bit</td><td>1</td>
+              <td>Whether the player is currently alive</td>
+              <td>True</td>
+              <td>True or False only</td>
+            </tr>
+            <tr>
+              <td class="mono">saveTimestamp</td>
+              <td>Date &amp; Time</td><td>YYYY/MM/DD hh:mm</td>
+              <td>4</td><td>16</td>
+              <td>Date and time when the game was last saved</td>
+              <td>2026/04/15 19:32</td>
+              <td>Valid datetime, not in future</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- INTERACTIVE: DATA DICTIONARY BUILDER -->
+      <div class="interactive-box">
+        <div class="ib-header">
+          <div class="ib-title">Activity 2.3 — Complete the Data Dictionary <span class="ib-badge purple">Fill in</span></div>
+        </div>
+        <div class="ib-body">
+          <div class="ib-instruction">
+            A game needs to store <strong>enemy data</strong>. Complete the missing cells in the data dictionary below.
+            Think carefully about the correct data type, byte size, and validation rule for each variable.
+          </div>
+          <div class="dd-table-wrap">
+            <table class="dd-table" id="dd-activity">
+              <thead>
+                <tr><th>Variable</th><th>Data Type</th><th>Bytes</th><th>Description</th><th>Validation</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">enemyName</td>
+                  <td><input class="dd-input" id="dd0" data-ans="String" placeholder="type…"></td>
+                  <td><input class="dd-input" id="dd1" data-ans="1 per char" placeholder="…" style="width:90px"></td>
+                  <td>Name label shown above enemy in HUD</td>
+                  <td>1–15 chars</td>
+                </tr>
+                <tr>
+                  <td class="mono">enemyHealth</td>
+                  <td><input class="dd-input" id="dd2" data-ans="Integer" placeholder="type…"></td>
+                  <td><input class="dd-input" id="dd3" data-ans="4" placeholder="…" style="width:90px"></td>
+                  <td>Current hit points remaining</td>
+                  <td><input class="dd-input" id="dd4" data-ans="Integer 0–500" placeholder="write rule…"></td>
+                </tr>
+                <tr>
+                  <td class="mono">isAggressive</td>
+                  <td><input class="dd-input" id="dd5" data-ans="Boolean" placeholder="type…"></td>
+                  <td><input class="dd-input" id="dd6" data-ans="1 bit" placeholder="…" style="width:90px"></td>
+                  <td>Whether enemy actively pursues player</td>
+                  <td><input class="dd-input" id="dd7" data-ans="True or False" placeholder="write rule…"></td>
+                </tr>
+                <tr>
+                  <td class="mono">spawnTime</td>
+                  <td><input class="dd-input" id="dd8" data-ans="Date and Time" placeholder="type…"></td>
+                  <td><input class="dd-input" id="dd9" data-ans="4" placeholder="…" style="width:90px"></td>
+                  <td>Timestamp when this enemy instance spawned</td>
+                  <td>Valid datetime</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ib-actions">
+            <button class="ib-btn primary" onclick="checkDD()">Check Answers</button>
+            <button class="ib-btn ghost" onclick="resetDD()">Reset</button>
+          </div>
+          <div class="ib-feedback" id="dd-feedback"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.6 DATA STRUCTURES -->
+    <section class="content-section" id="structures">
+      <div class="section-tag">Section 2.6</div>
+      <h2 class="section-heading blue">Data Structures</h2>
+
+      <p class="prose">
+        A <strong>data structure</strong> is a way of organising multiple data items in memory.
+        Choosing the right structure for a problem is one of the most important decisions in
+        software engineering — the wrong choice can make a program slow, fragile, or difficult
+        to maintain.
+      </p>
+
+      <div class="interactive-box">
+        <div class="ib-header">
+          <div class="ib-title">Data Structures — Visual Explorer <span class="ib-badge blue">Interactive</span></div>
+        </div>
+        <div class="ib-body" style="padding-bottom:1.5rem;">
+          <div class="ds-tabs" id="ds-tabs">
+            <div class="ds-tab active" onclick="showDS('array')">Array (1D)</div>
+            <div class="ds-tab" onclick="showDS('array2d')">Array (2D)</div>
+            <div class="ds-tab" onclick="showDS('record')">Record</div>
+            <div class="ds-tab" onclick="showDS('tree')">Tree</div>
+            <div class="ds-tab" onclick="showDS('file')">Sequential File</div>
+          </div>
+
+          <!-- ARRAY 1D -->
+          <div class="ds-panel active" id="ds-array">
+            <div class="ds-caption">
+              A <strong>1D array</strong> stores items of the <em>same type</em> in a fixed sequence,
+              accessed by an index starting at 0. Ideal for leaderboard scores, inventory lists,
+              or storing a level's tile data.
+            </div>
+            <div style="margin-bottom:0.75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);">leaderboard[0..4] — Integer</div>
+            <div class="array-viz" id="arr1d"></div>
+            <div class="code-block" style="margin-top:1rem;">
+              <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Python</div></div>
+              <div class="code-body"><span class="cm"># Declare and use a 1D array (Python list)</span>
+leaderboard = [<span class="num-lit">9800</span>, <span class="num-lit">7400</span>, <span class="num-lit">6100</span>, <span class="num-lit">5500</span>, <span class="num-lit">3200</span>]
+
+<span class="cm"># Access by index</span>
+<span class="fn">print</span>(leaderboard[<span class="num-lit">0</span>])   <span class="cm"># → 9800  (first place)</span>
+<span class="fn">print</span>(leaderboard[<span class="num-lit">4</span>])   <span class="cm"># → 3200  (fifth place)</span>
+
+<span class="cm"># Update a score</span>
+leaderboard[<span class="num-lit">2</span>] = <span class="num-lit">6300</span>
+
+<span class="cm"># Length</span>
+<span class="fn">print</span>(<span class="fn">len</span>(leaderboard))  <span class="cm"># → 5</span></div>
+            </div>
+          </div>
+
+          <!-- ARRAY 2D -->
+          <div class="ds-panel" id="ds-array2d">
+            <div class="ds-caption">
+              A <strong>2D array</strong> is an array of arrays — like a grid or table.
+              Perfect for game maps, chess boards, Sudoku grids, or tile-based level data.
+              Access uses two indices: <code>[row][col]</code>.
+            </div>
+            <div style="margin-bottom:0.75rem;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);">gameMap[3][5] — Integer (0=empty, 1=wall, 2=pickup)</div>
+            <div id="arr2d" style="display:inline-block;"></div>
+            <div class="code-block" style="margin-top:1rem;">
+              <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Python</div></div>
+              <div class="code-body"><span class="cm"># 2D array: 3 rows × 5 columns</span>
+gameMap = [
+    [<span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>],   <span class="cm"># row 0 — all walls</span>
+    [<span class="num-lit">1</span>, <span class="num-lit">0</span>, <span class="num-lit">0</span>, <span class="num-lit">2</span>, <span class="num-lit">1</span>],   <span class="cm"># row 1 — open space + pickup</span>
+    [<span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>, <span class="num-lit">1</span>],   <span class="cm"># row 2 — all walls</span>
+]
+
+<span class="fn">print</span>(gameMap[<span class="num-lit">1</span>][<span class="num-lit">3</span>])   <span class="cm"># → 2  (pickup at row 1, col 3)</span>
+
+<span class="cm"># Traverse the whole grid</span>
+<span class="kw">for</span> row <span class="kw">in</span> gameMap:
+    <span class="kw">for</span> cell <span class="kw">in</span> row:
+        <span class="fn">print</span>(cell, end=<span class="st">' '</span>)
+    <span class="fn">print</span>()</div>
+            </div>
+          </div>
+
+          <!-- RECORD -->
+          <div class="ds-panel" id="ds-record">
+            <div class="ds-caption">
+              A <strong>record</strong> groups related fields of <em>different types</em> under one name.
+              Unlike an array (same type), a record can mix strings, integers, booleans, and floats.
+              Each game entity — a player, enemy, or item — is best represented as a record.
+            </div>
+            <div class="record-viz">
+              <div class="record-header">RECORD — Player</div>
+              <div class="record-field"><span class="record-field-name">playerName</span><span class="record-field-val">"ShadowAce"</span><span class="record-field-type">String</span></div>
+              <div class="record-field"><span class="record-field-name">score</span><span class="record-field-val">14750</span><span class="record-field-type">Integer</span></div>
+              <div class="record-field"><span class="record-field-name">playerHealth</span><span class="record-field-val">75</span><span class="record-field-type">Integer</span></div>
+              <div class="record-field"><span class="record-field-name">positionX</span><span class="record-field-val">-14.35</span><span class="record-field-type">Float</span></div>
+              <div class="record-field"><span class="record-field-name">isAlive</span><span class="record-field-val">True</span><span class="record-field-type">Boolean</span></div>
+            </div>
+            <div class="code-block" style="margin-top:1rem;">
+              <div class="code-header"><div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div><div class="code-lang">Python — Record as Dictionary</div></div>
+              <div class="code-body"><span class="cm"># Python uses a dict to represent a record</span>
+player = {
+    <span class="st">"playerName"</span>  : <span class="st">"ShadowAce"</span>,
+    <span class="st">"score"</span>       : <span class="num-lit">14750</span>,
+    <span class="st">"playerHealth"</span>: <span class="num-lit">75</span>,
+    <span class="st">"positionX"</span>   : <span class="num-lit">-14.35</span>,
+    <span class="st">"isAlive"</span>     : <span class="nm">True</span>
+}
+
+<span class="fn">print</span>(player[<span class="st">"playerName"</span>])  <span class="cm"># → "ShadowAce"</span>
+player[<span class="st">"score"</span>] += <span class="num-lit">500</span>       <span class="cm"># update field</span></div>
+            </div>
+          </div>
+
+          <!-- TREE -->
+          <div class="ds-panel" id="ds-tree">
+            <div class="ds-caption">
+              A <strong>tree</strong> is a hierarchical structure where each <em>node</em> has a value
+              and links to <em>child nodes</em>. The topmost node is the <em>root</em>. Trees model
+              hierarchies naturally — a game scene graph (Unity's object hierarchy), a file system,
+              or a decision tree for enemy AI.
+            </div>
+            <svg width="100%" viewBox="0 0 420 220" style="max-width:420px;display:block;margin:0 auto 1rem;">
+              <defs><marker id="ta" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="#3e4f65"/></marker></defs>
+              <!-- Root -->
+              <rect x="160" y="10" width="100" height="34" rx="5" fill="#1a2235" stroke="#39e8a2" stroke-width="1.5"/>
+              <text x="210" y="32" text-anchor="middle" fill="#39e8a2" font-size="12" font-family="JetBrains Mono">Game Scene</text>
+              <!-- Level 1 -->
+              <line x1="210" y1="44" x2="100" y2="84" stroke="#3e4f65" stroke-width="1.5" marker-end="url(#ta)"/>
+              <line x1="210" y1="44" x2="210" y2="84" stroke="#3e4f65" stroke-width="1.5" marker-end="url(#ta)"/>
+              <line x1="210" y1="44" x2="320" y2="84" stroke="#3e4f65" stroke-width="1.5" marker-end="url(#ta)"/>
+              <rect x="50" y="84" width="100" height="34" rx="5" fill="#131928" stroke="#5b8fff" stroke-width="1.5"/>
+              <text x="100" y="106" text-anchor="middle" fill="#5b8fff" font-size="12" font-family="JetBrains Mono">Player</text>
+              <rect x="160" y="84" width="100" height="34" rx="5" fill="#131928" stroke="#5b8fff" stroke-width="1.5"/>
+              <text x="210" y="106" text-anchor="middle" fill="#5b8fff" font-size="12" font-family="JetBrains Mono">Enemies</text>
+              <rect x="270" y="84" width="100" height="34" rx="5" fill="#131928" stroke="#5b8fff" stroke-width="1.5"/>
+              <text x="320" y="106" text-anchor="middle" fill="#5b8fff" font-size="12" font-family="JetBrains Mono">UI</text>
+              <!-- Level 2 from Enemies -->
+              <line x1="210" y1="118" x2="160" y2="158" stroke="#3e4f65" stroke-width="1.5" marker-end="url(#ta)"/>
+              <line x1="210" y1="118" x2="260" y2="158" stroke="#3e4f65" stroke-width="1.5" marker-end="url(#ta)"/>
+              <rect x="105" y="158" width="110" height="34" rx="5" fill="#131928" stroke="#f0b429" stroke-width="1.5"/>
+              <text x="160" y="180" text-anchor="middle" fill="#f0b429" font-size="12" font-family="JetBrains Mono">EnemyType A</text>
+              <rect x="215" y="158" width="110" height="34" rx="5" fill="#131928" stroke="#f0b429" stroke-width="1.5"/>
+              <text x="270" y="180" text-anchor="middle" fill="#f0b429" font-size="12" font-family="JetBrains Mono">EnemyType B</text>
+              <!-- Labels -->
+              <text x="18" y="106" fill="#3e4f65" font-size="9" font-family="JetBrains Mono">root</text>
+              <text x="18" y="140" fill="#3e4f65" font-size="9" font-family="JetBrains Mono">children</text>
+              <text x="18" y="180" fill="#3e4f65" font-size="9" font-family="JetBrains Mono">leaf nodes</text>
+            </svg>
+            <div class="callout blue" style="margin-top:0;">
+              <div class="callout-label">Tree Terminology</div>
+              <div class="callout-body">
+                <strong>Root:</strong> topmost node (no parent). &nbsp;
+                <strong>Parent / Child:</strong> nodes connected by an edge. &nbsp;
+                <strong>Leaf:</strong> node with no children. &nbsp;
+                <strong>Depth:</strong> number of edges from root to a node.
+              </div>
+            </div>
+          </div>
+
+          <!-- SEQUENTIAL FILE -->
+          <div class="ds-panel" id="ds-file">
+            <div class="ds-caption">
+              A <strong>sequential file</strong> stores records one after another, in a fixed order.
+              To find a specific record you must read from the start — there is no random access.
+              Used for log files, save game data written sequentially, and audit trails.
+            </div>
+            <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;">
+              <div style="background:var(--bg-card);padding:0.5rem 0.85rem;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);">scores.dat — Sequential File</div>
+              <div style="background:var(--bg-deep);padding:0.75rem 0.85rem;display:flex;flex-direction:column;gap:0;">
+                <div style="padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;gap:1.5rem;"><span style="color:var(--text-muted);">Record 0 →</span><span style="color:var(--accent);">"ShadowAce"</span><span style="color:var(--gold);">9800</span><span style="color:var(--accent2);">2026/04/15</span></div>
+                <div style="padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;gap:1.5rem;"><span style="color:var(--text-muted);">Record 1 →</span><span style="color:var(--accent);">"NovaStar"</span><span style="color:var(--gold);">7400</span><span style="color:var(--accent2);">2026/04/13</span></div>
+                <div style="padding:0.4rem 0.5rem;font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;gap:1.5rem;"><span style="color:var(--text-muted);">Record 2 →</span><span style="color:var(--accent);">"IronByte"</span><span style="color:var(--gold);">6100</span><span style="color:var(--accent2);">2026/04/10</span></div>
+              </div>
+            </div>
+            <div class="callout">
+              <div class="callout-label">Sequential vs Random Access</div>
+              <div class="callout-body">
+                Sequential files must be read in order from the beginning — you cannot jump
+                to record 500 without reading records 0–499 first. For fast lookups, use arrays
+                (index-based random access) or hash tables. Sequential files are simple, portable,
+                and appropriate when all records must be processed anyway (e.g., batch processing
+                end-of-day scores).
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section class="content-section" id="quiz">
+      <div class="section-tag">Knowledge Check</div>
+      <h2 class="section-heading gold">Chapter 2 Quiz</h2>
+      <p class="prose">Six questions covering number systems, data types, and data structures.</p>
+
+      <div class="interactive-box">
+        <div class="ib-header">
+          <div class="ib-title">Knowledge Check — Chapter 2 <span class="ib-badge">6 Questions</span></div>
+        </div>
+        <div class="ib-body">
+
+          <div class="quiz-q" id="q1">
+            <div class="quiz-prompt">1. What is the decimal value of the binary number <code>10110100</code>?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> 174</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> 180</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> 182</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> 164</div>
+            </div>
+            <div class="quiz-explain" id="exp-q1">
+              <strong>Correct — B: 180.</strong> Column values where bits are 1: 128 + 32 + 16 + 4 = 180.
+              Bit pattern: 1×128 + 0×64 + 1×32 + 1×16 + 0×8 + 1×4 + 0×2 + 0×1 = 180.
+            </div>
+          </div>
+
+          <div class="quiz-q" id="q2">
+            <div class="quiz-prompt">2. What is the hexadecimal equivalent of decimal 255?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> EF</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> FE</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> FF</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> F0</div>
+            </div>
+            <div class="quiz-explain" id="exp-q2">
+              <strong>Correct — C: FF.</strong> 255 = 15×16 + 15 = F×16 + F. Each hex digit F represents
+              the maximum nibble value (1111 in binary). 255 = 11111111 in binary — all 8 bits set.
+            </div>
+          </div>
+
+          <div class="quiz-q" id="q3">
+            <div class="quiz-prompt">3. Using 8-bit two's complement, what is the binary representation of −12?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> 10001100</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> 11110011</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> 11110100</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> 10000011</div>
+            </div>
+            <div class="quiz-explain" id="exp-q3">
+              <strong>Correct — C: 11110100.</strong> Step 1: +12 = 00001100. Step 2: Flip bits → 11110011.
+              Step 3: Add 1 → 11110100. The MSB (1) confirms this is a negative number.
+            </div>
+          </div>
+
+          <div class="quiz-q" id="q4">
+            <div class="quiz-prompt">4. A game stores a player's position as <code>positionX = 3.75</code>. Which data type is most appropriate?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> Integer</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> Boolean</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> Single precision floating point</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> String</div>
+            </div>
+            <div class="quiz-explain" id="exp-q4">
+              <strong>Correct — C: Single precision floating point.</strong> Position values require
+              decimal precision — integer cannot store 3.75. Float (real) is appropriate.
+              The syllabus specifically names "single precision floating point" as a required data type.
+            </div>
+          </div>
+
+          <div class="quiz-q" id="q5">
+            <div class="quiz-prompt">5. A game's map is stored in a 10×10 grid where each cell contains 0 (empty) or 1 (wall). Which data structure is most appropriate?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> Sequential file</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> Two-dimensional array</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> Record</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> Tree</div>
+            </div>
+            <div class="quiz-explain" id="exp-q5">
+              <strong>Correct — B: Two-dimensional array.</strong> A 2D array maps naturally to a grid —
+              each cell accessed by [row][column]. All values are the same type (integer), and
+              random access by position is required. Trees model hierarchies; records group mixed-type
+              fields; sequential files lack random access.
+            </div>
+          </div>
+
+          <div class="quiz-q" id="q6">
+            <div class="quiz-prompt">6. In the HSC data dictionary format, which column specifies how many characters are needed to display a value on screen?</div>
+            <div class="quiz-opts">
+              <div class="quiz-opt"><span class="opt-letter">A</span> Size in bytes</div>
+              <div class="quiz-opt"><span class="opt-letter">B</span> Format for display</div>
+              <div class="quiz-opt"><span class="opt-letter">C</span> Size for display</div>
+              <div class="quiz-opt"><span class="opt-letter">D</span> Validation</div>
+            </div>
+            <div class="quiz-explain" id="exp-q6">
+              <strong>Correct — C: Size for display.</strong> "Size in bytes" is the storage size in memory.
+              "Size for display" specifies how many characters are needed on screen (e.g., a score
+              with max 9,999,999 needs 7 display characters). These are separate columns in the HSC format.
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+            <button class="ib-btn primary" onclick="submitQuiz()">Submit Quiz</button>
+            <button class="ib-btn ghost" onclick="resetQuiz()">Reset</button>
+          </div>
+          <div class="ib-feedback" id="quiz-feedback" style="margin-top:0.75rem;font-size:14px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <div class="progress-wrap">
+      <div class="progress-title">Chapter 2 — Your Progress</div>
+      <div class="progress-steps">
+        <div class="ps done">2.1</div>
+        <div class="ps done">2.2</div>
+        <div class="ps done">2.3</div>
+        <div class="ps done">2.4</div>
+        <div class="ps done">2.5</div>
+        <div class="ps done">2.6</div>
+        <div class="ps current" id="ps-quiz">Quiz</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="ch2-progress" style="width:85%"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progress-text">6 of 7 sections complete — finish the quiz!</span>
+        <span id="progress-pct">85%</span>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <div class="ch-nav">
+      <a class="nav-btn secondary" href="chapter-01.html">← Chapter 1: Thinking Like a Software Engineer</a>
+      <a class="nav-btn primary" href="chapter-03.html">Chapter 3: Python — First Steps →</a>
+    </div>
+
+  </div><!-- /content-wrap -->
+</main>
+
+<script>
+/* Initialise shared navigation */
+SENav.init({ chapterId: 2 });
+
+/* ── NUMBER BASE CONVERTER ─────────────────────────────── */
+const ASCII_NAMES = {32:'space',0:'null',8:'backspace',9:'tab',10:'newline',13:'return',27:'escape',127:'delete'};
+function convertFromDec() {
+  let v = parseInt(document.getElementById('dec-in').value);
+  if (isNaN(v)) v = 0;
+  v = Math.max(0, Math.min(255, v));
+  const bin = v.toString(2).padStart(8,'0');
+  const hex = v.toString(16).toUpperCase().padStart(2,'0');
+  document.getElementById('bin-out').value = bin;
+  document.getElementById('hex-out').value = hex;
+  renderBits(bin, v);
+  renderASCII(v);
+}
+function renderBits(bin, val) {
+  const cols = [128,64,32,16,8,4,2,1];
+  const wrap = document.getElementById('bit-display');
+  wrap.innerHTML = bin.split('').map((b,i) =>
+    `<div class="bit ${b==='1'?'one':'zero'}" title="column ${cols[i]}">${b}</div>`
+  ).join('');
+  const active = bin.split('').map((b,i)=> b==='1'? cols[i]:0).filter(Boolean);
+  document.getElementById('bit-hint').textContent = active.length
+    ? active.join(' + ') + ' = ' + val
+    : 'All bits are 0';
+}
+function renderASCII(v) {
+  const el = document.getElementById('ascii-out');
+  const hint = document.getElementById('ascii-hint');
+  if (v >= 32 && v <= 126) {
+    el.textContent = String.fromCharCode(v);
+    if (v >= 65 && v <= 90)       hint.textContent = 'Uppercase letter (65–90)';
+    else if (v >= 97 && v <= 122) hint.textContent = 'Lowercase letter (97–122)';
+    else if (v >= 48 && v <= 57)  hint.textContent = 'Digit character (48–57)';
+    else                          hint.textContent = 'Printable symbol';
+  } else {
+    el.textContent = '';
+    hint.textContent = ASCII_NAMES[v] || (v < 32 ? 'Control character' : '');
+  }
+}
+function setDec(n) {
+  document.getElementById('dec-in').value = n;
+  convertFromDec();
+}
+convertFromDec();
+
+/* ── TWO'S COMPLEMENT ──────────────────────────────────── */
+function calcTC() {
+  let n = parseInt(document.getElementById('tc-input').value);
+  if (isNaN(n) || n >= 0) n = -57;
+  n = Math.max(-128, Math.min(-1, n));
+  const pos = Math.abs(n);
+  const step1 = pos.toString(2).padStart(8,'0');
+  const step2 = step1.split('').map(b => b==='1'?'0':'1').join('');
+  const tc    = (parseInt(step2,2) + 1).toString(2).padStart(8,'0');
+
+  const wrap = document.getElementById('tc-steps');
+  wrap.innerHTML = `
+    <div class="tc-step">
+      <div class="tc-step-label">Step 1 — Write +${pos} in 8-bit binary</div>
+      <div class="tc-bits">${renderTCBits(step1,'normal')}</div>
+      <div class="tc-val">+${pos} = ${step1}<sub>2</sub></div>
+    </div>
+    <div class="tc-step">
+      <div class="tc-step-label">Step 2 — Flip all bits (one's complement)</div>
+      <div class="tc-bits">${renderTCBits(step2,'flip')}</div>
+      <div class="tc-val">Inverted: ${step2}<sub>2</sub></div>
+    </div>
+    <div class="tc-step">
+      <div class="tc-step-label">Step 3 — Add 1 → result is ${n} in two's complement</div>
+      <div class="tc-bits">${renderTCBits(tc,'result')}</div>
+      <div class="tc-val">Two's complement of ${n}: <strong style="color:var(--accent)">${tc}<sub>2</sub></strong> &nbsp;(MSB=1 → negative ✓)</div>
+    </div>`;
+}
+function renderTCBits(bin, style) {
+  return bin.split('').map((b,i) => {
+    let cls = b==='1'?'one':'zero';
+    if (style==='flip') cls = 'flip';
+    if (style==='result' && i===0) cls = 'sign';
+    return `<div class="tc-bit ${cls}">${b}</div>`;
+  }).join('');
+}
+calcTC();
+
+/* ── DATA STRUCTURES TABS ──────────────────────────────── */
+function showDS(id) {
+  document.querySelectorAll('.ds-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ds-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('ds-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* Build 1D array visual */
+const lb = [9800,7400,6100,5500,3200];
+const a1 = document.getElementById('arr1d');
+lb.forEach((v,i) => {
+  const c = document.createElement('div');
+  c.className = 'array-cell';
+  c.innerHTML = `<div class="array-val">${v}</div><div class="array-idx">[${i}]</div>`;
+  a1.appendChild(c);
+});
+
+/* Build 2D array visual */
+const map2d = [[1,1,1,1,1],[1,0,0,2,1],[1,1,1,1,1]];
+const colMap = {0:'var(--bg-surface)',1:'var(--accent-dim)',2:'var(--gold-dim)'};
+const txtMap = {0:'·',1:'█',2:'★'};
+const a2 = document.getElementById('arr2d');
+map2d.forEach((row,r) => {
+  const rowDiv = document.createElement('div');
+  rowDiv.style.display='flex';
+  row.forEach((cell,c) => {
+    const d = document.createElement('div');
+    d.className = 'array-cell';
+    d.style.background = colMap[cell];
+    d.style.minWidth = '48px';
+    const color = cell===0?'var(--text-muted)':cell===1?'var(--accent)':'var(--gold)';
+    d.innerHTML = `<div class="array-val" style="color:${color};font-size:16px">${txtMap[cell]}</div><div class="array-idx">[${r}][${c}]</div>`;
+    rowDiv.appendChild(d);
+  });
+  a2.appendChild(rowDiv);
+});
+
+/* ── DATA DICTIONARY ACTIVITY ──────────────────────────── */
+const ddAnswers = {
+  dd0:'string', dd1:'1 per char',
+  dd2:'integer', dd3:'4',
+  dd4:'integer 0–500', dd5:'boolean', dd6:'1 bit',
+  dd7:'true or false', dd8:'date and time', dd9:'4'
+};
+function checkDD() {
+  let correct = 0, total = 0;
+  document.querySelectorAll('.dd-input').forEach(inp => {
+    const id = inp.id;
+    const ans = (ddAnswers[id]||'').toLowerCase();
+    const val = inp.value.trim().toLowerCase();
+    inp.classList.remove('correct','wrong');
+    if (!val) return;
+    total++;
+    if (val === ans || (id==='dd4' && val.includes('0') && val.includes('500')) ||
+        (id==='dd7' && (val.includes('true') || val.includes('false') || val.includes('boolean'))) ||
+        (id==='dd8' && val.includes('date')) ) {
+      inp.classList.add('correct'); correct++;
+    } else { inp.classList.add('wrong'); }
+  });
+  const filled = document.querySelectorAll('.dd-input').length;
+  if (correct === filled) setFB('dd-feedback','All correct! Your data dictionary entries are accurate. ✓','success');
+  SENav.markActivity('act-data-dict');
+  else if (correct >= filled/2) setFB('dd-feedback',`${correct}/${filled} correct — review the highlighted cells.`,'partial');
+  else setFB('dd-feedback',`${correct}/${filled} correct — review Section 2.4 for data types.`,'fail');
+}
+function resetDD() {
+  document.querySelectorAll('.dd-input').forEach(i => { i.value=''; i.classList.remove('correct','wrong'); });
+  setFB('dd-feedback','','');
+}
+
+/* ── QUIZ ───────────────────────────────────────────────── */
+const quizAnswers = {q1:'B',q2:'C',q3:'C',q4:'C',q5:'B',q6:'C'};
+const userAnswers = {};
+const optLetters  = ['A','B','C','D'];
+document.querySelectorAll('.quiz-q').forEach(q => {
+  const qid = q.id;
+  q.querySelectorAll('.quiz-opt').forEach((opt,i) => {
+    opt.onclick = function() {
+      q.querySelectorAll('.quiz-opt').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      userAnswers[qid] = optLetters[i];
+    };
+  });
+});
+function submitQuiz() {
+  let score = 0;
+  Object.entries(quizAnswers).forEach(([qid,correct]) => {
+    const q = document.getElementById(qid);
+    const opts = q.querySelectorAll('.quiz-opt');
+    const exp  = document.getElementById('exp-'+qid);
+    const user = userAnswers[qid];
+    opts.forEach((o,i) => {
+      o.classList.remove('selected');
+      o.classList.add('disabled');
+      if (optLetters[i]===correct) o.classList.add('correct');
+      else if (user && optLetters[i]===user && user!==correct) o.classList.add('wrong');
+    });
+    if (user===correct) score++;
+    exp.classList.add('visible');
+  });
+  const total = Object.keys(quizAnswers).length;
+  const pct = Math.round(score/total*100);
+  if (score===total) {
+    setFB('quiz-feedback',`🎉 ${score}/${total} — Perfect score! Chapter 2 complete.`,'success');
+    SENav.setQuizScore(score, total);
+    document.getElementById('ps-quiz').classList.add('done');
+    updateProgress(100);
+  } else if (score >= total*0.6) {
+    setFB('quiz-feedback',`${score}/${total} (${pct}%) — Good work. Review explanations for any you missed.`,'partial');
+    updateProgress(90);
+  } else {
+    setFB('quiz-feedback',`${score}/${total} (${pct}%) — Review Sections 2.1–2.5 and try again.`,'fail');
+  }
+}
+function resetQuiz() {
+  Object.keys(userAnswers).forEach(k => delete userAnswers[k]);
+  document.querySelectorAll('.quiz-opt').forEach(o => { o.className='quiz-opt'; });
+  document.querySelectorAll('.quiz-explain').forEach(e => e.classList.remove('visible'));
+  document.querySelectorAll('.quiz-q').forEach(q => {
+    const qid = q.id;
+    q.querySelectorAll('.quiz-opt').forEach((opt,i) => {
+      opt.onclick = function() {
+        q.querySelectorAll('.quiz-opt').forEach(o=>o.classList.remove('selected'));
+        opt.classList.add('selected'); userAnswers[qid]=optLetters[i];
+      };
+    });
+  });
+  setFB('quiz-feedback','',''); updateProgress(85);
+}
+
+/* ── HELPERS ─────────────────────────────────────────────── */
+function setFB(id,msg,type) {
+  const el=document.getElementById(id); el.textContent=msg;
+  el.className='ib-feedback'; if(type) el.classList.add(type);
+}
+function updateProgress(pct) {
+  document.getElementById('ch2-progress').style.width=pct+'%';
+  document.getElementById('progress-pct').textContent=pct+'%';
+  document.getElementById('progress-text').textContent =
+    pct===100 ? 'All sections complete — great work!' : `${Math.round(pct/100*7)} of 7 sections complete`;
+}
+
+/* ── SCROLL TRACKING ─────────────────────────────────────── */
+const sections = document.querySelectorAll('.content-section');
+const sbLinks  = document.querySelectorAll('.sb-link');
+const hLinks   = document.querySelectorAll('.h-btn');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      sbLinks.forEach(l => { l.classList.toggle('active', l.getAttribute('href')==='#'+id); });
+      hLinks.forEach(l  => { l.classList.toggle('active',  l.getAttribute('href')==='#'+id); });
+    }
+  });
+}, { rootMargin:'-15% 0px -70% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
