@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unity Depth Study — Coin Collector Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:       #0c0c0e;
+  --bg2:      #111116;
+  --bg3:      #18181f;
+  --surface:  #1e1e28;
+  --border:   #2a2a38;
+  --lime:     #c6f135;
+  --cyan:     #38e8d4;
+  --violet:   #a78bfa;
+  --amber:    #fbbf24;
+  --red:      #f87171;
+  --text:     #e8e8f0;
+  --muted:    #7c7c96;
+  --code-bg:  #13131a;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(12,12,14,.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 58px;
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem;
+  color: var(--lime); letter-spacing: .06em; text-decoration: none;
+  display: flex; align-items: center; gap: .6rem;
+}
+.nav-logo .dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+.nav-links { display: flex; gap: 2rem; }
+.nav-links a {
+  font-family: 'Space Mono', monospace; font-size: .72rem;
+  color: var(--muted); text-decoration: none; letter-spacing: .08em;
+  text-transform: uppercase; transition: color .2s;
+}
+.nav-links a:hover { color: var(--lime); }
+@media(max-width:700px){ .nav-links{display:none} }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 7rem 4rem 5rem;
+  position: relative; overflow: hidden;
+}
+.hero-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: .25;
+  animation: gridSlide 30s linear infinite;
+}
+@keyframes gridSlide { from{transform:translate(0,0)} to{transform:translate(60px,60px)} }
+.hero-glow {
+  position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+  width: 900px; height: 600px;
+  background: radial-gradient(ellipse, rgba(198,241,53,.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-content { position: relative; z-index: 2; max-width: 860px; }
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: .6rem;
+  font-family: 'Space Mono', monospace; font-size: .7rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--lime);
+  border: 1px solid rgba(198,241,53,.3); padding: .35rem 1rem; border-radius: 2px;
+  margin-bottom: 2rem; background: rgba(198,241,53,.06);
+}
+.hero-tag span { color: var(--muted); }
+
+.hero h1 {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(3rem, 9vw, 7rem);
+  line-height: .95; letter-spacing: -.02em;
+  margin-bottom: 1.5rem;
+}
+.hero h1 .accent { color: var(--lime); }
+.hero h1 .dim { color: var(--muted); }
+
+.hero-sub {
+  font-size: 1.15rem; color: var(--muted); max-width: 540px; margin-bottom: 3rem;
+  line-height: 1.7;
+}
+
+.hero-stats {
+  display: flex; gap: 0; flex-wrap: wrap;
+  border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  width: fit-content; margin-bottom: 3rem;
+}
+.stat {
+  padding: .9rem 2rem; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: .2rem;
+}
+.stat:last-child { border-right: none; }
+.stat-val {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem;
+  color: var(--lime);
+}
+.stat-label { font-family: 'Space Mono', monospace; font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+
+.scroll-hint {
+  display: flex; align-items: center; gap: .75rem;
+  font-family: 'Space Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .1em;
+  animation: float 2.5s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.scroll-hint::before {
+  content: ''; width: 1px; height: 40px; background: linear-gradient(to bottom, transparent, var(--muted));
+}
+
+/* ── SECTION WRAPPER ── */
+section { padding: 5rem 4rem; max-width: 1100px; margin: 0 auto; }
+@media(max-width:700px){ section{padding:3rem 1.5rem} }
+
+.section-label {
+  font-family: 'Space Mono', monospace; font-size: .68rem; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--lime); margin-bottom: .75rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+h2 {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(1.8rem,4vw,2.8rem);
+  line-height: 1.1; margin-bottom: 1.25rem; letter-spacing: -.02em;
+}
+h3 {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.2rem;
+  margin-bottom: .75rem; letter-spacing: -.01em;
+}
+p { margin-bottom: 1rem; color: var(--muted); }
+p strong { color: var(--text); }
+ul, ol { margin: .75rem 0 1rem 1.5rem; }
+li { margin-bottom: .4rem; color: var(--muted); }
+li strong { color: var(--text); }
+
+/* ── DIVIDER ── */
+.divider {
+  border: none; height: 1px; background: var(--border);
+  max-width: 1100px; margin: 0 auto;
+}
+
+/* ── TIMELINE ── */
+.timeline { display: flex; flex-direction: column; gap: 0; margin-top: 2.5rem; }
+.phase {
+  display: grid; grid-template-columns: 180px 1fr;
+  gap: 0 2.5rem; position: relative;
+}
+.phase::before {
+  content: ''; position: absolute; left: 172px; top: 36px; bottom: -1px;
+  width: 1px; background: var(--border); z-index: 0;
+}
+.phase:last-child::before { display: none; }
+.phase-time {
+  padding: 1.5rem 0;
+  font-family: 'Space Mono', monospace; font-size: .78rem; color: var(--muted);
+  text-align: right; letter-spacing: .05em; line-height: 1.4;
+  position: relative;
+}
+.phase-time::after {
+  content: ''; position: absolute; right: -9px; top: 28px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--lime);
+  z-index: 1;
+}
+.phase.active .phase-time::after { background: var(--lime); }
+.phase-body {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1.5rem; margin: 1rem 0;
+}
+.phase-header {
+  display: flex; align-items: center; gap: 1rem; margin-bottom: .75rem;
+}
+.phase-num {
+  font-family: 'Space Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; background: rgba(198,241,53,.12);
+  color: var(--lime); border: 1px solid rgba(198,241,53,.3);
+  padding: 2px 8px; border-radius: 2px;
+}
+.phase-tasks { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.task-chip {
+  font-family: 'Space Mono', monospace; font-size: .68rem;
+  padding: .3rem .75rem; border-radius: 2px; border: 1px solid var(--border);
+  color: var(--muted); background: var(--bg2);
+}
+@media(max-width:640px){
+  .phase{grid-template-columns:1fr}
+  .phase-time{text-align:left;padding-bottom:0}
+  .phase::before{display:none}
+  .phase-time::after{display:none}
+}
+
+/* ── CODE BLOCKS ── */
+.code-file {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden; margin: 1.5rem 0;
+}
+.code-file-header {
+  display: flex; align-items: center; gap: 1rem; padding: .75rem 1.25rem;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.code-dots { display: flex; gap: 6px; }
+.code-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--border);
+}
+.code-dots span:nth-child(1){ background: #f87171; }
+.code-dots span:nth-child(2){ background: #fbbf24; }
+.code-dots span:nth-child(3){ background: var(--lime); }
+.code-filename {
+  font-family: 'Space Mono', monospace; font-size: .75rem;
+  color: var(--muted); letter-spacing: .05em;
+}
+.code-badge {
+  margin-left: auto; font-family: 'Space Mono', monospace; font-size: .65rem;
+  color: var(--cyan); background: rgba(56,232,212,.1);
+  border: 1px solid rgba(56,232,212,.25); padding: 2px 8px; border-radius: 2px;
+}
+pre {
+  padding: 1.5rem; overflow-x: auto; font-family: 'Space Mono', monospace;
+  font-size: .8rem; line-height: 1.8; color: #cdd6f4;
+  tab-size: 4;
+}
+
+/* Syntax colours */
+.cs-kw  { color: #c6f135; }       /* keywords */
+.cs-type{ color: #89dceb; }       /* types */
+.cs-fn  { color: #f9e2af; }       /* method names */
+.cs-str { color: #a6e3a1; }       /* strings */
+.cs-cmt { color: #45475a; font-style: italic; }
+.cs-num { color: #fab387; }
+.cs-attr{ color: #cba6f7; }       /* [Header] etc */
+.cs-op  { color: #94e2d5; }       /* operators */
+
+/* ── ANNOTATION BOXES ── */
+.annotation {
+  border-left: 3px solid var(--lime); background: rgba(198,241,53,.05);
+  border-radius: 0 6px 6px 0; padding: 1rem 1.25rem; margin: 1.25rem 0;
+}
+.annotation .ann-label {
+  font-family: 'Space Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--lime); margin-bottom: .4rem;
+}
+.annotation p { margin: 0; color: var(--text); font-size: .9rem; }
+
+.annotation.cyan { border-left-color: var(--cyan); background: rgba(56,232,212,.05); }
+.annotation.cyan .ann-label { color: var(--cyan); }
+.annotation.violet { border-left-color: var(--violet); background: rgba(167,139,250,.05); }
+.annotation.violet .ann-label { color: var(--violet); }
+.annotation.amber { border-left-color: var(--amber); background: rgba(251,191,36,.05); }
+.annotation.amber .ann-label { color: var(--amber); }
+
+/* ── SCRIPTS GRID ── */
+.scripts-overview {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem; margin: 2rem 0;
+}
+.script-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.25rem; transition: border-color .2s, transform .15s;
+  cursor: default;
+}
+.script-card:hover { border-color: var(--lime); transform: translateY(-2px); }
+.script-icon {
+  width: 36px; height: 36px; border-radius: 4px; margin-bottom: 1rem;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.script-card .script-name {
+  font-family: 'Space Mono', monospace; font-size: .82rem; color: var(--lime);
+  margin-bottom: .4rem;
+}
+.script-card p { font-size: .85rem; margin: 0; line-height: 1.5; }
+.script-card .role-badge {
+  display: inline-block; margin-top: .75rem;
+  font-family: 'Space Mono', monospace; font-size: .62rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 2px;
+  border: 1px solid var(--border); color: var(--muted);
+}
+
+/* ── ARCHITECTURE DIAGRAM ── */
+.arch-diagram {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 2rem; margin: 2rem 0; overflow-x: auto;
+}
+.arch-row { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.arch-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: .6rem 1.2rem; font-family: 'Space Mono', monospace; font-size: .78rem;
+  text-align: center; min-width: 120px;
+}
+.arch-box .ab-title { color: var(--text); font-weight: 700; }
+.arch-box .ab-sub { color: var(--muted); font-size: .65rem; margin-top: 2px; }
+.arch-box.lime { border-color: rgba(198,241,53,.5); background: rgba(198,241,53,.06); }
+.arch-box.lime .ab-title { color: var(--lime); }
+.arch-box.cyan { border-color: rgba(56,232,212,.4); background: rgba(56,232,212,.06); }
+.arch-box.cyan .ab-title { color: var(--cyan); }
+.arch-box.violet { border-color: rgba(167,139,250,.4); background: rgba(167,139,250,.06); }
+.arch-box.violet .ab-title { color: var(--violet); }
+.arch-box.amber { border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.06); }
+.arch-box.amber .ab-title { color: var(--amber); }
+.arch-arrow {
+  color: var(--muted); font-family: 'Space Mono', monospace; font-size: .7rem;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.arch-arrow .arr-label { font-size: .6rem; color: var(--muted); }
+
+/* ── EXTENSION CARDS ── */
+.ext-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem; margin-top: 2rem;
+}
+.ext-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1.5rem; position: relative; overflow: hidden;
+}
+.ext-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.ext-card.a::before { background: var(--lime); }
+.ext-card.b::before { background: var(--cyan); }
+.ext-card.c::before { background: var(--violet); }
+.ext-card.d::before { background: var(--amber); }
+.ext-diff {
+  font-family: 'Space Mono', monospace; font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 2px; margin-bottom: 1rem;
+  display: inline-block; border: 1px solid;
+}
+.ext-diff.easy { color: var(--lime); border-color: rgba(198,241,53,.4); background: rgba(198,241,53,.08); }
+.ext-diff.medium { color: var(--cyan); border-color: rgba(56,232,212,.4); background: rgba(56,232,212,.08); }
+.ext-diff.hard { color: var(--violet); border-color: rgba(167,139,250,.4); background: rgba(167,139,250,.08); }
+.ext-diff.stretch { color: var(--amber); border-color: rgba(251,191,36,.4); background: rgba(251,191,36,.08); }
+.ext-card h3 { font-size: 1rem; margin-bottom: .5rem; }
+.ext-card ul { margin: .75rem 0 0 1.25rem; }
+.ext-card li { font-size: .88rem; }
+
+/* ── RUBRIC TABLE ── */
+.rubric-wrap { overflow-x: auto; margin-top: 2rem; }
+.rubric {
+  width: 100%; border-collapse: collapse; font-size: .88rem;
+}
+.rubric th {
+  background: var(--surface); color: var(--text); padding: .75rem 1rem;
+  text-align: left; font-family: 'Space Mono', monospace; font-size: .7rem;
+  letter-spacing: .08em; text-transform: uppercase; border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.rubric th:first-child { color: var(--lime); }
+.rubric td {
+  padding: .75rem 1rem; border-bottom: 1px solid var(--border);
+  vertical-align: top; color: var(--muted); line-height: 1.5;
+}
+.rubric td:first-child {
+  font-family: 'Space Mono', monospace; font-size: .78rem;
+  color: var(--text); white-space: nowrap;
+}
+.rubric tr:hover td { background: rgba(255,255,255,.02); }
+.marks-badge {
+  display: inline-block; font-family: 'Space Mono', monospace; font-size: .72rem;
+  padding: 2px 8px; border-radius: 2px;
+  background: rgba(198,241,53,.1); color: var(--lime);
+  border: 1px solid rgba(198,241,53,.3);
+}
+
+/* ── UNITY TIPS BOX ── */
+.tip-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem; margin-top: 2rem;
+}
+.tip-card {
+  background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.25rem;
+}
+.tip-card .tip-icon { font-size: 1.4rem; margin-bottom: .75rem; display: block; }
+.tip-card h4 {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: .9rem;
+  margin-bottom: .4rem; color: var(--text);
+}
+.tip-card p { font-size: .84rem; margin: 0; }
+.tip-shortcut {
+  display: inline-block; margin-top: .6rem;
+  font-family: 'Space Mono', monospace; font-size: .7rem;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--cyan); padding: 2px 8px; border-radius: 3px;
+}
+
+/* ── CTA / FOOTER ── */
+.cta-bar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4rem;
+  text-align: center;
+}
+.cta-bar h2 { font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 1rem; }
+.cta-bar p { color: var(--muted); max-width: 480px; margin: 0 auto 2rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: .6rem;
+  font-family: 'Space Mono', monospace; font-size: .78rem; letter-spacing: .08em;
+  text-transform: uppercase; text-decoration: none;
+  padding: .85rem 2rem; border-radius: 3px;
+  background: var(--lime); color: var(--bg); font-weight: 700;
+  transition: transform .15s, box-shadow .15s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(198,241,53,.25); }
+
+footer {
+  background: var(--bg); border-top: 1px solid var(--border);
+  padding: 2rem 4rem;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+}
+footer p { font-family: 'Space Mono', monospace; font-size: .68rem; color: var(--muted); margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <span class="dot"></span>
+    UNITY / DEPTH STUDY
+  </a>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#schedule">Schedule</a>
+    <a href="#scripts">Scripts</a>
+    <a href="#extensions">Extend</a>
+    <a href="#assessment">Assess</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+    <div class="hero-tag">
+      <span>Stage 5 · Computing Technology</span>
+      Depth Study — Software Development
+    </div>
+    <h1>
+      BUILD A<br>
+      <span class="accent">COIN COLLECTOR</span><br>
+      <span class="dim">IN UNITY</span>
+    </h1>
+    <p class="hero-sub">
+      You have a third-person character controller, a simple world, and four C# scripts. Now make it a game. Five hours. One playable demo. Your design.
+    </p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-val">5</span>
+        <span class="stat-label">Hours Total</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val">4</span>
+        <span class="stat-label">Scripts Provided</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val">1</span>
+        <span class="stat-label">Playable Demo</span>
+      </div>
+      <div class="stat">
+        <span class="stat-val">∞</span>
+        <span class="stat-label">Design Choices</span>
+      </div>
+    </div>
+    <div class="scroll-hint">SCROLL TO BEGIN</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- OVERVIEW                                  -->
+<!-- ══════════════════════════════════════════ -->
+<section id="overview">
+  <div class="section-label">01 — Overview</div>
+  <h2>The Brief</h2>
+  <p>You've been handed a Unity project with a working third-person character controller and a starter environment. Your job is to turn it into a complete, playable game — with a clear game loop, level design, and at least one extension of your own choice.</p>
+  <p>The core mechanic is already working: <strong>players move through a 3D world and collect coins</strong>. The UI updates in real time, the game manager tracks your score, and the coins rotate and disappear on collection. What happens <em>next</em> is up to you.</p>
+
+  <div class="scripts-overview">
+    <div class="script-card">
+      <div class="script-icon" style="background:rgba(198,241,53,.1);">🎮</div>
+      <div class="script-name">GameManager.cs</div>
+      <p>The central brain. Tracks total coins collected. Persists across scenes using <code>DontDestroyOnLoad</code>. Uses the Singleton pattern so any script can reach it.</p>
+      <span class="role-badge">Singleton · Score</span>
+    </div>
+    <div class="script-card">
+      <div class="script-icon" style="background:rgba(56,232,212,.1);">📺</div>
+      <div class="script-name">UIManager.cs</div>
+      <p>Manages the on-screen coin counter. Uses TextMeshPro. Also a Singleton — call <code>UIManager.Instance.UpdateCoinUI()</code> from anywhere.</p>
+      <span class="role-badge">Singleton · HUD</span>
+    </div>
+    <div class="script-card">
+      <div class="script-icon" style="background:rgba(167,139,250,.1);">🧑</div>
+      <div class="script-name">PlayerCoinCollector.cs</div>
+      <p>Attached to your player. Stores <code>currentCoins</code> and calls the GameManager when coins are added. Acts as the bridge between the player and the game state.</p>
+      <span class="role-badge">Player · Event bridge</span>
+    </div>
+    <div class="script-card">
+      <div class="script-icon" style="background:rgba(251,191,36,.1);">🪙</div>
+      <div class="script-name">coin.cs</div>
+      <p>Rotates continuously. On trigger enter with the Player tag, plays a sound, spawns a VFX, adds its coin value to the collector, then destroys itself.</p>
+      <span class="role-badge">Collectible · Physics</span>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE DIAGRAM -->
+  <h3 style="margin-top:2.5rem">How the Scripts Connect</h3>
+  <div class="arch-diagram">
+    <div class="arch-row">
+      <div class="arch-box amber">
+        <div class="ab-title">Coin.cs</div>
+        <div class="ab-sub">OnTriggerEnter → Player</div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arr-label">calls AddCoins()</div>
+        →
+      </div>
+      <div class="arch-box violet">
+        <div class="ab-title">PlayerCoinCollector.cs</div>
+        <div class="ab-sub">Tracks currentCoins</div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arr-label">calls UpdateCoinCount()</div>
+        →
+      </div>
+      <div class="arch-box lime">
+        <div class="ab-title">GameManager.cs</div>
+        <div class="ab-sub">totalCoins · Singleton</div>
+      </div>
+      <div class="arch-arrow">
+        <div class="arr-label">calls UpdateCoinUI()</div>
+        →
+      </div>
+      <div class="arch-box cyan">
+        <div class="ab-title">UIManager.cs</div>
+        <div class="ab-sub">Updates HUD text</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);margin:0;margin-top:1.25rem">
+      Coin collected → Player notified → GameManager updated → UI redraws
+    </p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCHEDULE                                  -->
+<!-- ══════════════════════════════════════════ -->
+<section id="schedule">
+  <div class="section-label">02 — Schedule</div>
+  <h2>Five-Hour Game Plan</h2>
+  <p>Each phase builds on the last. Don't skip ahead — a good level in a broken game is worth nothing.</p>
+
+  <div class="timeline">
+
+    <div class="phase active">
+      <div class="phase-time">
+        Hour 1<br>
+        <span style="font-size:.62rem;color:var(--muted)">~60 min</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-header">
+          <span class="phase-num">Phase 01</span>
+          <h3 style="margin:0;font-size:1.05rem">Explore &amp; Understand</h3>
+        </div>
+        <p style="margin:0;font-size:.92rem">Open the project and play it. Read every script. Understand how the coin gets collected before you change anything. Break it deliberately — then fix it. That's the fastest way to understand code.</p>
+        <div class="phase-tasks">
+          <span class="task-chip">Play the starter build</span>
+          <span class="task-chip">Read all 4 scripts</span>
+          <span class="task-chip">Trace a coin collection end-to-end</span>
+          <span class="task-chip">Check Console for errors</span>
+          <span class="task-chip">Sketch your game concept on paper</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        Hour 2<br>
+        <span style="font-size:.62rem;color:var(--muted)">~60 min</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-header">
+          <span class="phase-num">Phase 02</span>
+          <h3 style="margin:0;font-size:1.05rem">Game Loop &amp; Win Condition</h3>
+        </div>
+        <p style="margin:0;font-size:.92rem">A game without a win or lose condition is a toy. Decide: does the player collect all coins to win? Race against a timer? Avoid an enemy? Add your win/lose logic to the <code>GameManager</code> and a simple "Game Over" or "You Win!" UI screen.</p>
+        <div class="phase-tasks">
+          <span class="task-chip">Add totalCoinGoal to GameManager</span>
+          <span class="task-chip">Detect win condition</span>
+          <span class="task-chip">Create a Win/Lose UI panel</span>
+          <span class="task-chip">Add a restart button</span>
+          <span class="task-chip">Test with all coins collected</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        Hour 3<br>
+        <span style="font-size:.62rem;color:var(--muted)">~60 min</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-header">
+          <span class="phase-num">Phase 03</span>
+          <h3 style="margin:0;font-size:1.05rem">World Building &amp; Level Design</h3>
+        </div>
+        <p style="margin:0;font-size:.92rem">This is the creative heart. Use Unity's terrain tools, ProBuilder, or primitive objects to build an interesting space. Coins should be placed intentionally — some easy to reach, some requiring exploration or skill. Think about player flow.</p>
+        <div class="phase-tasks">
+          <span class="task-chip">Block out level geometry</span>
+          <span class="task-chip">Place 15–30 coins deliberately</span>
+          <span class="task-chip">Add obstacles or platforms</span>
+          <span class="task-chip">Set up camera and lighting</span>
+          <span class="task-chip">Apply terrain or materials</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        Hour 4<br>
+        <span style="font-size:.62rem;color:var(--muted)">~60 min</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-header">
+          <span class="phase-num">Phase 04</span>
+          <h3 style="margin:0;font-size:1.05rem">Extension Feature</h3>
+        </div>
+        <p style="margin:0;font-size:.92rem">Add at least one feature beyond the starter scripts. This is where your game becomes <em>yours</em>. Choose one idea from the Extensions section and implement it. Don't start something you can't finish — a completed simple feature beats a broken complex one.</p>
+        <div class="phase-tasks">
+          <span class="task-chip">Choose one extension</span>
+          <span class="task-chip">Write/modify the script</span>
+          <span class="task-chip">Test in Play Mode frequently</span>
+          <span class="task-chip">Hook into GameManager if needed</span>
+          <span class="task-chip">Add UI feedback for new mechanic</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-time">
+        Hour 5<br>
+        <span style="font-size:.62rem;color:var(--muted)">~60 min</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-header">
+          <span class="phase-num">Phase 05</span>
+          <h3 style="margin:0;font-size:1.05rem">Polish, Test &amp; Present</h3>
+        </div>
+        <p style="margin:0;font-size:.92rem">Fix the most obvious bugs. Add a main menu or start screen. Make sure it can be handed to a classmate who has never seen it and they can play a full round without asking for help. Build and export if required.</p>
+        <div class="phase-tasks">
+          <span class="task-chip">Full playtest by someone else</span>
+          <span class="task-chip">Fix top 3 bugs from playtest</span>
+          <span class="task-chip">Add main menu scene</span>
+          <span class="task-chip">Sound effects check</span>
+          <span class="task-chip">File → Build Settings → Build</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- SCRIPTS DEEP DIVE                         -->
+<!-- ══════════════════════════════════════════ -->
+<section id="scripts">
+  <div class="section-label">03 — Scripts</div>
+  <h2>Your Starter Code, Explained</h2>
+  <p>Read these carefully. Every line matters. The annotations explain <em>why</em> the code is written this way, not just what it does.</p>
+
+  <!-- GAMEMANAGER -->
+  <div class="code-file">
+    <div class="code-file-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-filename">GameManager.cs</span>
+      <span class="code-badge">Singleton Pattern</span>
+    </div>
+    <pre><span class="cs-kw">using</span> UnityEngine;
+
+<span class="cs-kw">public class</span> <span class="cs-type">GameManager</span> : <span class="cs-type">MonoBehaviour</span>
+{
+    <span class="cs-comment cs-cmt">// The Singleton instance — one GameManager accessible everywhere</span>
+    <span class="cs-kw">public static</span> <span class="cs-type">GameManager</span> Instance;
+
+    <span class="cs-kw">private int</span> totalCoins = <span class="cs-num">0</span>;
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">Awake</span>()
+    {
+        <span class="cs-kw">if</span> (Instance == <span class="cs-kw">null</span>)
+        {
+            Instance = <span class="cs-kw">this</span>;
+            <span class="cs-fn">DontDestroyOnLoad</span>(gameObject); <span class="cs-cmt">// survive scene loads</span>
+        }
+        <span class="cs-kw">else</span>
+        {
+            <span class="cs-fn">Destroy</span>(gameObject); <span class="cs-cmt">// destroy duplicates</span>
+        }
+    }
+
+    <span class="cs-kw">public void</span> <span class="cs-fn">UpdateCoinCount</span>(<span class="cs-kw">int</span> newAmount)
+    {
+        totalCoins = newAmount;
+        UIManager.Instance.<span class="cs-fn">UpdateCoinUI</span>(totalCoins);
+    }
+
+    <span class="cs-kw">public int</span> <span class="cs-fn">GetCoinCount</span>()
+    {
+        <span class="cs-kw">return</span> totalCoins;
+    }
+}</pre>
+  </div>
+
+  <div class="annotation">
+    <div class="ann-label">🔑 Singleton Pattern</div>
+    <p><code>public static GameManager Instance</code> is a static reference — it belongs to the <em>class</em>, not any specific object. This means any script can call <code>GameManager.Instance.UpdateCoinCount()</code> from anywhere in the project without needing a direct reference. The <code>Awake()</code> check ensures only one GameManager ever exists — if a second one appears (e.g. when loading a new scene), it destroys itself immediately.</p>
+  </div>
+
+  <div class="annotation amber">
+    <div class="ann-label">🧩 Extension Point</div>
+    <p>This is where you add a <strong>win condition</strong>. Add a field <code>public int totalCoinGoal = 20;</code> and at the end of <code>UpdateCoinCount()</code>, check <code>if (totalCoins >= totalCoinGoal) { CheckWin(); }</code>. You can also add a timer here using <code>Time.deltaTime</code> in <code>Update()</code>.</p>
+  </div>
+
+  <!-- UIMANAGER -->
+  <div class="code-file" style="margin-top:2.5rem">
+    <div class="code-file-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-filename">UIManager.cs</span>
+      <span class="code-badge">TextMeshPro</span>
+    </div>
+    <pre><span class="cs-kw">using</span> UnityEngine;
+<span class="cs-kw">using</span> TMPro;
+
+<span class="cs-kw">public class</span> <span class="cs-type">UIManager</span> : <span class="cs-type">MonoBehaviour</span>
+{
+    <span class="cs-kw">public static</span> <span class="cs-type">UIManager</span> Instance;
+
+    <span class="cs-attr">[Header("UI Elements")]</span>
+    <span class="cs-kw">public</span> <span class="cs-type">TMP_Text</span> coinText;
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">Awake</span>()
+    {
+        <span class="cs-kw">if</span> (Instance == <span class="cs-kw">null</span>) Instance = <span class="cs-kw">this</span>;
+        <span class="cs-kw">else</span> <span class="cs-fn">Destroy</span>(gameObject);
+    }
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">Start</span>()
+    {
+        <span class="cs-cmt">// Read from GameManager on scene start to sync display</span>
+        <span class="cs-fn">UpdateCoinUI</span>(GameManager.Instance.<span class="cs-fn">GetCoinCount</span>());
+    }
+
+    <span class="cs-kw">public void</span> <span class="cs-fn">UpdateCoinUI</span>(<span class="cs-kw">int</span> amount)
+    {
+        coinText.text = <span class="cs-str">"Coins: "</span> + amount;
+    }
+}</pre>
+  </div>
+
+  <div class="annotation cyan">
+    <div class="ann-label">📺 Extending the HUD</div>
+    <p>Add more <code>TMP_Text</code> fields for a <strong>timer</strong>, a <strong>coin goal</strong> display ("Coins: 12 / 20"), or a <strong>health bar</strong>. Create methods like <code>UpdateTimerUI(float seconds)</code> and call them from GameManager. All the wiring is the same pattern — Singleton, public method, update the text field.</p>
+  </div>
+
+  <!-- PLAYERCOINCOLLECTOR -->
+  <div class="code-file" style="margin-top:2.5rem">
+    <div class="code-file-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-filename">PlayerCoinCollector.cs</span>
+      <span class="code-badge">Component Bridge</span>
+    </div>
+    <pre><span class="cs-kw">using</span> UnityEngine;
+
+<span class="cs-kw">public class</span> <span class="cs-type">PlayerCoinCollector</span> : <span class="cs-type">MonoBehaviour</span>
+{
+    <span class="cs-kw">public int</span> currentCoins = <span class="cs-num">0</span>;
+
+    <span class="cs-kw">public void</span> <span class="cs-fn">AddCoins</span>(<span class="cs-kw">int</span> amount)
+    {
+        currentCoins += amount;
+
+        <span class="cs-cmt">// Pass the new total up to the GameManager</span>
+        GameManager.Instance.<span class="cs-fn">UpdateCoinCount</span>(currentCoins);
+    }
+}</pre>
+  </div>
+
+  <div class="annotation violet">
+    <div class="ann-label">🧑 Why a separate PlayerCoinCollector?</div>
+    <p>Separation of concerns. The GameManager tracks the <em>global</em> game state; the PlayerCoinCollector tracks <em>this player's</em> coin count. In a multiplayer game you'd have two collectors feeding one GameManager. It also means the Coin doesn't need to know anything about the GameManager directly — it just tells the collector, which handles the rest.</p>
+  </div>
+
+  <!-- COIN -->
+  <div class="code-file" style="margin-top:2.5rem">
+    <div class="code-file-header">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-filename">coin.cs</span>
+      <span class="code-badge">Trigger · Audio · VFX</span>
+    </div>
+    <pre><span class="cs-kw">using</span> UnityEngine;
+
+<span class="cs-kw">public class</span> <span class="cs-type">Coin</span> : <span class="cs-type">MonoBehaviour</span>
+{
+    <span class="cs-attr">[Header("Coin Settings")]</span>
+    <span class="cs-kw">public float</span> rotationSpeed = <span class="cs-num">90f</span>;
+    <span class="cs-kw">public int</span> coinValue = <span class="cs-num">1</span>;
+
+    <span class="cs-attr">[Header("Effects")]</span>
+    <span class="cs-kw">public</span> <span class="cs-type">AudioClip</span> pickupSound;
+    <span class="cs-kw">public</span> <span class="cs-type">GameObject</span> pickupVFX;
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">Update</span>()
+    {
+        transform.<span class="cs-fn">Rotate</span>(Vector3.up * rotationSpeed * Time.deltaTime);
+    }
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">OnTriggerEnter</span>(<span class="cs-type">Collider</span> other)
+    {
+        <span class="cs-kw">if</span> (other.<span class="cs-fn">CompareTag</span>(<span class="cs-str">"Player"</span>))
+        {
+            <span class="cs-type">PlayerCoinCollector</span> collector =
+                other.<span class="cs-fn">GetComponent</span>&lt;<span class="cs-type">PlayerCoinCollector</span>&gt;();
+
+            <span class="cs-kw">if</span> (collector != <span class="cs-kw">null</span>)
+                collector.<span class="cs-fn">AddCoins</span>(coinValue);
+
+            <span class="cs-kw">if</span> (pickupSound)
+                AudioSource.<span class="cs-fn">PlayClipAtPoint</span>(pickupSound, transform.position);
+
+            <span class="cs-kw">if</span> (pickupVFX)
+                <span class="cs-fn">Instantiate</span>(pickupVFX, transform.position, Quaternion.identity);
+
+            <span class="cs-fn">Destroy</span>(gameObject);
+        }
+    }
+}</pre>
+  </div>
+
+  <div class="annotation amber">
+    <div class="ann-label">🪙 Making Other Collectibles</div>
+    <p>Duplicate this script and rename it <code>PowerUp.cs</code>, <code>Star.cs</code>, or <code>Key.cs</code>. Change what happens in <code>OnTriggerEnter</code> — instead of calling <code>AddCoins()</code>, call a new method like <code>AddHealth()</code>, <code>ActivateSpeedBoost()</code>, or <code>UnlockDoor()</code>. Set <code>coinValue</code> to a higher number for a "gold coin" variant worth 5 points.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- UNITY TIPS                                -->
+<!-- ══════════════════════════════════════════ -->
+<section>
+  <div class="section-label">04 — Unity Tips</div>
+  <h2>Things to Know Before You Start</h2>
+
+  <div class="tip-grid">
+    <div class="tip-card">
+      <span class="tip-icon">🏷️</span>
+      <h4>Tags Matter</h4>
+      <p>The Coin script uses <code>CompareTag("Player")</code>. If your player object isn't tagged "Player" in the Inspector, coins will never register. Check this first if collection isn't working.</p>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">⚡</span>
+      <h4>Is Trigger = On</h4>
+      <p>The Coin's Collider must have "Is Trigger" checked. If it's a solid collider, <code>OnTriggerEnter</code> never fires — it'll be a wall instead of a collectible.</p>
+      <span class="tip-shortcut">Inspector → Collider → ✓ Is Trigger</span>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🎲</span>
+      <h4>Prefabs are Your Friend</h4>
+      <p>Turn your coin into a Prefab by dragging it from the Hierarchy into the Project panel. Then you can place dozens of coins quickly and edit them all at once.</p>
+      <span class="tip-shortcut">Drag from Hierarchy → Project</span>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">📦</span>
+      <h4>ProBuilder for Level Design</h4>
+      <p>Window → Package Manager → ProBuilder. Lets you create custom geometry — platforms, ramps, rooms — directly in Unity without needing Blender.</p>
+      <span class="tip-shortcut">Window → Package Manager</span>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🔊</span>
+      <h4>Free Audio Assets</h4>
+      <p>Unity Asset Store has free audio packs. Freesound.org has CC-licensed clips. Drag an AudioClip into the <code>pickupSound</code> field on the Coin's Inspector — no code needed.</p>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">🐛</span>
+      <h4>Use the Console</h4>
+      <p>Window → General → Console. Read every red error message — Unity tells you the file and line number. A <code>NullReferenceException</code> almost always means a public field is empty in the Inspector.</p>
+      <span class="tip-shortcut">Ctrl + Shift + C</span>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">▶️</span>
+      <h4>Test Constantly</h4>
+      <p>Hit Play after every change. Don't write 20 lines of code and then test — test every 5 minutes. Changes made in Play Mode are lost when you stop — use <code>Debug.Log()</code> to inspect values.</p>
+      <span class="tip-shortcut">Ctrl + P to Play/Stop</span>
+    </div>
+    <div class="tip-card">
+      <span class="tip-icon">💾</span>
+      <h4>Save Often</h4>
+      <p>Unity doesn't auto-save scenes. Use File → Save Scene frequently. If Unity crashes without saving, the last hour of level design is gone. Save before any major change.</p>
+      <span class="tip-shortcut">Ctrl + S every 10 min</span>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- EXTENSIONS                                -->
+<!-- ══════════════════════════════════════════ -->
+<section id="extensions">
+  <div class="section-label">05 — Extensions</div>
+  <h2>Make it Your Own</h2>
+  <p>Choose <strong>at least one</strong> extension. Simpler done > complex broken. Read the description and pick something you'll actually finish in an hour.</p>
+
+  <div class="ext-grid">
+    <div class="ext-card a">
+      <span class="ext-diff easy">Easy — ~30 min</span>
+      <h3>⏱ Countdown Timer</h3>
+      <p>Add a timer to the GameManager. When it hits zero, the player loses. Display it on the HUD.</p>
+      <ul>
+        <li>Add <code>float timeRemaining</code> to GameManager</li>
+        <li>Decrement in <code>Update()</code> using <code>Time.deltaTime</code></li>
+        <li>Call <code>UIManager.Instance.UpdateTimerUI()</code></li>
+        <li>Trigger Game Over when it hits zero</li>
+      </ul>
+    </div>
+
+    <div class="ext-card a">
+      <span class="ext-diff easy">Easy — ~30 min</span>
+      <h3>💛 Gold Coins (Multi-Value)</h3>
+      <p>Create a second coin prefab worth 5 points. Change the colour and scale. Set <code>coinValue = 5</code> in the Inspector — no code changes needed.</p>
+      <ul>
+        <li>Duplicate the Coin prefab</li>
+        <li>Change material colour to gold</li>
+        <li>Set <code>coinValue</code> to 5</li>
+        <li>Place sparingly in hard-to-reach spots</li>
+      </ul>
+    </div>
+
+    <div class="ext-card b">
+      <span class="ext-diff medium">Medium — ~45 min</span>
+      <h3>❤️ Health System</h3>
+      <p>Add a health variable to the player. Create a hazard (lava, spikes) that reduces health on contact. If health hits zero, trigger Game Over.</p>
+      <ul>
+        <li>Add <code>int health = 3</code> to PlayerCoinCollector</li>
+        <li>Create a <code>Hazard.cs</code> script (copy Coin, change to TakeDamage)</li>
+        <li>Display hearts or a number in the HUD</li>
+        <li>Add a brief invincibility period after taking damage</li>
+      </ul>
+    </div>
+
+    <div class="ext-card b">
+      <span class="ext-diff medium">Medium — ~45 min</span>
+      <h3>⚡ Speed Power-Up</h3>
+      <p>A collectible that temporarily boosts movement speed. Requires communicating with the character controller script.</p>
+      <ul>
+        <li>Create <code>SpeedBoost.cs</code> (based on Coin)</li>
+        <li>Get the character controller component on pickup</li>
+        <li>Increase its speed variable for 5 seconds</li>
+        <li>Use a Coroutine to reset it after the duration</li>
+      </ul>
+    </div>
+
+    <div class="ext-card c">
+      <span class="ext-diff hard">Hard — ~60 min</span>
+      <h3>🚪 Scene Loader / Next Level</h3>
+      <p>Add a second scene (level 2). When the player collects all coins, load the next scene. The GameManager persists coin count across scenes automatically.</p>
+      <ul>
+        <li>File → Build Settings → add Scene 2</li>
+        <li>Add <code>SceneManager.LoadScene()</code> to win condition</li>
+        <li>Place coins in Scene 2</li>
+        <li>Show running total between levels on a transition screen</li>
+      </ul>
+    </div>
+
+    <div class="ext-card c">
+      <span class="ext-diff hard">Hard — ~60 min</span>
+      <h3>👾 Simple Enemy</h3>
+      <p>A patrolling enemy that moves between waypoints. If it touches the player, reduce health or trigger a respawn.</p>
+      <ul>
+        <li>Create an Enemy object with a simple model</li>
+        <li>Write <code>Enemy.cs</code> with a Transform array of waypoints</li>
+        <li>Move between them with <code>Vector3.MoveTowards</code></li>
+        <li>Use <code>OnTriggerEnter</code> to detect player contact</li>
+      </ul>
+    </div>
+
+    <div class="ext-card d">
+      <span class="ext-diff stretch">Stretch — 60+ min</span>
+      <h3>🏆 Persistent Leaderboard</h3>
+      <p>Save the player's score using <code>PlayerPrefs</code> and display a local high score on the main menu or game over screen.</p>
+      <ul>
+        <li><code>PlayerPrefs.SetInt("HighScore", score)</code></li>
+        <li>Load with <code>PlayerPrefs.GetInt("HighScore")</code></li>
+        <li>Compare after each run and update if beaten</li>
+        <li>Display on a dedicated UI panel</li>
+      </ul>
+    </div>
+
+    <div class="ext-card d">
+      <span class="ext-diff stretch">Stretch — 60+ min</span>
+      <h3>🌟 Animated Coin Trail</h3>
+      <p>Coins "fly" toward the player UI on collection instead of just disappearing. Uses a Coroutine to lerp the coin object toward the HUD position.</p>
+      <ul>
+        <li>Don't Destroy immediately — start a Coroutine</li>
+        <li>Move coin toward a UI target position in world space</li>
+        <li>Scale down and fade alpha over 0.5 seconds</li>
+        <li>Add coin count only after animation completes</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- WORLD BUILDING GUIDE                      -->
+<!-- ══════════════════════════════════════════ -->
+<section>
+  <div class="section-label">06 — World Building</div>
+  <h2>Level Design Principles</h2>
+  <p>A good level teaches players without a tutorial. The arrangement of your coins, the shape of your terrain, and the placement of obstacles should naturally guide the player and reward exploration.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.5rem">
+      <h3 style="color:var(--lime);font-size:1rem;margin-bottom:.75rem">✅ Do This</h3>
+      <ul style="margin-left:1.25rem">
+        <li>Place a cluster of easy coins near the start to teach the mechanic</li>
+        <li>Use height variation — coins on raised platforms reward platforming skill</li>
+        <li>Create a clear visual language — coins glow, hazards look dangerous</li>
+        <li>Leave breathing room — don't pack everything into one corner</li>
+        <li>Give the player a moment to survey the level from the start position</li>
+        <li>Playtest with someone who hasn't seen the level</li>
+      </ul>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.5rem">
+      <h3 style="color:var(--red);font-size:1rem;margin-bottom:.75rem">❌ Avoid This</h3>
+      <ul style="margin-left:1.25rem">
+        <li>Placing all coins in a straight line — no decision-making for the player</li>
+        <li>Invisible walls — use visible geometry to block paths</li>
+        <li>A coin that requires pixel-perfect jumping to reach (frustrating, not fun)</li>
+        <li>A completely flat plane with no landmarks — players get lost</li>
+        <li>Too many coins — dilutes the reward feeling of each collection</li>
+        <li>Finishing the level before testing it yourself in Play Mode</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="annotation" style="margin-top:2rem">
+    <div class="ann-label">💡 The Rule of Three</div>
+    <p>For every mechanic in your game, design three examples in your level: one that's easy (shows players how it works), one that's moderate (makes them think), and one that's hard (rewards mastery). This applies to coin placement, obstacles, and any collectibles you add.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ══════════════════════════════════════════ -->
+<!-- ASSESSMENT                                -->
+<!-- ══════════════════════════════════════════ -->
+<section id="assessment">
+  <div class="section-label">07 — Assessment</div>
+  <h2>How Your Demo is Evaluated</h2>
+  <p>Your game is assessed as a <strong>playable demo</strong>. It must be launchable and completable by someone who has never seen it, without crashing.</p>
+
+  <div class="rubric-wrap">
+    <table class="rubric">
+      <thead>
+        <tr>
+          <th>Criterion</th>
+          <th>Excellent</th>
+          <th>Satisfactory</th>
+          <th>Needs Work</th>
+          <th>Marks</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Game Loop</td>
+          <td>Clear win and lose conditions, both functional, tested and communicated to player through UI</td>
+          <td>Win condition works but lose condition missing or unclear to player</td>
+          <td>No win or lose condition — it runs but has no goal</td>
+          <td><span class="marks-badge">/ 4</span></td>
+        </tr>
+        <tr>
+          <td>Coin Collection</td>
+          <td>All provided scripts working correctly, coins collect reliably, HUD updates instantly, no console errors</td>
+          <td>Collection works but has occasional bugs or console warnings</td>
+          <td>Collection broken — scripts not connected or tag/trigger misconfigured</td>
+          <td><span class="marks-badge">/ 4</span></td>
+        </tr>
+        <tr>
+          <td>Level Design</td>
+          <td>Intentional coin placement, varied terrain or geometry, clear player path with interesting decisions, visually coherent</td>
+          <td>Coins placed throughout a reasonably varied environment, some design thought evident</td>
+          <td>Coins placed randomly on a flat plane, minimal environment design</td>
+          <td><span class="marks-badge">/ 4</span></td>
+        </tr>
+        <tr>
+          <td>Extension Feature</td>
+          <td>At least one extension feature fully implemented, functional, and integrated into the game loop with UI feedback</td>
+          <td>Extension partially implemented or functional but not well-integrated</td>
+          <td>No extension beyond the starter scripts, or extension crashes the game</td>
+          <td><span class="marks-badge">/ 4</span></td>
+        </tr>
+        <tr>
+          <td>Code Quality</td>
+          <td>Any new scripts follow the patterns in the starter code, meaningful variable names, comments explaining intent, no redundant code</td>
+          <td>Scripts work but variable names unclear, no comments, some redundancy</td>
+          <td>Code copied without understanding, major structural issues</td>
+          <td><span class="marks-badge">/ 2</span></td>
+        </tr>
+        <tr>
+          <td>Polish &amp; Playability</td>
+          <td>Playable from start to finish by a new player without guidance, main menu present, audio/VFX enhance feedback, no game-breaking bugs</td>
+          <td>Mostly playable with some rough edges, no main menu but playable</td>
+          <td>Requires developer assistance to play, frequent crashes or stuck states</td>
+          <td><span class="marks-badge">/ 2</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+    margin-top:1.5rem;padding:1.25rem 1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:6px">
+    <div>
+      <div style="font-family:'Space Mono',monospace;font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.25rem">Total Available</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;color:var(--lime)">20 marks</div>
+    </div>
+    <div style="max-width:420px">
+      <p style="margin:0;font-size:.88rem;color:var(--muted)">Note: a visually beautiful game that crashes on launch scores zero for playability. Always prioritise function over form — but with enough time, you can have both.</p>
+    </div>
+  </div>
+
+  <div class="annotation" style="margin-top:2rem">
+    <div class="ann-label">📋 Submission Checklist</div>
+    <p>Before you submit: ✔ Game runs without errors ✔ Coins can be collected and HUD updates ✔ A win or lose state is reachable ✔ Extension feature is in and working ✔ Someone else has playtested it ✔ Unity project folder zipped or a build uploaded</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-bar">
+  <h2>Start with <span style="color:var(--lime)">Play Mode.</span></h2>
+  <p>Open the project. Hit play. Collect a coin. Read what happens in the Console. Then build from there.</p>
+  <a href="#overview" class="btn">↑ Back to Top</a>
+</div>
+
+<footer>
+  <p>Computing Technology 7–10 · Stage 5 · Software Development · Depth Study</p>
+  <p style="font-family:'Space Mono',monospace;font-size:.65rem;color:var(--muted)">Unity 2022+ · C# · TextMeshPro · 5-Hour Game Jam Format</p>
+</footer>
+
+</body>
+</html>
