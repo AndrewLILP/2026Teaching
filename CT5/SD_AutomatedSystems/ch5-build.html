@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 5 — Build Challenge · Automated Systems</title>
+<style>
+  :root {
+    --violet: #5b4dd4; --violet-dark: #3d30b0; --violet-deep: #1e1540;
+    --violet-mid: #7c6ee0; --violet-light: #ece9fc; --violet-pale: #f5f3fe;
+    --ink: #1a1630; --ink-mid: #3d3660; --muted: #6b6590;
+    --border: #e2deff; --white: #ffffff; --bg: #f7f6ff;
+    --radius: 12px; --radius-sm: 8px;
+    --ga: #28a745; --ga-bg: #e8f5e9; --ga-text: #1b5e20; --ga-border: #a3d9a5;
+    --gb: #17a2b8; --gb-bg: #e0f7fa; --gb-text: #004d40; --gb-border: #80deea;
+    --gc: #c89b00; --gc-bg: #fffde7; --gc-text: #6b5200; --gc-border: #ffe082;
+    --gd: #fd7e14; --gd-bg: #fff3e0; --gd-text: #7c3700; --gd-border: #ffcc80;
+    --ge: #dc3545; --ge-bg: #ffebee; --ge-text: #7f0000; --ge-border: #ef9a9a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* NAV */
+  .topnav { background: var(--violet-deep); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .nav-home { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-home:hover { color: rgba(255,255,255,.9); }
+  .nav-chapter { font-family: 'Courier New', monospace; font-size: 11px; color: rgba(255,255,255,.4); }
+  .nav-next { font-family: 'Courier New', monospace; font-size: 11px; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-next:hover { color: rgba(255,255,255,.9); }
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; width: 83.33%; background: var(--violet); border-radius: 0 2px 2px 0; }
+
+  /* HERO */
+  .ch-hero { background: var(--violet-deep); padding: 52px 40px 60px; position: relative; overflow: hidden; }
+  .ch-hero::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 28px 28px; }
+  .ch-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(91,77,212,.4) 0%, transparent 65%); }
+  .ch-hero-inner { position: relative; z-index: 1; max-width: 760px; animation: fadeUp .5s ease both; }
+  .ch-num { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .14em; color: var(--violet-mid); display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ch-num::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(124,110,224,.4); }
+  .ch-hero h1 { font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: normal; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+  .ch-hero h1 em { font-style: normal; color: var(--violet-mid); }
+  .ch-hero-desc { font-size: 1rem; color: rgba(255,255,255,.6); max-width: 560px; line-height: 1.65; margin-bottom: 28px; }
+  .ch-outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .outcome-tag { font-family: 'Courier New', monospace; font-size: 10px; padding: 4px 12px; border-radius: 12px; background: rgba(91,77,212,.25); border: 1px solid rgba(124,110,224,.35); color: #c4b5fd; }
+
+  /* MAIN */
+  .main { max-width: 900px; margin: 0 auto; padding: 56px 24px 80px; }
+  .section { margin-bottom: 60px; }
+  .section-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  h2 { font-family: Georgia, serif; font-size: 1.5rem; font-weight: normal; color: var(--ink); margin-bottom: 14px; line-height: 1.3; }
+  h3 { font-family: Georgia, serif; font-size: 1.05rem; font-weight: normal; color: var(--ink-mid); margin-bottom: 10px; margin-top: 24px; }
+  p { margin-bottom: 14px; font-size: 15.5px; color: var(--ink-mid); line-height: 1.75; }
+  p:last-child { margin-bottom: 0; }
+  code { font-family: 'Courier New', monospace; font-size: 12px; background: rgba(91,77,212,.1); color: var(--violet-dark); padding: 1px 6px; border-radius: 4px; }
+
+  /* SCENE CHECKLIST */
+  .checklist-toggle { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 22px; margin: 20px 0; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; transition: border-color .15s; }
+  .checklist-toggle:hover { border-color: var(--violet-mid); }
+  .checklist-toggle-title { font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: .06em; color: var(--violet); }
+  .checklist-toggle-arrow { font-size: 14px; color: var(--muted); transition: transform .2s; }
+  .checklist-toggle-arrow.open { transform: rotate(180deg); }
+  .checklist-body { background: var(--white); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); padding: 20px 22px; display: none; }
+  .checklist-body.open { display: block; }
+  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); transition: background .15s; cursor: pointer; }
+  .check-item:hover { background: var(--bg); }
+  .check-item input[type="checkbox"] { margin-top: 3px; accent-color: var(--violet); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+  .check-item label { font-size: 13px; color: var(--ink-mid); line-height: 1.5; cursor: pointer; }
+  .check-item.done label { color: var(--muted); text-decoration: line-through; }
+
+  /* MODULAR STRUCTURE */
+  .module-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 20px 0; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .mod-col { padding: 18px 16px; border-right: 1px solid var(--border); }
+  .mod-col:last-child { border-right: none; }
+  .mod-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+  .mod-file { font-family: 'Courier New', monospace; font-size: 13px; color: var(--violet-dark); display: block; margin-bottom: 6px; }
+  .mod-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .mod-arrow-row { display: flex; align-items: center; justify-content: center; padding: 10px 0; color: var(--muted); font-size: 20px; }
+  .mod-sensor { background: #f0f9ff; } .mod-sensor .mod-label { color: #0369a1; }
+  .mod-ctrl   { background: var(--violet-pale); } .mod-ctrl .mod-label { color: var(--violet); }
+  .mod-act    { background: #f0fff4; } .mod-act .mod-label { color: #065f46; }
+  .mod-ui     { background: #fffbeb; } .mod-ui .mod-label { color: #92400e; }
+
+  /* TIER CARDS */
+  .tier { border-radius: var(--radius); border: 1px solid; margin: 20px 0; overflow: hidden; }
+  .tier-header { padding: 18px 22px; display: flex; align-items: center; gap: 14px; cursor: pointer; user-select: none; }
+  .tier-badge { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-size: 1.1rem; color: #fff; flex-shrink: 0; }
+  .tier-header-text { flex: 1; }
+  .tier-title { font-family: Georgia, serif; font-size: 1.05rem; color: var(--ink); display: block; margin-bottom: 2px; }
+  .tier-sub { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .04em; color: var(--muted); }
+  .tier-chevron { font-size: 16px; color: var(--muted); transition: transform .2s; flex-shrink: 0; }
+  .tier-chevron.open { transform: rotate(180deg); }
+  .tier-body { display: none; border-top: 1px solid; }
+  .tier-body.open { display: block; }
+  .tier-inner { padding: 22px; }
+
+  .tier.ge { border-color: var(--ge-border); } .tier.ge .tier-header { background: var(--ge-bg); } .tier.ge .tier-badge { background: var(--ge); } .tier.ge .tier-body { border-color: var(--ge-border); }
+  .tier.gd { border-color: var(--gd-border); } .tier.gd .tier-header { background: var(--gd-bg); } .tier.gd .tier-badge { background: var(--gd); } .tier.gd .tier-body { border-color: var(--gd-border); }
+  .tier.gc { border-color: var(--gc-border); } .tier.gc .tier-header { background: var(--gc-bg); } .tier.gc .tier-badge { background: var(--gc); } .tier.gc .tier-body { border-color: var(--gc-border); }
+  .tier.gb { border-color: var(--gb-border); } .tier.gb .tier-header { background: var(--gb-bg); } .tier.gb .tier-badge { background: var(--gb); } .tier.gb .tier-body { border-color: var(--gb-border); }
+  .tier.ga { border-color: var(--ga-border); } .tier.ga .tier-header { background: var(--ga-bg); } .tier.ga .tier-badge { background: var(--ga); } .tier.ga .tier-body { border-color: var(--ga-border); }
+
+  /* Inside tier body */
+  .tier-section-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; margin-top: 18px; display: block; }
+  .tier-section-label:first-child { margin-top: 0; }
+  .tier-inner p { font-size: 14px; color: var(--ink-mid); margin-bottom: 10px; line-height: 1.65; }
+
+  /* Task checklist inside tier */
+  .task-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px; margin: 6px 0; }
+  .task-list li { font-size: 13.5px; color: var(--ink-mid); padding: 6px 12px 6px 28px; position: relative; background: var(--bg); border-radius: var(--radius-sm); line-height: 1.5; }
+  .task-list li::before { content: '→'; position: absolute; left: 8px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); top: 7px; }
+
+  /* Extension box */
+  .extension-box { border-radius: var(--radius-sm); padding: 12px 16px; margin-top: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .ge .extension-box { background: rgba(220,53,69,.06); border: 1px solid var(--ge-border); }
+  .gd .extension-box { background: rgba(253,126,20,.06); border: 1px solid var(--gd-border); }
+  .gc .extension-box { background: rgba(200,155,0,.06); border: 1px solid var(--gc-border); }
+  .gb .extension-box { background: rgba(23,162,184,.06); border: 1px solid var(--gb-border); }
+  .ga .extension-box { background: rgba(40,167,69,.06); border: 1px solid var(--ga-border); }
+  .ext-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; color: var(--muted); white-space: nowrap; padding-top: 1px; }
+  .ext-text { font-size: 13px; color: var(--ink-mid); line-height: 1.6; }
+
+  /* Code blocks */
+  .code-wrap { background: var(--violet-deep); border-radius: var(--radius-sm); overflow: hidden; margin: 10px 0; }
+  .code-file { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; color: rgba(255,255,255,.4); padding: 10px 16px 6px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .code-wrap pre { font-family: 'Courier New', monospace; font-size: 11.5px; line-height: 1.8; color: #c4b5fd; margin: 0; padding: 14px 16px; overflow-x: auto; white-space: pre; }
+  .ck { color: #93c5fd; } .ct { color: #6ee7b7; } .cc { color: rgba(255,255,255,.32); }
+  .cs { color: #fde68a; } .cm { color: #c4b5fd; } .cv { color: #fca5a5; }
+  .ctodo { color: #fb923c; font-style: italic; }
+
+  /* Iteration tracker */
+  .iter-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .iter-header { background: var(--violet-deep); padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .iter-title { font-family: Georgia, serif; font-size: 1rem; color: #fff; font-weight: normal; }
+  .iter-sub { font-family: 'Courier New', monospace; font-size: 10px; color: rgba(255,255,255,.45); }
+  .iter-add { display: flex; flex-direction: column; gap: 10px; padding: 20px 22px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .iter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .iter-group { display: flex; flex-direction: column; gap: 5px; }
+  .iter-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); }
+  .iter-input { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-family: Georgia, serif; font-size: 13px; color: var(--ink); background: var(--white); transition: border-color .15s; resize: none; }
+  .iter-input:focus { outline: none; border-color: var(--violet-mid); }
+  .iter-select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-family: Georgia, serif; font-size: 13px; color: var(--ink); background: var(--white); cursor: pointer; }
+  .iter-btn { font-family: 'Courier New', monospace; font-size: 11px; padding: 8px 18px; border-radius: 20px; border: 1.5px solid var(--violet); color: var(--violet); background: transparent; cursor: pointer; align-self: flex-end; transition: background .15s, color .15s; }
+  .iter-btn:hover { background: var(--violet); color: #fff; }
+  .iter-history { padding: 16px 22px; display: flex; flex-direction: column; gap: 10px; max-height: 340px; overflow-y: auto; }
+  .iter-empty { font-family: 'Courier New', monospace; font-size: 12px; color: var(--muted); text-align: center; padding: 20px; }
+  .iter-entry { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; display: grid; grid-template-columns: auto 1fr; gap: 12px; }
+  .iter-ver { font-family: 'Courier New', monospace; font-size: 11px; background: var(--violet-light); color: var(--violet-dark); padding: 3px 9px; border-radius: 10px; align-self: start; white-space: nowrap; }
+  .iter-content { display: flex; flex-direction: column; gap: 4px; }
+  .iter-date { font-family: 'Courier New', monospace; font-size: 10px; color: var(--muted); }
+  .iter-field { font-size: 12.5px; color: var(--ink-mid); line-height: 1.5; }
+  .iter-field strong { font-family: 'Courier New', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: normal; }
+  .result-pass { color: #065f46; } .result-partial { color: #92400e; } .result-fail { color: #7f0000; }
+  .iter-footer { padding: 10px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+  .iter-clear { font-family: 'Courier New', monospace; font-size: 11px; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--muted); color: var(--muted); background: transparent; cursor: pointer; transition: background .15s, color .15s; }
+  .iter-clear:hover { background: var(--muted); color: #fff; }
+
+  /* Callouts */
+  .callout { border-radius: var(--radius); padding: 20px 24px; margin: 24px 0; display: flex; gap: 16px; }
+  .callout-unity { background: var(--violet-pale); border: 1px solid var(--border); }
+  .callout-tip   { background: #f0fff4; border: 1px solid #a7f3d0; }
+  .callout-icon { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; color: var(--violet); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+  .callout-tip .callout-icon { color: #065f46; }
+  .callout-body p { font-size: 14px; line-height: 1.65; color: var(--ink-mid); margin-bottom: 6px; }
+  .callout-body p:last-child { margin-bottom: 0; }
+
+  /* Notebook */
+  .notebook { background: var(--violet-deep); border-radius: var(--radius); padding: 32px; margin-top: 56px; position: relative; overflow: hidden; }
+  .notebook::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 22px 22px; }
+  .notebook-inner { position: relative; z-index: 1; }
+  .notebook-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--violet-mid); margin-bottom: 8px; }
+  .notebook h2 { color: #fff; font-size: 1.2rem; margin-bottom: 6px; }
+  .notebook-sub { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; font-family: 'Courier New', monospace; }
+  .prompt-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .prompt-list li { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-sm); padding: 16px 20px 16px 48px; position: relative; font-size: 14.5px; color: rgba(255,255,255,.85); line-height: 1.6; }
+  .prompt-num { position: absolute; left: 16px; top: 16px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--violet-mid); }
+
+  /* Chapter nav */
+  .ch-nav { display: flex; justify-content: space-between; align-items: center; padding: 32px 0 0; border-top: 1px solid var(--border); margin-top: 48px; gap: 12px; flex-wrap: wrap; }
+  .ch-nav-btn { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); text-decoration: none; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: border-color .15s, color .15s, background .15s; }
+  .ch-nav-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-pale); }
+  .ch-nav-btn.next { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .ch-nav-btn.next:hover { background: var(--violet-dark); border-color: var(--violet-dark); }
+  .ch-nav-center { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
+
+  footer { background: var(--violet-deep); color: rgba(255,255,255,.35); text-align: center; padding: 20px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 680px) {
+    .ch-hero { padding: 36px 20px 44px; } .main { padding: 32px 16px 60px; }
+    .topnav { padding: 0 16px; } .nav-chapter { display: none; }
+    .module-flow { grid-template-columns: 1fr 1fr; }
+    .check-grid { grid-template-columns: 1fr; }
+    .iter-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+    Unit hub
+  </a>
+  <span class="nav-chapter">CH 05 / 06 — Build Challenge</span>
+  <a class="nav-next" href="ch6-evaluate.html">
+    Ch 6
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+  </a>
+</nav>
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<header class="ch-hero">
+  <div class="ch-hero-inner">
+    <div class="ch-num">CHAPTER 05 · PRODUCING &amp; IMPLEMENTING</div>
+    <h1>Build <em>challenge</em></h1>
+    <p class="ch-hero-desc">Five tiered tasks — one per grade level. Start where your skills are, aim one level higher, and document every iteration in the tracker below. Your notebook is evidence of your thinking, not just your finished product.</p>
+    <div class="ch-outcomes">
+      <span class="outcome-tag">CT5-OPL-01</span>
+      <span class="outcome-tag">CT5-ALG-01</span>
+      <span class="outcome-tag">CT5-DES-01</span>
+      <span class="outcome-tag">CT5-EVL-01</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── 5.1 BEFORE YOU BUILD ──────────────────────── -->
+  <section class="section">
+    <div class="section-label">5.1 — Before you build</div>
+    <h2>Set up your Unity scene</h2>
+    <p>Before writing a single line of code, your Unity scene needs a working foundation. Tick each item below once it's in place — your answers are saved automatically.</p>
+
+    <div class="checklist-toggle" id="cl-toggle" onclick="toggleChecklist()">
+      <span class="checklist-toggle-title">Unity scene setup checklist</span>
+      <span class="checklist-toggle-arrow" id="cl-arrow">▼</span>
+    </div>
+    <div class="checklist-body" id="cl-body">
+      <div class="check-grid" id="check-grid">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <div class="callout callout-unity" style="margin-top:20px;">
+      <div class="callout-icon">SINGLE RESPONSIBILITY</div>
+      <div class="callout-body">
+        <p>The single most important rule for keeping your Unity project manageable: <em>one script, one job</em>. A script that detects the player should not also be moving a door and updating a UI label. When each script has one clear responsibility, bugs are easier to find and fixes don't break other things. The four-script pattern below shows how to split the work.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5.2 MODULAR STRUCTURE ──────────────────────── -->
+  <section class="section">
+    <div class="section-label">5.2 — Modular code structure</div>
+    <h2>Four scripts, one system</h2>
+    <p>Grade B and above projects should use this pattern. Each script has exactly one responsibility and communicates with the others through public method calls or UnityEvents. Even for simpler systems, naming your script clearly (e.g. <code>DoorSensor.cs</code> not <code>Door.cs</code>) signals that you understand the principle.</p>
+
+    <div class="module-flow">
+      <div class="mod-col mod-sensor">
+        <span class="mod-label">Detect</span>
+        <span class="mod-file">SensorReader.cs</span>
+        <span class="mod-desc">Reads inputs from trigger colliders, raycasts, float variables, or <code>Input</code>. Notifies the controller when a condition changes. Knows nothing about what to do with the information.</span>
+      </div>
+      <div class="mod-col mod-ctrl">
+        <span class="mod-label">Decide</span>
+        <span class="mod-file">SystemController.cs</span>
+        <span class="mod-desc">Holds the FSM or threshold logic. Receives data from sensors, makes the decision, then calls methods on the actuator. Never directly touches Unity components like <code>Animator</code> or <code>Light</code>.</span>
+      </div>
+      <div class="mod-col mod-act">
+        <span class="mod-label">Act</span>
+        <span class="mod-file">ActuatorDriver.cs</span>
+        <span class="mod-desc">Receives commands from the controller and drives Unity components — <code>Animator</code>, <code>Light</code>, <code>NavMeshAgent</code>, <code>AudioSource</code>. Knows nothing about why it was told to act.</span>
+      </div>
+      <div class="mod-col mod-ui">
+        <span class="mod-label">Display</span>
+        <span class="mod-file">UIManager.cs</span>
+        <span class="mod-desc">Updates TextMeshPro labels, sliders, and image colours to reflect system state. Only reads data — never changes the state itself. Called by the controller each frame or on state change.</span>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">GRADE A SIGNAL</div>
+      <div class="callout-body">
+        <p>Assessors look for evidence of design thinking — not just code that works. A Grade A project notebook explains <em>why</em> you split the responsibilities the way you did, what you would change if requirements changed, and how the architecture made debugging easier. The code is the evidence; the notebook is the argument.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5.3 TIERED TASKS ───────────────────────────── -->
+  <section class="section">
+    <div class="section-label">5.3 — Tiered build tasks</div>
+    <h2>Select your tier — aim one level above where you feel comfortable</h2>
+    <p>Click a grade to expand the task. Each one includes a starter script with <code>TODO</code> comments — your job is to replace those comments with working code. Complete the task checklist before moving to the iteration tracker.</p>
+
+    <!-- GRADE E -->
+    <div class="tier ge" id="tier-e">
+      <div class="tier-header" onclick="toggleTier('e')">
+        <div class="tier-badge">E</div>
+        <div class="tier-header-text">
+          <span class="tier-title">Museum exhibit activator</span>
+          <span class="tier-sub">One trigger zone → spotlight + info panel appear · OnTriggerEnter + SetActive</span>
+        </div>
+        <span class="tier-chevron" id="chev-e">▼</span>
+      </div>
+      <div class="tier-body" id="body-e">
+        <div class="tier-inner">
+          <span class="tier-section-label">You will build</span>
+          <p>A Unity scene where walking into a trigger zone switches on a spotlight and makes an info panel visible. The player walks away — nothing resets. This is the simplest possible automated response: one input, two simultaneous outputs, no logic needed.</p>
+
+          <span class="tier-section-label">Starter script</span>
+          <div class="code-wrap">
+            <div class="code-file">ExhibitActivator.cs — attach to the trigger zone GameObject</div>
+            <pre><span class="ck">using</span> UnityEngine;
+
+<span class="ck">public class</span> <span class="ct">ExhibitActivator</span> : <span class="ct">MonoBehaviour</span>
+{
+    <span class="cc">// Drag your spotlight GameObject in here in the Inspector</span>
+    <span class="ck">public</span> <span class="ct">GameObject</span> spotlight;
+
+    <span class="cc">// Drag your info panel GameObject in here</span>
+    <span class="ck">public</span> <span class="ct">GameObject</span> infoPanel;
+
+    <span class="ck">void</span> <span class="cm">OnTriggerEnter</span>(<span class="ct">Collider</span> other)
+    {
+        <span class="ck">if</span> (other.<span class="cm">CompareTag</span>(<span class="cs">"Player"</span>))
+        {
+            <span class="ctodo">// TODO: Call SetActive(true) on spotlight</span>
+
+            <span class="ctodo">// TODO: Call SetActive(true) on infoPanel</span>
+        }
+    }
+}</pre>
+          </div>
+
+          <span class="tier-section-label">Your task checklist</span>
+          <ul class="task-list">
+            <li>Create a trigger collider zone in front of the exhibit (set "Is Trigger" in the Inspector)</li>
+            <li>Create a Spotlight and a UI Canvas panel in the scene</li>
+            <li>Set both to inactive in the Inspector before running (so they start hidden)</li>
+            <li>Fill in the two TODO lines — <code>SetActive(true)</code> on each</li>
+            <li>Tag your player character as "Player" in the Inspector</li>
+            <li>Test: walk into the zone — both should appear</li>
+          </ul>
+
+          <div class="extension-box">
+            <span class="ext-label">EXTENSION →</span>
+            <span class="ext-text">Add <code>OnTriggerExit</code> so the spotlight and panel turn off when the player walks away. That makes this a Grade D system — you've added a return state.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADE D -->
+    <div class="tier gd" id="tier-d">
+      <div class="tier-header" onclick="toggleTier('d')">
+        <div class="tier-badge">D</div>
+        <div class="tier-header-text">
+          <span class="tier-title">Security floodlight with timer</span>
+          <span class="tier-sub">Motion trigger → light on → 5-second countdown → light off · float timer in Update()</span>
+        </div>
+        <span class="tier-chevron" id="chev-d">▼</span>
+      </div>
+      <div class="tier-body" id="body-d">
+        <div class="tier-inner">
+          <span class="tier-section-label">You will build</span>
+          <p>A security light that activates on motion and stays on for a configurable duration after the last detection. The core challenge is writing a timer that decrements each frame using <code>Time.deltaTime</code> — making the behaviour frame-rate independent.</p>
+
+          <span class="tier-section-label">Starter script</span>
+          <div class="code-wrap">
+            <div class="code-file">SecurityFloodlight.cs — attach to an empty GameObject in the trigger zone</div>
+            <pre><span class="ck">using</span> UnityEngine;
+
+<span class="ck">public class</span> <span class="ct">SecurityFloodlight</span> : <span class="ct">MonoBehaviour</span>
+{
+    <span class="ck">public</span> <span class="ct">Light</span>  floodlight;
+    <span class="ck">public</span> <span class="ct">float</span> holdDuration = <span class="cv">5f</span>;
+
+    <span class="ck">private</span> <span class="ct">float</span> timer       = <span class="cv">0f</span>;
+    <span class="ck">private</span> <span class="ct">bool</span>  playerInZone = <span class="cv">false</span>;
+
+    <span class="ck">void</span> <span class="cm">Update</span>()
+    {
+        <span class="ctodo">// TODO: If playerInZone, reset timer to holdDuration</span>
+        <span class="ctodo">// TODO: Else if timer > 0, subtract Time.deltaTime from timer</span>
+
+        <span class="ctodo">// TODO: Set floodlight.enabled to (timer > 0)</span>
+    }
+
+    <span class="ck">void</span> <span class="cm">OnTriggerEnter</span>(<span class="ct">Collider</span> other)
+    {
+        <span class="ctodo">// TODO: If tag is "Player", set playerInZone to true</span>
+    }
+
+    <span class="ck">void</span> <span class="cm">OnTriggerExit</span>(<span class="ct">Collider</span> other)
+    {
+        <span class="ctodo">// TODO: If tag is "Player", set playerInZone to false</span>
+    }
+}</pre>
+          </div>
+
+          <span class="tier-section-label">Your task checklist</span>
+          <ul class="task-list">
+            <li>Complete all four TODO sections in the script</li>
+            <li>Make <code>holdDuration</code> configurable from the Inspector — try 2s, 5s, 10s</li>
+            <li>Verify the light stays on while the player is in the zone (timer keeps resetting)</li>
+            <li>Verify the light turns off after exactly <code>holdDuration</code> seconds after the player leaves</li>
+            <li>Test edge case: player enters, leaves, re-enters before timer expires — light should stay on</li>
+          </ul>
+
+          <div class="extension-box">
+            <span class="ext-label">EXTENSION →</span>
+            <span class="ext-text">Add an <code>AudioSource</code> that plays a click sound when the light turns on and off. Then add a <code>TextMeshPro</code> label showing the countdown timer value — that brings in data display and moves you toward Grade C.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADE C -->
+    <div class="tier gc" id="tier-c">
+      <div class="tier-header" onclick="toggleTier('c')">
+        <div class="tier-badge">C</div>
+        <div class="tier-header-text">
+          <span class="tier-title">Water tank level controller</span>
+          <span class="tier-sub">Threshold on/off loop with UI data display · float comparison + Mathf.Clamp01</span>
+        </div>
+        <span class="tier-chevron" id="chev-c">▼</span>
+      </div>
+      <div class="tier-body" id="body-c">
+        <div class="tier-inner">
+          <span class="tier-section-label">You will build</span>
+          <p>A simulated water tank that drains gradually each frame. A pump activates automatically when the level drops below 20% and deactivates when it exceeds 90% — preventing both overflow and running dry. A UI slider shows the current level in real time.</p>
+
+          <span class="tier-section-label">Starter script</span>
+          <div class="code-wrap">
+            <div class="code-file">WaterTankController.cs — attach to a controller GameObject</div>
+            <pre><span class="ck">using</span> UnityEngine;
+<span class="ck">using</span> UnityEngine.UI;
+
+<span class="ck">public class</span> <span class="ct">WaterTankController</span> : <span class="ct">MonoBehaviour</span>
+{
+    [<span class="ct">Header</span>(<span class="cs">"Settings"</span>)]
+    <span class="ck">public</span> <span class="ct">float</span> drainRate     = <span class="cv">0.02f</span>;  <span class="cc">// per second</span>
+    <span class="ck">public</span> <span class="ct">float</span> fillRate      = <span class="cv">0.05f</span>;  <span class="cc">// per second when pump on</span>
+    <span class="ck">public</span> <span class="ct">float</span> lowThreshold  = <span class="cv">0.2f</span>;   <span class="cc">// pump activates below this</span>
+    <span class="ck">public</span> <span class="ct">float</span> highThreshold = <span class="cv">0.9f</span>;   <span class="cc">// pump deactivates above this</span>
+
+    [<span class="ct">Header</span>(<span class="cs">"References"</span>)]
+    <span class="ck">public</span> <span class="ct">Slider</span>          levelSlider;
+    <span class="ck">public</span> <span class="ct">ParticleSystem</span>  pumpParticles;
+
+    <span class="ck">private</span> <span class="ct">float</span> tankLevel = <span class="cv">0.8f</span>;
+    <span class="ck">private</span> <span class="ct">bool</span>  pumpOn    = <span class="cv">false</span>;
+
+    <span class="ck">void</span> <span class="cm">Update</span>()
+    {
+        <span class="cc">// INPUT — tank drains naturally</span>
+        <span class="ctodo">// TODO: Subtract (drainRate * Time.deltaTime) from tankLevel</span>
+        <span class="ctodo">// TODO: If pumpOn, also add (fillRate * Time.deltaTime) to tankLevel</span>
+        <span class="ctodo">// TODO: Clamp tankLevel between 0 and 1 using Mathf.Clamp01()</span>
+
+        <span class="cc">// PROCESS — threshold logic (hysteresis)</span>
+        <span class="ctodo">// TODO: If tankLevel &lt; lowThreshold, set pumpOn = true</span>
+        <span class="ctodo">// TODO: If tankLevel &gt; highThreshold, set pumpOn = false</span>
+
+        <span class="cc">// OUTPUT — update UI and particles</span>
+        <span class="ctodo">// TODO: Set levelSlider.value = tankLevel</span>
+        <span class="ctodo">// TODO: If pumpOn, call pumpParticles.Play() else pumpParticles.Stop()</span>
+    }
+}</pre>
+          </div>
+
+          <span class="tier-section-label">Your task checklist</span>
+          <ul class="task-list">
+            <li>Complete all TODO sections — the drain, fill, clamp, both thresholds, and both outputs</li>
+            <li>Add a UI Slider to the scene and connect it in the Inspector (min 0, max 1)</li>
+            <li>Add a ParticleSystem to represent the pump — a simple upward-flowing burst works</li>
+            <li>Verify the pump turns on below 20% and off above 90% — watch the slider while running</li>
+            <li>Verify <code>Mathf.Clamp01()</code> prevents the level going below 0 or above 1</li>
+            <li>Add a <code>TextMeshPro</code> label showing "PUMP ON" / "PUMP OFF" to reflect <code>pumpOn</code></li>
+          </ul>
+
+          <div class="extension-box">
+            <span class="ext-label">EXTENSION →</span>
+            <span class="ext-text">Add a second threshold between the two: a "warning" zone (20–35%) that changes the slider colour to orange using <code>Image.color</code>. This introduces multi-level threshold logic and is a clear Grade B behaviour.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADE B -->
+    <div class="tier gb" id="tier-b">
+      <div class="tier-header" onclick="toggleTier('b')">
+        <div class="tier-badge">B</div>
+        <div class="tier-header-text">
+          <span class="tier-title">Traffic light intersection</span>
+          <span class="tier-sub">Multi-state FSM with timer + pedestrian interrupt · enum + switch statement</span>
+        </div>
+        <span class="tier-chevron" id="chev-b">▼</span>
+      </div>
+      <div class="tier-body" id="body-b">
+        <div class="tier-inner">
+          <span class="tier-section-label">You will build</span>
+          <p>A traffic light that cycles Red → Green → Amber → Red on a timer. A pedestrian button (E key) interrupts the cycle, forcing a transition to Red immediately — then the normal cycle resumes. This requires a proper FSM where an external event can override the normal transition logic.</p>
+
+          <span class="tier-section-label">Starter script</span>
+          <div class="code-wrap">
+            <div class="code-file">TrafficLightFSM.cs — attach to a controller GameObject</div>
+            <pre><span class="ck">using</span> UnityEngine;
+
+<span class="ck">public class</span> <span class="ct">TrafficLightFSM</span> : <span class="ct">MonoBehaviour</span>
+{
+    <span class="ck">public enum</span> <span class="ct">LightState</span> { Red, Green, Amber }
+
+    [<span class="ct">Header</span>(<span class="cs">"Durations"</span>)]
+    <span class="ck">public</span> <span class="ct">float</span> redDuration   = <span class="cv">5f</span>;
+    <span class="ck">public</span> <span class="ct">float</span> greenDuration = <span class="cv">4f</span>;
+    <span class="ck">public</span> <span class="ct">float</span> amberDuration = <span class="cv">2f</span>;
+
+    [<span class="ct">Header</span>(<span class="cs">"Lights"</span>)]
+    <span class="ck">public</span> <span class="ct">Light</span> redLight, greenLight, amberLight;
+
+    <span class="ck">private</span> <span class="ct">LightState</span> state = <span class="ct">LightState</span>.Red;
+    <span class="ck">private</span> <span class="ct">float</span>      timer = <span class="cv">0f</span>;
+
+    <span class="ck">void</span> <span class="cm">Update</span>()
+    {
+        timer += Time.deltaTime;
+
+        <span class="cc">// Pedestrian button — interrupt to Red immediately</span>
+        <span class="ck">if</span> (Input.<span class="cm">GetKeyDown</span>(<span class="ct">KeyCode</span>.E))
+        {
+            <span class="ctodo">// TODO: Call Transition(LightState.Red)</span>
+        }
+
+        <span class="ctodo">// TODO: Write a switch(state) block.
+        // In each case, check if timer >= the duration for that state.
+        // If so, call Transition() with the next state.
+        // Red → Green → Amber → Red</span>
+
+        <span class="cm">UpdateLights</span>();
+    }
+
+    <span class="ck">void</span> <span class="cm">Transition</span>(<span class="ct">LightState</span> next)
+    {
+        <span class="ctodo">// TODO: Set state = next and reset timer to 0</span>
+    }
+
+    <span class="ck">void</span> <span class="cm">UpdateLights</span>()
+    {
+        <span class="ctodo">// TODO: Enable each light only when state matches.
+        // e.g. redLight.enabled = (state == LightState.Red);</span>
+    }
+}</pre>
+          </div>
+
+          <span class="tier-section-label">Your task checklist</span>
+          <ul class="task-list">
+            <li>Complete the <code>switch</code> block with all three state cases and their transitions</li>
+            <li>Complete <code>Transition()</code> — state change and timer reset</li>
+            <li>Complete <code>UpdateLights()</code> — only the current state's light should be enabled</li>
+            <li>Test: does the cycle run Red → Green → Amber → Red in the correct order?</li>
+            <li>Test: press E mid-green — does the light jump to Red immediately then restart the cycle?</li>
+            <li>Add a <code>TextMeshPro</code> label that displays the current state name using <code>state.ToString()</code></li>
+          </ul>
+
+          <div class="extension-box">
+            <span class="ext-label">EXTENSION →</span>
+            <span class="ext-text">Add a second traffic light 90° offset (representing the cross street) that is always in the opposite state — when yours is Green, the other is Red. This requires the second controller to read the first's state, introducing inter-script communication via a public reference.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRADE A -->
+    <div class="tier ga" id="tier-a">
+      <div class="tier-header" onclick="toggleTier('a')">
+        <div class="tier-badge">A</div>
+        <div class="tier-header-text">
+          <span class="tier-title">Security patrol drone</span>
+          <span class="tier-sub">NavMesh waypoints + FOV detection + FSM + data logging · autonomous vs human comparison</span>
+        </div>
+        <span class="tier-chevron" id="chev-a">▼</span>
+      </div>
+      <div class="tier-body" id="body-a">
+        <div class="tier-inner">
+          <span class="tier-section-label">You will build</span>
+          <p>An autonomous drone that patrols a set of waypoints using Unity's NavMesh. When the player enters its cone-of-vision, the drone enters an Alert state, tracks the player, and plays an alarm. After a timeout it returns to patrol. Detection events are logged to a <code>List&lt;string&gt;</code> and displayed on a UI panel — raising the data privacy considerations the Grade A descriptor requires.</p>
+
+          <span class="tier-section-label">Starter script</span>
+          <div class="code-wrap">
+            <div class="code-file">PatrolDrone.cs — attach to the drone GameObject (requires NavMeshAgent component)</div>
+            <pre><span class="ck">using</span> UnityEngine;
+<span class="ck">using</span> UnityEngine.AI;
+<span class="ck">using</span> System.Collections;
+<span class="ck">using</span> System.Collections.Generic;
+
+<span class="ck">public class</span> <span class="ct">PatrolDrone</span> : <span class="ct">MonoBehaviour</span>
+{
+    <span class="ck">public enum</span> <span class="ct">DroneState</span> { Patrolling, Alerted, Returning }
+
+    [<span class="ct">Header</span>(<span class="cs">"Patrol"</span>)]
+    <span class="ck">public</span> <span class="ct">Transform</span>[] waypoints;
+    <span class="ck">public</span> <span class="ct">float</span>       waypointThreshold = <span class="cv">1.5f</span>;
+
+    [<span class="ct">Header</span>(<span class="cs">"Detection"</span>)]
+    <span class="ck">public</span> <span class="ct">Transform</span> player;
+    <span class="ck">public</span> <span class="ct">float</span>     detectionRange = <span class="cv">8f</span>;
+    <span class="ck">public</span> <span class="ct">float</span>     fieldOfView    = <span class="cv">60f</span>;
+    <span class="ck">public</span> <span class="ct">float</span>     alertDuration  = <span class="cv">4f</span>;
+
+    [<span class="ct">Header</span>(<span class="cs">"References"</span>)]
+    <span class="ck">public</span> <span class="ct">Light</span>           alertLight;
+    <span class="ck">public</span> <span class="ct">AudioSource</span>     alarm;
+    <span class="ck">public</span> <span class="ct">TextMeshPro</span>     logDisplay;
+
+    <span class="ck">private</span> <span class="ct">NavMeshAgent</span>  agent;
+    <span class="ck">private</span> <span class="ct">DroneState</span>    state = <span class="ct">DroneState</span>.Patrolling;
+    <span class="ck">private</span> <span class="ct">int</span>           waypointIndex = <span class="cv">0</span>;
+    <span class="ck">private</span> <span class="ct">List</span>&lt;<span class="ct">string</span>&gt;  detectionLog  = <span class="ck">new</span> <span class="ct">List</span>&lt;<span class="ct">string</span>&gt;();
+
+    <span class="ck">void</span> <span class="cm">Start</span>()
+    {
+        agent = <span class="cm">GetComponent</span>&lt;<span class="ct">NavMeshAgent</span>&gt;();
+        <span class="ctodo">// TODO: Set agent.SetDestination to waypoints[0].position</span>
+    }
+
+    <span class="ck">void</span> <span class="cm">Update</span>()
+    {
+        <span class="ck">switch</span> (state)
+        {
+            <span class="ck">case</span> <span class="ct">DroneState</span>.Patrolling:
+                <span class="ctodo">// TODO: Call PatrolWaypoints()</span>
+                <span class="ctodo">// TODO: If CanSeePlayer(), call StartAlert()</span>
+                <span class="ck">break</span>;
+            <span class="ck">case</span> <span class="ct">DroneState</span>.Alerted:
+                <span class="ctodo">// TODO: Set agent destination to player.position</span>
+                <span class="ck">break</span>;
+            <span class="ck">case</span> <span class="ct">DroneState</span>.Returning:
+                <span class="ctodo">// TODO: Set agent destination to waypoints[0].position</span>
+                <span class="ctodo">// TODO: If close to waypoints[0], set state = Patrolling</span>
+                <span class="ck">break</span>;
+        }
+    }
+
+    <span class="ck">void</span> <span class="cm">PatrolWaypoints</span>()
+    {
+        <span class="ctodo">// TODO: If distance to waypoints[waypointIndex] < waypointThreshold,
+        //       increment waypointIndex (wrap using %) and set new destination</span>
+    }
+
+    <span class="ck">bool</span> <span class="cm">CanSeePlayer</span>()
+    {
+        <span class="ct">float</span> dist  = Vector3.<span class="cm">Distance</span>(transform.position, player.position);
+        <span class="ct">float</span> angle = Vector3.<span class="cm">Angle</span>(transform.forward,
+                                     player.position - transform.position);
+        <span class="ctodo">// TODO: Return true if dist < detectionRange AND angle < fieldOfView / 2</span>
+        <span class="ck">return</span> <span class="cv">false</span>; <span class="cc">// placeholder</span>
+    }
+
+    <span class="ck">void</span> <span class="cm">StartAlert</span>()
+    {
+        state = <span class="ct">DroneState</span>.Alerted;
+        alertLight.enabled = <span class="cv">true</span>;
+        alertLight.color   = Color.red;
+        alarm.<span class="cm">Play</span>();
+
+        <span class="cc">// Log the detection event with a timestamp</span>
+        <span class="ct">string</span> entry = <span class="cs">$"[{System.DateTime.Now:HH:mm:ss}] Player detected at {player.position}"</span>;
+        detectionLog.<span class="cm">Add</span>(entry);
+        <span class="ctodo">// TODO: Update logDisplay.text to show the last 5 entries</span>
+        <span class="ctodo">// Hint: use string.Join("\n", detectionLog) and Substring if needed</span>
+
+        <span class="cm">StartCoroutine</span>(<span class="cm">AlertTimeout</span>());
+    }
+
+    <span class="ct">IEnumerator</span> <span class="cm">AlertTimeout</span>()
+    {
+        <span class="ck">yield return new</span> <span class="ct">WaitForSeconds</span>(alertDuration);
+        state              = <span class="ct">DroneState</span>.Returning;
+        alertLight.enabled = <span class="cv">false</span>;
+        alarm.<span class="cm">Stop</span>();
+    }
+}</pre>
+          </div>
+
+          <span class="tier-section-label">Your task checklist</span>
+          <ul class="task-list">
+            <li>Bake a NavMesh in your scene (Window → AI → Navigation → Bake)</li>
+            <li>Add a NavMeshAgent component to the drone GameObject</li>
+            <li>Complete all TODO sections — patrol, detection, alert, return, and data log</li>
+            <li>Place at least 3 waypoints and connect them to the array in the Inspector</li>
+            <li>Test: drone patrols continuously with no player nearby</li>
+            <li>Test: walk in front of the drone — alert triggers, drone tracks, alarm plays</li>
+            <li>Test: wait <code>alertDuration</code> seconds — drone returns to patrol</li>
+            <li>Verify detection events appear in the UI log display with timestamps</li>
+          </ul>
+
+          <div class="extension-box">
+            <span class="ext-label">EXTENSION →</span>
+            <span class="ext-text">Add a physics raycast inside <code>CanSeePlayer()</code> so walls block the drone's line of sight — the drone can only detect the player if there's nothing in between. Then write a short ethics statement in your notebook: what does this data log capture, who could access it, and what safeguards would a real deployment need?</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5.4 ITERATION TRACKER ─────────────────────── -->
+  <section class="section">
+    <div class="section-label">5.4 — Iteration tracker</div>
+    <h2>Document every build iteration</h2>
+    <p>Add an entry every time you make a meaningful change to your system — not just when it works perfectly. Honest documentation of failures and partial successes is exactly what distinguishes a thoughtful project notebook from a results-only report. Your entries are saved automatically to this browser.</p>
+
+    <div class="iter-wrap">
+      <div class="iter-header">
+        <div>
+          <div class="iter-title">Build iteration log</div>
+          <div class="iter-sub">Automated Systems — Ch 5 · Saved to this browser</div>
+        </div>
+      </div>
+      <div class="iter-add">
+        <div class="iter-row">
+          <div class="iter-group">
+            <label class="iter-label" for="it-what">What I changed or added</label>
+            <textarea class="iter-input" id="it-what" rows="2" placeholder="e.g. Added the threshold logic in Update() for the pump…"></textarea>
+          </div>
+          <div class="iter-group">
+            <label class="iter-label" for="it-tested">What I tested</label>
+            <textarea class="iter-input" id="it-tested" rows="2" placeholder="e.g. Ran TC02 — walked into zone with tankLevel at 0.15…"></textarea>
+          </div>
+        </div>
+        <div class="iter-row">
+          <div class="iter-group">
+            <label class="iter-label" for="it-result">Result</label>
+            <select class="iter-select" id="it-result">
+              <option value="">Select result…</option>
+              <option value="pass">Pass — worked as expected</option>
+              <option value="partial">Partial — worked but with issues</option>
+              <option value="fail">Fail — didn't work, investigating why</option>
+            </select>
+          </div>
+          <div class="iter-group">
+            <label class="iter-label" for="it-next">Next step</label>
+            <textarea class="iter-input" id="it-next" rows="2" placeholder="e.g. Fix the edge case where two players trigger simultaneously…"></textarea>
+          </div>
+        </div>
+        <button class="iter-btn" onclick="addIteration()">Add iteration ↗</button>
+      </div>
+      <div class="iter-history" id="iter-history">
+        <div class="iter-empty" id="iter-empty">No iterations logged yet — add your first entry above.</div>
+      </div>
+      <div class="iter-footer">
+        <button class="iter-clear" onclick="clearIterations()">Clear all entries</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NOTEBOOK ───────────────────────────────────── -->
+  <div class="notebook">
+    <div class="notebook-inner">
+      <div class="notebook-label">Project notebook</div>
+      <h2>Chapter 5 — reflection prompts</h2>
+      <p class="notebook-sub">Write these in your notebook as you build — not after. Honest in-progress reflection is more valuable than polished retrospective analysis.</p>
+      <ol class="prompt-list">
+        <li><span class="prompt-num">01</span>After each iteration, write a brief entry in your notebook (in addition to the digital tracker) describing what changed, what you tested, and what the result was. Include any error messages you saw and how you resolved them.</li>
+        <li><span class="prompt-num">02</span>Describe the single-responsibility principle in your own words. For your system specifically, explain which script is responsible for detecting inputs, which decides what to do, and which drives the outputs.</li>
+        <li><span class="prompt-num">03</span>Identify one bug or unexpected behaviour you encountered during building. Describe how you diagnosed it (what you checked, what you changed) and how you fixed it — or, if it's still unsolved, what you think is causing it.</li>
+        <li><span class="prompt-num">04</span>Compare your finished system to the design brief you wrote in Chapter 3. Which requirements did you meet fully? Which partially? Which not at all? What would you need to change to meet the remaining ones?</li>
+        <li><span class="prompt-num">05</span>Grade A only: Explain how your system's architecture (the script split) made it easier — or harder — to add new features. What would you do differently if you were starting again?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="ch-nav">
+    <a class="ch-nav-btn" href="ch4-algorithms.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+      Ch 4 — Algorithms &amp; Control Logic
+    </a>
+    <span class="ch-nav-center">5 of 6</span>
+    <a class="ch-nav-btn next" href="ch6-evaluate.html">
+      Ch 6 — Test &amp; Evaluate
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+    </a>
+  </div>
+</main>
+<footer>NSW Computing Technology 7–10 (2022) · Stage 5 · Chapter 5 of 6</footer>
+
+<script>
+/* ── SCENE CHECKLIST ─────────────────────────────────── */
+const CHECKS = [
+  'New Unity 6 URP project created',
+  'Player GameObject with CharacterController or Rigidbody',
+  'Player GameObject tagged as "Player" in the Inspector',
+  'Camera configured to follow the player',
+  'Trigger collider zone created with "Is Trigger" checked',
+  'Trigger zone has the correct script attached',
+  'All public script variables assigned in the Inspector',
+  'NavMesh baked (if using NavMeshAgent) via Window → AI → Navigation',
+  'TextMeshPro package imported (Window → Package Manager)',
+  'Tested once in Play Mode before adding logic',
+];
+
+function renderChecklist() {
+  const grid = document.getElementById('check-grid');
+  grid.innerHTML = CHECKS.map((c, i) => {
+    const saved = localStorage.getItem('as_check_' + i) === '1';
+    return `<label class="check-item${saved ? ' done' : ''}" id="cl-item-${i}">
+      <input type="checkbox" ${saved ? 'checked' : ''} onchange="toggleCheck(${i}, this)">
+      <span>${c}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleCheck(i, el) {
+  localStorage.setItem('as_check_' + i, el.checked ? '1' : '0');
+  const item = document.getElementById('cl-item-' + i);
+  item.classList.toggle('done', el.checked);
+}
+
+function toggleChecklist() {
+  const body = document.getElementById('cl-body');
+  const arrow = document.getElementById('cl-arrow');
+  const open = body.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+  if (open && !document.getElementById('check-grid').children.length) renderChecklist();
+}
+
+/* ── TIER ACCORDIONS ─────────────────────────────────── */
+function toggleTier(g) {
+  const body = document.getElementById('body-' + g);
+  const chev = document.getElementById('chev-' + g);
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+/* ── ITERATION TRACKER ───────────────────────────────── */
+function loadIterations() { return JSON.parse(localStorage.getItem('as_iterations') || '[]'); }
+function saveIterations(arr) { localStorage.setItem('as_iterations', JSON.stringify(arr)); }
+
+function renderIterations() {
+  const arr = loadIterations();
+  const hist = document.getElementById('iter-history');
+  const empty = document.getElementById('iter-empty');
+  if (!arr.length) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  hist.innerHTML = arr.slice().reverse().map((e, ri) => {
+    const resultClass = e.result === 'pass' ? 'result-pass' : e.result === 'partial' ? 'result-partial' : 'result-fail';
+    const resultLabel = e.result === 'pass' ? 'Pass' : e.result === 'partial' ? 'Partial' : 'Fail';
+    return `<div class="iter-entry">
+      <span class="iter-ver">v${arr.length - ri}</span>
+      <div class="iter-content">
+        <span class="iter-date">${e.date}</span>
+        <span class="iter-field"><strong>Changed: </strong>${e.what}</span>
+        <span class="iter-field"><strong>Tested: </strong>${e.tested}</span>
+        <span class="iter-field"><strong>Result: </strong><span class="${resultClass}">${resultLabel}</span>${e.next ? ' — <strong>Next: </strong>' + e.next : ''}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addIteration() {
+  const what   = document.getElementById('it-what').value.trim();
+  const tested = document.getElementById('it-tested').value.trim();
+  const result = document.getElementById('it-result').value;
+  const next   = document.getElementById('it-next').value.trim();
+  if (!what || !tested || !result) {
+    alert('Please fill in what you changed, what you tested, and the result before adding an entry.');
+    return;
+  }
+  const arr = loadIterations();
+  arr.push({ what, tested, result, next, date: new Date().toLocaleString('en-AU', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) });
+  saveIterations(arr);
+  ['it-what','it-tested','it-next'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('it-result').value = '';
+  renderIterations();
+}
+
+function clearIterations() {
+  if (!confirm('Clear all iteration entries? This cannot be undone.')) return;
+  localStorage.removeItem('as_iterations');
+  renderIterations();
+}
+
+renderIterations();
+
+// Auto-open the checklist on first visit
+if (!localStorage.getItem('as_cl_seen')) {
+  toggleChecklist();
+  localStorage.setItem('as_cl_seen', '1');
+}
+</script>
+</body>
+</html>

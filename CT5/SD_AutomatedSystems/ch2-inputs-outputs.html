@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 2 — Inputs, Processes &amp; Outputs · Automated Systems</title>
+<style>
+  :root {
+    --violet: #5b4dd4;
+    --violet-dark: #3d30b0;
+    --violet-deep: #1e1540;
+    --violet-mid: #7c6ee0;
+    --violet-light: #ece9fc;
+    --violet-pale: #f5f3fe;
+    --ink: #1a1630;
+    --ink-mid: #3d3660;
+    --muted: #6b6590;
+    --border: #e2deff;
+    --white: #ffffff;
+    --bg: #f7f6ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --col-in:  #0369a1;
+    --col-in-bg:  #f0f9ff;
+    --col-in-border: #bae6fd;
+    --col-pro: #5b4dd4;
+    --col-pro-bg: var(--violet-pale);
+    --col-pro-border: var(--border);
+    --col-out: #065f46;
+    --col-out-bg: #f0fff4;
+    --col-out-border: #a7f3d0;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* ── TOP NAV ─────────────────────────────────────── */
+  .topnav { background: var(--violet-deep); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .nav-home { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-home:hover { color: rgba(255,255,255,.9); }
+  .nav-chapter { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.4); }
+  .nav-next { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-next:hover { color: rgba(255,255,255,.9); }
+
+  /* ── HERO ────────────────────────────────────────── */
+  .ch-hero { background: var(--violet-deep); padding: 52px 40px 60px; position: relative; overflow: hidden; }
+  .ch-hero::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 28px 28px; }
+  .ch-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(91,77,212,.4) 0%, transparent 65%); }
+  .ch-hero-inner { position: relative; z-index: 1; max-width: 760px; animation: fadeUp .5s ease both; }
+  .ch-num { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .14em; color: var(--violet-mid); display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ch-num::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(124,110,224,.4); }
+  .ch-hero h1 { font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: normal; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+  .ch-hero h1 em { font-style: normal; color: var(--violet-mid); }
+  .ch-hero-desc { font-size: 1rem; color: rgba(255,255,255,.6); max-width: 560px; line-height: 1.65; margin-bottom: 28px; }
+  .ch-outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .outcome-tag { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .05em; padding: 4px 12px; border-radius: 12px; background: rgba(91,77,212,.25); border: 1px solid rgba(124,110,224,.35); color: #c4b5fd; }
+
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; width: 33.33%; background: var(--violet); border-radius: 0 2px 2px 0; }
+
+  /* ── MAIN ────────────────────────────────────────── */
+  .main { max-width: 900px; margin: 0 auto; padding: 56px 24px 80px; }
+  .section { margin-bottom: 60px; }
+  .section-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  h2 { font-family: Georgia, serif; font-size: 1.5rem; font-weight: normal; color: var(--ink); margin-bottom: 14px; line-height: 1.3; }
+  h3 { font-family: Georgia, serif; font-size: 1.05rem; font-weight: normal; color: var(--ink-mid); margin-bottom: 10px; margin-top: 28px; }
+  p { margin-bottom: 14px; font-size: 15.5px; color: var(--ink-mid); line-height: 1.75; }
+  p:last-child { margin-bottom: 0; }
+
+  code { font-family: 'Courier New', monospace; font-size: 12px; background: rgba(91,77,212,.1); color: var(--violet-dark); padding: 1px 6px; border-radius: 4px; }
+
+  /* ── IPO BANNER ──────────────────────────────────── */
+  .ipo-banner {
+    display: grid;
+    grid-template-columns: 1fr 36px 1fr 36px 1fr;
+    align-items: center;
+    gap: 0;
+    margin: 28px 0;
+  }
+  .ipo-col {
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+  .ipo-col.in  { background: var(--col-in-bg);  border: 1px solid var(--col-in-border); }
+  .ipo-col.pro { background: var(--col-pro-bg); border: 1px solid var(--col-pro-border); }
+  .ipo-col.out { background: var(--col-out-bg); border: 1px solid var(--col-out-border); }
+  .ipo-arrow { text-align: center; font-size: 18px; color: var(--muted); flex-shrink: 0; }
+  .ipo-letter { font-family: Georgia, serif; font-size: 2rem; font-weight: normal; display: block; margin-bottom: 4px; }
+  .ipo-col.in  .ipo-letter { color: var(--col-in); }
+  .ipo-col.pro .ipo-letter { color: var(--col-pro); }
+  .ipo-col.out .ipo-letter { color: var(--col-out); }
+  .ipo-word { font-family: Georgia, serif; font-size: 1rem; display: block; color: var(--ink); margin-bottom: 6px; }
+  .ipo-desc { font-family: 'Courier New', monospace; font-size: 10px; color: var(--muted); line-height: 1.5; display: block; }
+
+  /* ── SENSOR TABLE ────────────────────────────────── */
+  .map-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: var(--white);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .map-table th {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .map-table th:nth-child(1) { background: var(--col-in-bg);  color: var(--col-in); }
+  .map-table th:nth-child(2) { background: var(--col-pro-bg); color: var(--col-pro); }
+  .map-table th:nth-child(3) { background: #fff8e1;           color: #92400e; }
+  .map-table td { padding: 11px 16px; vertical-align: top; border-bottom: 1px solid var(--border); line-height: 1.5; color: var(--ink-mid); }
+  .map-table td:nth-child(2) { font-family: 'Courier New', monospace; font-size: 11.5px; color: var(--violet-dark); }
+  .map-table td:nth-child(3) { font-size: 13px; color: var(--muted); }
+  .map-table tr:last-child td { border-bottom: none; }
+  .map-table tr:nth-child(even) td { background: rgba(247,246,255,.6); }
+
+  /* ── DATA TYPE CARDS ─────────────────────────────── */
+  .dtype-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .dtype-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+  }
+  .dtype-name {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--violet-dark);
+    font-weight: normal;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .dtype-desc {
+    font-size: 12.5px;
+    color: var(--ink-mid);
+    line-height: 1.55;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .dtype-example {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 5px 8px;
+    border-radius: 4px;
+    display: block;
+    line-height: 1.6;
+  }
+
+  /* ── ACTUATOR TABLE ──────────────────────────────── */
+  .act-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .act-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .act-real {
+    font-size: 13.5px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--col-out); flex-shrink: 0; }
+  .act-arrow-sm { font-size: 11px; color: var(--muted); }
+  .act-unity {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--violet-dark);
+    background: var(--violet-pale);
+    padding: 4px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+  }
+  .act-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ── IPO EXPLORER ────────────────────────────────── */
+  .explorer-wrap {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 20px 0;
+  }
+  .explorer-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .exp-tab {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: .04em;
+    padding: 12px 18px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+  }
+  .exp-tab:hover { color: var(--violet); }
+  .exp-tab.active { color: var(--violet); border-bottom-color: var(--violet); background: var(--white); }
+
+  .explorer-body { padding: 28px; }
+  .explorer-intro { font-size: 14px; color: var(--muted); margin-bottom: 24px; font-family: 'Courier New', monospace; }
+
+  .ipo-pipeline {
+    display: grid;
+    grid-template-columns: 1fr 32px 1fr 32px 1fr;
+    gap: 0;
+    align-items: start;
+    margin-bottom: 24px;
+  }
+  .pipe-col { border-radius: var(--radius-sm); padding: 16px; }
+  .pipe-col.in  { background: var(--col-in-bg);  border: 1px solid var(--col-in-border); }
+  .pipe-col.pro { background: var(--col-pro-bg); border: 1px solid var(--col-pro-border); }
+  .pipe-col.out { background: var(--col-out-bg); border: 1px solid var(--col-out-border); }
+  .pipe-arrow { display: flex; align-items: center; justify-content: center; padding-top: 20px; color: var(--muted); font-size: 14px; }
+  .pipe-head {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .pipe-col.in  .pipe-head { color: var(--col-in); }
+  .pipe-col.pro .pipe-head { color: var(--col-pro); }
+  .pipe-col.out .pipe-head { color: var(--col-out); }
+  .pipe-item { font-size: 12.5px; color: var(--ink-mid); padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .pipe-item::before { content: '—'; color: var(--muted); flex-shrink: 0; font-family: 'Courier New', monospace; font-size: 11px; margin-top: 1px; }
+  .pipe-code { font-family: 'Courier New', monospace; font-size: 10.5px; color: var(--violet-dark); background: rgba(91,77,212,.08); padding: 1px 5px; border-radius: 3px; }
+
+  /* Code block */
+  .code-block {
+    background: var(--violet-deep);
+    border-radius: var(--radius-sm);
+    padding: 20px 22px;
+    overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c4b5fd;
+    margin: 0;
+    white-space: pre;
+  }
+  .c-comment { color: rgba(255,255,255,.35); }
+  .c-kw      { color: #93c5fd; }
+  .c-type    { color: #6ee7b7; }
+  .c-string  { color: #fde68a; }
+  .c-method  { color: #c4b5fd; }
+  .c-val     { color: #fca5a5; }
+
+  /* callout */
+  .callout { border-radius: var(--radius); padding: 20px 24px; margin: 24px 0; display: flex; gap: 16px; }
+  .callout-unity { background: var(--violet-pale); border: 1px solid var(--border); }
+  .callout-tip   { background: #f0fff4; border: 1px solid #a7f3d0; }
+  .callout-icon { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; color: var(--violet); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+  .callout-tip .callout-icon { color: #065f46; }
+  .callout-body p { font-size: 14px; line-height: 1.65; color: var(--ink-mid); margin-bottom: 6px; }
+  .callout-body p:last-child { margin-bottom: 0; }
+
+  /* ── NOTEBOOK ────────────────────────────────────── */
+  .notebook { background: var(--violet-deep); border-radius: var(--radius); padding: 32px; margin-top: 56px; position: relative; overflow: hidden; }
+  .notebook::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 22px 22px; }
+  .notebook-inner { position: relative; z-index: 1; }
+  .notebook-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--violet-mid); margin-bottom: 8px; }
+  .notebook h2 { color: #fff; font-size: 1.2rem; margin-bottom: 6px; }
+  .notebook-sub { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; font-family: 'Courier New', monospace; }
+  .prompt-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .prompt-list li { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-sm); padding: 16px 20px 16px 48px; position: relative; font-size: 14.5px; color: rgba(255,255,255,.85); line-height: 1.6; }
+  .prompt-num { position: absolute; left: 16px; top: 16px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--violet-mid); }
+
+  /* ── CHAPTER NAV ─────────────────────────────────── */
+  .ch-nav { display: flex; justify-content: space-between; align-items: center; padding: 32px 0 0; border-top: 1px solid var(--border); margin-top: 48px; gap: 12px; flex-wrap: wrap; }
+  .ch-nav-btn { font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: .06em; padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); text-decoration: none; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: border-color .15s, color .15s, background .15s; }
+  .ch-nav-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-pale); }
+  .ch-nav-btn.next { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .ch-nav-btn.next:hover { background: var(--violet-dark); border-color: var(--violet-dark); }
+  .ch-nav-center { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+
+  footer { background: var(--violet-deep); color: rgba(255,255,255,.35); text-align: center; padding: 20px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media (max-width: 660px) {
+    .ch-hero { padding: 36px 20px 44px; }
+    .main { padding: 32px 16px 60px; }
+    .topnav { padding: 0 16px; }
+    .nav-chapter { display: none; }
+    .ipo-banner { grid-template-columns: 1fr; gap: 8px; }
+    .ipo-arrow { display: none; }
+    .ipo-pipeline { grid-template-columns: 1fr; gap: 8px; }
+    .pipe-arrow { display: none; }
+    .act-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+    Unit hub
+  </a>
+  <span class="nav-chapter">CH 02 / 06 — Inputs, Processes &amp; Outputs</span>
+  <a class="nav-next" href="ch3-design.html">
+    Ch 3
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+  </a>
+</nav>
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<header class="ch-hero">
+  <div class="ch-hero-inner">
+    <div class="ch-num">CHAPTER 02 · IDENTIFYING &amp; DEFINING</div>
+    <h1>Inputs, processes <em>&amp; outputs</em></h1>
+    <p class="ch-hero-desc">Every automated system follows the same fundamental pattern — sense something, decide what to do, act on that decision. This chapter maps that pattern to Unity so you can build real systems in code.</p>
+    <div class="ch-outcomes">
+      <span class="outcome-tag">CT5-DAT-01</span>
+      <span class="outcome-tag">CT5-DAT-02</span>
+      <span class="outcome-tag">CT5-OPL-01</span>
+      <span class="outcome-tag">CT5-THI-01</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── 2.1 THE IPO MODEL ───────────────────────────── -->
+  <section class="section">
+    <div class="section-label">2.1 — The IPO model</div>
+    <h2>Sense — decide — act</h2>
+
+    <p>Whether you're looking at a dishwasher or a self-driving car, every automated system follows the same three-stage pattern. Engineers call it the <strong>IPO model</strong>: Input → Process → Output. Understanding this model lets you analyse any system and, more importantly, design your own.</p>
+
+    <div class="ipo-banner">
+      <div class="ipo-col in">
+        <span class="ipo-letter">I</span>
+        <span class="ipo-word">Input</span>
+        <span class="ipo-desc">Data collected from the environment via sensors — temperature, distance, motion, time</span>
+      </div>
+      <div class="ipo-arrow">→</div>
+      <div class="ipo-col pro">
+        <span class="ipo-letter">P</span>
+        <span class="ipo-word">Process</span>
+        <span class="ipo-desc">The program logic that reads inputs, compares them to rules, and decides what action to take</span>
+      </div>
+      <div class="ipo-arrow">→</div>
+      <div class="ipo-col out">
+        <span class="ipo-letter">O</span>
+        <span class="ipo-word">Output</span>
+        <span class="ipo-desc">Physical or digital responses — motors moving, lights switching, displays updating, sounds playing</span>
+      </div>
+    </div>
+
+    <p>In Unity, this same model maps directly onto the game loop. The engine calls <code>Update()</code> every frame — that single method is where all three stages happen: read inputs, run logic, drive outputs. This is why Unity is such a powerful tool for simulating automated systems: the architecture already matches how real systems work.</p>
+
+    <div class="callout callout-unity">
+      <div class="callout-icon">UNITY NOTE</div>
+      <div class="callout-body">
+        <p>Unity has two main update loops. <code>Update()</code> runs every rendered frame — use this for reading input and driving UI. <code>FixedUpdate()</code> runs at a fixed physics timestep (default 50 times per second) — use this for any logic that applies forces to Rigidbodies. For most automated system simulations, <code>Update()</code> is the right choice unless you're applying physics forces.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2.2 INPUTS ─────────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">2.2 — Inputs (sensors → Unity)</div>
+    <h2>How sensors become code</h2>
+
+    <p>Real mechatronic systems use physical sensors to detect the world. In Unity we simulate those sensors using the physics engine and scripting API. The table below maps the most common real-world sensors to their Unity equivalent — use this as a reference when designing your own system.</p>
+
+    <table class="map-table">
+      <thead>
+        <tr>
+          <th>Real-world sensor</th>
+          <th>Unity equivalent</th>
+          <th>How it works in Unity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>PIR / proximity sensor — detects presence within a zone</td>
+          <td>OnTriggerEnter(Collider c)</td>
+          <td>Attach a Trigger Collider to the detection zone. When a tagged object enters, the method fires automatically.</td>
+        </tr>
+        <tr>
+          <td>Distance / IR sensor — measures exact distance to an object</td>
+          <td>Physics.Raycast()</td>
+          <td>Fire a ray from a point. If it hits something, <code>hit.distance</code> gives the exact distance in world units.</td>
+        </tr>
+        <tr>
+          <td>Camera / vision — detects objects within a field of view</td>
+          <td>Raycast + angle check</td>
+          <td>Calculate the angle between the sensor's forward vector and the direction to the target using <code>Vector3.Angle()</code>.</td>
+        </tr>
+        <tr>
+          <td>Collision / pressure sensor — detects physical contact</td>
+          <td>OnCollisionEnter(Collision c)</td>
+          <td>Fires when a Rigidbody collides with another object. <code>collision.impulse.magnitude</code> gives the force of impact.</td>
+        </tr>
+        <tr>
+          <td>Temperature / level / moisture sensor — reads a continuous value</td>
+          <td>float variable (drifting over time)</td>
+          <td>Use a <code>float</code> that changes each frame via <code>Time.deltaTime</code> to simulate a value rising or falling naturally.</td>
+        </tr>
+        <tr>
+          <td>Timer / clock — tracks elapsed time or schedule</td>
+          <td>Time.time / Time.deltaTime</td>
+          <td><code>Time.time</code> is seconds since play began. <code>Time.deltaTime</code> is time since the last frame — essential for frame-rate independent logic.</td>
+        </tr>
+        <tr>
+          <td>Velocity / accelerometer — measures speed and direction</td>
+          <td>Rigidbody.velocity</td>
+          <td>A Vector3 giving speed in all three axes. <code>rb.velocity.magnitude</code> gives total speed regardless of direction.</td>
+        </tr>
+        <tr>
+          <td>Button / switch — human-triggered input</td>
+          <td>Input.GetKeyDown(KeyCode.E)</td>
+          <td>Returns true on the single frame the key is pressed. Use for player-initiated events like pedestrian crossing buttons.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">DESIGN TIP</div>
+      <div class="callout-body">
+        <p>When choosing between <code>OnTriggerEnter</code> and <code>Physics.Raycast</code>, ask: does my real sensor define a <em>zone</em> (trigger collider) or a <em>beam</em> (raycast)? A PIR motion light has a cone-shaped zone — trigger collider. A distance sensor on a robot arm points in one direction — raycast. Matching the right Unity tool to the real sensor makes your simulation more accurate and your code more readable.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2.3 DATA TYPES ─────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">2.3 — Data types for automation</div>
+    <h2>Choosing the right type for sensor data</h2>
+
+    <p>Every sensor reading has to be stored as a variable. The data type you choose affects what operations you can do with the value, how much memory it uses, and how clearly your code communicates its intent. For automated systems, there are five data types you'll use constantly.</p>
+
+    <div class="dtype-grid">
+      <div class="dtype-card">
+        <span class="dtype-name">float</span>
+        <span class="dtype-desc">A decimal number. Use for any continuous measurement — distance, speed, temperature, time elapsed, fill level.</span>
+        <span class="dtype-example">float distance = hit.distance;<br>float temperature = 21.4f;<br>float tankLevel = 0.75f;</span>
+      </div>
+      <div class="dtype-card">
+        <span class="dtype-name">bool</span>
+        <span class="dtype-desc">True or false only. Use for on/off states — is the sensor triggered? Is the door open? Is the alarm active?</span>
+        <span class="dtype-example">bool isTriggered = false;<br>bool doorOpen = true;<br>bool alarmActive;</span>
+      </div>
+      <div class="dtype-card">
+        <span class="dtype-name">int</span>
+        <span class="dtype-desc">A whole number. Use for counts — items on a conveyor, cycles completed, number of zones triggered.</span>
+        <span class="dtype-example">int itemCount = 0;<br>int cyclesRun = 3;<br>int zonesActive = 2;</span>
+      </div>
+      <div class="dtype-card">
+        <span class="dtype-name">Vector3</span>
+        <span class="dtype-desc">Three floats (x, y, z). Use for position, velocity direction, or the direction a sensor is pointing.</span>
+        <span class="dtype-example">Vector3 velocity =<br>  rb.velocity;<br>Vector3 sensorDir =<br>  transform.forward;</span>
+      </div>
+      <div class="dtype-card">
+        <span class="dtype-name">enum</span>
+        <span class="dtype-desc">A named set of states. Use to track which phase your system is in — far cleaner than using magic numbers.</span>
+        <span class="dtype-example">enum DoorState {<br>  Closed, Opening,<br>  Open, Closing<br>}<br>DoorState state;</span>
+      </div>
+      <div class="dtype-card">
+        <span class="dtype-name">string</span>
+        <span class="dtype-desc">Text. Rarely used in automation logic itself — mainly for UI labels, log messages, and tag comparisons.</span>
+        <span class="dtype-example">string tag =<br>  other.gameObject.tag;<br>Debug.Log("Triggered!");</span>
+      </div>
+    </div>
+
+    <div class="callout callout-unity">
+      <div class="callout-icon">STAGE 6 FLAG</div>
+      <div class="callout-body">
+        <p>In Stage 6 Software Engineering you'll encounter <strong>structs</strong> — a way to group related sensor readings into a single named type (e.g. a <code>SensorReading</code> struct with a <code>float value</code>, <code>float timestamp</code>, and <code>string sensorId</code>). For Stage 5 this isn't required, but it's worth knowing the concept exists for when you reach it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2.4 OUTPUTS ────────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">2.4 — Outputs (actuators → Unity)</div>
+    <h2>How actuators become code</h2>
+
+    <p>Once the process logic has made a decision, it needs to act on it. In the real world that means motors, lights, valves, and speakers. In Unity we drive those same outputs using transforms, physics, the animation system, and the UI toolkit.</p>
+
+    <div class="act-grid">
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Motor / linear actuator — pushes or pulls</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">Transform.Lerp() / MoveTowards()</span>
+        <div class="act-note">Smoothly moves an object from one position to another over time. Control speed with the <code>t</code> parameter.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Servo motor — rotates to an angle</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">Transform.Rotate() / Quaternion.Lerp()</span>
+        <div class="act-note">Rotates an object around an axis. <code>Quaternion.Lerp</code> gives smooth rotation to a target angle.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>DC motor — applies continuous force</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">Rigidbody.AddForce()</span>
+        <div class="act-note">Applies a physics force in a direction. Use <code>ForceMode.Acceleration</code> for consistent speed regardless of mass.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Animated mechanism (arm, door, gate)</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">Animator.SetBool() / SetTrigger()</span>
+        <div class="act-note">Drive a pre-built animation from code. <code>SetBool("isOpen", true)</code> transitions the Animator state machine.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Light — switches on/off or changes intensity</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">Light.enabled / Light.intensity</span>
+        <div class="act-note">Toggle a Light component or ramp its intensity value to simulate dimming or strobe effects.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Display panel / indicator</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">TextMeshPro.text / Image.color</span>
+        <div class="act-note">Update a world-space TMP text component or change a UI Image colour to red/green to show system state.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Buzzer / speaker / alarm</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">AudioSource.Play() / PlayOneShot()</span>
+        <div class="act-note"><code>Play()</code> loops a sound continuously. <code>PlayOneShot(clip)</code> plays once without interrupting other audio.</div>
+      </div>
+      <div class="act-card">
+        <div class="act-real"><div class="act-dot"></div>Wheeled / mobile robot</div>
+        <div class="act-arrow-sm">↳</div>
+        <span class="act-unity">NavMeshAgent.SetDestination()</span>
+        <div class="act-note">Pass a world-space Vector3 destination. The agent pathfinds automatically, avoiding obstacles on the NavMesh.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2.5 IPO EXPLORER ───────────────────────────── -->
+  <section class="section">
+    <div class="section-label">2.5 — IPO explorer</div>
+    <h2>See the full pipeline for real systems</h2>
+
+    <p>Select a system below to see its complete input → process → output breakdown, with the Unity equivalent at each stage. These are the same systems from Chapter 1's classify activity — now you can see exactly how each one would be built.</p>
+
+    <div class="explorer-wrap">
+      <div class="explorer-tabs" id="explorer-tabs">
+        <button class="exp-tab active" onclick="showSystem(0)">Sliding doors</button>
+        <button class="exp-tab" onclick="showSystem(1)">Security floodlight</button>
+        <button class="exp-tab" onclick="showSystem(2)">Water tank</button>
+        <button class="exp-tab" onclick="showSystem(3)">Conveyor sorter</button>
+        <button class="exp-tab" onclick="showSystem(4)">Patrol drone</button>
+      </div>
+      <div class="explorer-body">
+        <div class="explorer-intro" id="exp-intro"></div>
+        <div class="ipo-pipeline" id="exp-pipeline"></div>
+        <div class="code-block" id="exp-code"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NOTEBOOK ───────────────────────────────────── -->
+  <div class="notebook">
+    <div class="notebook-inner">
+      <div class="notebook-label">Project notebook</div>
+      <h2>Chapter 2 — reflection prompts</h2>
+      <p class="notebook-sub">Write your responses in your project notebook before moving to Chapter 3.</p>
+      <ol class="prompt-list">
+        <li><span class="prompt-num">01</span>Choose one system from the IPO explorer. In your own words, describe what each stage does without using any code terms. Focus on what is being detected, decided, and driven.</li>
+        <li><span class="prompt-num">02</span>Explain the difference between <code>OnTriggerEnter</code> and <code>Physics.Raycast</code> for sensing an object's presence. Describe a situation where you would choose each one.</li>
+        <li><span class="prompt-num">03</span>For a system you could build in Unity, list at least two inputs, the data type best suited to each, and what output each input would eventually drive. Draw the IPO pipeline as a simple diagram.</li>
+        <li><span class="prompt-num">04</span>Why is <code>Time.deltaTime</code> important in automation simulations? What problem would occur if you didn't use it when changing a value over time?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="ch-nav">
+    <a class="ch-nav-btn" href="ch1-concepts.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+      Ch 1 — What is Automation?
+    </a>
+    <span class="ch-nav-center">2 of 6</span>
+    <a class="ch-nav-btn next" href="ch3-design.html">
+      Ch 3 — Design Your System
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+    </a>
+  </div>
+
+</main>
+<footer>NSW Computing Technology 7–10 (2022) · Stage 5 · Chapter 2 of 6</footer>
+
+<script>
+const SYSTEMS = [
+  {
+    name: 'Automatic sliding doors',
+    intro: 'Grade D complexity · One trigger zone, one output (door animation), a timed return state.',
+    inputs: [
+      { label: 'Player enters trigger zone', code: 'OnTriggerEnter' },
+      { label: 'Timer counts down while open', code: 'Time.deltaTime' },
+    ],
+    processes: [
+      { label: 'If triggered → start opening', code: 'if (triggered)' },
+      { label: 'If timer expired → start closing', code: 'if (timer <= 0)' },
+    ],
+    outputs: [
+      { label: 'Play open animation', code: 'Animator.SetBool("open", true)' },
+      { label: 'Play close animation', code: 'Animator.SetBool("open", false)' },
+    ],
+    code: `<span class="c-kw">private</span> <span class="c-type">bool</span> playerInZone = <span class="c-val">false</span>;
+<span class="c-kw">private</span> <span class="c-type">float</span> closeTimer = <span class="c-val">0f</span>;
+<span class="c-kw">private</span> <span class="c-type">float</span> closeDelay = <span class="c-val">2f</span>;
+<span class="c-kw">private</span> <span class="c-type">Animator</span> anim;
+
+<span class="c-kw">void</span> <span class="c-method">Update</span>() {
+    <span class="c-comment">// PROCESS — decide based on timer</span>
+    <span class="c-kw">if</span> (playerInZone) {
+        closeTimer = closeDelay;         <span class="c-comment">// reset timer while player is present</span>
+    } <span class="c-kw">else</span> {
+        closeTimer -= Time.deltaTime;    <span class="c-comment">// count down after player leaves</span>
+    }
+    <span class="c-comment">// OUTPUT — drive the door animation</span>
+    anim.<span class="c-method">SetBool</span>(<span class="c-string">"isOpen"</span>, closeTimer > <span class="c-val">0f</span>);
+}
+
+<span class="c-comment">// INPUT — trigger zone fires this</span>
+<span class="c-kw">void</span> <span class="c-method">OnTriggerEnter</span>(<span class="c-type">Collider</span> other) {
+    <span class="c-kw">if</span> (other.<span class="c-method">CompareTag</span>(<span class="c-string">"Player"</span>)) playerInZone = <span class="c-val">true</span>;
+}
+<span class="c-kw">void</span> <span class="c-method">OnTriggerExit</span>(<span class="c-type">Collider</span> other) {
+    <span class="c-kw">if</span> (other.<span class="c-method">CompareTag</span>(<span class="c-string">"Player"</span>)) playerInZone = <span class="c-val">false</span>;
+}`
+  },
+  {
+    name: 'Security floodlight',
+    intro: 'Grade D complexity · Motion trigger → light on → countdown timer → light off.',
+    inputs: [
+      { label: 'Motion detected in zone', code: 'OnTriggerEnter' },
+      { label: 'Countdown timer', code: 'float timer' },
+    ],
+    processes: [
+      { label: 'If motion → reset timer, turn on', code: 'timer = holdDuration' },
+      { label: 'Each frame → decrement timer', code: 'timer -= Time.deltaTime' },
+      { label: 'If timer ≤ 0 → turn off', code: 'if (timer <= 0)' },
+    ],
+    outputs: [
+      { label: 'Enable/disable Light component', code: 'floodlight.enabled' },
+      { label: 'Optional: play alert sound', code: 'AudioSource.Play()' },
+    ],
+    code: `<span class="c-kw">public</span> <span class="c-type">Light</span> floodlight;
+<span class="c-kw">public</span> <span class="c-type">float</span> holdDuration = <span class="c-val">5f</span>;
+<span class="c-kw">private</span> <span class="c-type">float</span> timer = <span class="c-val">0f</span>;
+
+<span class="c-kw">void</span> <span class="c-method">Update</span>() {
+    <span class="c-comment">// PROCESS — count down and drive output</span>
+    <span class="c-kw">if</span> (timer > <span class="c-val">0f</span>) {
+        timer -= Time.deltaTime;
+        floodlight.enabled = <span class="c-val">true</span>;   <span class="c-comment">// OUTPUT: light on</span>
+    } <span class="c-kw">else</span> {
+        floodlight.enabled = <span class="c-val">false</span>;  <span class="c-comment">// OUTPUT: light off</span>
+    }
+}
+
+<span class="c-comment">// INPUT — motion detected</span>
+<span class="c-kw">void</span> <span class="c-method">OnTriggerEnter</span>(<span class="c-type">Collider</span> other) {
+    <span class="c-kw">if</span> (other.<span class="c-method">CompareTag</span>(<span class="c-string">"Player"</span>))
+        timer = holdDuration;  <span class="c-comment">// reset timer on detection</span>
+}`
+  },
+  {
+    name: 'Water tank level controller',
+    intro: 'Grade C complexity · Float value drifts over time; pump activates below threshold, deactivates when full.',
+    inputs: [
+      { label: 'Tank fill level (0.0 – 1.0)', code: 'float tankLevel' },
+      { label: 'Drain rate per second', code: 'float drainRate' },
+    ],
+    processes: [
+      { label: 'Drain tank each frame', code: 'tankLevel -= drainRate * deltaTime' },
+      { label: 'If level < low threshold → pump on', code: 'if (tankLevel < 0.2f)' },
+      { label: 'If level > high threshold → pump off', code: 'if (tankLevel > 0.9f)' },
+    ],
+    outputs: [
+      { label: 'Pump particle system on/off', code: 'pumpParticles.Play()' },
+      { label: 'UI slider shows current level', code: 'levelSlider.value = tankLevel' },
+    ],
+    code: `<span class="c-kw">public</span> <span class="c-type">float</span> drainRate = <span class="c-val">0.02f</span>;
+<span class="c-kw">public</span> <span class="c-type">Slider</span> levelSlider;
+<span class="c-kw">private</span> <span class="c-type">float</span> tankLevel = <span class="c-val">0.8f</span>;
+<span class="c-kw">private</span> <span class="c-type">bool</span> pumpOn = <span class="c-val">false</span>;
+
+<span class="c-kw">void</span> <span class="c-method">Update</span>() {
+    <span class="c-comment">// INPUT — tank drains naturally each frame</span>
+    tankLevel -= drainRate * Time.deltaTime;
+    <span class="c-kw">if</span> (pumpOn) tankLevel += (drainRate * <span class="c-val">2f</span>) * Time.deltaTime;
+    tankLevel = Mathf.<span class="c-method">Clamp01</span>(tankLevel);
+
+    <span class="c-comment">// PROCESS — threshold control with hysteresis</span>
+    <span class="c-kw">if</span> (tankLevel < <span class="c-val">0.2f</span>) pumpOn = <span class="c-val">true</span>;
+    <span class="c-kw">if</span> (tankLevel > <span class="c-val">0.9f</span>) pumpOn = <span class="c-val">false</span>;
+
+    <span class="c-comment">// OUTPUT — update UI</span>
+    levelSlider.value = tankLevel;
+}`
+  },
+  {
+    name: 'Conveyor belt sorter',
+    intro: 'Grade B complexity · Items pass a sensor; a tag check branches them to accept or reject lanes.',
+    inputs: [
+      { label: 'Item enters sensor trigger zone', code: 'OnTriggerEnter' },
+      { label: 'Item tag read (Accept / Reject)', code: 'other.CompareTag()' },
+    ],
+    processes: [
+      { label: 'Read item tag at sensor point', code: 'string tag = other.tag' },
+      { label: 'If tag == "Accept" → open accept gate', code: 'if (tag == "Accept")' },
+      { label: 'Else → open reject gate', code: 'else → rejectGate' },
+    ],
+    outputs: [
+      { label: 'Animate accept gate open', code: 'acceptAnim.SetTrigger("Open")' },
+      { label: 'Animate reject gate open', code: 'rejectAnim.SetTrigger("Open")' },
+      { label: 'Update item count on UI', code: 'countText.text = count.ToString()' },
+    ],
+    code: `<span class="c-kw">public</span> <span class="c-type">Animator</span> acceptGate, rejectGate;
+<span class="c-kw">public</span> <span class="c-type">TextMeshPro</span> countText;
+<span class="c-kw">private</span> <span class="c-type">int</span> acceptCount = <span class="c-val">0</span>, rejectCount = <span class="c-val">0</span>;
+
+<span class="c-comment">// INPUT + PROCESS + OUTPUT all triggered by sensor</span>
+<span class="c-kw">void</span> <span class="c-method">OnTriggerEnter</span>(<span class="c-type">Collider</span> other) {
+    <span class="c-kw">if</span> (other.<span class="c-method">CompareTag</span>(<span class="c-string">"ConveyorItem"</span>)) {
+        <span class="c-comment">// PROCESS — read the item's type tag</span>
+        <span class="c-type">string</span> itemType = other.gameObject
+            .<span class="c-method">GetComponent</span>&lt;<span class="c-type">ItemData</span>&gt;().itemType;
+
+        <span class="c-kw">if</span> (itemType == <span class="c-string">"Accept"</span>) {
+            acceptGate.<span class="c-method">SetTrigger</span>(<span class="c-string">"Open"</span>); <span class="c-comment">// OUTPUT</span>
+            acceptCount++;
+        } <span class="c-kw">else</span> {
+            rejectGate.<span class="c-method">SetTrigger</span>(<span class="c-string">"Open"</span>); <span class="c-comment">// OUTPUT</span>
+            rejectCount++;
+        }
+        countText.text = <span class="c-string">$"Accept: {acceptCount} | Reject: {rejectCount}"</span>;
+    }
+}`
+  },
+  {
+    name: 'Security patrol drone',
+    intro: 'Grade A complexity · NavMesh waypoint patrol, cone-of-vision detection, alarm state, autonomous return.',
+    inputs: [
+      { label: 'Player within detection range', code: 'Vector3.Distance()' },
+      { label: 'Player within view angle', code: 'Vector3.Angle()' },
+      { label: 'Line of sight not blocked', code: 'Physics.Raycast()' },
+    ],
+    processes: [
+      { label: 'FSM state: Patrol / Alert / Return', code: 'enum DroneState' },
+      { label: 'If player in FOV cone → Alert', code: 'if (dist < range && angle < fov/2)' },
+      { label: 'After timeout → return to patrol', code: 'IEnumerator AlertTimeout()' },
+    ],
+    outputs: [
+      { label: 'NavMesh drives to next waypoint', code: 'agent.SetDestination(waypoint)' },
+      { label: 'Alarm sound and light on alert', code: 'audio.Play() + light.color = red' },
+      { label: 'NavMesh returns to patrol start', code: 'agent.SetDestination(base)' },
+    ],
+    code: `<span class="c-kw">enum</span> <span class="c-type">DroneState</span> { Patrol, Alert, Returning }
+
+<span class="c-kw">private</span> <span class="c-type">DroneState</span> state = <span class="c-type">DroneState</span>.Patrol;
+<span class="c-kw">public</span>  <span class="c-type">float</span> detectionRange = <span class="c-val">8f</span>, fovAngle = <span class="c-val">60f</span>;
+<span class="c-kw">private</span> <span class="c-type">NavMeshAgent</span> agent;
+<span class="c-kw">private</span> <span class="c-type">Transform</span> player;
+
+<span class="c-kw">void</span> <span class="c-method">Update</span>() {
+    <span class="c-kw">switch</span> (state) {
+        <span class="c-kw">case</span> <span class="c-type">DroneState</span>.Patrol:
+            <span class="c-method">PatrolWaypoints</span>();
+            <span class="c-kw">if</span> (<span class="c-method">CanSeePlayer</span>()) <span class="c-method">StartAlert</span>();
+            <span class="c-kw">break</span>;
+        <span class="c-kw">case</span> <span class="c-type">DroneState</span>.Alert:
+            agent.<span class="c-method">SetDestination</span>(player.position); <span class="c-comment">// OUTPUT</span>
+            <span class="c-kw">break</span>;
+    }
+}
+
+<span class="c-comment">// PROCESS — cone of vision check</span>
+<span class="c-type">bool</span> <span class="c-method">CanSeePlayer</span>() {
+    <span class="c-type">float</span> dist  = Vector3.<span class="c-method">Distance</span>(transform.position, player.position);
+    <span class="c-type">float</span> angle = Vector3.<span class="c-method">Angle</span>(transform.forward,
+                             player.position - transform.position);
+    <span class="c-kw">return</span> dist < detectionRange && angle < fovAngle / <span class="c-val">2f</span>;
+}`
+  }
+];
+
+let currentSystem = 0;
+
+function pipeHTML(items, cls) {
+  const head = cls === 'in' ? 'Input' : cls === 'pro' ? 'Process' : 'Output';
+  return `<div class="pipe-col ${cls}">
+    <span class="pipe-head">${head}</span>
+    ${items.map(i => `<div class="pipe-item"><span>${i.label} <span class="pipe-code">${i.code}</span></span></div>`).join('')}
+  </div>`;
+}
+
+function showSystem(idx) {
+  currentSystem = idx;
+  const s = SYSTEMS[idx];
+
+  document.querySelectorAll('.exp-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.getElementById('exp-intro').textContent = s.intro;
+  document.getElementById('exp-pipeline').innerHTML =
+    pipeHTML(s.inputs, 'in') +
+    '<div class="pipe-arrow">→</div>' +
+    pipeHTML(s.processes, 'pro') +
+    '<div class="pipe-arrow">→</div>' +
+    pipeHTML(s.outputs, 'out');
+  document.getElementById('exp-code').innerHTML = `<pre>${s.code}</pre>`;
+}
+
+showSystem(0);
+</script>
+</body>
+</html>

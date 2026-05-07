@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 4 — Algorithms &amp; Control Logic · Automated Systems</title>
+<style>
+  :root {
+    --violet: #5b4dd4; --violet-dark: #3d30b0; --violet-deep: #1e1540;
+    --violet-mid: #7c6ee0; --violet-light: #ece9fc; --violet-pale: #f5f3fe;
+    --ink: #1a1630; --ink-mid: #3d3660; --muted: #6b6590;
+    --border: #e2deff; --white: #ffffff; --bg: #f7f6ff;
+    --radius: 12px; --radius-sm: 8px;
+    --col-thresh: #0369a1; --col-thresh-bg: #f0f9ff; --col-thresh-border: #bae6fd;
+    --col-seq:    #065f46; --col-seq-bg:    #f0fff4; --col-seq-border:    #a7f3d0;
+    --col-fsm:    #6d28d9; --col-fsm-bg:    #f5f3ff; --col-fsm-border:    #ddd6fe;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* ── NAV ──────────────────────────────────────────── */
+  .topnav { background: var(--violet-deep); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .nav-home { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-home:hover { color: rgba(255,255,255,.9); }
+  .nav-chapter { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.4); }
+  .nav-next { font-family: 'Courier New', monospace; font-size: 11px; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-next:hover { color: rgba(255,255,255,.9); }
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; width: 66.66%; background: var(--violet); border-radius: 0 2px 2px 0; }
+
+  /* ── HERO ─────────────────────────────────────────── */
+  .ch-hero { background: var(--violet-deep); padding: 52px 40px 60px; position: relative; overflow: hidden; }
+  .ch-hero::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 28px 28px; }
+  .ch-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(91,77,212,.4) 0%, transparent 65%); }
+  .ch-hero-inner { position: relative; z-index: 1; max-width: 760px; animation: fadeUp .5s ease both; }
+  .ch-num { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .14em; color: var(--violet-mid); display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ch-num::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(124,110,224,.4); }
+  .ch-hero h1 { font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: normal; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+  .ch-hero h1 em { font-style: normal; color: var(--violet-mid); }
+  .ch-hero-desc { font-size: 1rem; color: rgba(255,255,255,.6); max-width: 560px; line-height: 1.65; margin-bottom: 28px; }
+  .ch-outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .outcome-tag { font-family: 'Courier New', monospace; font-size: 10px; padding: 4px 12px; border-radius: 12px; background: rgba(91,77,212,.25); border: 1px solid rgba(124,110,224,.35); color: #c4b5fd; }
+
+  /* ── MAIN ─────────────────────────────────────────── */
+  .main { max-width: 900px; margin: 0 auto; padding: 56px 24px 80px; }
+  .section { margin-bottom: 60px; }
+  .section-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  h2 { font-family: Georgia, serif; font-size: 1.5rem; font-weight: normal; color: var(--ink); margin-bottom: 14px; line-height: 1.3; }
+  h3 { font-family: Georgia, serif; font-size: 1.1rem; font-weight: normal; color: var(--ink-mid); margin-bottom: 10px; margin-top: 28px; }
+  p { margin-bottom: 14px; font-size: 15.5px; color: var(--ink-mid); line-height: 1.75; }
+  p:last-child { margin-bottom: 0; }
+  code { font-family: 'Courier New', monospace; font-size: 12px; background: rgba(91,77,212,.1); color: var(--violet-dark); padding: 1px 6px; border-radius: 4px; }
+
+  /* ── THREE PATTERNS ───────────────────────────────── */
+  .pattern-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 24px 0; }
+  .pat-card { border-radius: var(--radius); padding: 20px; border: 1px solid; }
+  .pat-thresh { background: var(--col-thresh-bg); border-color: var(--col-thresh-border); }
+  .pat-seq    { background: var(--col-seq-bg);    border-color: var(--col-seq-border); }
+  .pat-fsm    { background: var(--col-fsm-bg);    border-color: var(--col-fsm-border); }
+  .pat-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .pat-thresh .pat-label { color: var(--col-thresh); }
+  .pat-seq    .pat-label { color: var(--col-seq); }
+  .pat-fsm    .pat-label { color: var(--col-fsm); }
+  .pat-title { font-family: Georgia, serif; font-size: 1rem; color: var(--ink); margin-bottom: 8px; display: block; }
+  .pat-desc { font-size: 13px; color: var(--ink-mid); line-height: 1.55; }
+  .pat-eg { font-family: 'Courier New', monospace; font-size: 10px; color: var(--muted); margin-top: 10px; display: block; }
+
+  /* ── FLOWCHART ────────────────────────────────────── */
+  .flowchart-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin: 20px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .flowchart-caption { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); text-align: center; }
+  .flowchart-legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: 'Courier New', monospace; font-size: 10px; color: var(--muted); }
+  .leg-swatch { width: 22px; height: 14px; border: 1px solid; border-radius: 3px; flex-shrink: 0; }
+  .leg-terminal { background: #ece9fc; border-color: #5b4dd4; border-radius: 7px; }
+  .leg-process  { background: #ffffff; border-color: #e2deff; }
+  .leg-decision { background: #fffde7; border-color: #c89b00; transform: rotate(10deg); }
+  .leg-io       { background: #f0fff4; border-color: #a7f3d0; border-radius: 0; }
+
+  /* ── PSEUDOCODE ───────────────────────────────────── */
+  .pseudo-conventions { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin: 20px 0; }
+  .pseudo-conventions h3 { margin-top: 0; font-size: .95rem; color: var(--violet-dark); font-family: 'Courier New', monospace; letter-spacing: .04em; }
+  .conv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 8px; margin-top: 12px; }
+  .conv-item { background: var(--bg); border-radius: var(--radius-sm); padding: 8px 12px; font-family: 'Courier New', monospace; font-size: 11.5px; color: var(--ink-mid); }
+  .conv-kw { color: var(--violet-dark); font-weight: normal; }
+
+  /* ── PATTERN EXPLORER ─────────────────────────────── */
+  .explorer { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .exp-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .exp-tab { font-family: 'Courier New', monospace; font-size: 11px; padding: 12px 20px; border: none; background: transparent; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; }
+  .exp-tab:hover { color: var(--violet); }
+  .exp-tab.thresh.active { color: var(--col-thresh); border-bottom-color: var(--col-thresh); background: var(--white); }
+  .exp-tab.seq.active    { color: var(--col-seq);    border-bottom-color: var(--col-seq);    background: var(--white); }
+  .exp-tab.fsm.active    { color: var(--col-fsm);    border-bottom-color: var(--col-fsm);    background: var(--white); }
+  .exp-panel { display: none; padding: 0; }
+  .exp-panel.active { display: block; }
+  .exp-intro { padding: 18px 24px 0; }
+  .exp-intro p { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.6; }
+  .exp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .exp-col-head { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 14px 20px 8px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .exp-col-left  { border-right: 1px solid var(--border); }
+  .pseudo-block { background: #fafaf8; border: none; padding: 16px 20px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.9; color: var(--ink-mid); overflow-x: auto; white-space: pre; margin: 0; border-bottom: 1px solid var(--border); }
+  .pk  { color: #5b4dd4; } /* keyword */
+  .pc  { color: #a0a0a0; } /* comment */
+  .pv  { color: #c27c30; } /* value */
+  .ps  { color: #0369a1; } /* string/identifier */
+  .code-block-dark { background: var(--violet-deep); padding: 16px 20px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .code-block-dark pre { font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.9; color: #c4b5fd; margin: 0; white-space: pre; }
+  .ck  { color: #93c5fd; } /* keyword */
+  .ct  { color: #6ee7b7; } /* type */
+  .cc  { color: rgba(255,255,255,.32); } /* comment */
+  .cs  { color: #fde68a; } /* string */
+  .cm  { color: #c4b5fd; } /* method */
+  .cv  { color: #fca5a5; } /* value/literal */
+  .exp-explain { padding: 16px 24px; background: var(--bg); }
+  .exp-explain p { font-size: 13px; color: var(--ink-mid); margin: 0; line-height: 1.65; }
+  .exp-explain strong { color: var(--ink); font-weight: normal; font-style: italic; }
+
+  /* ── DESK CHECK ───────────────────────────────────── */
+  .desk-setup { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; margin: 20px 0; }
+  .desk-setup p { font-size: 14px; color: var(--ink-mid); margin-bottom: 10px; line-height: 1.6; }
+  .setup-vals { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .sval { font-family: 'Courier New', monospace; font-size: 12px; background: var(--violet-pale); color: var(--violet-dark); padding: 5px 12px; border-radius: var(--radius-sm); }
+
+  .trace-table { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--white); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); margin: 16px 0; }
+  .trace-table th { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 11px 14px; text-align: left; background: var(--bg); border-bottom: 1px solid var(--border); color: var(--muted); }
+  .trace-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--ink-mid); }
+  .trace-table tr:last-child td { border-bottom: none; }
+  .trace-table tr:nth-child(even) td { background: rgba(247,246,255,.5); }
+  .given { font-family: 'Courier New', monospace; font-size: 12px; }
+  .trace-input { font-family: 'Courier New', monospace; font-size: 12px; width: 80px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 5px 8px; color: var(--ink); background: var(--bg); text-align: center; transition: border-color .15s; }
+  .trace-input:focus { outline: none; border-color: var(--violet); background: var(--white); }
+  .trace-input.correct { border-color: #28a745; background: #f0fff4; color: #065f46; }
+  .trace-input.wrong   { border-color: #dc3545; background: #ffebee; color: #7f0000; }
+  .trace-input.revealed { border-color: #c89b00; background: #fffde7; color: #6b5200; }
+  .trace-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .trace-btn { font-family: 'Courier New', monospace; font-size: 11px; padding: 7px 16px; border-radius: 20px; border: 1.5px solid; cursor: pointer; background: transparent; transition: background .15s, color .15s; }
+  .tb-check  { border-color: var(--violet); color: var(--violet); }
+  .tb-check:hover  { background: var(--violet); color: #fff; }
+  .tb-reveal { border-color: var(--muted); color: var(--muted); }
+  .tb-reveal:hover { background: var(--muted); color: #fff; }
+  .tb-reset  { border-color: #dc3545; color: #dc3545; }
+  .tb-reset:hover  { background: #dc3545; color: #fff; }
+  .trace-score { font-family: 'Courier New', monospace; font-size: 12px; color: var(--muted); display: none; padding: 8px 12px; background: var(--bg); border-radius: var(--radius-sm); }
+  .trace-score.vis { display: inline-block; }
+
+  /* ── CALLOUTS ─────────────────────────────────────── */
+  .callout { border-radius: var(--radius); padding: 20px 24px; margin: 24px 0; display: flex; gap: 16px; }
+  .callout-unity { background: var(--violet-pale); border: 1px solid var(--border); }
+  .callout-tip   { background: #f0fff4; border: 1px solid #a7f3d0; }
+  .callout-icon { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; color: var(--violet); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+  .callout-tip .callout-icon { color: #065f46; }
+  .callout-body p { font-size: 14px; line-height: 1.65; color: var(--ink-mid); margin-bottom: 6px; }
+  .callout-body p:last-child { margin-bottom: 0; }
+
+  /* ── NOTEBOOK ─────────────────────────────────────── */
+  .notebook { background: var(--violet-deep); border-radius: var(--radius); padding: 32px; margin-top: 56px; position: relative; overflow: hidden; }
+  .notebook::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 22px 22px; }
+  .notebook-inner { position: relative; z-index: 1; }
+  .notebook-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--violet-mid); margin-bottom: 8px; }
+  .notebook h2 { color: #fff; font-size: 1.2rem; margin-bottom: 6px; }
+  .notebook-sub { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; font-family: 'Courier New', monospace; }
+  .prompt-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .prompt-list li { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-sm); padding: 16px 20px 16px 48px; position: relative; font-size: 14.5px; color: rgba(255,255,255,.85); line-height: 1.6; }
+  .prompt-num { position: absolute; left: 16px; top: 16px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--violet-mid); }
+
+  /* ── CHAPTER NAV ──────────────────────────────────── */
+  .ch-nav { display: flex; justify-content: space-between; align-items: center; padding: 32px 0 0; border-top: 1px solid var(--border); margin-top: 48px; gap: 12px; flex-wrap: wrap; }
+  .ch-nav-btn { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); text-decoration: none; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: border-color .15s, color .15s, background .15s; }
+  .ch-nav-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-pale); }
+  .ch-nav-btn.next { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .ch-nav-btn.next:hover { background: var(--violet-dark); border-color: var(--violet-dark); }
+  .ch-nav-center { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
+
+  footer { background: var(--violet-deep); color: rgba(255,255,255,.35); text-align: center; padding: 20px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 660px) {
+    .ch-hero { padding: 36px 20px 44px; } .main { padding: 32px 16px 60px; }
+    .topnav { padding: 0 16px; } .nav-chapter { display: none; }
+    .pattern-row { grid-template-columns: 1fr; }
+    .exp-cols { grid-template-columns: 1fr; }
+    .exp-col-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .conv-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+    Unit hub
+  </a>
+  <span class="nav-chapter">CH 04 / 06 — Algorithms &amp; Control Logic</span>
+  <a class="nav-next" href="ch5-build.html">
+    Ch 5
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+  </a>
+</nav>
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<header class="ch-hero">
+  <div class="ch-hero-inner">
+    <div class="ch-num">CHAPTER 04 · RESEARCHING &amp; PLANNING</div>
+    <h1>Algorithms <em>&amp; control logic</em></h1>
+    <p class="ch-hero-desc">Three patterns cover almost every automated system you'll build. Learn to express each one as a flowchart, write it in NSW pseudocode, desk-check it on paper — then translate it directly into C#.</p>
+    <div class="ch-outcomes">
+      <span class="outcome-tag">CT5-OPL-01</span>
+      <span class="outcome-tag">CT5-ALG-01</span>
+      <span class="outcome-tag">CT5-THI-01</span>
+      <span class="outcome-tag">CT5-EVL-01</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── 4.1 THREE PATTERNS ──────────────────────────── -->
+  <section class="section">
+    <div class="section-label">4.1 — The three control patterns</div>
+    <h2>Most automated systems use one of three patterns</h2>
+    <p>Once you can recognise which pattern a system uses, you know exactly how to design its algorithm and which C# structures to reach for. More complex systems — like the Grade A patrol drone — combine all three.</p>
+
+    <div class="pattern-row">
+      <div class="pat-card pat-thresh">
+        <span class="pat-label">Pattern 1</span>
+        <span class="pat-title">Threshold / on-off</span>
+        <span class="pat-desc">A measured value is compared to one or more thresholds. When the value crosses a threshold, an output switches on or off. The logic runs every frame.</span>
+        <span class="pat-eg">if / else · float comparison<br>Water tank, floodlight, greenhouse</span>
+      </div>
+      <div class="pat-card pat-seq">
+        <span class="pat-label">Pattern 2</span>
+        <span class="pat-title">Sequence</span>
+        <span class="pat-desc">A fixed series of steps executes in order, each waiting a set duration before the next begins. The sequence runs once per trigger event, not every frame.</span>
+        <span class="pat-eg">IEnumerator · WaitForSeconds<br>Car wash, airlock, morning routine</span>
+      </div>
+      <div class="pat-card pat-fsm">
+        <span class="pat-label">Pattern 3</span>
+        <span class="pat-title">Finite state machine</span>
+        <span class="pat-desc">The system exists in exactly one named state at a time. Events or conditions trigger transitions between states. Each state has its own behaviour.</span>
+        <span class="pat-eg">enum + switch statement<br>Traffic lights, patrol drone, robot arm</span>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">KEY IDEA</div>
+      <div class="callout-body">
+        <p>Grade E–D projects usually use Pattern 1 only. Grade C adds a second threshold or combines Pattern 1 with a timer. Grade B introduces Pattern 3. Grade A systems often use all three together — an FSM whose states each contain threshold logic, with coroutines handling timed transitions.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4.2 FLOWCHARTS ──────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">4.2 — Flowcharts</div>
+    <h2>Drawing the algorithm before writing code</h2>
+
+    <p>A flowchart lets you trace the logic of your algorithm visually before committing to code. For automated systems, the most important part is the decision diamond — it's where your system "thinks." Every diamond must have exactly two exits: yes and no.</p>
+
+    <div class="flowchart-wrap">
+      <!-- Security floodlight Update() loop flowchart -->
+      <svg width="100%" viewBox="0 0 560 580" role="img" style="max-width:560px;">
+        <title>Flowchart — Security floodlight Update() loop</title>
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 2L8 5L2 8" fill="none" stroke="#6b6590" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- START terminal -->
+        <rect x="195" y="16" width="170" height="38" rx="19" fill="#ece9fc" stroke="#5b4dd4" stroke-width="1.2"/>
+        <text x="280" y="39" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="12" fill="#3d30b0">START — each Update() frame</text>
+
+        <!-- Arrow 1 -->
+        <line x1="280" y1="54" x2="280" y2="74" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- PROCESS: read sensor -->
+        <rect x="145" y="74" width="270" height="40" rx="4" fill="#ffffff" stroke="#e2deff" stroke-width="1.2"/>
+        <text x="280" y="94" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11.5" fill="#3d3660">Read: is playerInZone true?</text>
+
+        <!-- Arrow 2 -->
+        <line x1="280" y1="114" x2="280" y2="140" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- DECISION 1: player in zone? -->
+        <!-- Diamond centred at (280, 180), half-w=120, half-h=40 -->
+        <polygon points="280,140 400,180 280,220 160,180" fill="#fffde7" stroke="#c89b00" stroke-width="1.2"/>
+        <text x="280" y="175" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11" fill="#6b5200">playerInZone</text>
+        <text x="280" y="189" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11" fill="#6b5200">= TRUE?</text>
+
+        <!-- YES label (right of diamond) -->
+        <text x="407" y="172" font-family="'Courier New', monospace" font-size="10" fill="#28a745">YES</text>
+        <!-- YES arrow: right point (400,180) → right → down to process -->
+        <polyline points="400,180 460,180 460,234" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- YES branch process: timer ← holdDuration -->
+        <rect x="390" y="234" width="158" height="40" rx="4" fill="#f0fff4" stroke="#a7f3d0" stroke-width="1.2"/>
+        <text x="469" y="254" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11.5" fill="#065f46">timer ← holdDuration</text>
+
+        <!-- YES merge arrow: down from YES process, left to merge -->
+        <polyline points="469,274 469,320 280,320" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- NO label (below diamond) -->
+        <text x="287" y="232" font-family="'Courier New', monospace" font-size="10" fill="#dc3545">NO</text>
+        <!-- NO branch process: timer ← timer − deltaTime -->
+        <line x1="280" y1="220" x2="280" y2="256" stroke="#6b6590" stroke-width="1.2"/>
+
+        <rect x="90" y="256" width="190" height="40" rx="4" fill="#ffffff" stroke="#e2deff" stroke-width="1.2"/>
+        <text x="185" y="276" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11.5" fill="#3d3660">timer ← timer − deltaTime</text>
+        <!-- clamp note -->
+        <text x="185" y="288" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="9.5" fill="#a0a0a0">(if timer &lt; 0: timer ← 0)</text>
+
+        <!-- NO merge arrow: right to merge point (280,320) -->
+        <polyline points="280,296 280,320" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- Merge label -->
+        <text x="280" y="315" text-anchor="middle" font-family="'Courier New', monospace" font-size="9" fill="#a0a0a0">↓ merge</text>
+
+        <!-- Arrow to DECISION 2 -->
+        <line x1="280" y1="320" x2="280" y2="348" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- DECISION 2: timer > 0? centred at (280, 388) hw=110 hh=38 -->
+        <polygon points="280,350 390,388 280,426 170,388" fill="#fffde7" stroke="#c89b00" stroke-width="1.2"/>
+        <text x="280" y="383" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11" fill="#6b5200">timer</text>
+        <text x="280" y="397" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11" fill="#6b5200">&gt; 0?</text>
+
+        <!-- YES right: light ON -->
+        <text x="397" y="380" font-family="'Courier New', monospace" font-size="10" fill="#28a745">YES</text>
+        <polyline points="390,388 455,388 455,434" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+        <rect x="388" y="434" width="142" height="40" rx="4" fill="#f0fff4" stroke="#a7f3d0" stroke-width="1.2"/>
+        <text x="459" y="454" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11.5" fill="#065f46">light.enabled ← TRUE</text>
+        <polyline points="459,474 459,510 280,510" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- NO left: light OFF -->
+        <text x="122" y="380" font-family="'Courier New', monospace" font-size="10" fill="#dc3545">NO</text>
+        <polyline points="170,388 100,388 100,434" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+        <rect x="26" y="434" width="148" height="40" rx="4" fill="#ffebee" stroke="#ef9a9a" stroke-width="1.2"/>
+        <text x="100" y="454" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="11.5" fill="#7f0000">light.enabled ← FALSE</text>
+        <polyline points="100,474 100,510 280,510" fill="none" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+
+        <!-- END terminal / loop back -->
+        <line x1="280" y1="510" x2="280" y2="534" stroke="#6b6590" stroke-width="1.2" marker-end="url(#arr)"/>
+        <rect x="195" y="534" width="170" height="38" rx="19" fill="#ece9fc" stroke="#5b4dd4" stroke-width="1.2"/>
+        <text x="280" y="553" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', monospace" font-size="12" fill="#3d30b0">Wait for next frame ↺</text>
+      </svg>
+
+      <div class="flowchart-legend">
+        <div class="legend-item"><div class="leg-swatch leg-terminal"></div>Terminal (start / end)</div>
+        <div class="legend-item"><div class="leg-swatch leg-process"></div>Process (action)</div>
+        <div class="legend-item"><div class="leg-swatch leg-decision"></div>Decision (yes / no)</div>
+        <div class="legend-item"><div class="leg-swatch leg-io"></div>Output result</div>
+      </div>
+      <div class="flowchart-caption">Security floodlight — Update() loop · Pattern 1: Threshold</div>
+    </div>
+
+    <div class="callout callout-unity">
+      <div class="callout-icon">UNITY NOTE</div>
+      <div class="callout-body">
+        <p>The "Wait for next frame ↺" terminal represents Unity calling <code>Update()</code> again automatically. You never write the loop itself — Unity handles it. Your job is to write only what happens <em>inside</em> one frame, and Unity takes care of repeating it 30–120 times per second.</p>
+      </div>
+    </div>
+
+    <h3>Drawing rules for flowcharts</h3>
+    <p>Every flowchart you submit must follow these conventions. Your teacher will check for them when assessing your project notebook.</p>
+    <div class="pseudo-conventions" style="margin-top:0;">
+      <div class="conv-grid" style="margin-top:0;">
+        <div class="conv-item">Terminals are oval/pill shaped (rounded rectangle) — start and end only</div>
+        <div class="conv-item">Process boxes are plain rectangles — one action per box</div>
+        <div class="conv-item">Decision diamonds have exactly two exits — label each YES and NO</div>
+        <div class="conv-item">Arrows show direction of flow — never leave an arrow unlabelled at a branch</div>
+        <div class="conv-item">Merge points (where paths rejoin) are shown with a dot or convergence arrow</div>
+        <div class="conv-item">Loop-back arrows are drawn on the left side of the flowchart, going upward</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4.3 PSEUDOCODE ──────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">4.3 — NSW pseudocode conventions</div>
+    <h2>Writing algorithms in structured English</h2>
+    <p>NSW Computing Technology uses a specific pseudocode style. It sits between plain English and real code — precise enough to be unambiguous, but readable without knowing C#. All keywords are uppercase. Use this style in your project notebook and in assessment tasks.</p>
+
+    <div class="pseudo-conventions">
+      <h3>Keyword reference</h3>
+      <div class="conv-grid">
+        <div class="conv-item"><span class="conv-kw">BEGIN</span> / <span class="conv-kw">END</span> — program boundary</div>
+        <div class="conv-item"><span class="conv-kw">IF</span> condition <span class="conv-kw">THEN</span> … <span class="conv-kw">ELSE</span> … <span class="conv-kw">END IF</span></div>
+        <div class="conv-item"><span class="conv-kw">WHILE</span> condition <span class="conv-kw">DO</span> … <span class="conv-kw">END WHILE</span></div>
+        <div class="conv-item"><span class="conv-kw">REPEAT</span> … <span class="conv-kw">UNTIL</span> condition</div>
+        <div class="conv-item"><span class="conv-kw">FOR</span> var ← start <span class="conv-kw">TO</span> end <span class="conv-kw">DO</span> … <span class="conv-kw">END FOR</span></div>
+        <div class="conv-item"><span class="conv-kw">PROCEDURE</span> name() … <span class="conv-kw">END PROCEDURE</span></div>
+        <div class="conv-item">Assignment uses <span class="conv-kw">←</span> (not = or :=)</div>
+        <div class="conv-item">Comparison uses <span class="conv-kw">=</span> (not == like in C#)</div>
+        <div class="conv-item">Logic: <span class="conv-kw">AND</span> <span class="conv-kw">OR</span> <span class="conv-kw">NOT</span> (not &amp;&amp; || !)</div>
+        <div class="conv-item">Comments start with <span class="conv-kw">//</span></div>
+        <div class="conv-item"><span class="conv-kw">DISPLAY</span> text — output to screen</div>
+        <div class="conv-item"><span class="conv-kw">WAIT</span> n seconds — pause execution</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4.4 PATTERN EXPLORER ────────────────────────── -->
+  <section class="section">
+    <div class="section-label">4.4 — Pattern explorer</div>
+    <h2>Pseudocode to C# — side by side</h2>
+    <p>Select a pattern to see the pseudocode and C# implementation side by side. Study how each pseudocode keyword maps to a specific C# structure — this is the translation skill your algorithm design tasks are assessing.</p>
+
+    <div class="explorer">
+      <div class="exp-tabs">
+        <button class="exp-tab thresh active" onclick="showTab('thresh',this)">Pattern 1 — Threshold</button>
+        <button class="exp-tab seq"           onclick="showTab('seq',this)">Pattern 2 — Sequence</button>
+        <button class="exp-tab fsm"           onclick="showTab('fsm',this)">Pattern 3 — State Machine</button>
+      </div>
+
+      <!-- PATTERN 1: THRESHOLD ────────────────────────── -->
+      <div class="exp-panel active" id="panel-thresh">
+        <div class="exp-intro"><p>Security floodlight · Grade D–C · A single measured value (timer) compared to a threshold each frame. Simple, predictable, and the foundation of almost all automation.</p></div>
+        <div class="exp-cols">
+          <div class="exp-col-left">
+            <div class="exp-col-head">NSW Pseudocode</div>
+<pre class="pseudo-block"><span class="pk">BEGIN</span> SecurityFloodlight
+  timer    ← 0
+  holdTime ← 5      <span class="pc">// seconds light stays on</span>
+
+  <span class="pk">PROCEDURE</span> Update()
+    <span class="pc">// INPUT — read sensor state</span>
+    <span class="pk">IF</span> playerInZone = <span class="pv">TRUE</span> <span class="pk">THEN</span>
+      timer ← holdTime   <span class="pc">// reset countdown</span>
+    <span class="pk">ELSE IF</span> timer > 0 <span class="pk">THEN</span>
+      timer ← timer - deltaTime
+    <span class="pk">END IF</span>
+
+    <span class="pc">// OUTPUT — drive the light</span>
+    <span class="pk">IF</span> timer > 0 <span class="pk">THEN</span>
+      light.enabled ← <span class="pv">TRUE</span>
+    <span class="pk">ELSE</span>
+      light.enabled ← <span class="pv">FALSE</span>
+    <span class="pk">END IF</span>
+  <span class="pk">END PROCEDURE</span>
+<span class="pk">END</span> SecurityFloodlight</pre>
+          </div>
+          <div>
+            <div class="exp-col-head">C# (Unity)</div>
+<div class="code-block-dark"><pre><span class="ck">public</span> <span class="ct">float</span> holdTime = <span class="cv">5f</span>;
+<span class="ck">public</span> <span class="ct">Light</span>  floodlight;
+<span class="ck">private</span> <span class="ct">float</span> timer = <span class="cv">0f</span>;
+<span class="ck">private</span> <span class="ct">bool</span>  playerInZone;
+
+<span class="ck">void</span> <span class="cm">Update</span>() {
+    <span class="cc">// INPUT — trigger zone sets playerInZone</span>
+    <span class="ck">if</span> (playerInZone) {
+        timer = holdTime;
+    } <span class="ck">else if</span> (timer > <span class="cv">0f</span>) {
+        timer -= Time.deltaTime;
+    }
+
+    <span class="cc">// OUTPUT — drive the light</span>
+    floodlight.enabled = timer > <span class="cv">0f</span>;
+}
+
+<span class="ck">void</span> <span class="cm">OnTriggerEnter</span>(<span class="ct">Collider</span> c) {
+    <span class="ck">if</span> (c.<span class="cm">CompareTag</span>(<span class="cs">"Player"</span>)) playerInZone = <span class="cv">true</span>;
+}
+<span class="ck">void</span> <span class="cm">OnTriggerExit</span>(<span class="ct">Collider</span> c) {
+    <span class="ck">if</span> (c.<span class="cm">CompareTag</span>(<span class="cs">"Player"</span>)) playerInZone = <span class="cv">false</span>;
+}</pre></div>
+          </div>
+        </div>
+        <div class="exp-explain">
+          <p><strong>IF … THEN … ELSE … END IF</strong> → C# <code>if () { } else { }</code> · <strong>timer ← holdTime</strong> → assignment <code>timer = holdTime;</code> · <strong>timer &gt; 0</strong> → C# uses the same operator. The entire pseudocode <code>IF timer &gt; 0 THEN light ← TRUE ELSE light ← FALSE END IF</code> collapses to a single C# line: <code>floodlight.enabled = timer &gt; 0f;</code> — C# evaluates the comparison as a bool directly.</p>
+        </div>
+      </div>
+
+      <!-- PATTERN 2: SEQUENCE ─────────────────────────── -->
+      <div class="exp-panel" id="panel-seq">
+        <div class="exp-intro"><p>Car wash sequence · Grade B · A fixed series of steps runs in order, each waiting a set duration. The key insight: this does <em>not</em> use Update(). Instead, a Coroutine pauses execution mid-method using <code>yield return</code>.</p></div>
+        <div class="exp-cols">
+          <div class="exp-col-left">
+            <div class="exp-col-head">NSW Pseudocode</div>
+<pre class="pseudo-block"><span class="pk">BEGIN</span> CarWashSystem
+
+  <span class="pk">PROCEDURE</span> StartWash()
+    boomGate.Close()
+    <span class="pk">DISPLAY</span> <span class="ps">"Soap phase"</span>
+    <span class="pk">WAIT</span> 3 seconds
+    <span class="pk">DISPLAY</span> <span class="ps">"Rinse phase"</span>
+    <span class="pk">WAIT</span> 3 seconds
+    <span class="pk">DISPLAY</span> <span class="ps">"Dry phase"</span>
+    <span class="pk">WAIT</span> 2 seconds
+    boomGate.Open()
+    <span class="pk">DISPLAY</span> <span class="ps">"Wash complete"</span>
+  <span class="pk">END PROCEDURE</span>
+
+  <span class="pk">PROCEDURE</span> OnVehicleDetected()
+    <span class="pk">CALL</span> StartWash()
+  <span class="pk">END PROCEDURE</span>
+
+<span class="pk">END</span> CarWashSystem</pre>
+          </div>
+          <div>
+            <div class="exp-col-head">C# (Unity)</div>
+<div class="code-block-dark"><pre><span class="ck">public</span> <span class="ct">Animator</span> boomGate;
+<span class="ck">public</span> <span class="ct">TextMeshPro</span> statusText;
+
+<span class="cc">// CALL StartWash() → StartCoroutine()</span>
+<span class="ck">void</span> <span class="cm">OnTriggerEnter</span>(<span class="ct">Collider</span> c) {
+    <span class="ck">if</span> (c.<span class="cm">CompareTag</span>(<span class="cs">"Vehicle"</span>))
+        <span class="cm">StartCoroutine</span>(<span class="cm">StartWash</span>());
+}
+
+<span class="cc">// PROCEDURE StartWash → IEnumerator</span>
+<span class="ct">IEnumerator</span> <span class="cm">StartWash</span>() {
+    boomGate.<span class="cm">SetTrigger</span>(<span class="cs">"Close"</span>);
+
+    statusText.text = <span class="cs">"Soap phase"</span>;
+    <span class="ck">yield return new</span> <span class="ct">WaitForSeconds</span>(<span class="cv">3f</span>);
+
+    statusText.text = <span class="cs">"Rinse phase"</span>;
+    <span class="ck">yield return new</span> <span class="ct">WaitForSeconds</span>(<span class="cv">3f</span>);
+
+    statusText.text = <span class="cs">"Dry phase"</span>;
+    <span class="ck">yield return new</span> <span class="ct">WaitForSeconds</span>(<span class="cv">2f</span>);
+
+    boomGate.<span class="cm">SetTrigger</span>(<span class="cs">"Open"</span>);
+    statusText.text = <span class="cs">"Wash complete"</span>;
+}</pre></div>
+          </div>
+        </div>
+        <div class="exp-explain">
+          <p><strong>WAIT n seconds</strong> → <code>yield return new WaitForSeconds(n);</code> — this pauses the Coroutine without blocking the rest of the game. <strong>PROCEDURE</strong> → <code>IEnumerator</code> method type (required for any method that uses <code>yield return</code>). <strong>CALL StartWash()</strong> → <code>StartCoroutine(StartWash())</code> — regular method calls don't run Coroutines; you must use <code>StartCoroutine()</code>. Everything between two <code>yield return</code> lines runs in a single frame.</p>
+        </div>
+      </div>
+
+      <!-- PATTERN 3: FSM ──────────────────────────────── -->
+      <div class="exp-panel" id="panel-fsm">
+        <div class="exp-intro"><p>Traffic light intersection · Grade B · The system is always in exactly one named state. A timer triggers transitions. The <code>enum</code> gives each state a readable name; the <code>switch</code> runs the right behaviour for the current state.</p></div>
+        <div class="exp-cols">
+          <div class="exp-col-left">
+            <div class="exp-col-head">NSW Pseudocode</div>
+<pre class="pseudo-block"><span class="pk">BEGIN</span> TrafficLightFSM
+  state ← RED
+  timer ← 0
+
+  <span class="pk">PROCEDURE</span> Update()
+    timer ← timer + deltaTime
+
+    <span class="pk">IF</span> state = RED <span class="pk">AND</span> timer >= 30 <span class="pk">THEN</span>
+      state ← GREEN
+      timer ← 0
+    <span class="pk">ELSE IF</span> state = GREEN <span class="pk">AND</span> timer >= 25 <span class="pk">THEN</span>
+      state ← AMBER
+      timer ← 0
+    <span class="pk">ELSE IF</span> state = AMBER <span class="pk">AND</span> timer >= 5 <span class="pk">THEN</span>
+      state ← RED
+      timer ← 0
+    <span class="pk">END IF</span>
+
+    UPDATE light colours <span class="pc">// based on state</span>
+  <span class="pk">END PROCEDURE</span>
+
+<span class="pk">END</span> TrafficLightFSM</pre>
+          </div>
+          <div>
+            <div class="exp-col-head">C# (Unity)</div>
+<div class="code-block-dark"><pre><span class="ck">enum</span> <span class="ct">LightState</span> { Red, Green, Amber }
+
+<span class="ck">private</span> <span class="ct">LightState</span> state = <span class="ct">LightState</span>.Red;
+<span class="ck">private</span> <span class="ct">float</span> timer = <span class="cv">0f</span>;
+<span class="ck">public</span>  <span class="ct">Light</span> redLight, greenLight, amberLight;
+
+<span class="ck">void</span> <span class="cm">Update</span>() {
+    timer += Time.deltaTime;
+
+    <span class="ck">switch</span> (state) {
+        <span class="ck">case</span> <span class="ct">LightState</span>.Red:
+            <span class="ck">if</span> (timer >= <span class="cv">30f</span>) <span class="cm">Transition</span>(<span class="ct">LightState</span>.Green);
+            <span class="ck">break</span>;
+        <span class="ck">case</span> <span class="ct">LightState</span>.Green:
+            <span class="ck">if</span> (timer >= <span class="cv">25f</span>) <span class="cm">Transition</span>(<span class="ct">LightState</span>.Amber);
+            <span class="ck">break</span>;
+        <span class="ck">case</span> <span class="ct">LightState</span>.Amber:
+            <span class="ck">if</span> (timer >= <span class="cv">5f</span>)  <span class="cm">Transition</span>(<span class="ct">LightState</span>.Red);
+            <span class="ck">break</span>;
+    }
+    <span class="cm">UpdateLights</span>();
+}
+
+<span class="ck">void</span> <span class="cm">Transition</span>(<span class="ct">LightState</span> next) {
+    state = next;
+    timer = <span class="cv">0f</span>;
+}
+
+<span class="ck">void</span> <span class="cm">UpdateLights</span>() {
+    redLight.enabled   = state == <span class="ct">LightState</span>.Red;
+    greenLight.enabled = state == <span class="ct">LightState</span>.Green;
+    amberLight.enabled = state == <span class="ct">LightState</span>.Amber;
+}</pre></div>
+          </div>
+        </div>
+        <div class="exp-explain">
+          <p><strong>state ← RED</strong> → <code>enum LightState { Red, Green, Amber }</code> then <code>LightState state = LightState.Red;</code>. The <code>enum</code> is the direct C# equivalent of naming states in pseudocode. <strong>IF state = RED AND timer &gt;= 30</strong> → the <code>switch</code> statement handles the state check; the <code>if (timer &gt;= 30f)</code> handles the condition inside it. Extracting <code>Transition()</code> and <code>UpdateLights()</code> as separate methods keeps each method focused on one responsibility — this is what makes it a Grade A implementation rather than Grade B.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4.5 DESK CHECKING ───────────────────────────── -->
+  <section class="section">
+    <div class="section-label">4.5 — Desk checking</div>
+    <h2>Tracing an algorithm by hand</h2>
+
+    <p>Desk checking means manually tracing through your algorithm step by step, recording every variable's value at each stage, <em>before</em> running it in Unity. It proves your logic is correct and is one of the fastest ways to find bugs before they become Unity errors.</p>
+
+    <p>The tool you use is a <strong>trace table</strong> — one column per variable, one row per step. Work through the algorithm with a specific input scenario and fill in every cell.</p>
+
+    <div class="desk-setup">
+      <p><strong>Scenario:</strong> Security floodlight. The player enters the zone on frame 1, then leaves. Trace the next 5 frames. Assume <code>deltaTime = 1 second</code> (simplified for tracing — real deltaTime is ~0.016s).</p>
+      <div class="setup-vals">
+        <span class="sval">holdDuration = 3</span>
+        <span class="sval">initial timer = 0</span>
+        <span class="sval">initial lightOn = FALSE</span>
+        <span class="sval">deltaTime = 1 (simplified)</span>
+      </div>
+    </div>
+
+    <p>Fill in the <strong>timer (after logic)</strong> and <strong>light.enabled</strong> values for each frame, then click Check.</p>
+
+    <table class="trace-table">
+      <thead>
+        <tr>
+          <th>Frame</th>
+          <th>playerInZone</th>
+          <th>timer (before)</th>
+          <th>timer (after logic)</th>
+          <th>light.enabled</th>
+        </tr>
+      </thead>
+      <tbody id="trace-body">
+        <!-- injected by JS -->
+      </tbody>
+    </table>
+
+    <div class="trace-controls">
+      <button class="trace-btn tb-check"  onclick="checkTrace()">Check answers</button>
+      <button class="trace-btn tb-reveal" onclick="revealTrace()">Show answers</button>
+      <button class="trace-btn tb-reset"  onclick="resetTrace()">Reset</button>
+      <span class="trace-score" id="trace-score"></span>
+    </div>
+
+    <div class="callout callout-tip" style="margin-top:20px;">
+      <div class="callout-icon">WHY BOTHER?</div>
+      <div class="callout-body">
+        <p>Tracing a 5-frame scenario on paper takes 2 minutes. Debugging the same logic error in Unity can take 20. The syllabus requires you to "validate algorithms with desk checking" — include a completed trace table in your project notebook for your final algorithm before you build it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NOTEBOOK ────────────────────────────────────── -->
+  <div class="notebook">
+    <div class="notebook-inner">
+      <div class="notebook-label">Project notebook</div>
+      <h2>Chapter 4 — reflection prompts</h2>
+      <p class="notebook-sub">Complete these in your project notebook. Flowcharts and pseudocode must be hand-drawn or hand-written.</p>
+      <ol class="prompt-list">
+        <li><span class="prompt-num">01</span>Draw a flowchart for the algorithm your system will use. Include at least one decision diamond. Use correct flowchart symbols and label all arrows.</li>
+        <li><span class="prompt-num">02</span>Write your algorithm in NSW pseudocode. Use the correct keywords (<code>IF/THEN/ELSE/END IF</code>, <code>←</code> for assignment, uppercase keywords). Which pattern — or combination of patterns — does your algorithm use?</li>
+        <li><span class="prompt-num">03</span>Desk check your algorithm using a trace table. Choose a specific scenario (e.g. "player enters zone at frame 1, leaves at frame 4") and trace at least 6 frames or steps, recording every variable value at each step.</li>
+        <li><span class="prompt-num">04</span>If your system uses a finite state machine: draw the state diagram showing all states as circles and all transitions as arrows, labelled with the condition that triggers each transition.</li>
+        <li><span class="prompt-num">05</span>Identify one edge case your algorithm might not handle correctly (e.g. two players in the zone at once, or a value going below zero). How would you modify your pseudocode to handle it?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="ch-nav">
+    <a class="ch-nav-btn" href="ch3-design.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+      Ch 3 — Design Your System
+    </a>
+    <span class="ch-nav-center">4 of 6</span>
+    <a class="ch-nav-btn next" href="ch5-build.html">
+      Ch 5 — Build Challenge
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+    </a>
+  </div>
+</main>
+<footer>NSW Computing Technology 7–10 (2022) · Stage 5 · Chapter 4 of 6</footer>
+
+<script>
+/* ── PATTERN TABS ─────────────────────────────────────── */
+function showTab(id, btn) {
+  document.querySelectorAll('.exp-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.exp-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+/* ── TRACE TABLE ──────────────────────────────────────── */
+const ROWS = [
+  { frame:1, inZone:'TRUE',  timerBefore:0, ansTimer:3, ansLight:'TRUE'  },
+  { frame:2, inZone:'FALSE', timerBefore:3, ansTimer:2, ansLight:'TRUE'  },
+  { frame:3, inZone:'FALSE', timerBefore:2, ansTimer:1, ansLight:'TRUE'  },
+  { frame:4, inZone:'FALSE', timerBefore:1, ansTimer:0, ansLight:'FALSE' },
+  { frame:5, inZone:'FALSE', timerBefore:0, ansTimer:0, ansLight:'FALSE' },
+];
+
+function renderTrace() {
+  const body = document.getElementById('trace-body');
+  body.innerHTML = ROWS.map((r,i) => `
+    <tr>
+      <td class="given">${r.frame}</td>
+      <td class="given" style="color:${r.inZone==='TRUE'?'#065f46':'#7f0000'}">${r.inZone}</td>
+      <td class="given">${r.timerBefore}</td>
+      <td><input class="trace-input" id="ti-${i}" type="text" maxlength="5" placeholder="?"></td>
+      <td><input class="trace-input" id="li-${i}" type="text" maxlength="5" placeholder="?"></td>
+    </tr>
+  `).join('');
+}
+
+function normalise(v) { return v.trim().toUpperCase(); }
+
+function checkTrace() {
+  let correct = 0, total = ROWS.length * 2;
+  ROWS.forEach((r, i) => {
+    const ti = document.getElementById('ti-' + i);
+    const li = document.getElementById('li-' + i);
+    const tOk = normalise(ti.value) === String(r.ansTimer);
+    const lOk = normalise(li.value) === r.ansLight;
+    ti.className = 'trace-input ' + (tOk ? 'correct' : 'wrong');
+    li.className = 'trace-input ' + (lOk ? 'correct' : 'wrong');
+    if (tOk) correct++; if (lOk) correct++;
+  });
+  const sc = document.getElementById('trace-score');
+  sc.classList.add('vis');
+  sc.innerHTML = `Score: <strong style="color:var(--violet)">${correct}/${total}</strong> — ${
+    correct===total ? 'Perfect trace! Your desk-checking is solid.' :
+    correct>=total*0.7 ? 'Good — check the highlighted cells against the algorithm.' :
+    'Review the pseudocode carefully and re-trace from frame 1.'
+  }`;
+}
+
+function revealTrace() {
+  ROWS.forEach((r, i) => {
+    const ti = document.getElementById('ti-' + i);
+    const li = document.getElementById('li-' + i);
+    ti.value = r.ansTimer; ti.className = 'trace-input revealed';
+    li.value = r.ansLight; li.className = 'trace-input revealed';
+  });
+  const sc = document.getElementById('trace-score');
+  sc.classList.add('vis');
+  sc.innerHTML = 'Answers revealed. Study each row — can you see why the timer changes the way it does?';
+}
+
+function resetTrace() {
+  document.getElementById('trace-score').classList.remove('vis');
+  renderTrace();
+}
+
+renderTrace();
+</script>
+</body>
+</html>

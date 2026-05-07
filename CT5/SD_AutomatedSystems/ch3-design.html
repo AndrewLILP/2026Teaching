@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 3 — Design Your System · Automated Systems</title>
+<style>
+  :root {
+    --violet: #5b4dd4;
+    --violet-dark: #3d30b0;
+    --violet-deep: #1e1540;
+    --violet-mid: #7c6ee0;
+    --violet-light: #ece9fc;
+    --violet-pale: #f5f3fe;
+    --ink: #1a1630;
+    --ink-mid: #3d3660;
+    --muted: #6b6590;
+    --border: #e2deff;
+    --white: #ffffff;
+    --bg: #f7f6ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --ga: #28a745; --ga-bg: #e8f5e9; --ga-text: #1b5e20; --ga-border: #a3d9a5;
+    --gb: #17a2b8; --gb-bg: #e0f7fa; --gb-text: #004d40; --gb-border: #80deea;
+    --gc: #c89b00; --gc-bg: #fffde7; --gc-text: #6b5200; --gc-border: #ffe082;
+    --gd: #fd7e14; --gd-bg: #fff3e0; --gd-text: #7c3700; --gd-border: #ffcc80;
+    --ge: #dc3545; --ge-bg: #ffebee; --ge-text: #7f0000; --ge-border: #ef9a9a;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+
+  /* ── NAV ──────────────────────────────────────────── */
+  .topnav { background: var(--violet-deep); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .nav-home { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-home:hover { color: rgba(255,255,255,.9); }
+  .nav-chapter { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.4); }
+  .nav-next { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .06em; color: rgba(255,255,255,.55); text-decoration: none; display: flex; align-items: center; gap: 7px; transition: color .15s; }
+  .nav-next:hover { color: rgba(255,255,255,.9); }
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; width: 50%; background: var(--violet); border-radius: 0 2px 2px 0; }
+
+  /* ── HERO ─────────────────────────────────────────── */
+  .ch-hero { background: var(--violet-deep); padding: 52px 40px 60px; position: relative; overflow: hidden; }
+  .ch-hero::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px); background-size: 28px 28px; }
+  .ch-hero::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(91,77,212,.4) 0%, transparent 65%); }
+  .ch-hero-inner { position: relative; z-index: 1; max-width: 760px; animation: fadeUp .5s ease both; }
+  .ch-num { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .14em; color: var(--violet-mid); display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ch-num::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(124,110,224,.4); }
+  .ch-hero h1 { font-family: Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: normal; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+  .ch-hero h1 em { font-style: normal; color: var(--violet-mid); }
+  .ch-hero-desc { font-size: 1rem; color: rgba(255,255,255,.6); max-width: 560px; line-height: 1.65; margin-bottom: 28px; }
+  .ch-outcomes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .outcome-tag { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .05em; padding: 4px 12px; border-radius: 12px; background: rgba(91,77,212,.25); border: 1px solid rgba(124,110,224,.35); color: #c4b5fd; }
+
+  /* ── MAIN ─────────────────────────────────────────── */
+  .main { max-width: 900px; margin: 0 auto; padding: 56px 24px 80px; }
+  .section { margin-bottom: 60px; }
+  .section-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  h2 { font-family: Georgia, serif; font-size: 1.5rem; font-weight: normal; color: var(--ink); margin-bottom: 14px; line-height: 1.3; }
+  h3 { font-family: Georgia, serif; font-size: 1.05rem; font-weight: normal; color: var(--ink-mid); margin-bottom: 10px; margin-top: 28px; }
+  p { margin-bottom: 14px; font-size: 15.5px; color: var(--ink-mid); line-height: 1.75; }
+  p:last-child { margin-bottom: 0; }
+  code { font-family: 'Courier New', monospace; font-size: 12px; background: rgba(91,77,212,.1); color: var(--violet-dark); padding: 1px 6px; border-radius: 4px; }
+
+  /* ── GRADE RANKING WIDGET ─────────────────────────── */
+  .rank-panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .rank-filter { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 20px; background: var(--bg); border-bottom: 1px solid var(--border); align-items: center; }
+  .filter-label { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); }
+  .fbtn { padding: 5px 14px; border-radius: 20px; border: 1.5px solid; background: transparent; cursor: pointer; font-family: 'Courier New', monospace; font-size: 11px; font-weight: normal; transition: background .15s, color .15s; }
+  .fbtn.all { border-color: var(--ink-mid); color: var(--ink-mid); }
+  .fbtn.all.active, .fbtn.all:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .fbtn.ga { border-color: var(--ga); color: var(--ga); } .fbtn.ga.active, .fbtn.ga:hover { background: var(--ga); color: #fff; }
+  .fbtn.gb { border-color: var(--gb); color: var(--gb); } .fbtn.gb.active, .fbtn.gb:hover { background: var(--gb); color: #fff; }
+  .fbtn.gc { border-color: var(--gc); color: var(--gc); } .fbtn.gc.active, .fbtn.gc:hover { background: #ffc107; color: var(--gc-text); border-color: #ffc107; }
+  .fbtn.gd { border-color: var(--gd); color: var(--gd); } .fbtn.gd.active, .fbtn.gd:hover { background: var(--gd); color: #fff; }
+  .fbtn.ge { border-color: var(--ge); color: var(--ge); } .fbtn.ge.active, .fbtn.ge:hover { background: var(--ge); color: #fff; }
+
+  .rank-body { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .grade-group-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 12px 0 4px; display: flex; align-items: center; gap: 10px; }
+  .grade-group-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .rank-card { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); border-left-width: 4px; background: var(--white); transition: box-shadow .15s; }
+  .rank-card:hover { box-shadow: 0 2px 12px rgba(91,77,212,.08); }
+  .rank-num { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); min-width: 20px; padding-top: 2px; flex-shrink: 0; }
+  .rank-body-inner { flex: 1; }
+  .rank-title { font-size: 14px; font-weight: normal; color: var(--ink); font-family: Georgia, serif; margin-bottom: 3px; }
+  .rank-desc { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 5px; }
+  .rank-tag { display: inline-block; font-family: 'Courier New', monospace; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+
+  .ga-card { border-left-color: var(--ga); } .ga-tag { background: var(--ga-bg); color: var(--ga-text); }
+  .gb-card { border-left-color: var(--gb); } .gb-tag { background: var(--gb-bg); color: var(--gb-text); }
+  .gc-card { border-left-color: var(--gc); } .gc-tag { background: var(--gc-bg); color: var(--gc-text); }
+  .gd-card { border-left-color: var(--gd); } .gd-tag { background: var(--gd-bg); color: var(--gd-text); }
+  .ge-card { border-left-color: var(--ge); } .ge-tag { background: var(--ge-bg); color: var(--ge-text); }
+
+  /* ── REQUIREMENTS ─────────────────────────────────── */
+  .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .req-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+  .req-card h3 { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; margin-top: 0; }
+  .req-func h3 { color: #0369a1; }
+  .req-nonfunc h3 { color: #5b21b6; }
+  .req-card p { font-size: 13.5px; color: var(--ink-mid); line-height: 1.65; margin-bottom: 12px; }
+  .req-list { list-style: none; padding: 0; }
+  .req-list li { font-size: 13px; color: var(--ink-mid); padding: 5px 0 5px 16px; position: relative; line-height: 1.5; border-bottom: 1px solid var(--border); }
+  .req-list li:last-child { border-bottom: none; }
+  .req-list li::before { content: '→'; position: absolute; left: 0; font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); top: 6px; }
+
+  .req-table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .req-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .req-table th { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg); color: var(--muted); }
+  .req-table td { padding: 11px 16px; vertical-align: top; border-bottom: 1px solid var(--border); color: var(--ink-mid); line-height: 1.5; }
+  .req-table tr:last-child td { border-bottom: none; }
+  .req-table tr:nth-child(even) td { background: rgba(247,246,255,.5); }
+  .req-badge { font-family: 'Courier New', monospace; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+  .badge-func    { background: #e0f2fe; color: #0369a1; }
+  .badge-nonfunc { background: var(--violet-pale); color: var(--violet-dark); }
+
+  /* ── USE CASES ────────────────────────────────────── */
+  .usecase-box { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .uc-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .uc-tab { font-family: 'Courier New', monospace; font-size: 11px; padding: 11px 18px; border: none; background: transparent; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; white-space: nowrap; }
+  .uc-tab:hover { color: var(--violet); }
+  .uc-tab.active { color: var(--violet); border-bottom-color: var(--violet); background: var(--white); }
+  .uc-body { padding: 24px; display: none; }
+  .uc-body.active { display: block; }
+  .uc-row { display: grid; grid-template-columns: 120px 1fr; gap: 0; align-items: stretch; }
+  .uc-field { padding: 10px 14px; border-bottom: 1px solid var(--border); display: contents; }
+  .uc-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--violet-pale); display: flex; align-items: flex-start; }
+  .uc-value { font-size: 13.5px; color: var(--ink-mid); padding: 10px 16px; border-bottom: 1px solid var(--border); line-height: 1.6; }
+  .uc-label:last-of-type, .uc-value:last-of-type { border-bottom: none; }
+  .uc-steps { list-style: decimal; padding-left: 20px; }
+  .uc-steps li { font-size: 13.5px; color: var(--ink-mid); padding: 3px 0; line-height: 1.6; }
+
+  /* ── DESIGN BRIEF FORM ────────────────────────────── */
+  .brief-form { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 20px 0; }
+  .brief-header { background: var(--violet-deep); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .brief-header-title { font-family: Georgia, serif; font-size: 1.1rem; color: #fff; font-weight: normal; }
+  .brief-header-sub { font-family: 'Courier New', monospace; font-size: 10px; color: rgba(255,255,255,.5); }
+  .save-status { font-family: 'Courier New', monospace; font-size: 10px; color: rgba(255,255,255,.45); display: flex; align-items: center; gap: 6px; }
+  .save-dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
+  .brief-body { padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .brief-group { display: flex; flex-direction: column; gap: 6px; }
+  .brief-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--violet); }
+  .brief-hint { font-size: 12px; color: var(--muted); line-height: 1.5; font-family: Georgia, serif; font-style: italic; }
+  .brief-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-family: Georgia, serif; font-size: 14px; color: var(--ink); background: var(--bg); transition: border-color .15s, background .15s; resize: vertical; }
+  .brief-input:focus { outline: none; border-color: var(--violet-mid); background: var(--white); }
+  .brief-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .brief-select { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-family: Georgia, serif; font-size: 14px; color: var(--ink); background: var(--bg); cursor: pointer; }
+  .brief-select:focus { outline: none; border-color: var(--violet-mid); }
+  .brief-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .brief-footer { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: var(--bg); }
+  .brief-btn { font-family: 'Courier New', monospace; font-size: 11px; padding: 8px 18px; border-radius: 20px; border: 1.5px solid; cursor: pointer; transition: background .15s, color .15s; }
+  .btn-save { border-color: var(--violet); color: var(--violet); background: transparent; }
+  .btn-save:hover { background: var(--violet); color: #fff; }
+  .btn-clear { border-color: var(--muted); color: var(--muted); background: transparent; }
+  .btn-clear:hover { background: var(--muted); color: #fff; }
+  .btn-print { border-color: #065f46; color: #065f46; background: transparent; }
+  .btn-print:hover { background: #065f46; color: #fff; }
+
+  /* ── CALLOUTS ─────────────────────────────────────── */
+  .callout { border-radius: var(--radius); padding: 20px 24px; margin: 24px 0; display: flex; gap: 16px; }
+  .callout-unity { background: var(--violet-pale); border: 1px solid var(--border); }
+  .callout-tip   { background: #f0fff4; border: 1px solid #a7f3d0; }
+  .callout-warn  { background: #fffbeb; border: 1px solid #fde68a; }
+  .callout-icon { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .08em; color: var(--violet); white-space: nowrap; padding-top: 2px; flex-shrink: 0; }
+  .callout-tip  .callout-icon  { color: #065f46; }
+  .callout-warn .callout-icon  { color: #92400e; }
+  .callout-body p { font-size: 14px; line-height: 1.65; color: var(--ink-mid); margin-bottom: 6px; }
+  .callout-body p:last-child { margin-bottom: 0; }
+
+  /* ── NOTEBOOK ─────────────────────────────────────── */
+  .notebook { background: var(--violet-deep); border-radius: var(--radius); padding: 32px; margin-top: 56px; position: relative; overflow: hidden; }
+  .notebook::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1px); background-size: 22px 22px; }
+  .notebook-inner { position: relative; z-index: 1; }
+  .notebook-label { font-family: 'Courier New', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--violet-mid); margin-bottom: 8px; }
+  .notebook h2 { color: #fff; font-size: 1.2rem; margin-bottom: 6px; }
+  .notebook-sub { font-size: 13px; color: rgba(255,255,255,.5); margin-bottom: 24px; font-family: 'Courier New', monospace; }
+  .prompt-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .prompt-list li { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: var(--radius-sm); padding: 16px 20px 16px 48px; position: relative; font-size: 14.5px; color: rgba(255,255,255,.85); line-height: 1.6; }
+  .prompt-num { position: absolute; left: 16px; top: 16px; font-family: 'Courier New', monospace; font-size: 11px; color: var(--violet-mid); }
+
+  /* ── CHAPTER NAV ──────────────────────────────────── */
+  .ch-nav { display: flex; justify-content: space-between; align-items: center; padding: 32px 0 0; border-top: 1px solid var(--border); margin-top: 48px; gap: 12px; flex-wrap: wrap; }
+  .ch-nav-btn { font-family: 'Courier New', monospace; font-size: 12px; letter-spacing: .06em; padding: 10px 20px; border-radius: 24px; border: 1.5px solid var(--border); text-decoration: none; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: border-color .15s, color .15s, background .15s; }
+  .ch-nav-btn:hover { border-color: var(--violet); color: var(--violet); background: var(--violet-pale); }
+  .ch-nav-btn.next { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .ch-nav-btn.next:hover { background: var(--violet-dark); border-color: var(--violet-dark); }
+  .ch-nav-center { font-family: 'Courier New', monospace; font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+
+  footer { background: var(--violet-deep); color: rgba(255,255,255,.35); text-align: center; padding: 20px; font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: .06em; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+  @media print {
+    .topnav, .progress-bar, .ch-hero, .rank-panel, .brief-footer, .ch-nav, footer, .notebook { display: none; }
+    .brief-form { border: none; }
+    .brief-input, .brief-select { background: white; border: 1px solid #ccc; }
+    body { background: white; }
+    .main { padding: 0; max-width: 100%; }
+  }
+
+  @media (max-width: 660px) {
+    .ch-hero { padding: 36px 20px 44px; }
+    .main { padding: 32px 16px 60px; }
+    .topnav { padding: 0 16px; }
+    .nav-chapter { display: none; }
+    .req-grid { grid-template-columns: 1fr; }
+    .brief-row { grid-template-columns: 1fr; }
+    .uc-row { grid-template-columns: 80px 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+    Unit hub
+  </a>
+  <span class="nav-chapter">CH 03 / 06 — Design Your System</span>
+  <a class="nav-next" href="ch4-algorithms.html">
+    Ch 4
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+  </a>
+</nav>
+<div class="progress-bar"><div class="progress-fill"></div></div>
+
+<header class="ch-hero">
+  <div class="ch-hero-inner">
+    <div class="ch-num">CHAPTER 03 · RESEARCHING &amp; PLANNING</div>
+    <h1>Design your <em>system</em></h1>
+    <p class="ch-hero-desc">Browse 19 project ideas ranked from Grade E to A, then specify exactly what your system must do — and how well it must do it — before you write a single line of code.</p>
+    <div class="ch-outcomes">
+      <span class="outcome-tag">CT5-DES-01</span>
+      <span class="outcome-tag">CT5-THI-01</span>
+      <span class="outcome-tag">CT5-EVL-01</span>
+      <span class="outcome-tag">CT5-DAT-01</span>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ── 3.1 GRADE RANKING ───────────────────────────── -->
+  <section class="section">
+    <div class="section-label">3.1 — Project ideas ranked by grade</div>
+    <h2>Choose your system</h2>
+    <p>The 19 ideas below are ranked from simplest (Grade E) to most complex (Grade A) based on the Stage 5 Computing Technology course performance descriptors. Each is achievable in Unity using the techniques from Chapters 1 and 2. Filter by grade, find a starting point that suits your current skills, then aim to extend it by one level.</p>
+
+    <div class="callout callout-tip">
+      <div class="callout-icon">STRATEGY</div>
+      <div class="callout-body">
+        <p>If you're unsure where to start, pick a Grade D idea and design it to Grade C standard — add a second output or a threshold condition. The best projects start simple and grow through iteration, rather than starting complex and never finishing. Your project notebook should document every iteration, not just the final result.</p>
+      </div>
+    </div>
+
+    <div class="rank-panel">
+      <div class="rank-filter">
+        <span class="filter-label">Filter by grade:&nbsp;</span>
+        <button class="fbtn all active" onclick="filterRank('all', this)">All</button>
+        <button class="fbtn ga" onclick="filterRank('a', this)">Grade A</button>
+        <button class="fbtn gb" onclick="filterRank('b', this)">Grade B</button>
+        <button class="fbtn gc" onclick="filterRank('c', this)">Grade C</button>
+        <button class="fbtn gd" onclick="filterRank('d', this)">Grade D</button>
+        <button class="fbtn ge" onclick="filterRank('e', this)">Grade E</button>
+      </div>
+      <div class="rank-body" id="rank-body"></div>
+    </div>
+  </section>
+
+  <!-- ── 3.2 REQUIREMENTS ────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">3.2 — Functional &amp; non-functional requirements</div>
+    <h2>Specifying what your system must do</h2>
+    <p>Before writing code, engineers write down exactly what a system is supposed to do. These are called <strong>requirements</strong>, and they come in two types. Getting requirements right is what separates a system that works from one that merely runs.</p>
+
+    <div class="req-grid">
+      <div class="req-card req-func">
+        <h3>Functional requirements</h3>
+        <p>These describe <em>what the system does</em> — specific behaviours that can be verified with a test case. Each one should be precise enough that you could write a test to check it.</p>
+        <ul class="req-list">
+          <li>The door must open within 0.5 seconds of the player entering the trigger zone</li>
+          <li>The door must close automatically 2 seconds after the player leaves</li>
+          <li>The light must activate when any tagged "Player" object enters the zone</li>
+          <li>The pump must deactivate when the tank level exceeds 90%</li>
+        </ul>
+      </div>
+      <div class="req-card req-nonfunc">
+        <h3>Non-functional requirements</h3>
+        <p>These describe <em>how well the system performs</em> — constraints on quality, safety, performance, and reliability that apply across the whole system.</p>
+        <ul class="req-list">
+          <li>The simulation must run at a minimum of 30 frames per second</li>
+          <li>All sensor logic must be frame-rate independent (use Time.deltaTime)</li>
+          <li>Any system failure state must display a visible error message to the user</li>
+          <li>The system must handle edge cases without crashing (e.g. two objects in zone at once)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Worked example — automatic sliding door</h3>
+    <div class="req-table-wrap">
+      <table class="req-table">
+        <thead>
+          <tr><th>ID</th><th>Requirement</th><th>Type</th><th>Test criteria</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>R01</td>
+            <td>Door opens when a Player object enters the trigger zone</td>
+            <td><span class="req-badge badge-func">Functional</span></td>
+            <td>Walk character into zone — door animation plays within 0.5s</td>
+          </tr>
+          <tr>
+            <td>R02</td>
+            <td>Door closes 2 seconds after the Player leaves the zone</td>
+            <td><span class="req-badge badge-func">Functional</span></td>
+            <td>Leave zone — door closes after exactly 2s (use stopwatch)</td>
+          </tr>
+          <tr>
+            <td>R03</td>
+            <td>Door remains open if Player is still present when timer expires</td>
+            <td><span class="req-badge badge-func">Functional</span></td>
+            <td>Stand in zone for 10s — door stays open the entire time</td>
+          </tr>
+          <tr>
+            <td>R04</td>
+            <td>Door behaviour is identical regardless of frame rate</td>
+            <td><span class="req-badge badge-nonfunc">Non-functional</span></td>
+            <td>Run at 30fps and 120fps — timer duration must be identical</td>
+          </tr>
+          <tr>
+            <td>R05</td>
+            <td>Non-Player tagged objects must not trigger the door</td>
+            <td><span class="req-badge badge-func">Functional</span></td>
+            <td>Roll a physics cube into zone — door must not open</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 3.3 USE CASES ───────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">3.3 — Writing use cases</div>
+    <h2>Describing how your system gets used</h2>
+
+    <p>A <strong>use case</strong> describes one specific scenario in which your system is triggered and used. It captures the actor (who or what starts it), the steps that follow, and the state the system is in when it's done. Use cases are written from the outside — what does an observer see happening? — not from the code's point of view.</p>
+
+    <p>Select a system below to see a fully worked use case you can use as a model for your own.</p>
+
+    <div class="usecase-box">
+      <div class="uc-tabs">
+        <button class="uc-tab active" onclick="showUC(0, this)">Sliding doors</button>
+        <button class="uc-tab" onclick="showUC(1, this)">Floodlight</button>
+        <button class="uc-tab" onclick="showUC(2, this)">Conveyor sorter</button>
+      </div>
+
+      <div class="uc-body active" id="uc-0">
+        <div class="uc-row">
+          <div class="uc-label">Use case</div><div class="uc-value">UC-01: Player passes through automatic doors</div>
+          <div class="uc-label">Actor</div><div class="uc-value">Player character (human-controlled)</div>
+          <div class="uc-label">Precondition</div><div class="uc-value">Door is in closed state. Player is outside the trigger zone.</div>
+          <div class="uc-label">Trigger</div><div class="uc-value">Player character enters the trigger collider zone in front of the door.</div>
+          <div class="uc-label">Main flow</div>
+          <div class="uc-value">
+            <ol class="uc-steps">
+              <li>System detects Player tag in trigger zone via <code>OnTriggerEnter</code></li>
+              <li>System sets <code>isOpen = true</code> and resets the close timer</li>
+              <li>Animator plays the door-open animation</li>
+              <li>Player moves through the doorway</li>
+              <li>Player exits the trigger zone — <code>OnTriggerExit</code> fires</li>
+              <li>Close timer begins counting down (2 seconds)</li>
+              <li>Timer reaches zero — Animator plays door-close animation</li>
+              <li>System returns to closed state</li>
+            </ol>
+          </div>
+          <div class="uc-label">Alternate flow</div><div class="uc-value">If the Player re-enters the zone while the door is closing, the timer resets and the door reopens (R03).</div>
+          <div class="uc-label">Postcondition</div><div class="uc-value">Door is closed. Player is on the opposite side of the doorway.</div>
+        </div>
+      </div>
+
+      <div class="uc-body" id="uc-1">
+        <div class="uc-row">
+          <div class="uc-label">Use case</div><div class="uc-value">UC-01: Security floodlight activates on motion detection</div>
+          <div class="uc-label">Actor</div><div class="uc-value">Player character (intruder scenario)</div>
+          <div class="uc-label">Precondition</div><div class="uc-value">Floodlight is off. Player is outside the detection zone. Hold timer is at zero.</div>
+          <div class="uc-label">Trigger</div><div class="uc-value">Player enters the PIR detection trigger zone.</div>
+          <div class="uc-label">Main flow</div>
+          <div class="uc-value">
+            <ol class="uc-steps">
+              <li>System detects Player in zone via <code>OnTriggerEnter</code></li>
+              <li>Hold timer is set to 5 seconds</li>
+              <li>Light component is enabled — floodlight turns on</li>
+              <li>Each frame: timer decrements by <code>Time.deltaTime</code></li>
+              <li>Player leaves the detection zone</li>
+              <li>Timer continues counting down (no reset on exit)</li>
+              <li>Timer reaches zero — light component is disabled</li>
+            </ol>
+          </div>
+          <div class="uc-label">Alternate flow</div><div class="uc-value">If Player re-enters while light is on, timer resets to 5 seconds — light stays on for the full duration after each detection.</div>
+          <div class="uc-label">Postcondition</div><div class="uc-value">Floodlight is off. Hold timer is zero. System is ready to detect again.</div>
+        </div>
+      </div>
+
+      <div class="uc-body" id="uc-2">
+        <div class="uc-row">
+          <div class="uc-label">Use case</div><div class="uc-value">UC-01: Defective item is detected and diverted to reject lane</div>
+          <div class="uc-label">Actor</div><div class="uc-value">Conveyor belt system (fully autonomous)</div>
+          <div class="uc-label">Precondition</div><div class="uc-value">Belt is running. Sensor gate is in neutral position. Item is on the belt.</div>
+          <div class="uc-label">Trigger</div><div class="uc-value">An item with tag "Defective" enters the sensor trigger zone.</div>
+          <div class="uc-label">Main flow</div>
+          <div class="uc-value">
+            <ol class="uc-steps">
+              <li>Sensor fires <code>OnTriggerEnter</code> as item arrives</li>
+              <li>System reads the item's <code>ItemData.itemType</code> component</li>
+              <li>Type is "Defective" — reject gate Animator plays "Open" trigger</li>
+              <li>Item travels along belt into reject lane</li>
+              <li>Reject counter increments; UI label updates</li>
+              <li>After 1 second, reject gate Animator plays "Close" trigger</li>
+            </ol>
+          </div>
+          <div class="uc-label">Alternate flow</div><div class="uc-value">If item type is "Accept", the accept gate opens instead and the accept counter increments.</div>
+          <div class="uc-label">Postcondition</div><div class="uc-value">Item is in the reject bin. Gate is closed. System is ready for the next item.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3.4 DESIGN BRIEF ────────────────────────────── -->
+  <section class="section">
+    <div class="section-label">3.4 — My design brief</div>
+    <h2>Plan your system before you build</h2>
+    <p>Complete this design brief for the system you've chosen to build. Your answers are saved automatically to this browser and will still be here next session. Fill in every field before moving to Chapter 4 — the brief is your contract with yourself about what you're going to build.</p>
+
+    <div class="callout callout-warn">
+      <div class="callout-icon">BEFORE YOU START</div>
+      <div class="callout-body">
+        <p>Your design brief is saved to this browser automatically. If you clear your browser data or use a different computer, the saved answers will be lost. Take a screenshot or print the page (use the Print button at the bottom of the form) to keep a permanent copy.</p>
+      </div>
+    </div>
+
+    <div class="brief-form">
+      <div class="brief-header">
+        <div>
+          <div class="brief-header-title">Automated Systems — Design Brief</div>
+          <div class="brief-header-sub">NSW Computing Technology Stage 5 · Chapter 3</div>
+        </div>
+        <div class="save-status"><div class="save-dot"></div><span id="save-label">Saved</span></div>
+      </div>
+
+      <div class="brief-body">
+
+        <div class="brief-row">
+          <div class="brief-group">
+            <label class="brief-label" for="bf-name">System name</label>
+            <span class="brief-hint">Give your system a descriptive name, e.g. "Greenhouse temperature controller"</span>
+            <input class="brief-input" id="bf-name" type="text" placeholder="My automated system name…">
+          </div>
+          <div class="brief-group">
+            <label class="brief-label" for="bf-grade">Target grade level</label>
+            <span class="brief-hint">Choose the grade complexity you're aiming for based on section 3.1</span>
+            <select class="brief-select" id="bf-grade">
+              <option value="">Select a grade…</option>
+              <option value="e">Grade E — one trigger, one output</option>
+              <option value="d">Grade D — trigger + timer or return state</option>
+              <option value="c">Grade C — threshold logic, basic data display</option>
+              <option value="b">Grade B — state machine, multi-step sequence</option>
+              <option value="a">Grade A — autonomous agent, data logging, ethics</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-context">Real-world context</label>
+          <span class="brief-hint">Describe the real-world setting and purpose. What problem does this system solve? Who uses it?</span>
+          <textarea class="brief-input" id="bf-context" rows="3" placeholder="This system would be used in… It solves the problem of…"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-spectrum">Position on the control spectrum</label>
+          <span class="brief-hint">Is it human-controlled, semi-autonomous, or fully autonomous? Justify your answer.</span>
+          <textarea class="brief-input" id="bf-spectrum" rows="2" placeholder="My system is [human/semi/fully autonomous] because…"></textarea>
+        </div>
+
+        <div class="brief-divider"></div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-inputs">Inputs (sensors)</label>
+          <span class="brief-hint">List at least two inputs. For each, name the real-world sensor, the Unity equivalent, and the data type used.</span>
+          <textarea class="brief-input" id="bf-inputs" rows="4" placeholder="Input 1: [sensor name] → [Unity method] → [data type]&#10;Input 2: [sensor name] → [Unity method] → [data type]&#10;Input 3 (optional): …"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-process">Process logic</label>
+          <span class="brief-hint">Describe the decision-making in plain English first. What conditions does your system check? What does it decide?</span>
+          <textarea class="brief-input" id="bf-process" rows="4" placeholder="When [input condition], the system will [decision/action].&#10;If [condition A], then… otherwise…"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-outputs">Outputs (actuators)</label>
+          <span class="brief-hint">List at least two outputs. For each, name the real-world actuator and the Unity component or method that drives it.</span>
+          <textarea class="brief-input" id="bf-outputs" rows="3" placeholder="Output 1: [actuator] → [Unity component/method]&#10;Output 2: [actuator] → [Unity component/method]"></textarea>
+        </div>
+
+        <div class="brief-divider"></div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-func">Functional requirements</label>
+          <span class="brief-hint">Write at least three requirements starting with "The system must…" — each must be specific enough to test.</span>
+          <textarea class="brief-input" id="bf-func" rows="5" placeholder="R01: The system must…&#10;R02: The system must…&#10;R03: The system must…"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-nonfunc">Non-functional requirements</label>
+          <span class="brief-hint">Write at least two requirements about performance, reliability, or safety.</span>
+          <textarea class="brief-input" id="bf-nonfunc" rows="3" placeholder="NF01: The simulation must…&#10;NF02: All sensor logic must…"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-tests">Initial test cases</label>
+          <span class="brief-hint">Write at least two test cases before you start building. Format: Input → Expected output.</span>
+          <textarea class="brief-input" id="bf-tests" rows="4" placeholder="TC01: When [action], the system should [expected result].&#10;TC02: When [action], the system should [expected result]."></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-ethics">Social and ethical considerations</label>
+          <span class="brief-hint">Who benefits from this system? Who might be disadvantaged? What data does it collect, and who owns it?</span>
+          <textarea class="brief-input" id="bf-ethics" rows="3" placeholder="This system could benefit… but might disadvantage… It collects data about…"></textarea>
+        </div>
+
+        <div class="brief-group">
+          <label class="brief-label" for="bf-sketch">Sketch description</label>
+          <span class="brief-hint">Describe what your Unity scene will look like. What GameObjects are in it? Where are they positioned? (Draw the actual sketch in your project notebook.)</span>
+          <textarea class="brief-input" id="bf-sketch" rows="3" placeholder="My scene will contain… The sensor zone will be positioned… The player will start at…"></textarea>
+        </div>
+
+      </div>
+
+      <div class="brief-footer">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="brief-btn btn-save" onclick="saveBrief()">Save now</button>
+          <button class="brief-btn btn-clear" onclick="clearBrief()">Clear form</button>
+          <button class="brief-btn btn-print" onclick="window.print()">Print / save PDF</button>
+        </div>
+        <span style="font-family:'Courier New',monospace;font-size:10px;color:var(--muted);">Autosaved to this browser</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── NOTEBOOK ────────────────────────────────────── -->
+  <div class="notebook">
+    <div class="notebook-inner">
+      <div class="notebook-label">Project notebook</div>
+      <h2>Chapter 3 — reflection prompts</h2>
+      <p class="notebook-sub">Complete these in your project notebook alongside the design brief above.</p>
+      <ol class="prompt-list">
+        <li><span class="prompt-num">01</span>Why is it important to write requirements <em>before</em> building? Describe what could go wrong if you wrote code first and requirements later.</li>
+        <li><span class="prompt-num">02</span>Explain the difference between a functional and a non-functional requirement using two examples from your own design brief.</li>
+        <li><span class="prompt-num">03</span>Draw the IPO pipeline for your chosen system as a diagram in your notebook — sensors on the left, process in the middle, actuators on the right.</li>
+        <li><span class="prompt-num">04</span>Write a use case for your system following the format from section 3.3. Include at least one alternate flow.</li>
+        <li><span class="prompt-num">05</span>Identify one way a group of people might be disadvantaged by your system and propose one design change that could reduce that impact.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="ch-nav">
+    <a class="ch-nav-btn" href="ch2-inputs-outputs.html">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2L2 7l6 5M2 7h10"/></svg>
+      Ch 2 — Inputs, Processes &amp; Outputs
+    </a>
+    <span class="ch-nav-center">3 of 6</span>
+    <a class="ch-nav-btn next" href="ch4-algorithms.html">
+      Ch 4 — Algorithms &amp; Control Logic
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l6 5-6 5M12 7H2"/></svg>
+    </a>
+  </div>
+</main>
+
+<footer>NSW Computing Technology 7–10 (2022) · Stage 5 · Chapter 3 of 6</footer>
+
+<script>
+/* ── GRADE RANKING DATA ─────────────────────────────── */
+const RANKS = [
+  { g:'e', n:1,  title:'Museum exhibit activator',
+    desc:'Player enters trigger zone → spotlight on, info panel appears. Single collider, no logic branching.',
+    tag:'OnTriggerEnter + SetActive' },
+  { g:'e', n:2,  title:'Fence opens / lights turn on',
+    desc:'The entry-point example. Proximity → animate gate + toggle light. One collider, one output each.',
+    tag:'OnTriggerEnter + Animator' },
+  { g:'d', n:3,  title:'Automatic sliding doors',
+    desc:'Trigger opens doors, timer waits, doors close. Introduces a timed return state without branching.',
+    tag:'Coroutine + WaitForSeconds' },
+  { g:'d', n:4,  title:'Security floodlight',
+    desc:'Motion trigger → light on → countdown → light off. Introduces a countdown timer and idle/active state.',
+    tag:'float timer in Update()' },
+  { g:'d', n:5,  title:'Smart home morning routine',
+    desc:'At a set time: blinds open → lights ramp up → coffee machine animates. Time-driven sequence, no conditionals.',
+    tag:'Time.time threshold checks' },
+  { g:'c', n:6,  title:'Pedestrian crossing',
+    desc:'E-key press → traffic light sequence → NavMesh cars stop → player crosses. Human-initiated control.',
+    tag:'Input + Coroutine + NavMeshAgent' },
+  { g:'c', n:7,  title:'Water tank level controller',
+    desc:'Float value drains over time; pump activates below threshold, shuts off when full. Classic on/off control loop.',
+    tag:'float threshold + UI Slider' },
+  { g:'c', n:8,  title:'Irrigation system',
+    desc:'Soil moisture falls over time; sprinklers fire on threshold or schedule. Combined condition + time logic.',
+    tag:'threshold + Time.time schedule' },
+  { g:'c', n:9,  title:'Energy monitoring dashboard',
+    desc:'Appliance toggles update a live total power reading on a UI panel. Multiple inputs, one calculated output.',
+    tag:'bool[] + sum + TextMeshPro' },
+  { g:'b', n:10, title:'Greenhouse temperature system',
+    desc:'Temperature drifts; vents activate above upper threshold, deactivate below lower. Introduces hysteresis.',
+    tag:'dual float thresholds' },
+  { g:'b', n:11, title:'Conveyor belt quality control',
+    desc:'Objects move along a belt; a sensor checks a tag and a gate diverts rejects to a bin. Condition branching.',
+    tag:'tag comparison + gate Animator' },
+  { g:'b', n:12, title:'Car wash sequence',
+    desc:'Vehicle enters → boom gate closes → soap → rinse → dry → gate opens. Strict multi-step sequence.',
+    tag:'enum state + Coroutine chain' },
+  { g:'b', n:13, title:'Traffic light intersection',
+    desc:'Multiple lights cycle on a timer with a pedestrian button interrupt. FSM with external event transitions.',
+    tag:'enum FSM + interrupt flag' },
+  { g:'b', n:14, title:'Airlock / decontamination chamber',
+    desc:'Outer door closes → fans run → inner door opens. Each step locked until the previous completes.',
+    tag:'enum FSM + transition guards' },
+  { g:'a', n:15, title:'Smoke detector + multi-zone sprinkler',
+    desc:'Smoke density rises in one zone; alarm triggers, sprinklers activate in sequence across adjacent zones.',
+    tag:'zone array + propagation' },
+  { g:'a', n:16, title:'Speed camera system',
+    desc:'Speed sampled, logged to a List, displayed on a data panel; fine triggered if over limit. Data + privacy.',
+    tag:'Rigidbody.velocity + List<T>' },
+  { g:'a', n:17, title:'Factory robot arm',
+    desc:'Button triggers: extend → grip → retract → release → home. Precise Transform targets + safety guards.',
+    tag:'enum FSM + Transform.Lerp' },
+  { g:'a', n:18, title:'Security patrol drone',
+    desc:'NavMesh waypoint patrol, cone-of-vision detection, alarm state, autonomous return after timeout.',
+    tag:'NavMeshAgent + FOV raycast' },
+  { g:'a', n:19, title:'Autonomous delivery robot',
+    desc:'Pathfinds to delivery point, logs time, returns to base, re-routes around mid-path obstacles.',
+    tag:'NavMeshAgent + dynamic obstacles' },
+];
+
+const GRADE_META = {
+  e: { label:'Grade E — identify and follow a given algorithm',    cls:'ge' },
+  d: { label:'Grade D — basic algorithm, timer state, one output', cls:'gd' },
+  c: { label:'Grade C — common algorithms, threshold logic, UI',   cls:'gc' },
+  b: { label:'Grade B — functional FSMs, multi-step sequences',    cls:'gb' },
+  a: { label:'Grade A — autonomous agents, data logging, ethics',  cls:'ga' },
+};
+
+let currentFilter = 'all';
+
+function filterRank(g, btn) {
+  currentFilter = g;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRank();
+}
+
+function renderRank() {
+  const body = document.getElementById('rank-body');
+  const grades = ['e','d','c','b','a'];
+  let html = '';
+  grades.forEach(g => {
+    const items = RANKS.filter(r => r.g === g && (currentFilter === 'all' || currentFilter === g));
+    if (!items.length) return;
+    const m = GRADE_META[g];
+    html += `<div class="grade-group-label ${m.cls}-card" style="color:var(--${g === 'c' ? 'gc' : 'g'+g});">${m.label}</div>`;
+    items.forEach(r => {
+      html += `<div class="rank-card ${m.cls}-card">
+        <span class="rank-num">${r.n}</span>
+        <div class="rank-body-inner">
+          <div class="rank-title">${r.title}</div>
+          <div class="rank-desc">${r.desc}</div>
+          <span class="rank-tag ${m.cls}-tag">${r.tag}</span>
+        </div>
+      </div>`;
+    });
+  });
+  body.innerHTML = html;
+}
+
+renderRank();
+
+/* ── USE CASES ──────────────────────────────────────── */
+function showUC(idx, btn) {
+  document.querySelectorAll('.uc-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.uc-body').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('uc-' + idx).classList.add('active');
+}
+
+/* ── DESIGN BRIEF — localStorage ───────────────────── */
+const FIELDS = ['bf-name','bf-grade','bf-context','bf-spectrum','bf-inputs',
+                'bf-process','bf-outputs','bf-func','bf-nonfunc','bf-tests',
+                'bf-ethics','bf-sketch'];
+
+function loadBrief() {
+  FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    const saved = localStorage.getItem('as_' + id);
+    if (saved && el) el.value = saved;
+  });
+}
+
+function saveBrief() {
+  FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) localStorage.setItem('as_' + id, el.value);
+  });
+  const lbl = document.getElementById('save-label');
+  lbl.textContent = 'Saved ✓';
+  setTimeout(() => { lbl.textContent = 'Saved'; }, 1800);
+}
+
+function clearBrief() {
+  if (!confirm('Clear all fields? This cannot be undone.')) return;
+  FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value = ''; localStorage.removeItem('as_' + id); }
+  });
+}
+
+// autosave on change
+FIELDS.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => {
+    localStorage.setItem('as_' + id, el.value);
+    document.getElementById('save-label').textContent = 'Saved';
+  });
+});
+
+loadBrief();
+</script>
+</body>
+</html>
