@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factorisation — Stage 4</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F4EFE9;
+  --card:#FFFFFF;
+  --border:#DDD5CA;
+  --slate:#2B6CB0;
+  --amber:#8B5E1A;
+  --terra:#C75B39;
+  --green:#3D7054;
+  --accent:#1D6B45;
+  --accent-dark:#155233;
+  --accent-light:#E6F4EC;
+  --text:#1A1A1A;
+  --text-muted:#5A5A5A;
+  --correct:#2E7D32;
+  --correct-bg:#E8F5E9;
+  --wrong:#C62828;
+  --wrong-bg:#FFEBEE;
+}
+
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:16px;line-height:1.6}
+
+.chapter-header{background:linear-gradient(135deg,var(--accent) 0%,var(--accent-dark) 100%);color:#fff;padding:2rem 1.5rem 1.5rem;position:relative;overflow:hidden}
+.chapter-header::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none}
+.chapter-header::after{content:'';position:absolute;bottom:-60px;left:20%;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.header-inner{max-width:860px;margin:0 auto;position:relative;z-index:1}
+.outcome-badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:.25rem .9rem;font-size:.78rem;font-weight:700;letter-spacing:.04em;margin-bottom:.75rem}
+.chapter-header h1{font-size:clamp(1.4rem,4vw,2.1rem);font-weight:900;line-height:1.2;margin-bottom:.4rem}
+.chapter-header p{font-size:.92rem;opacity:.85;max-width:580px}
+.stage-tag{display:inline-block;margin-top:.6rem;background:rgba(255,255,255,.15);border-radius:4px;padding:.15rem .6rem;font-size:.8rem;font-weight:700}
+
+.tab-bar{background:#fff;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tab-bar-inner{max-width:860px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none}
+.tab-bar-inner::-webkit-scrollbar{display:none}
+.tab-btn{flex:none;padding:.75rem 1rem;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab-btn:hover{color:var(--accent)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+.content-area{max-width:860px;margin:0 auto;padding:1.5rem 1rem 4rem}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.section-title{font-size:1.1rem;font-weight:900;color:var(--accent);margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:.5rem}
+.section-title::after{content:'';flex:1;height:2px;background:linear-gradient(to right,var(--accent-light),transparent)}
+.info-box{background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;padding:.75rem 1rem;font-size:.88rem;margin-bottom:.75rem}
+.info-box strong{color:var(--accent-dark)}
+.warn-box{background:#FFF8E7;border:1px solid #E0C060;border-radius:8px;padding:.75rem 1rem;font-size:.88rem;margin-bottom:.75rem}
+.warn-box strong{color:var(--amber)}
+
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 2px}
+.frac .num{border-bottom:1.5px solid currentColor;padding:0 3px 2px;font-size:.85em}
+.frac .den{padding:2px 3px 0;font-size:.85em}
+
+/* FLIP CARDS */
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem}
+.flip-card{height:280px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:1.25rem}
+.flip-front{background:var(--accent);color:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:2px solid var(--accent-dark)}
+.flip-front .word{font-size:1.2rem;font-weight:900;margin-bottom:.5rem;line-height:1.2}
+.flip-front .tap-hint{font-size:.75rem;opacity:.7;margin-top:.75rem}
+.flip-back{background:var(--card);border:2px solid var(--accent);transform:rotateY(180deg);overflow:auto;font-size:.85rem}
+.flip-back h4{font-weight:800;color:var(--accent);margin-bottom:.5rem;font-size:.9rem}
+.frayer{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;height:calc(100% - 2rem)}
+.frayer-cell{background:var(--accent-light);border-radius:6px;padding:.4rem .5rem;font-size:.78rem}
+.frayer-cell strong{display:block;font-weight:800;font-size:.72rem;color:var(--accent-dark);margin-bottom:.2rem}
+
+/* CONCEPTS */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+@media(max-width:540px){.compare-grid{grid-template-columns:1fr}}
+.compare-box{border-radius:10px;padding:1rem 1.1rem}
+.compare-box.forest{background:var(--accent-light);border-left:4px solid var(--accent)}
+.compare-box.slate{background:#EEF4FB;border-left:4px solid var(--slate)}
+.compare-box.amber{background:#FFFBF0;border-left:4px solid var(--amber)}
+.compare-box.terra{background:#FDF0EC;border-left:4px solid var(--terra)}
+.compare-box h4{font-weight:800;font-size:.9rem;margin-bottom:.5rem}
+.demo-line{background:#fafaf9;border:1px solid var(--border);border-radius:7px;padding:.5rem .9rem;font-size:.92rem;font-weight:700;margin:.3rem 0;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.demo-arrow{color:var(--accent);font-size:1rem}
+
+.factor-chips{display:flex;flex-wrap:wrap;gap:.3rem;margin:.4rem 0}
+.fchip{padding:.18rem .55rem;border-radius:14px;font-size:.8rem;font-weight:700;border:1.5px solid}
+.fchip.num{background:#EEF4FB;border-color:var(--slate);color:var(--slate)}
+.fchip.alg{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.fchip.hcf{background:var(--amber);border-color:var(--amber);color:#fff;font-size:.82rem}
+
+.inverse-strip{background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;padding:1rem 1.25rem;margin:.75rem 0;text-align:center}
+.inverse-row{font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:.5rem;flex-wrap:wrap;margin:.3rem 0}
+.inv-tag{font-size:.72rem;font-weight:800;letter-spacing:.05em;color:var(--text-muted)}
+.arrow-label{font-size:.78rem;font-style:italic;color:var(--accent-dark);font-weight:700}
+
+.verify-box{background:var(--correct-bg);border:1.5px solid var(--correct);border-radius:8px;padding:.6rem 1rem;font-size:.9rem;font-weight:700;color:var(--correct);margin-top:.5rem}
+
+/* Quick check */
+.quick-check{background:#f9f5f2;border:1px solid var(--border);border-radius:10px;padding:1.1rem}
+.quick-check h4{font-weight:800;margin-bottom:.6rem;color:var(--amber)}
+.qc-options{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.6rem}
+.qc-btn{text-align:left;padding:.5rem .9rem;border-radius:7px;border:1.5px solid var(--border);background:#fff;font-family:'Nunito',sans-serif;font-size:.9rem;cursor:pointer;transition:all .2s;font-weight:600}
+.qc-btn:not(.qc-done):hover{border-color:var(--accent)}
+.qc-btn.correct-ans{background:var(--correct-bg);border-color:var(--correct);color:var(--correct)}
+.qc-btn.wrong-ans{background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)}
+.qc-feedback{font-size:.85rem;padding:.5rem .75rem;border-radius:7px;display:none}
+.qc-feedback.show{display:block}
+.qc-feedback.ok{background:var(--correct-bg);color:var(--correct)}
+.qc-feedback.bad{background:var(--wrong-bg);color:var(--wrong)}
+
+/* INTERACTIVE */
+.interactive-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.expr-selector-row{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:1.25rem}
+.expr-pill{padding:.4rem 1rem;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;color:var(--text-muted)}
+.expr-pill.active,.expr-pill:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.ff-expr-label{text-align:center;font-size:1.3rem;font-weight:900;color:var(--accent-dark);margin-bottom:1rem;padding:.5rem;background:var(--accent-light);border-radius:8px}
+
+.ff-terms{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;margin-bottom:1rem}
+.ff-term-card{flex:1;min-width:140px;max-width:220px;border:2px solid var(--border);border-radius:10px;padding:.75rem;background:#fafaf9;text-align:center}
+.ff-term-card .tc-term{font-size:1.1rem;font-weight:900;color:var(--accent);margin-bottom:.4rem}
+.ff-term-card .tc-factors{font-size:.8rem;color:var(--text-muted);display:none;margin-top:.35rem;text-align:left;line-height:1.7}
+.ff-term-card .tc-factors.show{display:block}
+.ff-term-card .tc-flabel{font-size:.72rem;font-weight:800;color:var(--accent-dark);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem}
+
+.ff-hcf-box{display:none;background:var(--accent-light);border:2px solid var(--accent);border-radius:10px;padding:.85rem 1.25rem;margin-bottom:1rem;text-align:center}
+.ff-hcf-box.show{display:block}
+.ff-hcf-box .hcf-val{font-size:1.4rem;font-weight:900;color:var(--accent);margin:.25rem 0}
+.ff-hcf-box .hcf-explain{font-size:.85rem;color:var(--text-muted);font-style:italic}
+
+.ff-factored-box{display:none;background:#fff;border:2px solid var(--accent);border-radius:10px;padding:.85rem 1.25rem;margin-bottom:1rem;text-align:center}
+.ff-factored-box.show{display:block}
+.ff-factored-box .fact-expr{font-size:1.2rem;font-weight:900;color:var(--accent-dark);margin:.25rem 0}
+.ff-factored-box .fact-steps{font-size:.85rem;color:var(--text-muted);margin-top:.4rem;text-align:left}
+.ff-factored-box .fact-step{margin:.15rem 0;padding:.2rem 0;border-bottom:1px solid var(--border)}
+.ff-factored-box .fact-step:last-child{border-bottom:none}
+
+.ff-verify-box{display:none;margin-bottom:1rem}
+.ff-verify-box.show{display:block}
+
+.stage-btns{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:.5rem}
+.stage-btn{padding:.45rem 1rem;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;color:var(--text-muted)}
+.stage-btn.go{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stage-btn.done-s{background:var(--correct-bg);border-color:var(--correct);color:var(--correct);cursor:default}
+.stage-btn:disabled{opacity:.38;cursor:not-allowed}
+.stage-btn.reset-s{border-color:var(--terra);color:var(--terra)}
+
+.rules-panel{background:#f9f5f2;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-top:.75rem}
+.rules-panel h4{font-weight:800;color:var(--amber);margin-bottom:.5rem;font-size:.9rem}
+.rules-panel ul{padding-left:1.2rem;font-size:.88rem;display:flex;flex-direction:column;gap:.3rem}
+
+/* WORKED EXAMPLES */
+.example-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1.25rem;overflow:hidden}
+.example-header{background:var(--accent);color:#fff;padding:.75rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.example-header h4{font-weight:800;font-size:.9rem}
+.level-badge{font-size:.72rem;font-weight:700;background:rgba(255,255,255,.2);border-radius:12px;padding:.15rem .6rem;white-space:nowrap}
+.example-body{padding:1.25rem}
+.question{background:var(--accent-light);border-radius:8px;padding:.75rem 1rem;margin-bottom:.9rem;font-weight:700;font-size:.95rem;border-left:4px solid var(--accent)}
+.steps-container{display:flex;flex-direction:column;gap:.5rem}
+.step-row{background:#fafaf9;border:1px solid var(--border);border-radius:8px;padding:.65rem 1rem;display:none}
+.step-row.visible{display:block}
+.step-action{font-weight:800;font-size:.82rem;color:var(--accent);margin-bottom:.25rem}
+.step-math{font-size:1rem;font-weight:700;margin-bottom:.2rem;line-height:1.8}
+.step-why{font-style:italic;font-size:.82rem;color:var(--text-muted)}
+.show-step-btn{margin-top:.75rem;padding:.5rem 1.1rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer}
+.show-step-btn:hover{background:var(--accent-dark)}
+.show-step-btn:disabled{background:#ccc;cursor:not-allowed}
+.done-note{display:none;margin-top:.5rem;font-size:.82rem;font-style:italic;color:var(--correct);font-weight:700}
+
+/* factor table for ex 1 */
+.factor-table{width:100%;border-collapse:collapse;font-size:.88rem;margin:.5rem 0}
+.factor-table th{background:var(--accent);color:#fff;padding:.4rem .7rem;text-align:left;font-weight:700}
+.factor-table td{padding:.4rem .7rem;border-bottom:1px solid var(--border);vertical-align:top}
+.factor-table tr:last-child td{border-bottom:none}
+.factor-table tr:nth-child(even) td{background:#f9f5f2}
+
+/* ERROR DETECTIVE */
+.ed-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1.25rem;overflow:hidden}
+.ed-header{background:#5C2D0E;color:#fff;padding:.75rem 1.25rem;font-weight:800;font-size:.9rem}
+.ed-body{padding:1.25rem}
+.ed-question{background:#FFF8F0;border:1px solid #E0B080;border-radius:8px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.88rem}
+.ed-question strong{display:block;margin-bottom:.3rem;color:#5C2D0E}
+.ed-working{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.9rem}
+.ed-line{padding:.4rem .75rem;border-radius:6px;background:#fafaf9;border:1px solid var(--border);font-size:.92rem;font-weight:600;cursor:pointer;transition:all .2s;user-select:none}
+.ed-line:hover{border-color:var(--terra)}
+.ed-line.selected{border-color:var(--terra);background:#FFF0EE}
+.ed-line.revealed-wrong{background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)}
+.ed-line.revealed-ok{background:var(--correct-bg);border-color:var(--correct)}
+.ed-guess-btn{padding:.45rem 1rem;background:var(--terra);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:.75rem}
+.ed-reveal{display:none;background:#FFF8F0;border:1px solid #E0B080;border-radius:8px;padding:.9rem 1rem;font-size:.88rem}
+.ed-reveal.show{display:block}
+.ed-reveal h5{font-weight:800;color:#5C2D0E;margin-bottom:.4rem}
+.correct-work{background:var(--correct-bg);border-radius:6px;padding:.5rem .75rem;margin-top:.5rem;font-weight:700;font-size:.9rem}
+
+/* WORD PROBLEMS */
+.wp-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:1.25rem;overflow:hidden}
+.wp-header{background:var(--amber);color:#fff;padding:.75rem 1.25rem;display:flex;justify-content:space-between;align-items:center}
+.wp-header h4{font-weight:800;font-size:.9rem}
+.wp-level{font-size:.78rem;font-weight:700;background:rgba(255,255,255,.2);border-radius:12px;padding:.15rem .6rem}
+.wp-body{padding:1.25rem}
+.wp-scenario{background:#FFFBF0;border:1px solid #E0C97A;border-radius:8px;padding:.75rem 1rem;margin-bottom:.9rem;font-weight:700;font-size:.95rem;border-left:4px solid var(--amber)}
+.newman-steps{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.9rem}
+.n-step{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.n-step-head{background:var(--bg);padding:.4rem .85rem;font-size:.8rem;font-weight:800;color:var(--amber);border-bottom:1px solid var(--border)}
+.n-step-body{padding:.5rem .85rem;font-size:.88rem;font-style:italic;color:var(--text-muted)}
+.solution-btn{padding:.45rem 1rem;background:var(--amber);color:#fff;border:none;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer}
+.wp-solution{display:none;background:#FFFBF0;border:1px solid #E0C97A;border-radius:8px;padding:.9rem 1rem;margin-top:.75rem;font-size:.88rem}
+.wp-solution.show{display:block}
+.wp-solution h5{font-weight:800;color:var(--amber);margin-bottom:.4rem}
+.sol-step{background:#fff;border-radius:6px;padding:.4rem .75rem;margin-bottom:.3rem;font-weight:600;font-size:.88rem;border-left:3px solid var(--amber)}
+
+/* PRACTICE */
+.tier-toggle{display:flex;gap:.5rem;justify-content:center;margin-bottom:1.25rem;flex-wrap:wrap}
+.tier-btn{padding:.45rem 1.1rem;border-radius:20px;border:2px solid var(--border);background:#fff;font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .2s;color:var(--text-muted)}
+.tier-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tier-desc{background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;padding:.6rem 1rem;font-size:.85rem;margin-bottom:1rem;text-align:center;font-style:italic}
+.tier-panel{display:none}
+.tier-panel.active{display:block}
+.mcq-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:.9rem}
+.mcq-q{font-weight:700;margin-bottom:.7rem;font-size:.95rem;line-height:1.5}
+.mcq-opts{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.5rem}
+.opt-btn{text-align:left;padding:.5rem .9rem;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:'Nunito',sans-serif;font-size:.9rem;cursor:pointer;transition:all .2s;font-weight:600;line-height:1.4}
+.opt-btn:not(.locked):hover{border-color:var(--accent)}
+.opt-btn.correct-ans{background:var(--correct-bg)!important;border-color:var(--correct)!important;color:var(--correct)!important}
+.opt-btn.wrong-ans{background:var(--wrong-bg)!important;border-color:var(--wrong)!important;color:var(--wrong)!important}
+.opt-btn.locked{cursor:default}
+.mcq-feedback{display:none;font-size:.85rem;padding:.5rem .75rem;border-radius:7px;margin-top:.35rem}
+.mcq-feedback.show{display:block}
+.mcq-feedback.ok{background:var(--correct-bg);color:var(--correct)}
+.mcq-feedback.bad{background:var(--wrong-bg);color:var(--wrong)}
+.hint-toggle{background:none;border:none;font-family:'Nunito',sans-serif;font-size:.82rem;color:var(--accent);font-weight:700;cursor:pointer;padding:0;margin-top:.25rem;display:block}
+.hint-toggle:hover{text-decoration:underline}
+.hint-box{display:none;background:#FFFBF0;border:1px solid #E0C97A;border-radius:7px;padding:.45rem .8rem;font-size:.83rem;margin-top:.3rem;font-style:italic;color:var(--amber)}
+.hint-box.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="chapter-header">
+  <div class="header-inner">
+    <div class="outcome-badge">MA4-ALG-C-01</div>
+    <h1>Factorisation</h1>
+    <p>Identifying factors of algebraic terms, HCF, factorising expressions, and verifying by expansion</p>
+    <span class="stage-tag">Stage 4 — Years 7–8</span>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab-bar-inner">
+    <button class="tab-btn active" onclick="showTab(0)">📚 Key Words</button>
+    <button class="tab-btn" onclick="showTab(1)">💡 Concepts</button>
+    <button class="tab-btn" onclick="showTab(2)">🔄 Factor Finder</button>
+    <button class="tab-btn" onclick="showTab(3)">✏️ Worked Examples</button>
+    <button class="tab-btn" onclick="showTab(4)">🔍 Error Detective</button>
+    <button class="tab-btn" onclick="showTab(5)">📖 Word Problems</button>
+    <button class="tab-btn" onclick="showTab(6)">✅ Practice</button>
+  </div>
+</div>
+
+<div class="content-area">
+
+<!-- ═══════════════════ TAB 1: KEY WORDS -->
+<div class="tab-panel active" id="tab0">
+  <p class="section-title">📚 Vocabulary — tap a card to flip</p>
+  <div class="info-box">Factorisation is the inverse of expansion — you are <em>undoing</em> the distributive law. The vocabulary here connects back to what you already know about factors from arithmetic.</div>
+  <div class="flip-grid">
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Factor</div>
+          <div style="font-size:.83rem;opacity:.85">A number or term that divides exactly into another</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Factor</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>A number, pronumeral, or term that divides exactly into another with no remainder. Every term has multiple factors.</div>
+            <div class="frayer-cell"><strong>Examples</strong>Factors of 12: 1, 2, 3, 4, 6, 12. Factors of 6x: 1, 2, 3, 6, x, 2x, 3x, 6x.</div>
+            <div class="frayer-cell"><strong>Non-examples</strong>5 is not a factor of 12 (12 ÷ 5 is not a whole number). y is not a factor of 6x (y does not divide into x).</div>
+            <div class="frayer-cell"><strong>Key idea</strong>Every term has at least two factors: 1 and itself. Factors always come in pairs.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Highest Common Factor (HCF)</div>
+          <div style="font-size:.83rem;opacity:.85">The largest factor shared by all terms</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Highest Common Factor</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>The largest factor that divides exactly into every term in the expression. Both a numerical HCF and an algebraic HCF may exist.</div>
+            <div class="frayer-cell"><strong>Examples</strong>HCF of 6x and 9: 3. HCF of 4a² and 6a: 2a. HCF of 10xy and 15x: 5x.</div>
+            <div class="frayer-cell"><strong>Non-examples</strong>6 is a common factor of 12x and 18, but not the HCF — 6 is the HCF. (Check: is there a larger one? No.)</div>
+            <div class="frayer-cell"><strong>Key idea</strong>Find the HCF of the coefficients, then find the common algebraic factor (lowest power of each common letter).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Factorise</div>
+          <div style="font-size:.83rem;opacity:.85">Write an expression as a product of its factors</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Factorise</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>To rewrite an algebraic expression as a product: the HCF multiplied by a bracket containing the remaining factors.</div>
+            <div class="frayer-cell"><strong>Examples</strong>Factorise 6x + 9: → 3(2x + 3). Factorise 4a² + 6a: → 2a(2a + 3).</div>
+            <div class="frayer-cell"><strong>Non-examples</strong>3x + 4 cannot be factorised (HCF of 3 and 4 is 1 — factoring out 1 is trivial).</div>
+            <div class="frayer-cell"><strong>Key idea</strong>Factorising is the reverse of expanding. It converts a sum into a product.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Common Factor</div>
+          <div style="font-size:.83rem;opacity:.85">A factor shared by every term in the expression</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Common Factor</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>A factor that divides exactly into every term in an expression. There may be several common factors — we want the highest (HCF).</div>
+            <div class="frayer-cell"><strong>Examples</strong>For 12x and 8x: common factors include 1, 2, 4, x, 2x, 4x. The HCF is 4x.</div>
+            <div class="frayer-cell"><strong>Non-examples</strong>6 is a common factor of 12 and 18 but not of 12 and 10 (10 ÷ 6 is not a whole number).</div>
+            <div class="frayer-cell"><strong>Key idea</strong>To be a common factor, a term must divide into EVERY term. If it misses even one, it is not a common factor.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Algebraic Factor</div>
+          <div style="font-size:.83rem;opacity:.85">A pronumeral or expression that is a factor</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Algebraic Factor</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>A pronumeral or product of pronumerals that divides exactly into a term. The algebraic factor is the common letter part at its lowest power.</div>
+            <div class="frayer-cell"><strong>Examples</strong>In 4a² and 6a: the algebraic factor is a (lowest power: a¹). In 10xy and 15x: algebraic factor is x.</div>
+            <div class="frayer-cell"><strong>Non-examples</strong>In 4x + 6: there is no algebraic factor common to both terms (6 has no x).</div>
+            <div class="frayer-cell"><strong>Key idea</strong>Use the lowest power of each letter that appears in ALL terms.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="word">Verify by Expansion</div>
+          <div style="font-size:.83rem;opacity:.85">Check the answer by expanding back out</div>
+          <div class="tap-hint">tap to flip ↩</div>
+        </div>
+        <div class="flip-back">
+          <h4>Verify by Expansion</h4>
+          <div class="frayer">
+            <div class="frayer-cell"><strong>Definition</strong>After factorising, apply the distributive law to expand the result. If you get back the original expression, the factorisation is correct.</div>
+            <div class="frayer-cell"><strong>Example</strong>Factorise: 6x + 9 = 3(2x + 3). Verify: 3(2x + 3) = 6x + 9 ✓</div>
+            <div class="frayer-cell"><strong>Non-example</strong>If expansion gives 6x + 6 ≠ 6x + 9, the factorisation has an error.</div>
+            <div class="frayer-cell"><strong>Key idea</strong>Verification is required by the syllabus and takes only seconds — always do it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 2: CONCEPTS -->
+<div class="tab-panel" id="tab1">
+
+  <p class="section-title">A — Factors of an algebraic term</p>
+  <div class="compare-box forest" style="margin-bottom:1rem">
+    <h4>Finding all factors systematically</h4>
+    <p style="font-size:.88rem;margin-bottom:.6rem">For the term <strong>12ab</strong>, list factors by combining the numerical factors of 12 with each algebraic factor of ab:</p>
+    <div style="font-size:.85rem;margin-bottom:.4rem;font-weight:700">Numerical factors of 12: &nbsp; 1, 2, 3, 4, 6, 12</div>
+    <div style="font-size:.85rem;margin-bottom:.6rem;font-weight:700">Algebraic parts: &nbsp; 1 (no letter), a, b, ab</div>
+    <div class="factor-chips">
+      <span class="fchip num">1</span><span class="fchip num">2</span><span class="fchip num">3</span><span class="fchip num">4</span><span class="fchip num">6</span><span class="fchip num">12</span>
+      <span class="fchip alg">a</span><span class="fchip alg">2a</span><span class="fchip alg">3a</span><span class="fchip alg">4a</span><span class="fchip alg">6a</span><span class="fchip alg">12a</span>
+      <span class="fchip alg">b</span><span class="fchip alg">2b</span><span class="fchip alg">3b</span><span class="fchip alg">4b</span><span class="fchip alg">6b</span><span class="fchip alg">12b</span>
+      <span class="fchip alg">ab</span><span class="fchip alg">2ab</span><span class="fchip alg">3ab</span><span class="fchip alg">4ab</span><span class="fchip alg">6ab</span><span class="fchip alg">12ab</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-muted);margin-top:.5rem">24 factors in total — numerical factors shown in blue, algebraic factors in green. 12ab itself is always a factor of itself.</p>
+  </div>
+
+  <p class="section-title">B — Finding the HCF</p>
+  <div class="compare-grid">
+    <div class="compare-box slate">
+      <h4>Step 1: HCF of the coefficients</h4>
+      <p style="font-size:.88rem;margin-bottom:.5rem">Find the HCF of the number parts using factor lists or prime factorisation.</p>
+      <div class="demo-line">HCF(6, 9) = <strong>3</strong> &nbsp;<span class="demo-arrow">←</span>&nbsp; for 6x + 9</div>
+      <div class="demo-line">HCF(4, 6) = <strong>2</strong> &nbsp;<span class="demo-arrow">←</span>&nbsp; for 4a² + 6a</div>
+      <div class="demo-line">HCF(10, 15, 5) = <strong>5</strong> &nbsp;<span class="demo-arrow">←</span>&nbsp; for 10xy − 15x + 5x²</div>
+    </div>
+    <div class="compare-box forest">
+      <h4>Step 2: Common algebraic factor</h4>
+      <p style="font-size:.88rem;margin-bottom:.5rem">Find letters common to ALL terms — use the lowest power of each.</p>
+      <div class="demo-line">6x and 9: &nbsp; 9 has no x &nbsp;<span class="demo-arrow">→</span>&nbsp; <strong>no alg. factor</strong></div>
+      <div class="demo-line">4a² and 6a: &nbsp; both have a &nbsp;<span class="demo-arrow">→</span>&nbsp; <strong>a¹ = a</strong></div>
+      <div class="demo-line">10xy and 15x: &nbsp; both have x &nbsp;<span class="demo-arrow">→</span>&nbsp; <strong>x</strong></div>
+    </div>
+  </div>
+  <div class="info-box">💡 <strong>Combining both steps:</strong> HCF = (numerical HCF) × (algebraic common factor). So for 4a² + 6a: HCF = 2 × a = <strong>2a</strong>. For 10xy − 15x: HCF = 5 × x = <strong>5x</strong>.</div>
+
+  <p class="section-title">C — Factorisation as the inverse of expansion</p>
+  <div class="inverse-strip">
+    <div class="inverse-row">
+      <span class="inv-tag">FACTORISED FORM</span>
+      <strong>3(2x + 3)</strong>
+      <span style="font-size:1.5rem;color:var(--accent)">⇌</span>
+      <strong>6x + 9</strong>
+      <span class="inv-tag">EXPANDED FORM</span>
+    </div>
+    <div style="display:flex;justify-content:center;gap:3rem;margin-top:.4rem">
+      <span class="arrow-label">← Factorise (this chapter)</span>
+      <span class="arrow-label">Expand (previous chapter) →</span>
+    </div>
+    <p style="font-size:.83rem;color:var(--text-muted);margin-top:.6rem">Both forms are equivalent — they give the same value for every value of x. Factorisation undoes expansion, and expansion verifies factorisation.</p>
+  </div>
+  <div class="warn-box"><strong>⚠️ Always extract the FULL HCF.</strong> Writing 6x + 9 = 3(2x + 3) is correct. Writing 6x + 9 = 1(6x + 9) or leaving it as is are not useful factorisations. Incomplete factorisation — e.g. 2(2a² + 3a) for 4a² + 6a — is wrong because the bracket still has a common factor (a) that was not extracted.</div>
+
+  <p class="section-title">D — Quick Check</p>
+  <div class="quick-check">
+    <h4>🎯 What is the HCF of 8x² and 12x?</h4>
+    <div class="qc-options">
+      <button class="qc-btn" data-correct="false" data-msg="4 is the HCF of the coefficients 8 and 12, but x also appears in both terms. The full HCF must include the algebraic common factor." onclick="qcAns(this)">A) &nbsp; 4</button>
+      <button class="qc-btn" data-correct="true" data-msg="Correct! HCF of 8 and 12 = 4. Both terms have x — the lowest power is x¹. So HCF = 4x." onclick="qcAns(this)">B) &nbsp; 4x</button>
+      <button class="qc-btn" data-correct="false" data-msg="4x² would require x² to appear in both terms, but 12x only has x¹. Use the lowest power of the common letter." onclick="qcAns(this)">C) &nbsp; 4x²</button>
+      <button class="qc-btn" data-correct="false" data-msg="2x is a common factor but not the highest — 4x divides into both terms as well. Always find the HIGHEST common factor." onclick="qcAns(this)">D) &nbsp; 2x</button>
+    </div>
+    <div class="qc-feedback" id="qcFb"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 3: FACTOR FINDER -->
+<div class="tab-panel" id="tab2">
+  <p class="section-title">🔄 Factor Finder — step-by-step factorisation</p>
+  <div class="info-box">Choose an expression, then work through the four stages: list factors → identify HCF → write the factorised form → verify by expansion.</div>
+
+  <div class="interactive-box">
+    <div style="font-weight:800;text-align:center;margin-bottom:.75rem;color:var(--accent)">Choose an expression:</div>
+    <div class="expr-selector-row">
+      <button class="expr-pill active" onclick="setFFExpr(this,'e1')">6x + 9</button>
+      <button class="expr-pill" onclick="setFFExpr(this,'e2')">4a² + 6a</button>
+      <button class="expr-pill" onclick="setFFExpr(this,'e3')">10xy − 15x</button>
+      <button class="expr-pill" onclick="setFFExpr(this,'e4')">12x²y − 8xy</button>
+      <button class="expr-pill" onclick="setFFExpr(this,'e5')">6m + 9n − 12</button>
+    </div>
+
+    <div class="ff-expr-label" id="ffExprLabel">6x + 9</div>
+    <div class="ff-terms" id="ffTerms"></div>
+    <div class="ff-hcf-box" id="ffHcfBox">
+      <div style="font-size:.8rem;font-weight:800;color:var(--accent-dark);letter-spacing:.04em;margin-bottom:.3rem">HIGHEST COMMON FACTOR</div>
+      <div class="hcf-val" id="ffHcfVal"></div>
+      <div class="hcf-explain" id="ffHcfExplain"></div>
+    </div>
+    <div class="ff-factored-box" id="ffFactoredBox">
+      <div style="font-size:.8rem;font-weight:800;color:var(--accent-dark);letter-spacing:.04em;margin-bottom:.3rem">FACTORISED FORM</div>
+      <div class="fact-expr" id="ffFactExpr"></div>
+      <div class="fact-steps" id="ffFactSteps"></div>
+    </div>
+    <div class="ff-verify-box" id="ffVerifyBox">
+      <div class="verify-box" id="ffVerifyContent"></div>
+    </div>
+
+    <div class="stage-btns">
+      <button class="stage-btn done-s" id="ffBtn0" disabled>① Terms shown</button>
+      <button class="stage-btn go"     id="ffBtn1" onclick="ffStage1()">② List Factors &amp; HCF</button>
+      <button class="stage-btn"        id="ffBtn2" onclick="ffStage2()" disabled>③ Factorise</button>
+      <button class="stage-btn"        id="ffBtn3" onclick="ffStage3()" disabled>④ Verify</button>
+      <button class="stage-btn reset-s" onclick="ffReset()">↺ Reset</button>
+    </div>
+  </div>
+
+  <div class="rules-panel">
+    <h4>📌 Factorisation — four-step method</h4>
+    <ul>
+      <li><strong>Step 1 — Identify the terms.</strong> Separate the expression at each + or − sign. Keep each sign with its term.</li>
+      <li><strong>Step 2 — Find the HCF.</strong> Find the HCF of the coefficients (numbers), then find the common algebraic factor (lowest power of each letter that appears in ALL terms). The full HCF = both combined.</li>
+      <li><strong>Step 3 — Write the factorised form.</strong> Place the HCF outside the bracket. Inside, write each term divided by the HCF. Check signs carefully.</li>
+      <li><strong>Step 4 — Verify by expansion.</strong> Apply the distributive law to your answer. If you recover the original expression exactly, the factorisation is correct.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════ TAB 4: WORKED EXAMPLES -->
+<div class="tab-panel" id="tab3">
+  <p class="section-title">✏️ Worked Examples — reveal one step at a time</p>
+
+  <!-- EX 1 -->
+  <div class="example-card">
+    <div class="example-header">
+      <h4>Example 1 — Listing Factors of a Term</h4>
+      <span class="level-badge">Foundation</span>
+    </div>
+    <div class="example-body">
+      <div class="question">List all factors of &nbsp;<strong>12a²b</strong></div>
+      <div class="steps-container" id="ex1steps">
+        <div class="step-row visible">
+          <div class="step-action">Step 1 — List all numerical factors of 12</div>
+          <div class="step-math">1, 2, 3, 4, 6, 12</div>
+          <div class="step-why"><em>Check every integer from 1 to 12 to see which divide evenly into 12. Work in pairs: 1 × 12, 2 × 6, 3 × 4.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 2 — Identify the algebraic parts</div>
+          <div class="step-math">Letters present: a² and b &nbsp; → &nbsp; algebraic parts: 1, a, a², b, ab, a²b</div>
+          <div class="step-why"><em>For each letter, list every power from 1 up to what appears: a¹ and a². The letter b appears only to the first power. Also include 1 (no letters) and all combinations.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 3 — Combine to list all 36 factors</div>
+          <table class="factor-table">
+            <thead><tr><th>Algebraic part</th><th>Multiply by each numerical factor</th></tr></thead>
+            <tbody>
+              <tr><td>1 (no letters)</td><td>1, 2, 3, 4, 6, 12</td></tr>
+              <tr><td>a</td><td>a, 2a, 3a, 4a, 6a, 12a</td></tr>
+              <tr><td>a²</td><td>a², 2a², 3a², 4a², 6a², 12a²</td></tr>
+              <tr><td>b</td><td>b, 2b, 3b, 4b, 6b, 12b</td></tr>
+              <tr><td>ab</td><td>ab, 2ab, 3ab, 4ab, 6ab, 12ab</td></tr>
+              <tr><td>a²b</td><td>a²b, 2a²b, 3a²b, 4a²b, 6a²b, 12a²b</td></tr>
+            </tbody>
+          </table>
+          <div class="step-why"><em>Systematic listing: 6 numerical factors × 6 algebraic parts = 36 factors total. 12a²b is always a factor of itself (it divides into itself exactly once).</em></div>
+        </div>
+      </div>
+      <button class="show-step-btn" id="ex1btn" onclick="revealStep('ex1steps','ex1btn',3)">Show Next Step</button>
+      <div class="done-note" id="ex1done">✅ 12a²b has 36 factors in total. This systematic method works for any algebraic term.</div>
+    </div>
+  </div>
+
+  <!-- EX 2 -->
+  <div class="example-card">
+    <div class="example-header">
+      <h4>Example 2 — Numerical HCF Factorisation</h4>
+      <span class="level-badge">Foundation</span>
+    </div>
+    <div class="example-body">
+      <div class="question">Factorise &nbsp;<strong>6x + 9</strong> &nbsp; and verify your answer by expansion.</div>
+      <div class="steps-container" id="ex2steps">
+        <div class="step-row visible">
+          <div class="step-action">Step 1 — Find the HCF of the coefficients</div>
+          <div class="step-math">Coefficients: 6 and 9 &nbsp; → &nbsp; HCF = 3</div>
+          <div class="step-why"><em>Factors of 6: 1, 2, 3, 6. Factors of 9: 1, 3, 9. Largest in common: 3.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 2 — Check for a common algebraic factor</div>
+          <div class="step-math">6x contains x; &nbsp; 9 contains no x &nbsp; → &nbsp; no algebraic common factor</div>
+          <div class="step-why"><em>A common algebraic factor must appear in EVERY term. Since 9 has no pronumeral, there is no algebraic factor to extract.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 3 — Divide each term by the HCF (3)</div>
+          <div class="step-math">6x ÷ 3 = 2x &nbsp;|&nbsp; 9 ÷ 3 = 3</div>
+          <div class="step-why"><em>These become the terms inside the bracket. The HCF goes outside.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 4 — Write the factorised form</div>
+          <div class="step-math">6x + 9 = <strong>3(2x + 3)</strong></div>
+          <div class="step-why"><em>HCF outside, remaining terms inside the bracket.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 5 — Verify by expansion</div>
+          <div class="step-math">3(2x + 3) = 3 × 2x + 3 × 3 = 6x + 9 &nbsp; ✓</div>
+          <div class="verify-box">✅ Verification: expanding 3(2x + 3) returns 6x + 9. The factorisation is correct.</div>
+          <div class="step-why"><em>Always verify by expanding your answer. If expansion gives back the original expression, you are correct.</em></div>
+        </div>
+      </div>
+      <button class="show-step-btn" id="ex2btn" onclick="revealStep('ex2steps','ex2btn',5)">Show Next Step</button>
+      <div class="done-note" id="ex2done">✅ 6x + 9 = 3(2x + 3)</div>
+    </div>
+  </div>
+
+  <!-- EX 3 -->
+  <div class="example-card">
+    <div class="example-header">
+      <h4>Example 3 — Algebraic HCF Factorisation</h4>
+      <span class="level-badge">Core</span>
+    </div>
+    <div class="example-body">
+      <div class="question">Factorise &nbsp;<strong>4a² + 6a</strong> &nbsp; and verify.</div>
+      <div class="steps-container" id="ex3steps">
+        <div class="step-row visible">
+          <div class="step-action">Step 1 — HCF of the coefficients</div>
+          <div class="step-math">HCF(4, 6) = 2</div>
+          <div class="step-why"><em>Factors of 4: 1, 2, 4. Factors of 6: 1, 2, 3, 6. Largest in common: 2.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 2 — Common algebraic factor</div>
+          <div class="step-math">4a² has a² &nbsp;|&nbsp; 6a has a¹ &nbsp; → &nbsp; common factor = a¹ = a</div>
+          <div class="step-why"><em>Both terms contain a. The lowest power of a across both terms is a¹. Take the lowest power — the a² in the first term does not force a² into the HCF, because 6a only has a¹.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 3 — Combine: HCF = 2a</div>
+          <div class="step-math">Full HCF = 2 × a = <strong>2a</strong></div>
+          <div class="step-why"><em>Multiply the numerical HCF (2) by the algebraic HCF (a) to get the complete HCF.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 4 — Divide each term by 2a</div>
+          <div class="step-math">4a² ÷ 2a = 2a &nbsp;|&nbsp; 6a ÷ 2a = 3</div>
+          <div class="step-why"><em>4 ÷ 2 = 2 and a² ÷ a = a, giving 2a. 6 ÷ 2 = 3 and a ÷ a = 1, giving 3.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 5 — Write and verify</div>
+          <div class="step-math">4a² + 6a = <strong>2a(2a + 3)</strong></div>
+          <div class="verify-box">✅ Verify: 2a(2a + 3) = 2a × 2a + 2a × 3 = 4a² + 6a ✓</div>
+          <div class="step-why"><em>Expanding 2a(2a + 3) recovers 4a² + 6a. The factorisation is correct.</em></div>
+        </div>
+      </div>
+      <button class="show-step-btn" id="ex3btn" onclick="revealStep('ex3steps','ex3btn',5)">Show Next Step</button>
+      <div class="done-note" id="ex3done">✅ 4a² + 6a = 2a(2a + 3)</div>
+    </div>
+  </div>
+
+  <!-- EX 4 -->
+  <div class="example-card">
+    <div class="example-header">
+      <h4>Example 4 — Three-Term Factorisation</h4>
+      <span class="level-badge">Core</span>
+    </div>
+    <div class="example-body">
+      <div class="question">Factorise &nbsp;<strong>10x²y − 15xy + 5xy²</strong> &nbsp; and verify.</div>
+      <div class="steps-container" id="ex4steps">
+        <div class="step-row visible">
+          <div class="step-action">Step 1 — HCF of coefficients 10, 15, 5</div>
+          <div class="step-math">HCF(10, 15, 5) = 5</div>
+          <div class="step-why"><em>5 divides into 10 (twice), into 15 (three times), and into 5 (once). It is the largest such number.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 2 — Common algebraic factor across all three terms</div>
+          <div class="step-math">
+            10x²y: has x² and y &nbsp;|&nbsp; 15xy: has x and y &nbsp;|&nbsp; 5xy²: has x and y²<br>
+            Common to all: x¹ and y¹ &nbsp; → &nbsp; algebraic HCF = xy
+          </div>
+          <div class="step-why"><em>x appears in all three (lowest power x¹). y appears in all three (lowest power y¹). So the algebraic HCF is xy.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 3 — Full HCF = 5xy. Divide each term</div>
+          <div class="step-math">
+            10x²y ÷ 5xy = 2x<br>
+            −15xy ÷ 5xy = −3<br>
+            5xy² ÷ 5xy = y
+          </div>
+          <div class="step-why"><em>Divide coefficients and pronumerals separately for each term. Keep the sign of each term — the second term remains negative.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 4 — Write and verify</div>
+          <div class="step-math">10x²y − 15xy + 5xy² = <strong>5xy(2x − 3 + y)</strong></div>
+          <div class="verify-box">✅ Verify: 5xy(2x − 3 + y) = 10x²y − 15xy + 5xy² ✓</div>
+          <div class="step-why"><em>Check by distributing 5xy to all three terms inside the bracket.</em></div>
+        </div>
+      </div>
+      <button class="show-step-btn" id="ex4btn" onclick="revealStep('ex4steps','ex4btn',4)">Show Next Step</button>
+      <div class="done-note" id="ex4done">✅ 10x²y − 15xy + 5xy² = 5xy(2x − 3 + y)</div>
+    </div>
+  </div>
+
+  <!-- EX 5 -->
+  <div class="example-card">
+    <div class="example-header">
+      <h4>Example 5 — Three-Term with Two-Variable HCF</h4>
+      <span class="level-badge">Extension</span>
+    </div>
+    <div class="example-body">
+      <div class="question">Factorise &nbsp;<strong>12a²b − 8ab² + 4ab</strong> &nbsp; and verify.</div>
+      <div class="steps-container" id="ex5steps">
+        <div class="step-row visible">
+          <div class="step-action">Step 1 — HCF of coefficients 12, 8, 4</div>
+          <div class="step-math">HCF(12, 8, 4) = 4</div>
+          <div class="step-why"><em>4 divides into 12 (three times), 8 (twice), and 4 (once). It is the largest number that divides all three.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 2 — Common algebraic factor</div>
+          <div class="step-math">
+            12a²b: a² and b &nbsp;|&nbsp; −8ab²: a and b² &nbsp;|&nbsp; 4ab: a and b<br>
+            Lowest power of a: a¹ &nbsp;|&nbsp; Lowest power of b: b¹ &nbsp; → &nbsp; algebraic HCF = ab
+          </div>
+          <div class="step-why"><em>a appears in all three terms (powers: 2, 1, 1 — take the lowest: a¹). b appears in all three (powers: 1, 2, 1 — take the lowest: b¹). Algebraic HCF = ab.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 3 — Full HCF = 4ab. Divide each term</div>
+          <div class="step-math">
+            12a²b ÷ 4ab = 3a<br>
+            −8ab² ÷ 4ab = −2b<br>
+            4ab ÷ 4ab = 1
+          </div>
+          <div class="step-why"><em>The last term 4ab ÷ 4ab = 1. This is critical: when a term equals the HCF exactly, it leaves 1 inside the bracket — not 0, not nothing. Write it as 1.</em></div>
+        </div>
+        <div class="step-row">
+          <div class="step-action">Step 4 — Write and verify</div>
+          <div class="step-math">12a²b − 8ab² + 4ab = <strong>4ab(3a − 2b + 1)</strong></div>
+          <div class="verify-box">✅ Verify: 4ab × 3a = 12a²b; &nbsp; 4ab × (−2b) = −8ab²; &nbsp; 4ab × 1 = 4ab ✓</div>
+          <div class="step-why"><em>All three products match the original terms exactly. The factorisation is correct.</em></div>
+        </div>
+      </div>
+      <button class="show-step-btn" id="ex5btn" onclick="revealStep('ex5steps','ex5btn',4)">Show Next Step</button>
+      <div class="done-note" id="ex5done">✅ 12a²b − 8ab² + 4ab = 4ab(3a − 2b + 1)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 5: ERROR DETECTIVE -->
+<div class="tab-panel" id="tab4">
+  <p class="section-title">🔍 Error Detective — find the mistake</p>
+  <div class="info-box">Each case has <strong>exactly one error</strong>. The most common factorisation errors involve not extracting the full HCF, or making a sign error inside the bracket.</div>
+
+  <!-- CASE 1: HCF not fully extracted -->
+  <div class="ed-card">
+    <div class="ed-header">🔍 Case 1 — Factorising 4a² + 6a</div>
+    <div class="ed-body">
+      <div class="ed-question">
+        <strong>Task:</strong> Factorise &nbsp; 4a² + 6a
+      </div>
+      <p style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--text-muted)">Click the line that contains the error:</p>
+      <div class="ed-working" id="edWork1">
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 1: &nbsp; HCF of coefficients 4 and 6: HCF = 2</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 2: &nbsp; No algebraic common factor needed — 2 is the HCF</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 3: &nbsp; 4a² ÷ 2 = 2a² &nbsp; and &nbsp; 6a ÷ 2 = 3a</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 4: &nbsp; 4a² + 6a = 2(2a² + 3a)</div>
+        <div class="ed-line" data-correct="true" onclick="selectEdLine(this)">Line 5: &nbsp; Verify: 2(2a² + 3a) = 4a² + 6a ✓ — factorisation complete</div>
+      </div>
+      <button class="ed-guess-btn" onclick="revealEd('edWork1','ed1reveal')">Reveal Answer</button>
+      <div class="ed-reveal" id="ed1reveal">
+        <h5>❌ The error is on Line 2 (confirmed by Line 5)</h5>
+        <p>Line 2 claims there is no algebraic common factor. This is wrong — both <strong>4a²</strong> and <strong>6a</strong> contain the letter a. The algebraic HCF is a¹ = a, making the full HCF = 2a, not just 2.</p>
+        <p style="margin-top:.4rem;font-size:.88rem">The verification on Line 5 passes (2(2a² + 3a) = 4a² + 6a is true), which is why this error is so easy to miss. But the factorisation <strong>2(2a² + 3a)</strong> is incomplete — the expression inside the bracket still has a common factor of a.</p>
+        <ul style="padding-left:1.2rem;font-size:.88rem;margin:.4rem 0">
+          <li>A verification check only confirms the algebra is equivalent — it does not confirm the HCF is fully extracted.</li>
+          <li>Always check: does the expression inside the bracket still have a common factor? If yes, the factorisation is incomplete.</li>
+        </ul>
+        <div class="correct-work">
+          ✅ Correct: HCF = 2a (numerical HCF 2, algebraic HCF a)<br>
+          4a² + 6a = <strong>2a(2a + 3)</strong><br>
+          Verify: 2a(2a + 3) = 4a² + 6a ✓
+        </div>
+        <p style="font-size:.82rem;margin-top:.5rem;font-style:italic;color:var(--text-muted)">Error pattern: extracting only the numerical HCF and missing the common algebraic factor.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASE 2: Sign error in bracket -->
+  <div class="ed-card">
+    <div class="ed-header">🔍 Case 2 — Factorising 10xy − 15x</div>
+    <div class="ed-body">
+      <div class="ed-question">
+        <strong>Task:</strong> Factorise &nbsp; 10xy − 15x
+      </div>
+      <p style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;color:var(--text-muted)">Click the line that contains the error:</p>
+      <div class="ed-working" id="edWork2">
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 1: &nbsp; HCF of 10 and 15: HCF = 5</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 2: &nbsp; Common algebraic factor: x appears in both terms → algebraic HCF = x</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 3: &nbsp; Full HCF = 5x</div>
+        <div class="ed-line" data-correct="true" onclick="selectEdLine(this)">Line 4: &nbsp; 10xy ÷ 5x = 2y &nbsp; and &nbsp; 15x ÷ 5x = 3 &nbsp; → &nbsp; answer: 5x(2y + 3)</div>
+        <div class="ed-line" data-correct="false" onclick="selectEdLine(this)">Line 5: &nbsp; Verify: 5x(2y + 3) = 10xy + 15x &nbsp; ✗ &nbsp; (does not match original)</div>
+      </div>
+      <button class="ed-guess-btn" onclick="revealEd('edWork2','ed2reveal')">Reveal Answer</button>
+      <div class="ed-reveal" id="ed2reveal">
+        <h5>❌ The error is on Line 4</h5>
+        <p>The working correctly identifies the HCF as 5x, but then writes <strong>5x(2y + 3)</strong> instead of <strong>5x(2y − 3)</strong>. The second term in the original expression is <em>−15x</em> (negative). When divided by 5x: −15x ÷ 5x = <strong>−3</strong>, not +3.</p>
+        <p style="margin-top:.4rem;font-size:.88rem">The verification on Line 5 actually catches this error — it shows the expansion gives 10xy + 15x, which doesn't match the original 10xy − 15x. This demonstrates why verifying is so important.</p>
+        <ul style="padding-left:1.2rem;font-size:.88rem;margin:.4rem 0">
+          <li>The sign of each term inside the bracket comes from the division: keep the sign of the original term.</li>
+          <li>−15x ÷ 5x = −3 (negative ÷ positive = negative)</li>
+        </ul>
+        <div class="correct-work">
+          ✅ Correct:<br>
+          10xy ÷ 5x = 2y &nbsp; and &nbsp; (−15x) ÷ 5x = −3<br>
+          10xy − 15x = <strong>5x(2y − 3)</strong><br>
+          Verify: 5x(2y − 3) = 10xy − 15x ✓
+        </div>
+        <p style="font-size:.82rem;margin-top:.5rem;font-style:italic;color:var(--text-muted)">Error pattern: dropping the negative sign when dividing a negative term by the HCF. Verification catches this every time.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 6: WORD PROBLEMS -->
+<div class="tab-panel" id="tab5">
+  <p class="section-title">📖 Word Problems — Newman's Framework</p>
+  <div class="info-box">Each problem asks you to build an algebraic expression from a context, identify the HCF, factorise, and verify. Factorisation reveals structure that the expanded form hides.</div>
+
+  <!-- PROBLEM 1 -->
+  <div class="wp-card">
+    <div class="wp-header">
+      <h4>Problem 1 — Rectangle Dimensions</h4>
+      <span class="wp-level">1-step</span>
+    </div>
+    <div class="wp-body">
+      <div class="wp-scenario">A rectangle has an area of (12x + 8) cm². Factorise the area expression to find a possible pair of dimensions for the rectangle.</div>
+      <div class="newman-steps">
+        <div class="n-step">
+          <div class="n-step-head">① READ</div>
+          <div class="n-step-body">I need to write 12x + 8 as a _____________ (HCF × bracket). Each factor gives one _____________ of the rectangle.</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">② DEFINE</div>
+          <div class="n-step-body">Terms: 12x and 8. HCF of 12 and 8 = _____. Common algebraic factor? _____________</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">③ FACTORISE</div>
+          <div class="n-step-body">12x ÷ _____ = _____ &nbsp; and &nbsp; 8 ÷ _____ = _____</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">④ VERIFY</div>
+          <div class="n-step-body">Expand your answer: _____(_____ + _____) = _____________ &nbsp; ✓ or ✗?</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">⑤ ANSWER</div>
+          <div class="n-step-body">The rectangle could have dimensions _____ cm and (_____ + _____) cm.</div>
+        </div>
+      </div>
+      <button class="solution-btn" onclick="toggleSolution('sol1')">Show Full Solution</button>
+      <div class="wp-solution" id="sol1">
+        <h5>✅ Full Solution</h5>
+        <div class="sol-step">① Read: factorise 12x + 8 to find a product (two factors = two dimensions)</div>
+        <div class="sol-step">② HCF of 12 and 8 = 4. No common algebraic factor (8 has no x).</div>
+        <div class="sol-step">③ 12x ÷ 4 = 3x; &nbsp; 8 ÷ 4 = 2 &nbsp; → &nbsp; 12x + 8 = <strong>4(3x + 2)</strong></div>
+        <div class="sol-step">④ Verify: 4(3x + 2) = 12x + 8 ✓</div>
+        <div class="sol-step">⑤ Dimensions: width = 4 cm, length = (3x + 2) cm</div>
+        <p style="font-size:.82rem;font-style:italic;color:var(--text-muted);margin-top:.4rem">Note: other valid pairs exist (e.g. width = 2, length = 6x + 4) but 4(3x + 2) uses the HCF and gives the simplest factorised form.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM 2 -->
+  <div class="wp-card">
+    <div class="wp-header">
+      <h4>Problem 2 — Dividing Plants into Groups</h4>
+      <span class="wp-level">2-step</span>
+    </div>
+    <div class="wp-body">
+      <div class="wp-scenario">A gardener has 15mn seedlings of one type and 10n seedlings of another. She wants to divide all the plants into identical groups — each group must have the same algebraic composition. How many groups can she make, and what does each group contain?</div>
+      <div class="newman-steps">
+        <div class="n-step">
+          <div class="n-step-head">① READ</div>
+          <div class="n-step-body">The total seedlings can be written as _____________ + _____________. Factorising gives the number of groups (outside) and the contents of each group (inside).</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">② DEFINE</div>
+          <div class="n-step-body">m = ? &nbsp; n = ? &nbsp; HCF of 15mn and 10n = _____</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">③ FACTORISE</div>
+          <div class="n-step-body">15mn ÷ _____ = _____ &nbsp; and &nbsp; 10n ÷ _____ = _____</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">④ VERIFY</div>
+          <div class="n-step-body">Expand to check: _____(_____+_____) = _____________</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">⑤ ANSWER</div>
+          <div class="n-step-body">She can make _____ groups. Each group contains _____ of the first type and _____ of the second type.</div>
+        </div>
+      </div>
+      <button class="solution-btn" onclick="toggleSolution('sol2')">Show Full Solution</button>
+      <div class="wp-solution" id="sol2">
+        <h5>✅ Full Solution</h5>
+        <div class="sol-step">① Total = 15mn + 10n</div>
+        <div class="sol-step">② HCF of 15 and 10 = 5. Algebraic HCF: n appears in both (lowest power n¹). Full HCF = 5n.</div>
+        <div class="sol-step">③ 15mn ÷ 5n = 3m; &nbsp; 10n ÷ 5n = 2 &nbsp; → &nbsp; 15mn + 10n = <strong>5n(3m + 2)</strong></div>
+        <div class="sol-step">④ Verify: 5n(3m + 2) = 15mn + 10n ✓</div>
+        <div class="sol-step">⑤ She can make 5n groups. Each group has 3m of the first type and 2 of the second type.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM 3 -->
+  <div class="wp-card">
+    <div class="wp-header">
+      <h4>Problem 3 — Three-Term Factorisation in Context</h4>
+      <span class="wp-level">Multi-step</span>
+    </div>
+    <div class="wp-body">
+      <div class="wp-scenario">A designer tiles a wall using three sections. The sections have areas 6a²b cm², 9ab cm², and 3ab² cm². Write a fully factorised expression for the total area, verify it, and find the total area when a = 2 and b = 3.</div>
+      <div class="newman-steps">
+        <div class="n-step">
+          <div class="n-step-head">① READ</div>
+          <div class="n-step-body">Total area = _____ + _____ + _____. I need to factorise, verify, then substitute a = _____ and b = _____.</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">② FIND HCF</div>
+          <div class="n-step-body">Numerical HCF of 6, 9, 3 = _____ &nbsp;|&nbsp; Common algebraic factor: a appears in all (lowest power: _____), b appears in all (lowest power: _____) &nbsp;|&nbsp; Full HCF = _____</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">③ DIVIDE EACH TERM</div>
+          <div class="n-step-body">6a²b ÷ 3ab = _____ &nbsp;|&nbsp; 9ab ÷ 3ab = _____ &nbsp;|&nbsp; 3ab² ÷ 3ab = _____</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">④ VERIFY BY EXPANSION</div>
+          <div class="n-step-body">3ab(_____ + _____ + _____) = _____ + _____ + _____ &nbsp; ✓ or ✗?</div>
+        </div>
+        <div class="n-step">
+          <div class="n-step-head">⑤ EVALUATE when a = 2, b = 3</div>
+          <div class="n-step-body">3(___)(___)(2(___) + ___ + ___) = _____ cm²</div>
+        </div>
+      </div>
+      <button class="solution-btn" onclick="toggleSolution('sol3')">Show Full Solution</button>
+      <div class="wp-solution" id="sol3">
+        <h5>✅ Full Solution</h5>
+        <div class="sol-step">① Total = 6a²b + 9ab + 3ab²</div>
+        <div class="sol-step">② HCF(6,9,3) = 3; algebraic HCF = ab (a¹ and b¹ are lowest powers); Full HCF = 3ab</div>
+        <div class="sol-step">③ 6a²b ÷ 3ab = 2a; &nbsp; 9ab ÷ 3ab = 3; &nbsp; 3ab² ÷ 3ab = b</div>
+        <div class="sol-step">③ Factorised: <strong>3ab(2a + 3 + b)</strong></div>
+        <div class="sol-step">④ Verify: 3ab × 2a = 6a²b; 3ab × 3 = 9ab; 3ab × b = 3ab² → 6a²b + 9ab + 3ab² ✓</div>
+        <div class="sol-step">⑤ When a = 2, b = 3: 3(2)(3)(2×2 + 3 + 3) = 18(4 + 3 + 3) = 18 × 10 = <strong>180 cm²</strong></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 7: PRACTICE -->
+<div class="tab-panel" id="tab6">
+  <p class="section-title">✅ Self-Marking Practice</p>
+  <div class="tier-toggle">
+    <button class="tier-btn active" onclick="showTier('Foundation',this)">Foundation</button>
+    <button class="tier-btn" onclick="showTier('Core',this)">Core</button>
+    <button class="tier-btn" onclick="showTier('Extension',this)">Extension</button>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="tier-panel active" id="tierFoundation">
+    <div class="tier-desc">Foundation: Identify factors, find the HCF of numbers, and factorise with a numerical HCF only.</div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q1. Which list correctly shows all the factors of 8x?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="This list has all the numerical factors but misses the algebraic factors: x, 2x, 4x, and 8x must also be included." onclick="mcqAns(this)">A) &nbsp; 1, 2, 4, 8, x</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! Numerical factors of 8: 1, 2, 4, 8. Multiply each by x to get the algebraic factors: x, 2x, 4x, 8x. All 8 factors listed." onclick="mcqAns(this)">B) &nbsp; 1, 2, 4, 8, x, 2x, 4x, 8x</button>
+        <button class="opt-btn" data-result="wrong" data-msg="8 and x are factors but far from the complete list. Every divisor of the coefficient (1, 2, 4, 8) combined with every power of x (1, x) gives 8 factors." onclick="mcqAns(this)">C) &nbsp; 8 and x only</button>
+        <button class="opt-btn" data-result="wrong" data-msg="This misses the factor 4. Factors of 8 are 1, 2, 4, 8 — check all whole numbers up to 8." onclick="mcqAns(this)">D) &nbsp; 1, 2, 8, x, 2x, 8x</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hF1')">💡 Hint</button>
+      <div class="hint-box" id="hF1">First list all numerical factors of 8. Then multiply each by x to get the algebraic factors. Count them up — how many in total?</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q2. What is the HCF of 12 and 8?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="2 is a common factor of 12 and 8, but it is not the highest. 4 divides into both: 12 ÷ 4 = 3 and 8 ÷ 4 = 2." onclick="mcqAns(this)">A) &nbsp; 2</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! Factors of 12: 1, 2, 3, 4, 6, 12. Factors of 8: 1, 2, 4, 8. The largest common factor is 4." onclick="mcqAns(this)">B) &nbsp; 4</button>
+        <button class="opt-btn" data-result="wrong" data-msg="6 is a factor of 12 but not of 8. Check: 8 ÷ 6 = 1.333... — not a whole number, so 6 is not a factor of 8." onclick="mcqAns(this)">C) &nbsp; 6</button>
+        <button class="opt-btn" data-result="wrong" data-msg="8 does not divide into 12 exactly: 12 ÷ 8 = 1.5. A common factor must divide into both numbers as a whole number." onclick="mcqAns(this)">D) &nbsp; 8</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hF2')">💡 Hint</button>
+      <div class="hint-box" id="hF2">List all factors of both numbers. Find the largest number that appears in both lists.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q3. Factorise &nbsp; 6x + 10</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="2(3x + 10) is incorrect — 10 was not divided by 2. Check: 2 × 10 = 20, not 10. Both terms must be divided by the HCF." onclick="mcqAns(this)">A) &nbsp; 2(3x + 10)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="2(6x + 5) is incorrect — 6x was not divided by 2. Check: 2 × 6x = 12x, not 6x. Both terms must be divided by the HCF." onclick="mcqAns(this)">B) &nbsp; 2(6x + 5)</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF of 6 and 10 = 2. 6x ÷ 2 = 3x and 10 ÷ 2 = 5. Verify: 2(3x + 5) = 6x + 10 ✓" onclick="mcqAns(this)">C) &nbsp; 2(3x + 5)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="6(x + 10) uses a factor of 6, but 6 does not divide into 10 exactly. The HCF of 6 and 10 is 2, not 6." onclick="mcqAns(this)">D) &nbsp; 6(x + 10)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hF3')">💡 Hint</button>
+      <div class="hint-box" id="hF3">Find HCF(6, 10) first. Then divide BOTH terms by that HCF. Verify by expanding your answer.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q4. What is the HCF of 4a and 6a?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="2 is the HCF of the coefficients (4 and 6), but a also appears in both terms. The full HCF must include the algebraic common factor." onclick="mcqAns(this)">A) &nbsp; 2</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF of coefficients: HCF(4, 6) = 2. Common algebraic factor: a (appears in both). Full HCF = 2a." onclick="mcqAns(this)">B) &nbsp; 2a</button>
+        <button class="opt-btn" data-result="wrong" data-msg="4a divides into 4a (yes) but not into 6a as a whole-number multiple. 6a ÷ 4a = 1.5. So 4a is not a common factor." onclick="mcqAns(this)">C) &nbsp; 4a</button>
+        <button class="opt-btn" data-result="wrong" data-msg="6a does not divide into 4a: 4a ÷ 6a = 2/3, not a whole number. So 6a is not a common factor of both." onclick="mcqAns(this)">D) &nbsp; 6a</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hF4')">💡 Hint</button>
+      <div class="hint-box" id="hF4">Find the HCF of the numbers (4 and 6), then identify any common letters. Combine both parts.</div>
+    </div>
+  </div>
+
+  <!-- CORE -->
+  <div class="tier-panel" id="tierCore">
+    <div class="tier-desc">Core: Factorise using algebraic HCF, including two-variable and three-term expressions.</div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q1. Factorise &nbsp; 8x² + 12x</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="4(2x² + 3x) extracts the numerical HCF only. The bracket still has a common factor of x — the full HCF is 4x, not 4." onclick="mcqAns(this)">A) &nbsp; 4(2x² + 3x)</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF = 4x. 8x² ÷ 4x = 2x and 12x ÷ 4x = 3. Verify: 4x(2x + 3) = 8x² + 12x ✓" onclick="mcqAns(this)">B) &nbsp; 4x(2x + 3)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="2x(4x + 6) uses an HCF of 2x — but 4 also divides into both terms. The HCF is 4x, not 2x. Always find the HIGHEST common factor." onclick="mcqAns(this)">C) &nbsp; 2x(4x + 6)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="x(8x + 12) uses an HCF of x — but 4 also divides into both coefficients (8 and 12). The full HCF is 4x." onclick="mcqAns(this)">D) &nbsp; x(8x + 12)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hC1')">💡 Hint</button>
+      <div class="hint-box" id="hC1">Find HCF(8, 12) for the coefficients, then find the common algebraic factor. After factorising, check: does the bracket still have a common factor?</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q2. Factorise &nbsp; 5a²b − 10ab</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="5(a²b − 10ab) incorrectly leaves a²b unchanged (5 × a²b ≠ 5a²b in this context — check: 5 × a²b = 5a²b, so 5a²b ÷ 5 = a²b). But b and a are also common — the HCF is 5ab." onclick="mcqAns(this)">A) &nbsp; 5(a²b − 2ab)</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF = 5ab. 5a²b ÷ 5ab = a and 10ab ÷ 5ab = 2. Result: 5ab(a − 2). Verify: 5ab(a − 2) = 5a²b − 10ab ✓" onclick="mcqAns(this)">B) &nbsp; 5ab(a − 2)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="5a(ab − 2b) uses an HCF of 5a — but b also appears in both terms. The full HCF is 5ab." onclick="mcqAns(this)">C) &nbsp; 5a(ab − 2b)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="ab(5a − 10) uses an HCF of ab — but 5 also divides into both coefficients. The full HCF is 5ab." onclick="mcqAns(this)">D) &nbsp; ab(5a − 10)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hC2')">💡 Hint</button>
+      <div class="hint-box" id="hC2">List what is common: HCF of 5 and 10, then letters common to both terms (with lowest powers). Multiply for the full HCF.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q3. Factorise &nbsp; 6m + 9n − 12</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="3(2m + 9n − 4) divides 6m and 12 by 3 correctly, but leaves 9n unchanged. 9n ÷ 3 = 3n, not 9n." onclick="mcqAns(this)">A) &nbsp; 3(2m + 9n − 4)</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF(6, 9, 12) = 3. No algebraic HCF (m, n, and the constant 12 have no common letter). 6m÷3 = 2m, 9n÷3 = 3n, 12÷3 = 4. Result: 3(2m + 3n − 4)." onclick="mcqAns(this)">B) &nbsp; 3(2m + 3n − 4)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="6(m + 9n − 2): 6 does not divide into 9n (9 ÷ 6 is not a whole number). HCF of 6, 9, and 12 is 3, not 6." onclick="mcqAns(this)">C) &nbsp; 6(m + 9n − 2)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="3(2m + 3n − 12) divides 6m and 9n correctly but leaves 12 unchanged. 12 ÷ 3 = 4, not 12." onclick="mcqAns(this)">D) &nbsp; 3(2m + 3n − 12)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hC3')">💡 Hint</button>
+      <div class="hint-box" id="hC3">Find HCF(6, 9, 12). All three terms must be divided by it — including the constant 12. Verify by expanding your answer.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q4. Which expansion verifies that 4(3x − 2) is the correct factorisation of 12x − 8?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="correct" data-msg="Correct! 4 × 3x = 12x and 4 × (−2) = −8. The expansion gives 12x − 8, matching the original expression. Factorisation is verified." onclick="mcqAns(this)">A) &nbsp; 4(3x − 2) = 12x − 8 &nbsp; ✓</button>
+        <button class="opt-btn" data-result="wrong" data-msg="4(3x − 2) = 12x − 2 is incorrect: 4 × (−2) = −8, not −2. The constant was not multiplied by 4." onclick="mcqAns(this)">B) &nbsp; 4(3x − 2) = 12x − 2 &nbsp; ✗</button>
+        <button class="opt-btn" data-result="wrong" data-msg="7x − 2 would come from adding 4 + 3 = 7 for the x coefficient — but you must multiply: 4 × 3 = 12." onclick="mcqAns(this)">C) &nbsp; 4(3x − 2) = 7x − 2 &nbsp; ✗</button>
+        <button class="opt-btn" data-result="wrong" data-msg="12x + 8 has the wrong sign on the constant. 4 × (−2) = −8, not +8." onclick="mcqAns(this)">D) &nbsp; 4(3x − 2) = 12x + 8 &nbsp; ✗</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hC4')">💡 Hint</button>
+      <div class="hint-box" id="hC4">Expand 4(3x − 2) using the distributive law. Multiply 4 by each term inside the bracket, including its sign.</div>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div class="tier-panel" id="tierExtension">
+    <div class="tier-desc">Extension: Multi-variable HCF, three-term expressions, incomplete factorisation identification, and error analysis.</div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q1. Factorise &nbsp; 9x²y + 6xy² − 3xy</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF = 3xy. 9x²y ÷ 3xy = 3x; 6xy² ÷ 3xy = 2y; 3xy ÷ 3xy = 1. Result: 3xy(3x + 2y − 1). Verify by expanding." onclick="mcqAns(this)">A) &nbsp; 3xy(3x + 2y − 1)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="3x(3xy + 2y² − 1) uses an HCF of 3x — but y also appears in all three terms. The full HCF is 3xy." onclick="mcqAns(this)">B) &nbsp; 3x(3xy + 2y² − 1)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="xy(9x + 6y − 3) uses an HCF of xy — but 3 also divides into all three coefficients (9, 6, 3). Full HCF = 3xy." onclick="mcqAns(this)">C) &nbsp; xy(9x + 6y − 3)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="3(3x²y + 2xy² − xy) extracts only the numerical factor 3. The expression inside still has a common factor of xy. Full HCF = 3xy." onclick="mcqAns(this)">D) &nbsp; 3(3x²y + 2xy² − xy)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hE1')">💡 Hint</button>
+      <div class="hint-box" id="hE1">HCF of the coefficients (9, 6, 3). Then identify letters common to all three terms at their lowest power. Note what happens when a term equals the HCF exactly.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q2. Which factorisation is NOT correct?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="6a + 9 = 3(2a + 3) is correct. Verify: 3 × 2a = 6a and 3 × 3 = 9 ✓. HCF = 3." onclick="mcqAns(this)">A) &nbsp; 6a + 9 = 3(2a + 3)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="4x² + 8x = 4x(x + 2) is correct. Verify: 4x × x = 4x² and 4x × 2 = 8x ✓. HCF = 4x." onclick="mcqAns(this)">B) &nbsp; 4x² + 8x = 4x(x + 2)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="10m − 15n = 5(2m − 3n) is correct. Verify: 5 × 2m = 10m and 5 × (−3n) = −15n ✓. HCF = 5." onclick="mcqAns(this)">C) &nbsp; 10m − 15n = 5(2m − 3n)</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct — this factorisation IS wrong. 6x − 4y = 2(3x − 4y) is not correct: 2 × 4y = 8y, not 4y. HCF of 6 and 4 is 2, so 6x ÷ 2 = 3x and 4y ÷ 2 = 2y. The correct factorisation is 2(3x − 2y)." onclick="mcqAns(this)">D) &nbsp; 6x − 4y = 3(2x − 4y)</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hE2')">💡 Hint</button>
+      <div class="hint-box" id="hE2">Verify each option by expanding. The incorrect one will not give back the original expression when expanded.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q3. What is the HCF of &nbsp; 12a²b, &nbsp; 8ab², &nbsp; and &nbsp; 4a²b²?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="2ab is a common factor but not the highest. HCF(12, 8, 4) = 4, not 2. And both a and b appear in all three terms." onclick="mcqAns(this)">A) &nbsp; 2ab</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! HCF(12, 8, 4) = 4. Lowest power of a: a² in first, a¹ in second, a² in third → take a¹. Lowest power of b: b¹, b², b² → take b¹. Full HCF = 4ab." onclick="mcqAns(this)">B) &nbsp; 4ab</button>
+        <button class="opt-btn" data-result="wrong" data-msg="4a²b² would require a² and b² in all three terms. The second term (8ab²) only has a¹, so a² cannot be in the HCF." onclick="mcqAns(this)">C) &nbsp; 4a²b²</button>
+        <button class="opt-btn" data-result="wrong" data-msg="2a²b² has the wrong coefficient (2 instead of 4) and wrong powers. Always take the LOWEST power of each letter and the HIGHEST common number factor." onclick="mcqAns(this)">D) &nbsp; 2a²b²</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hE3')">💡 Hint</button>
+      <div class="hint-box" id="hE3">Three steps: (1) HCF of the coefficients 12, 8, 4. (2) Lowest power of a across all three terms. (3) Lowest power of b across all three terms. Multiply the results.</div>
+    </div>
+
+    <div class="mcq-card">
+      <div class="mcq-q">Q4. A student factorises 6x² + 4x as 2(3x² + 2x). What error did they make?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="The HCF of the coefficients 6 and 4 is 2, not 6. The coefficient error is not the problem here." onclick="mcqAns(this)">A) &nbsp; The HCF of the coefficients should be 6, not 2</button>
+        <button class="opt-btn" data-result="correct" data-msg="Correct! The HCF is 2x, not 2 — x is a common algebraic factor of both 6x² and 4x. The expression inside the bracket (3x² + 2x) still has a common factor of x, meaning the factorisation is incomplete." onclick="mcqAns(this)">B) &nbsp; The HCF should be 2x — the common factor x was not extracted</button>
+        <button class="opt-btn" data-result="wrong" data-msg="2(3x² + 2x) does verify: expand to get 6x² + 4x ✓. But verification only confirms equivalence, not that the HCF is fully extracted." onclick="mcqAns(this)">C) &nbsp; The factorisation cannot be verified by expansion</button>
+        <button class="opt-btn" data-result="wrong" data-msg="The sign inside the bracket is correct — both terms are positive. The error is in extracting only the numerical HCF and missing the algebraic factor x." onclick="mcqAns(this)">D) &nbsp; The sign inside the bracket is wrong</button>
+      </div>
+      <div class="mcq-feedback"></div>
+      <button class="hint-toggle" onclick="toggleHint('hE4')">💡 Hint</button>
+      <div class="hint-box" id="hE4">After factorising, always check: does the expression inside the bracket have any common factor remaining? If yes, the factorisation is incomplete.</div>
+    </div>
+  </div>
+
+</div><!-- /tab6 -->
+</div><!-- /content-area -->
+
+<script>
+// ─── TABS ────────────────────────────────────────────────────────────────────
+function showTab(i){
+  document.querySelectorAll('.tab-panel').forEach((p,j)=>p.classList.toggle('active',i===j));
+  document.querySelectorAll('.tab-btn').forEach((b,j)=>b.classList.toggle('active',i===j));
+}
+
+// ─── QUICK CHECK ─────────────────────────────────────────────────────────────
+var qcDone=false;
+function qcAns(btn){
+  if(qcDone)return;qcDone=true;
+  document.querySelectorAll('.qc-btn').forEach(b=>{b.classList.add('qc-done');b.style.pointerEvents='none'});
+  var ok=btn.dataset.correct==='true';
+  btn.classList.add(ok?'correct-ans':'wrong-ans');
+  var fb=document.getElementById('qcFb');
+  fb.textContent=(ok?'✅ ':'❌ ')+btn.dataset.msg;
+  fb.className='qc-feedback show '+(ok?'ok':'bad');
+}
+
+// ─── FACTOR FINDER ───────────────────────────────────────────────────────────
+var FF={
+  e1:{
+    label:'6x + 9',
+    terms:[
+      {term:'6x', factors:'Factors of 6x:\n1, 2, 3, 6 (numerical)\nx, 2x, 3x, 6x (algebraic)'},
+      {term:'+9', factors:'Factors of 9:\n1, 3, 9\n(no algebraic factor — 9 has no pronumeral)'}
+    ],
+    hcf:'3',
+    hcfExplain:'Largest numerical factor common to 6 and 9. No letter appears in both terms.',
+    factorisedLabel:'6x + 9 = 3(2x + 3)',
+    divSteps:['6x ÷ 3 = 2x','9 ÷ 3 = 3'],
+    verifyText:'✅ Verify: 3(2x + 3) = 3 × 2x + 3 × 3 = 6x + 9 ✓'
+  },
+  e2:{
+    label:'4a² + 6a',
+    terms:[
+      {term:'4a²', factors:'Factors of 4a²:\n1, 2, 4 (numerical)\na, a², 2a, 2a², 4a, 4a² (algebraic)'},
+      {term:'+6a', factors:'Factors of 6a:\n1, 2, 3, 6 (numerical)\na, 2a, 3a, 6a (algebraic)'}
+    ],
+    hcf:'2a',
+    hcfExplain:'HCF of coefficients: HCF(4, 6) = 2. Common letter: a (lowest power is a¹). Full HCF = 2 × a = 2a.',
+    factorisedLabel:'4a² + 6a = 2a(2a + 3)',
+    divSteps:['4a² ÷ 2a = 2a','6a ÷ 2a = 3'],
+    verifyText:'✅ Verify: 2a(2a + 3) = 2a × 2a + 2a × 3 = 4a² + 6a ✓'
+  },
+  e3:{
+    label:'10xy − 15x',
+    terms:[
+      {term:'10xy', factors:'Factors of 10xy include:\n1, 2, 5, 10\nx, y, xy, 2x, 5x, 10x, 2y, 5y, 10y, 2xy, 5xy, 10xy, ...'},
+      {term:'−15x', factors:'Factors of 15x include:\n1, 3, 5, 15\nx, 3x, 5x, 15x, ...'}
+    ],
+    hcf:'5x',
+    hcfExplain:'HCF of coefficients: HCF(10, 15) = 5. Common letter: x (y does not appear in −15x). HCF = 5x.',
+    factorisedLabel:'10xy − 15x = 5x(2y − 3)',
+    divSteps:['10xy ÷ 5x = 2y','(−15x) ÷ 5x = −3'],
+    verifyText:'✅ Verify: 5x(2y − 3) = 5x × 2y + 5x × (−3) = 10xy − 15x ✓'
+  },
+  e4:{
+    label:'12x²y − 8xy',
+    terms:[
+      {term:'12x²y', factors:'Factors of 12x²y include:\n1, 2, 3, 4, 6, 12\nx, y, xy, x², x²y, 2xy, 4xy, 6xy, 12xy, ...'},
+      {term:'−8xy', factors:'Factors of 8xy include:\n1, 2, 4, 8\nx, y, xy, 2xy, 4xy, 8xy, ...'}
+    ],
+    hcf:'4xy',
+    hcfExplain:'HCF(12, 8) = 4. Common letters: x (lowest power x¹) and y (lowest power y¹). HCF = 4xy.',
+    factorisedLabel:'12x²y − 8xy = 4xy(3x − 2)',
+    divSteps:['12x²y ÷ 4xy = 3x','(−8xy) ÷ 4xy = −2'],
+    verifyText:'✅ Verify: 4xy(3x − 2) = 4xy × 3x + 4xy × (−2) = 12x²y − 8xy ✓'
+  },
+  e5:{
+    label:'6m + 9n − 12',
+    terms:[
+      {term:'6m', factors:'Factors of 6m:\n1, 2, 3, 6\nm, 2m, 3m, 6m'},
+      {term:'+9n', factors:'Factors of 9n:\n1, 3, 9\nn, 3n, 9n'},
+      {term:'−12', factors:'Factors of 12:\n1, 2, 3, 4, 6, 12\n(no algebraic factor)'}
+    ],
+    hcf:'3',
+    hcfExplain:'HCF(6, 9, 12) = 3. No letter is common to ALL three terms (12 has none). HCF = 3 only.',
+    factorisedLabel:'6m + 9n − 12 = 3(2m + 3n − 4)',
+    divSteps:['6m ÷ 3 = 2m','9n ÷ 3 = 3n','(−12) ÷ 3 = −4'],
+    verifyText:'✅ Verify: 3(2m + 3n − 4) = 6m + 9n − 12 ✓'
+  }
+};
+
+var ffKey='e1', ffStage=0;
+
+function setFFExpr(btn,key){
+  document.querySelectorAll('.expr-pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ffKey=key;ffReset();
+}
+
+function ffReset(){
+  ffStage=0;
+  var ex=FF[ffKey];
+  document.getElementById('ffExprLabel').textContent=ex.label;
+  // rebuild term cards
+  var tc=document.getElementById('ffTerms');
+  tc.innerHTML='';
+  ex.terms.forEach(function(t){
+    var d=document.createElement('div');
+    d.className='ff-term-card';
+    d.innerHTML='<div class="tc-term">'+t.term+'</div><div class="tc-factors"><div class="tc-flabel">Factors include:</div>'+t.factors.replace(/\n/g,'<br>')+'</div>';
+    tc.appendChild(d);
+  });
+  document.getElementById('ffHcfBox').classList.remove('show');
+  document.getElementById('ffFactoredBox').classList.remove('show');
+  document.getElementById('ffVerifyBox').classList.remove('show');
+  // reset buttons
+  setFFBtns(0);
+}
+
+function setFFBtns(stage){
+  var b0=document.getElementById('ffBtn0'),b1=document.getElementById('ffBtn1'),b2=document.getElementById('ffBtn2'),b3=document.getElementById('ffBtn3');
+  b0.className='stage-btn done-s';b0.disabled=true;
+  b1.className='stage-btn'+(stage===0?' go':'');b1.disabled=(stage!==0);
+  b2.className='stage-btn'+(stage===1?' go':'');b2.disabled=(stage!==1);
+  b3.className='stage-btn'+(stage===2?' go':'');b3.disabled=(stage!==2);
+  if(stage>0)b1.className='stage-btn done-s';
+  if(stage>1)b2.className='stage-btn done-s';
+  if(stage>2)b3.className='stage-btn done-s';
+}
+
+function ffStage1(){
+  if(ffStage!==0)return;ffStage=1;
+  document.querySelectorAll('#ffTerms .tc-factors').forEach(f=>f.classList.add('show'));
+  var ex=FF[ffKey];
+  var hb=document.getElementById('ffHcfBox');
+  document.getElementById('ffHcfVal').textContent='HCF = '+ex.hcf;
+  document.getElementById('ffHcfExplain').textContent=ex.hcfExplain;
+  hb.classList.add('show');
+  setFFBtns(1);
+}
+
+function ffStage2(){
+  if(ffStage!==1)return;ffStage=2;
+  var ex=FF[ffKey];
+  var fb=document.getElementById('ffFactoredBox');
+  document.getElementById('ffFactExpr').textContent=ex.factorisedLabel;
+  var fs=document.getElementById('ffFactSteps');
+  fs.innerHTML='';
+  ex.divSteps.forEach(function(s){
+    var d=document.createElement('div');d.className='fact-step';d.textContent=s;fs.appendChild(d);
+  });
+  fb.classList.add('show');
+  setFFBtns(2);
+}
+
+function ffStage3(){
+  if(ffStage!==2)return;ffStage=3;
+  var ex=FF[ffKey];
+  document.getElementById('ffVerifyContent').textContent=ex.verifyText;
+  document.getElementById('ffVerifyBox').classList.add('show');
+  setFFBtns(3);
+}
+
+// initialise
+ffReset();
+
+// ─── STEP REVEAL ─────────────────────────────────────────────────────────────
+var stepIdx={ex1steps:0,ex2steps:0,ex3steps:0,ex4steps:0,ex5steps:0};
+function revealStep(id,btnId,total){
+  var nxt=stepIdx[id]+1;
+  var rows=document.querySelectorAll('#'+id+' .step-row');
+  if(nxt<rows.length){
+    rows[nxt].classList.add('visible');
+    stepIdx[id]=nxt;
+    if(nxt===rows.length-1){
+      document.getElementById(btnId).disabled=true;
+      document.getElementById(btnId.replace('btn','done')).style.display='block';
+    }
+  }
+}
+
+// ─── ERROR DETECTIVE ─────────────────────────────────────────────────────────
+function selectEdLine(el){
+  el.closest('.ed-working').querySelectorAll('.ed-line').forEach(l=>l.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function revealEd(workId,revealId){
+  document.querySelectorAll('#'+workId+' .ed-line').forEach(function(l){
+    l.classList.add(l.dataset.correct==='true'?'revealed-wrong':'revealed-ok');
+    l.onclick=null;
+  });
+  document.getElementById(revealId).classList.add('show');
+}
+
+// ─── WORD PROBLEMS ───────────────────────────────────────────────────────────
+function toggleSolution(id){document.getElementById(id).classList.toggle('show');}
+
+// ─── PRACTICE ────────────────────────────────────────────────────────────────
+function showTier(tier,btn){
+  document.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tier'+tier).classList.add('active');
+  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function mcqAns(btn){
+  var card=btn.closest('.mcq-card');
+  if(card._done)return;card._done=true;
+  card.querySelectorAll('.opt-btn').forEach(b=>{b.classList.add('locked');b.style.pointerEvents='none';});
+  var ok=btn.dataset.result==='correct';
+  btn.classList.add(ok?'correct-ans':'wrong-ans');
+  var fb=card.querySelector('.mcq-feedback');
+  fb.textContent=(ok?'✅ ':'❌ ')+btn.dataset.msg;
+  fb.className='mcq-feedback show '+(ok?'ok':'bad');
+}
+function toggleHint(id){document.getElementById(id).classList.toggle('show');}
+</script>
+</body>
+</html>
