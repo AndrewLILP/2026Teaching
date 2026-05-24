@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Detective — Algebraic Techniques</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --error: #ef4444;
+            --error-bg: #fef2f2;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        header h2 {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        .instructions {
+            background-color: #eee9ff;
+            color: #3b28cc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            font-weight: 600;
+            max-width: 700px;
+        }
+
+        /* Tabs Navigation */
+        .tabs-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.75rem 1.25rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Content Sections */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Case Cards */
+        .case-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .case-header {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .case-intro {
+            font-style: italic;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        /* Workings Lines */
+        .workings-container {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+        }
+
+        .working-line {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            background-color: var(--bg-card);
+        }
+
+        .working-line:last-child {
+            border-bottom: none;
+        }
+
+        .working-line:hover {
+            background-color: #f1f5f9;
+        }
+
+        .line-number {
+            width: 2.5rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-right: 1px solid var(--border);
+            margin-right: 1rem;
+            user-select: none;
+        }
+
+        .line-math {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        /* Feedback Styles */
+        .working-line.wrong-guess {
+            background-color: var(--error-bg);
+            color: #b91c1c;
+        }
+        
+        .working-line.wrong-guess .line-number {
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        .working-line.correct-guess {
+            background-color: var(--success-bg);
+            color: #047857;
+        }
+
+        .working-line.correct-guess .line-number {
+            color: #047857;
+            border-color: #6ee7b7;
+        }
+
+        /* Fraction Rendering System */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 0.25rem;
+            line-height: 1.1;
+            font-size: 0.95rem;
+        }
+
+        .frac .num {
+            border-bottom: 1.5px solid currentColor;
+            padding-bottom: 1px;
+        }
+
+        .frac .den {
+            padding-top: 1px;
+        }
+
+        /* Control Reveal Buttons */
+        .reveal-btn {
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .reveal-btn:hover {
+            background-color: #0f172a;
+        }
+
+        /* Explanation Panels */
+        .explanation-panel {
+            display: none;
+            margin-top: 1.25rem;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            background-color: #f8fafc;
+            border-left: 4px solid var(--primary);
+        }
+
+        .error-type-badge {
+            display: inline-block;
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .explanation-text {
+            margin-bottom: 1rem;
+            color: #334155;
+        }
+
+        .correct-box {
+            background-color: var(--success-bg);
+            border: 1px solid #a7f3d0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            color: #065f46;
+        }
+
+        .correct-box-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .correct-working-lines {
+            font-size: 1.05rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .correct-working-lines div {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Error Detective</h1>
+        <h2>Algebraic Techniques &middot; MA4-ALG-C-01 &middot; Stage 4</h2>
+        <div class="instructions">
+            Each case contains exactly one error. Read every line carefully, click the line you think is wrong, then reveal the answer and explanation.
+        </div>
+    </header>
+
+    <nav class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab(event, 'tab1')">1. Notation &amp; Substitution</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab2')">2. Simplifying Expressions</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab3')">3. Products &amp; Fractions</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab4')">4. Expanding &amp; Factorising</button>
+    </nav>
+
+    <div id="tab1" class="tab-content active">
+        
+        <div class="case-card">
+            <div class="case-header">Case 1: Word-to-Algebra Translation</div>
+            <div class="case-intro">An algebraic expression is generated to represent the phrasing: "6 less than three times a number x".</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Identify "three times a number x" as 3x.</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Identify "6 less than" as a subtraction step involving 6.</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Construct final expression: 6 &minus; 3x</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Reversal of Subtraction Order</span>
+                <p class="explanation-text">The phrase "6 less than" indicates that 6 must be subtracted <strong>from</strong> the quantity 3x. Writing 6 &minus; 3x indicates subtracting 3x from 6, which completely alters the values and meanings of the variables.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>1. Three times a number x = 3x</div>
+                        <div>2. 6 less than that value implies subtracting 6 from it</div>
+                        <div>3. Correct Expression = 3x &minus; 6</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-card">
+            <div class="case-header">Case 2: Substitution with Negative Powers</div>
+            <div class="case-intro">The expression 4n<sup>2</sup> &minus; 5n is evaluated by substituting n = &minus;3.</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Substitute n = &minus;3: 4(&minus;3)<sup>2</sup> &minus; 5(&minus;3)</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Evaluate powers: 4(&minus;9) &minus; 5(&minus;3)</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Multiply remaining factors: &minus;36 &minus; (&minus;15)</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Compute final value: &minus;36 + 15 = &minus;21</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Incorrect Squaring of Negative Bases</span>
+                <p class="explanation-text">Squaring any real number, negative or positive, always results in a positive value because a negative multiplied by a negative yields a positive product. Here, (&minus;3) &times; (&minus;3) must equal positive 9, not &minus;9.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>4(&minus;3)<sup>2</sup> &minus; 5(&minus;3)</div>
+                        <div>= 4(9) &minus; 5(&minus;3)</div>
+                        <div>= 36 &minus; (&minus;15)</div>
+                        <div>= 36 + 15 = 51</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="tab2" class="tab-content">
+        
+        <div class="case-card">
+            <div class="case-header">Case 1: Collecting Like Terms with Signs</div>
+            <div class="case-intro">An expression containing mixed terms is simplified: 7a + 4b &minus; a + 2b</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Group like algebraic items together: (7a + a) + (4b &minus; 2b)</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Combine the gathered a-terms: 7a + a = 8a</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Combine the gathered b-terms: 4b &minus; 2b = 2b</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Synthesize total components: 8a + 2b</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Misplacement of Term Operators</span>
+                <p class="explanation-text">The operational sign directly preceding an algebraic term belongs exclusively to that term. When rearranging terms using the commutative law, the minus sign attached to the single 'a' and the plus sign attached to '2b' were decoupled incorrectly, reversing operations completely.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>7a + 4b &minus; a + 2b</div>
+                        <div>= 7a &minus; a + 4b + 2b</div>
+                        <div>= (7a &minus; 1a) + (4b + 2b)</div>
+                        <div>= 6a + 6b</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-card">
+            <div class="case-header">Case 2: Implicit Unit Coefficients</div>
+            <div class="case-intro">The following polynomial expression is collected and simplified: 5x<sup>2</sup> + y &minus; x<sup>2</sup> &minus; y</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Group similar variable powers: (5x<sup>2</sup> &minus; x<sup>2</sup>) + (y &minus; y)</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Simplify the x<sup>2</sup> terms: 5x<sup>2</sup> &minus; x<sup>2</sup> = 5</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Simplify the y terms: y &minus; y = 0</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Add the final components: 5 + 0 = 5</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Dropping Variable Instead of Subtracting Coefficient</span>
+                <p class="explanation-text">A standalone variable term like x<sup>2</sup> has an implicit coefficient of 1 (meaning 1x<sup>2</sup>). Subtracting it from 5x<sup>2</sup> yields 4x<sup>2</sup>. The student incorrectly subtracted the entire variable structure away, leaving only the bare numerical difference.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>5x<sup>2</sup> + y &minus; x<sup>2</sup> &minus; y</div>
+                        <div>= (5x<sup>2</sup> &minus; 1x<sup>2</sup>) + (1y &minus; 1y)</div>
+                        <div>= 4x<sup>2</sup> + 0</div>
+                        <div>= 4x<sup>2</sup></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="tab3" class="tab-content">
+        
+        <div class="case-card">
+            <div class="case-header">Case 1: Multiplying Algebraic Terms</div>
+            <div class="case-intro">A multiplication problem containing mixed single terms is calculated: 3ab &times; 6bc</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Isolate and group the coefficients: 3 &times; 6 = 18</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Group algebraic elements: a &times; b &times; b &times; c</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Combine continuous duplicate variables: b &times; b = 2b</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Assemble product: 18a(2b)c = 36abc</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Confusing Exponents with Coefficient Multipliers</span>
+                <p class="explanation-text">Multiplying an algebraic term by itself yields a squared power index, not a numerical factor. Therefore, b &times; b must equal b<sup>2</sup>. Writing 2b signifies addition (b + b) rather than multiplicative power accumulation.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>3ab &times; 6bc</div>
+                        <div>= (3 &times; 6) &times; a &times; (b &times; b) &times; c</div>
+                        <div>= 18 &times; a &times; b<sup>2</sup> &times; c</div>
+                        <div>= 18ab<sup>2</sup>c</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-card">
+            <div class="case-header">Case 2: Cancelling Algebraic Fractions</div>
+            <div class="case-intro">An algebraic fraction with multiple variables is fully simplified: 
+                <div class="frac"><span class="num">12x<sup>2</sup>y</span><span class="den">4xy</span></div>
+            </div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Expand variable indices explicitly: 
+                        <div class="frac"><span class="num">12 &times; x &times; x &times; y</span><span class="den">4 &times; x &times; y</span></div>
+                    </span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Divide coefficients: 12 &divide; 4 = 3</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Cancel matching variable pairs from numerator and denominator, evaluating matching y terms as 0.</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Collect remaining elements: 3 &times; x &times; 0 = 0</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Evaluating Division Identity as Zero</span>
+                <p class="explanation-text">When cancelling matching variables in fractions, you are dividing a term by itself. Any non-zero base divided by itself equals 1, not 0 (i.e., y &divide; y = 1). Setting this calculation to zero nullifies the entire product incorrectly.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>
+                            <div class="frac"><span class="num">12x<sup>2</sup>y</span><span class="den">4xy</span></div>
+                            &nbsp;= 3 &times;&nbsp;
+                            <div class="frac"><span class="num">x &times; x</span><span class="den">x</span></div>
+                            &nbsp;&times;&nbsp;
+                            <div class="frac"><span class="num">y</span><span class="den">y</span></div>
+                        </div>
+                        <div>= 3 &times; x &times; 1</div>
+                        <div>= 3x</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="tab4" class="tab-content">
+        
+        <div class="case-card">
+            <div class="case-header">Case 1: Distributive Law Expansion</div>
+            <div class="case-intro">The distributive law is applied to clear grouping symbols: &minus;4(2x &minus; 3)</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Distribute factor to first inner term: (&minus;4) &times; 2x = &minus;8x</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Distribute factor to second inner term: (&minus;4) &times; 3 = &minus;12</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Combine results to form expression: &minus;8x &minus; 12</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Neglecting Parent Sign During Expansion</span>
+                <p class="explanation-text">The second term inside the grouping boundary carries a negative operator (&minus;3). When distributed across the outer multiplier, you must evaluate negative 4 multiplied by negative 3, which resolves to positive 12.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>&minus;4(2x &minus; 3)</div>
+                        <div>= (&minus;4 &times; 2x) + (&minus;4 &times; &minus;3)</div>
+                        <div>= &minus;8x + 12</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="case-card">
+            <div class="case-header">Case 2: Factorising via Highest Common Factor</div>
+            <div class="case-intro">The binomial expression 6a<sup>2</sup>b + 9ab is factorised by extracting its HCF components.</div>
+            <div class="workings-container">
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 1</span>
+                    <span class="line-math">Find numerical coefficient HCF: HCF(6, 9) = 3</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 2</span>
+                    <span class="line-math">Find literal variable common factors: both terms contain 'a' and 'b'</span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 3</span>
+                    <span class="line-math">Construct total extracted factor block: 3ab</span>
+                </div>
+                <div class="working-line" data-correct="true">
+                    <span class="line-number">Line 4</span>
+                    <span class="line-math">Divide components to establish inner brackets: 6a<sup>2</sup>b &divide; 3ab = 2a<sup>2</sup></span>
+                </div>
+                <div class="working-line" data-correct="false">
+                    <span class="line-number">Line 5</span>
+                    <span class="line-math">Complete factored layout: 3ab(2a<sup>2</sup> + 3)</span>
+                </div>
+            </div>
+            <button class="reveal-btn" onclick="revealExplanation(this)">Reveal Error &amp; Explanation</button>
+            <div class="explanation-panel">
+                <span class="error-type-badge">Incomplete Index Reduction during Division</span>
+                <p class="explanation-text">When dividing 6a<sup>2</sup>b by 3ab to identify leftover values, the 'a' variables must resolve under index laws: a<sup>2</sup> &divide; a = a<sup>1</sup> (or simply a). The student kept the power index at 2, failure to deduct the factor's 'a' power.</p>
+                <div class="correct-box">
+                    <div class="correct-box-title">Correct Working</div>
+                    <div class="correct-working-lines">
+                        <div>6a<sup>2</sup>b + 9ab</div>
+                        <div>1. HCF of 6 and 9 is 3. Common algebraic factor is ab. Total factor = 3ab</div>
+                        <div>2. First term calculation: 6a<sup>2</sup>b &divide; 3ab = 2a</div>
+                        <div>3. Second term calculation: 9ab &divide; 3ab = 3</div>
+                        <div>4. Complete Factored Expression = 3ab(2a + 3)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Initialize interaction handlers when document loads
+    document.addEventListener('DOMContentLoaded', () => {
+        const lines = document.querySelectorAll('.working-line');
+        lines.forEach(line => {
+            line.addEventListener('click', () => {
+                // Get sibling lines in the same container card
+                const parentContainer = line.closest('.workings-container');
+                const siblingLines = parentContainer.querySelectorAll('.working-line');
+                
+                // Clear existing selections in this block
+                siblingLines.forEach(l => {
+                    l.classList.remove('wrong-guess', 'correct-guess');
+                });
+
+                // Check accuracy state
+                const isCorrectErrorLine = line.getAttribute('data-correct') === 'true';
+                if (isCorrectErrorLine) {
+                    line.classList.add('correct-guess');
+                } else {
+                    line.classList.add('wrong-guess');
+                }
+            });
+        });
+    });
+
+    // Tab Interface Switcher
+    function switchTab(event, tabId) {
+        // Toggle tab menu elements active visual states
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        // Toggle visibility of specific blocks
+        const targetContents = document.querySelectorAll('.tab-content');
+        targetContents.forEach(content => content.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // Expand Explanatory Sub-Panels
+    function revealExplanation(buttonElement) {
+        const structuralPanel = buttonElement.nextElementSibling;
+        if (structuralPanel.style.display === 'block') {
+            structuralPanel.style.display = 'none';
+            buttonElement.textContent = 'Reveal Error & Explanation';
+        } else {
+            structuralPanel.style.display = 'block';
+            buttonElement.textContent = 'Hide Explanation';
+            
+            // Automatically find the correct error line to highlight if the user couldn't find it
+            const workingsContainer = buttonElement.previousElementSibling;
+            const targetLine = workingsContainer.querySelector('[data-correct="true"]');
+            if (targetLine && !targetLine.classList.contains('correct-guess')) {
+                targetLine.classList.add('correct-guess');
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
