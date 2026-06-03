@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3 — Interpreting Data | MA4-DAT-C-01</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4EFE9;--white:#fff;--border:#DDD5CA;
+  --accent:#6B8C3A;--accent-dark:#3F5420;--accent-light:#EFF4E5;
+  --num:#2B6CB0;--cat:#C47A1E;
+  --ok:#276C3A;--ok-bg:#E8F5EE;--err:#B83030;--err-bg:#FDEAEA;
+  --warn:#7A5200;--warn-bg:#FFF3CD;
+  --text:#1A1A2E;--muted:#5A5A6E;--radius:14px;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);font-size:18px;line-height:1.75;min-height:100vh;}
+.topbar{background:var(--accent-dark);color:#fff;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.topbar a{color:#fff;text-decoration:none;font-size:0.88rem;font-weight:700;opacity:0.85;}
+.topbar a:hover{opacity:1;}
+.topbar-title{font-size:1rem;font-weight:900;}
+.hero{background:linear-gradient(135deg,var(--accent-dark),var(--accent));color:#fff;padding:36px 24px 32px;text-align:center;}
+.hero .badge{display:inline-block;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.35);border-radius:20px;padding:4px 16px;font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:12px;}
+.hero h1{font-size:clamp(1.6rem,4.5vw,2.4rem);font-weight:900;margin-bottom:8px;}
+.hero p{font-size:1rem;opacity:0.9;max-width:560px;margin:0 auto;}
+.tab-bar{background:var(--white);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 12px;gap:4px;position:sticky;top:0;z-index:100;}
+.tab-btn{flex-shrink:0;padding:14px 16px;border:none;background:none;font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color 0.2s,border-color 0.2s;white-space:nowrap;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover:not(.active){color:var(--text);}
+.tab-panel{display:none;max-width:900px;margin:0 auto;padding:36px 20px 60px;}
+.tab-panel.active{display:block;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:28px 32px;margin-bottom:24px;}
+.card h2{font-size:1.2rem;font-weight:800;margin-bottom:14px;}
+.card h3{font-size:1rem;font-weight:800;margin-bottom:10px;}
+/* FLIP CARDS */
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+.flip-card{height:280px;perspective:1000px;cursor:pointer;}
+.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 0.5s;}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:2px solid var(--border);padding:22px;display:flex;flex-direction:column;}
+.flip-front{background:var(--white);align-items:center;justify-content:center;text-align:center;}
+.flip-back{background:var(--accent-light);transform:rotateY(180deg);overflow:auto;}
+.flip-front .word{font-size:1.2rem;font-weight:900;color:var(--accent);margin-bottom:8px;}
+.flip-front .hint{font-size:0.82rem;color:var(--muted);font-weight:600;}
+.frayer{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.83rem;line-height:1.5;}
+.frayer-def{grid-column:1/-1;background:var(--accent);color:#fff;border-radius:8px;padding:8px 12px;font-weight:700;}
+.frayer-box{background:var(--white);border-radius:8px;padding:8px 10px;}
+.frayer-box strong{display:block;font-size:0.75rem;color:var(--muted);font-weight:800;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+/* CHECKLIST */
+.checklist{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.check-item{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--bg);border-radius:10px;border-left:4px solid var(--accent);}
+.check-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.check-text{font-size:0.93rem;line-height:1.6;}
+.check-text strong{display:block;font-weight:800;margin-bottom:2px;}
+/* MISLEAD CARDS */
+.mislead-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:8px;}
+.mislead-card{background:var(--warn-bg);border:2px solid #F0C040;border-radius:12px;padding:18px 20px;}
+.mislead-title{font-weight:800;font-size:0.95rem;margin-bottom:8px;color:var(--warn);}
+.mislead-desc{font-size:0.88rem;line-height:1.6;color:#4A3800;}
+/* INTERACTIVE DETECTOR */
+.detector-wrap{display:flex;flex-direction:column;gap:20px;}
+.detector-card{background:var(--white);border:2px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.detector-head{padding:16px 22px;border-bottom:1px solid var(--border);font-weight:800;font-size:0.97rem;}
+.detector-graphs{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.detector-graph{padding:18px 16px;}
+.detector-graph.reveal{display:none;}
+.detector-graph.reveal.show{display:block;}
+.graph-label{font-size:0.8rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.graph-label.bad{color:var(--err);}
+.graph-label.good{color:var(--ok);}
+.flaw-opts{display:flex;flex-direction:column;gap:8px;padding:16px 22px;border-top:1px solid var(--border);}
+.flaw-opt{padding:11px 16px;border-radius:10px;border:2px solid var(--border);background:var(--bg);font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;text-align:left;min-height:44px;transition:border-color 0.2s,background 0.2s;}
+.flaw-opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-light);}
+.flaw-opt.correct{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);}
+.flaw-opt.wrong{background:var(--err-bg);border-color:var(--err);color:var(--err);}
+.flaw-opt:disabled{cursor:default;}
+.flaw-fb{padding:12px 22px;font-size:0.9rem;font-weight:700;display:none;border-top:1px solid var(--border);}
+.flaw-fb.show{display:block;}
+.flaw-fb.ok{background:var(--ok-bg);color:var(--ok);}
+.flaw-fb.bad{background:var(--err-bg);color:var(--err);}
+.reveal-btn{margin:0 22px 16px;padding:10px 22px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;display:none;}
+.reveal-btn.show{display:inline-block;}
+.reveal-btn:hover{opacity:0.88;}
+/* WORKED */
+.example-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden;}
+.ex-header{padding:18px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border);}
+.ex-title{font-weight:900;font-size:1rem;}
+.ex-tier{font-size:0.78rem;font-weight:800;padding:4px 12px;border-radius:20px;}
+.ex-body{padding:22px 24px;}
+.ex-question{font-weight:700;margin-bottom:18px;padding:12px 16px;background:var(--bg);border-radius:10px;border-left:4px solid var(--accent);}
+.step{display:none;animation:fadeIn 0.3s;}
+.step.show{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.step-row{display:grid;grid-template-columns:36px 1fr;gap:12px;margin-bottom:12px;align-items:start;}
+.step-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.88rem;color:#fff;background:var(--accent);flex-shrink:0;margin-top:2px;}
+.step-action{font-weight:800;font-size:0.95rem;margin-bottom:2px;}
+.step-math{font-size:1rem;margin-bottom:4px;padding:10px 14px;background:var(--bg);border-radius:8px;}
+.step-why{font-style:italic;font-size:0.88rem;color:var(--muted);}
+.ex-nav{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.btn{padding:10px 22px;border-radius:10px;border:none;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:800;cursor:pointer;transition:opacity 0.2s;}
+.btn-green{background:var(--accent);color:#fff;}
+.btn-green:hover{opacity:0.88;}
+.btn-outline{background:transparent;border:2px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+/* ERROR DET */
+.detective-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden;}
+.det-header{background:#FFF8F0;padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.det-header h3{font-size:1rem;font-weight:900;}
+.working-line{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px 16px;border-bottom:1px solid #f0ece8;align-items:start;font-size:0.93rem;cursor:pointer;transition:background 0.15s;}
+.working-line:hover{background:#FFF8F0;}
+.working-line.selected-wrong{background:var(--err-bg);border-left:4px solid var(--err);}
+.working-line.selected-wrong .line-num{background:var(--err);}
+.line-num{width:26px;height:26px;border-radius:50%;background:#D0C8C0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:800;flex-shrink:0;margin-top:3px;}
+.det-reveal{display:none;padding:20px 24px;background:var(--err-bg);border-top:2px solid var(--err);}
+.det-reveal.show{display:block;}
+.det-correct{padding:16px 20px;background:var(--ok-bg);border-radius:10px;margin-top:12px;font-size:0.92rem;}
+/* WORD PROBLEMS */
+.wp-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:24px;overflow:hidden;}
+.wp-header{padding:16px 24px;border-bottom:1px solid var(--border);font-weight:900;font-size:1rem;}
+.wp-scenario{padding:18px 24px;background:var(--bg);border-bottom:1px solid var(--border);font-size:0.95rem;}
+.newman-step{padding:14px 24px;border-bottom:1px solid var(--border);}
+.newman-step:last-child{border-bottom:none;}
+.newman-label{font-size:0.8rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px;}
+.frame{font-size:0.92rem;color:var(--muted);font-style:italic;background:var(--bg);padding:10px 14px;border-radius:8px;border-left:3px solid var(--accent);}
+.wp-sol{display:none;padding:18px 24px;background:var(--ok-bg);border-top:2px solid var(--ok);}
+.wp-sol.show{display:block;}
+/* MCQ */
+.tier-switch{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.tier-btn{padding:10px 22px;border-radius:30px;border:2px solid var(--border);background:var(--white);font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:800;cursor:pointer;transition:all 0.2s;}
+.tier-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.tier-panel{display:none;}
+.tier-panel.active{display:block;}
+.tier-desc{font-size:0.9rem;color:var(--muted);margin-bottom:20px;padding:12px 16px;background:var(--white);border-radius:10px;border:1px solid var(--border);}
+.mcq-block{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:22px 24px;margin-bottom:18px;}
+.mcq-q{font-weight:800;margin-bottom:14px;font-size:0.97rem;}
+.mcq-opts{display:flex;flex-direction:column;gap:8px;}
+.mcq-opt{padding:12px 16px;border-radius:10px;border:2px solid var(--border);background:var(--bg);font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:600;cursor:pointer;text-align:left;transition:border-color 0.2s,background 0.2s;min-height:44px;}
+.mcq-opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-light);}
+.mcq-opt:disabled{cursor:default;}
+.mcq-opt.correct{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);}
+.mcq-opt.wrong{background:var(--err-bg);border-color:var(--err);color:var(--err);}
+.mcq-fb{margin-top:10px;padding:10px 14px;border-radius:8px;font-size:0.88rem;font-weight:700;display:none;}
+.mcq-fb.show{display:block;}
+.mcq-fb.ok{background:var(--ok-bg);color:var(--ok);}
+.mcq-fb.bad{background:var(--err-bg);color:var(--err);}
+.hint-btn{background:none;border:none;font-family:'Nunito',sans-serif;font-size:0.85rem;font-weight:700;color:var(--accent);cursor:pointer;padding:4px 0;margin-top:8px;}
+.hint-box{display:none;margin-top:8px;padding:10px 14px;background:#FFFDE7;border:1px solid #F9C700;border-radius:8px;font-size:0.87rem;}
+.hint-box.show{display:block;}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:#fff;text-decoration:none;font-size:0.88rem;font-weight:700;opacity:0.85;}
+.back-link:hover{opacity:1;}
+@media(max-width:640px){
+  .flip-grid{grid-template-columns:1fr;}
+  .detector-graphs{grid-template-columns:1fr;}
+  .card{padding:20px 18px;}
+  .tab-btn{font-size:0.8rem;padding:12px 12px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-link" href="dat-index.html">← Back to Unit</a>
+  <span class="topbar-title">Lesson 3 — Interpreting Data</span>
+  <span style="font-size:0.82rem;opacity:0.75;">MA4-DAT-C-01</span>
+</div>
+
+<div class="hero">
+  <div class="badge">Lesson 3 of 3</div>
+  <h1>Interpreting Data</h1>
+  <p>Trends, outliers, predictions, misleading graphs, and drawing justified conclusions</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="openTab('kw')">📚 Key Words</button>
+  <button class="tab-btn" onclick="openTab('con')">💡 Concepts</button>
+  <button class="tab-btn" onclick="openTab('int')">🔄 Interactive</button>
+  <button class="tab-btn" onclick="openTab('we')">✏️ Worked Examples</button>
+  <button class="tab-btn" onclick="openTab('ed')">🔍 Error Detective</button>
+  <button class="tab-btn" onclick="openTab('wp')">📖 Word Problems</button>
+  <button class="tab-btn" onclick="openTab('prac')">✅ Practice</button>
+</div>
+
+<!-- ===== TAB 1: KEY WORDS ===== -->
+<div id="tab-kw" class="tab-panel active">
+  <div class="card">
+    <h2>📚 Key Vocabulary</h2>
+    <p style="font-size:0.92rem;color:var(--muted);margin-bottom:20px;">Click or tap each card to flip it and see the full definition, examples, and non-examples.</p>
+    <div class="flip-grid">
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Trend</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">A general pattern or direction in data over time — increasing, decreasing, or remaining steady</div>
+            <div class="frayer-box"><strong>Examples</strong>Temperature rising across summer months; sales increasing each quarter</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>A single data point; random fluctuation with no clear direction</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>Trends describe the overall direction, ignoring short-term ups and downs</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Outlier</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">A data value that is significantly different from the rest of the dataset</div>
+            <div class="frayer-box"><strong>Examples</strong>A score of 98 when most students scored 55–70; a temperature of 45°C in a dataset of 20–25°C values</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>A value at the high or low end of a normal spread; the maximum value in a symmetric dataset</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>Outliers may indicate errors, unusual events, or genuinely extreme cases</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Prediction</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">An estimate of a future (or unknown) value based on patterns observed in the data</div>
+            <div class="frayer-box"><strong>Examples</strong>Predicting next month's sales based on a rising trend; estimating a student's score from a pattern</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>Stating a fact already shown in the graph; guessing without reference to data</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>Predictions must be justified with reference to patterns in the data</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Misrepresentation</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">When a graph is designed or presented in a way that gives a false or misleading impression of the data</div>
+            <div class="frayer-box"><strong>Examples</strong>Truncated y-axis; inconsistent scale intervals; 3D effects distorting proportions</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>A graph with a clear title and accurate scale; a sector graph with correct proportions</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>Misrepresentation can be intentional (persuasion) or accidental (poor design)</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Conclusion</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">A statement summarising what the data shows, supported by specific evidence from the graph</div>
+            <div class="frayer-box"><strong>Examples</strong>"Sales increased by 40% from January to March, suggesting strong early-year demand."</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>"The graph looks interesting." (too vague, no evidence)</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>Always link your conclusion to specific data values or features visible in the graph</div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="this.classList.toggle('flipped')">
+        <div class="flip-inner">
+          <div class="flip-front"><div class="word">Scale</div><div class="hint">Tap to flip →</div></div>
+          <div class="flip-back"><div class="frayer">
+            <div class="frayer-def">The set of evenly spaced values on an axis — the scale determines how data is visually represented</div>
+            <div class="frayer-box"><strong>Examples</strong>Y-axis: 0, 10, 20, 30 (even intervals); x-axis: Jan, Feb, Mar (time sequence)</div>
+            <div class="frayer-box"><strong>Non-Examples</strong>Unequal intervals like 0, 5, 20, 50 on an axis; starting at a non-zero value without indicating it</div>
+            <div class="frayer-box" style="grid-column:1/-1"><strong>Key Idea</strong>An inappropriate scale is one of the most common ways graphs mislead readers</div>
+          </div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 2: CONCEPTS ===== -->
+<div id="tab-con" class="tab-panel">
+
+  <div class="card">
+    <h2>What to look for when interpreting a graph</h2>
+    <div class="checklist">
+      <div class="check-item">
+        <span class="check-icon">📈</span>
+        <div class="check-text"><strong>Overall trend</strong>Is the data going up, going down, or staying roughly the same? Describe the general direction over the full time period.</div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">⬆️⬇️</span>
+        <div class="check-text"><strong>Maximum and minimum</strong>Identify the highest and lowest values. When did they occur? What do they mean in context?</div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">💥</span>
+        <div class="check-text"><strong>Outliers</strong>Are there values that stand out as unusually high or low? Consider whether they represent an error or a genuine event.</div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">🔄</span>
+        <div class="check-text"><strong>Clusters and gaps</strong>Where do data points bunch together? Where are there gaps? What does this tell us about the distribution?</div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">🔮</span>
+        <div class="check-text"><strong>Prediction</strong>Based on the trend, what might happen next? State your prediction and the pattern that supports it.</div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon">⚠️</span>
+        <div class="check-text"><strong>Misleading features</strong>Does the scale start at zero? Are intervals even? Does the graph type suit the data? Could the visual design exaggerate or hide patterns?</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚠️ Common ways graphs mislead</h2>
+    <div class="mislead-grid">
+      <div class="mislead-card">
+        <div class="mislead-title">🔪 Truncated Y-axis</div>
+        <div class="mislead-desc">The y-axis starts above zero, making small differences look dramatic. A 5% increase can look like a 500% increase when the axis starts at 95%.</div>
+      </div>
+      <div class="mislead-card">
+        <div class="mislead-title">📏 Inconsistent scale</div>
+        <div class="mislead-desc">Intervals on the axis are unequal — e.g. jumping from 0→10→20→100. This distorts the visual distance between values.</div>
+      </div>
+      <div class="mislead-card">
+        <div class="mislead-title">🍒 Cherry-picked data</div>
+        <div class="mislead-desc">Only a favourable portion of the time period is shown, hiding a broader declining trend or inconvenient data points.</div>
+      </div>
+      <div class="mislead-card">
+        <div class="mislead-title">🎲 3D effects</div>
+        <div class="mislead-desc">Three-dimensional sector graphs or bar charts distort proportions — slices at the "front" appear larger than they really are.</div>
+      </div>
+      <div class="mislead-card">
+        <div class="mislead-title">🏷️ Missing labels or title</div>
+        <div class="mislead-desc">Without axis labels, units, or a title, the reader cannot correctly interpret what the graph shows or how large the values are.</div>
+      </div>
+      <div class="mislead-card">
+        <div class="mislead-title">📊 Wrong graph type</div>
+        <div class="mislead-desc">Using a graph type that doesn't suit the data — e.g. a line graph for unrelated categories — implies a relationship that doesn't exist.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Quick Check — Interpreting graphs</h2>
+    <div class="mcq-block" style="margin-bottom:0;">
+      <div class="mcq-q">A line graph shows a company's monthly profits over 12 months. The y-axis begins at $900,000. Profits ranged from $920,000 to $960,000. The graph visually suggests profits "doubled." Which misleading technique is being used?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Cherry-picking involves showing only a selected time period — here all 12 months are shown." onclick="mcqAns(this)">Cherry-picked data range</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! The y-axis starts at $900,000 instead of $0. A $40,000 increase (about 4%) looks like a 100% increase because the baseline is hidden." onclick="mcqAns(this)">Truncated y-axis</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Inconsistent intervals would mean unequal gaps between scale markings — the problem here is where the axis starts." onclick="mcqAns(this)">Inconsistent scale intervals</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A 3D effect distorts proportions in sector or bar graphs — this example uses a line graph with a scale issue." onclick="mcqAns(this)">3D perspective effect</button>
+      </div>
+      <div class="mcq-fb"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TAB 3: INTERACTIVE ===== -->
+<div id="tab-int" class="tab-panel">
+  <div class="card" style="margin-bottom:8px;">
+    <h2>🔄 Misleading Graph Detector</h2>
+    <p style="font-size:0.92rem;color:var(--muted);">Each pair shows a flawed graph on the left. Identify the misleading technique, then reveal the corrected version.</p>
+  </div>
+
+  <!-- Case 1: Truncated axis -->
+  <div class="detector-card">
+    <div class="detector-head">Case 1 — App downloads over 6 months</div>
+    <div class="detector-graphs">
+      <div class="detector-graph">
+        <div class="graph-label bad">⚠️ Original (possibly misleading)</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- bars starting visually from near 90 -->
+          <rect x="40" y="95" width="22" height="35" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="67" y="80" width="22" height="50" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="94" y="65" width="22" height="65" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="121" y="50" width="22" height="80" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="148" y="35" width="22" height="95" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="175" y="20" width="22" height="110" fill="#6B8C3A" opacity="0.85"/>
+          <!-- y axis labels — truncated -->
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#555">9 000</text>
+          <text x="30" y="110" text-anchor="end" font-size="8" fill="#555">9 200</text>
+          <text x="30" y="87" text-anchor="end" font-size="8" fill="#555">9 400</text>
+          <text x="30" y="64" text-anchor="end" font-size="8" fill="#555">9 600</text>
+          <text x="30" y="41" text-anchor="end" font-size="8" fill="#555">9 800</text>
+          <text x="30" y="18" text-anchor="end" font-size="8" fill="#555">10 000</text>
+          <text x="51" y="143" text-anchor="middle" font-size="8" fill="#555">Jan</text>
+          <text x="78" y="143" text-anchor="middle" font-size="8" fill="#555">Feb</text>
+          <text x="105" y="143" text-anchor="middle" font-size="8" fill="#555">Mar</text>
+          <text x="132" y="143" text-anchor="middle" font-size="8" fill="#555">Apr</text>
+          <text x="159" y="143" text-anchor="middle" font-size="8" fill="#555">May</text>
+          <text x="186" y="143" text-anchor="middle" font-size="8" fill="#555">Jun</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Downloads</text>
+        </svg>
+      </div>
+      <div class="detector-graph reveal" id="det1-fix">
+        <div class="graph-label good">✅ Corrected version</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- bars from zero — 9000-10000 range on 0-12000 scale -->
+          <rect x="40" y="44" width="22" height="86" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="67" y="40" width="22" height="90" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="94" y="36" width="22" height="94" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="121" y="32" width="22" height="98" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="148" y="27" width="22" height="103" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="175" y="22" width="22" height="108" fill="#6B8C3A" opacity="0.85"/>
+          <!-- y axis from 0 -->
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#555">0</text>
+          <text x="30" y="110" text-anchor="end" font-size="8" fill="#555">2 500</text>
+          <text x="30" y="87" text-anchor="end" font-size="8" fill="#555">5 000</text>
+          <text x="30" y="64" text-anchor="end" font-size="8" fill="#555">7 500</text>
+          <text x="30" y="41" text-anchor="end" font-size="8" fill="#555">10 000</text>
+          <text x="51" y="143" text-anchor="middle" font-size="8" fill="#555">Jan</text>
+          <text x="78" y="143" text-anchor="middle" font-size="8" fill="#555">Feb</text>
+          <text x="105" y="143" text-anchor="middle" font-size="8" fill="#555">Mar</text>
+          <text x="132" y="143" text-anchor="middle" font-size="8" fill="#555">Apr</text>
+          <text x="159" y="143" text-anchor="middle" font-size="8" fill="#555">May</text>
+          <text x="186" y="143" text-anchor="middle" font-size="8" fill="#555">Jun</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Downloads (axis from 0)</text>
+        </svg>
+      </div>
+    </div>
+    <div class="flaw-opts" id="flaw1-opts">
+      <p style="font-size:0.88rem;font-weight:700;color:var(--muted);margin-bottom:4px;">What is misleading about this graph?</p>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The bars do have labels on the x-axis (Jan–Jun) — missing labels is not the problem here." onclick="flawChoice(this,1)">The x-axis has no labels</button>
+      <button class="flaw-opt" data-result="correct" data-msg="✅ Correct! The y-axis starts at 9,000 not 0. Downloads only grew from 9,050 to 9,950 — about 10% — but the graph makes it look like growth of nearly 1000%. Starting the axis at zero reveals the true modest increase." onclick="flawChoice(this,1)">The y-axis starts at 9,000 not zero, exaggerating the growth</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The intervals on this axis are consistent (every 200 units). The issue is where the axis starts." onclick="flawChoice(this,1)">The scale intervals are unequal</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ A column/bar graph can be appropriate for monthly values — the graph type itself isn't the problem here." onclick="flawChoice(this,1)">The wrong graph type was used</button>
+    </div>
+    <div class="flaw-fb" id="flaw1-fb"></div>
+    <button class="reveal-btn" id="det1-btn" onclick="showFix('det1')">Show corrected graph →</button>
+  </div>
+
+  <!-- Case 2: Cherry-picked data -->
+  <div class="detector-card">
+    <div class="detector-head">Case 2 — Restaurant monthly revenue ($)</div>
+    <div class="detector-graphs">
+      <div class="detector-graph">
+        <div class="graph-label bad">⚠️ Original (possibly misleading)</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- Only shows Aug-Dec (cherry-picked upswing) -->
+          <polyline points="55,105 88,88 121,68 154,48 187,30" stroke="#6B8C3A" stroke-width="2.5" fill="none"/>
+          <circle cx="55" cy="105" r="4" fill="#6B8C3A"/>
+          <circle cx="88" cy="88" r="4" fill="#6B8C3A"/>
+          <circle cx="121" cy="68" r="4" fill="#6B8C3A"/>
+          <circle cx="154" cy="48" r="4" fill="#6B8C3A"/>
+          <circle cx="187" cy="30" r="4" fill="#6B8C3A"/>
+          <text x="55" y="143" text-anchor="middle" font-size="8" fill="#555">Aug</text>
+          <text x="88" y="143" text-anchor="middle" font-size="8" fill="#555">Sep</text>
+          <text x="121" y="143" text-anchor="middle" font-size="8" fill="#555">Oct</text>
+          <text x="154" y="143" text-anchor="middle" font-size="8" fill="#555">Nov</text>
+          <text x="187" y="143" text-anchor="middle" font-size="8" fill="#555">Dec</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Revenue (Aug–Dec only)</text>
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#555">0</text>
+          <text x="30" y="75" text-anchor="end" font-size="8" fill="#555">50K</text>
+          <text x="30" y="18" text-anchor="end" font-size="8" fill="#555">100K</text>
+        </svg>
+      </div>
+      <div class="detector-graph reveal" id="det2-fix">
+        <div class="graph-label good">✅ Full year (12 months)</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- Full 12 months — dips in middle of year -->
+          <polyline points="48,65 62,58 76,72 90,88 103,100 117,108 131,105 145,88 158,68 172,48 186,30 200,22"
+            stroke="#6B8C3A" stroke-width="2.5" fill="none"/>
+          <circle cx="48" cy="65" r="3" fill="#6B8C3A"/>
+          <circle cx="62" cy="58" r="3" fill="#6B8C3A"/>
+          <circle cx="76" cy="72" r="3" fill="#6B8C3A"/>
+          <circle cx="90" cy="88" r="3" fill="#6B8C3A"/>
+          <circle cx="103" cy="100" r="3" fill="#6B8C3A"/>
+          <circle cx="117" cy="108" r="3" fill="#6B8C3A"/>
+          <circle cx="131" cy="105" r="3" fill="#6B8C3A"/>
+          <circle cx="145" cy="88" r="3" fill="#6B8C3A"/>
+          <circle cx="158" cy="68" r="3" fill="#6B8C3A"/>
+          <circle cx="172" cy="48" r="3" fill="#6B8C3A"/>
+          <circle cx="186" cy="30" r="3" fill="#6B8C3A"/>
+          <circle cx="200" cy="22" r="3" fill="#6B8C3A"/>
+          <text x="48" y="143" text-anchor="middle" font-size="7" fill="#555">J</text>
+          <text x="62" y="143" text-anchor="middle" font-size="7" fill="#555">F</text>
+          <text x="76" y="143" text-anchor="middle" font-size="7" fill="#555">M</text>
+          <text x="90" y="143" text-anchor="middle" font-size="7" fill="#555">A</text>
+          <text x="103" y="143" text-anchor="middle" font-size="7" fill="#555">M</text>
+          <text x="117" y="143" text-anchor="middle" font-size="7" fill="#555">J</text>
+          <text x="131" y="143" text-anchor="middle" font-size="7" fill="#555">J</text>
+          <text x="145" y="143" text-anchor="middle" font-size="7" fill="#555">A</text>
+          <text x="158" y="143" text-anchor="middle" font-size="7" fill="#555">S</text>
+          <text x="172" y="143" text-anchor="middle" font-size="7" fill="#555">O</text>
+          <text x="186" y="143" text-anchor="middle" font-size="7" fill="#555">N</text>
+          <text x="200" y="143" text-anchor="middle" font-size="7" fill="#555">D</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Full year — revenue dips mid-year</text>
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#555">0</text>
+          <text x="30" y="75" text-anchor="end" font-size="8" fill="#555">50K</text>
+          <text x="30" y="18" text-anchor="end" font-size="8" fill="#555">100K</text>
+        </svg>
+      </div>
+    </div>
+    <div class="flaw-opts" id="flaw2-opts">
+      <p style="font-size:0.88rem;font-weight:700;color:var(--muted);margin-bottom:4px;">What is misleading about this graph?</p>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The y-axis here starts at 0 and is correctly scaled — that's not the issue." onclick="flawChoice(this,2)">The y-axis doesn't start at zero</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ A line graph is appropriate here — it shows change over time. The graph type is correct." onclick="flawChoice(this,2)">The wrong graph type is used</button>
+      <button class="flaw-opt" data-result="correct" data-msg="✅ Correct! Only August to December (the upswing) is shown. The full-year graph reveals that revenue actually declined from January to July before recovering. Showing only the best months creates a false impression of consistent growth." onclick="flawChoice(this,2)">Only 5 months are shown — the declining period (Jan–Jul) has been hidden</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The labels show months correctly. Missing labels is not the issue — it's about which months are included." onclick="flawChoice(this,2)">The x-axis labels are missing</button>
+    </div>
+    <div class="flaw-fb" id="flaw2-fb"></div>
+    <button class="reveal-btn" id="det2-btn" onclick="showFix('det2')">Show full-year graph →</button>
+  </div>
+
+  <!-- Case 3: Inconsistent scale -->
+  <div class="detector-card">
+    <div class="detector-head">Case 3 — Weekly website visitors</div>
+    <div class="detector-graphs">
+      <div class="detector-graph">
+        <div class="graph-label bad">⚠️ Original (possibly misleading)</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- bars with values 100, 200, 500, 1000 (but scale is 0,100,200,1000) -->
+          <rect x="50" y="106" width="28" height="24" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="90" y="82" width="28" height="48" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="130" y="52" width="28" height="78" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="170" y="18" width="28" height="112" fill="#6B8C3A" opacity="0.85"/>
+          <!-- unequal y intervals -->
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#B83030" font-weight="800">0</text>
+          <text x="30" y="109" text-anchor="end" font-size="8" fill="#B83030" font-weight="800">100</text>
+          <text x="30" y="85" text-anchor="end" font-size="8" fill="#B83030" font-weight="800">200</text>
+          <text x="30" y="55" text-anchor="end" font-size="8" fill="#B83030" font-weight="800">500</text>
+          <text x="30" y="20" text-anchor="end" font-size="8" fill="#B83030" font-weight="800">1000</text>
+          <text x="64" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 1</text>
+          <text x="104" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 2</text>
+          <text x="144" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 3</text>
+          <text x="184" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 4</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Visitors (unequal scale!)</text>
+        </svg>
+      </div>
+      <div class="detector-graph reveal" id="det3-fix">
+        <div class="graph-label good">✅ Corrected (equal intervals)</div>
+        <svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg" font-family="Nunito,sans-serif">
+          <rect x="35" y="130" width="170" height="1" fill="#555"/>
+          <rect x="35" y="15" width="1" height="115" fill="#555"/>
+          <!-- equal intervals 0-1000 in steps of 200 -->
+          <!-- wk1=100 → 11.5px, wk2=200 → 23px, wk3=500 → 57.5px, wk4=1000 → 115px -->
+          <rect x="50" y="118" width="28" height="12" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="90" y="107" width="28" height="23" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="130" y="72" width="28" height="58" fill="#6B8C3A" opacity="0.85"/>
+          <rect x="170" y="15" width="28" height="115" fill="#6B8C3A" opacity="0.85"/>
+          <!-- equal y intervals every 200 -->
+          <text x="30" y="133" text-anchor="end" font-size="8" fill="#555">0</text>
+          <text x="30" y="110" text-anchor="end" font-size="8" fill="#555">200</text>
+          <text x="30" y="87" text-anchor="end" font-size="8" fill="#555">400</text>
+          <text x="30" y="64" text-anchor="end" font-size="8" fill="#555">600</text>
+          <text x="30" y="41" text-anchor="end" font-size="8" fill="#555">800</text>
+          <text x="30" y="18" text-anchor="end" font-size="8" fill="#555">1000</text>
+          <text x="64" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 1</text>
+          <text x="104" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 2</text>
+          <text x="144" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 3</text>
+          <text x="184" y="143" text-anchor="middle" font-size="8" fill="#555">Wk 4</text>
+          <text x="110" y="156" text-anchor="middle" font-size="7" fill="#555">Visitors (equal intervals)</text>
+        </svg>
+      </div>
+    </div>
+    <div class="flaw-opts" id="flaw3-opts">
+      <p style="font-size:0.88rem;font-weight:700;color:var(--muted);margin-bottom:4px;">What is misleading about this graph?</p>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The y-axis starts at 0 — that's not the issue. Look more carefully at the gaps between scale values." onclick="flawChoice(this,3)">The y-axis doesn't start at zero</button>
+      <button class="flaw-opt" data-result="correct" data-msg="✅ Correct! The y-axis jumps 100, then 100, then 300, then 500 — the intervals are unequal. This makes Week 3 and Week 4 bars look similar in size, hiding the fact that Week 4 has 5× more visitors than Week 3." onclick="flawChoice(this,3)">The scale intervals are unequal (100, 100, 300, 500) — distorting the visual differences</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ The x-axis labels are present and correct. The problem is on the y-axis." onclick="flawChoice(this,3)">There are no labels on the x-axis</button>
+      <button class="flaw-opt" data-result="wrong" data-msg="❌ A bar/column graph is appropriate for weekly counts. The graph type isn't the problem." onclick="flawChoice(this,3)">A bar graph is not appropriate for this data</button>
+    </div>
+    <div class="flaw-fb" id="flaw3-fb"></div>
+    <button class="reveal-btn" id="det3-btn" onclick="showFix('det3')">Show corrected graph →</button>
+  </div>
+
+</div>
+
+<!-- ===== TAB 4: WORKED EXAMPLES ===== -->
+<div id="tab-we" class="tab-panel">
+
+  <div class="example-block" id="ex1">
+    <div class="ex-header">
+      <span class="ex-title">Example 1 — Reading values from a histogram</span>
+      <span class="ex-tier" style="background:var(--ok-bg);color:var(--ok);">Foundation</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-question">A frequency histogram shows the heights (cm) of 30 students. The bars have frequencies: 140–149: 3, 150–159: 7, 160–169: 12, 170–179: 6, 180–189: 2. What is the modal class? How many students are shorter than 160 cm?</div>
+      <div class="steps-wrap" id="ex1-steps">
+        <div class="step show" id="ex1-s1">
+          <div class="step-row"><div class="step-num">1</div><div class="step-content">
+            <div class="step-action">Identify the modal class</div>
+            <div class="step-math">The modal class is the interval with the highest frequency: 160–169 cm (frequency = 12)</div>
+            <div class="step-why">The modal class is the tallest bar — the interval containing the most data values.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex1-s2">
+          <div class="step-row"><div class="step-num">2</div><div class="step-content">
+            <div class="step-action">Count students shorter than 160 cm</div>
+            <div class="step-math">Intervals below 160 cm: 140–149 (3) + 150–159 (7) = 10 students</div>
+            <div class="step-why">Add the frequencies of all bars to the left of 160 cm.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex1-s3">
+          <div class="step-row"><div class="step-num">✓</div><div class="step-content">
+            <div class="step-action">State both answers clearly</div>
+            <div class="step-math" style="background:var(--ok-bg);color:var(--ok);">Modal class = 160–169 cm. 10 students are shorter than 160 cm.</div>
+            <div class="step-why">Always verify: 3 + 7 + 12 + 6 + 2 = 30 ✓ (matches the total of 30 students).</div>
+          </div></div>
+        </div>
+      </div>
+      <div class="ex-nav">
+        <button class="btn btn-green" onclick="nextStep('ex1',3)">Show Next Step</button>
+        <button class="btn btn-outline" onclick="resetEx('ex1',3)">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="example-block" id="ex2">
+    <div class="ex-header">
+      <span class="ex-title">Example 2 — Identify a trend in a line graph</span>
+      <span class="ex-tier" style="background:var(--ok-bg);color:var(--ok);">Foundation</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-question">A line graph shows the average daily temperature in a city across 12 months. Values (°C): Jan 22, Feb 23, Mar 21, Apr 18, May 14, Jun 11, Jul 10, Aug 11, Sep 14, Oct 17, Nov 20, Dec 22. Describe the trend and identify the minimum.</div>
+      <div class="steps-wrap" id="ex2-steps">
+        <div class="step show" id="ex2-s1">
+          <div class="step-row"><div class="step-num">1</div><div class="step-content">
+            <div class="step-action">Describe the overall pattern</div>
+            <div class="step-math">The temperature decreases from January to July, then increases from July to December.</div>
+            <div class="step-why">This forms a U-shaped (concave) pattern — typical of Southern Hemisphere seasonal temperature data.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex2-s2">
+          <div class="step-row"><div class="step-num">2</div><div class="step-content">
+            <div class="step-action">Identify the minimum</div>
+            <div class="step-math">Minimum = 10°C in July</div>
+            <div class="step-why">Read the lowest point on the line graph — it falls at July with a value of 10°C.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex2-s3">
+          <div class="step-row"><div class="step-num">3</div><div class="step-content">
+            <div class="step-action">Write a justified conclusion</div>
+            <div class="step-math" style="background:var(--ok-bg);color:var(--ok);">Temperatures show a decreasing trend Jan–Jul (summer to winter), reaching a minimum of 10°C in July, then rising through spring back toward summer highs of approximately 22–23°C.</div>
+          </div></div>
+        </div>
+      </div>
+      <div class="ex-nav">
+        <button class="btn btn-green" onclick="nextStep('ex2',3)">Show Next Step</button>
+        <button class="btn btn-outline" onclick="resetEx('ex2',3)">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="example-block" id="ex3">
+    <div class="ex-header">
+      <span class="ex-title">Example 3 — Making a prediction from a trend</span>
+      <span class="ex-tier" style="background:#EBF3FC;color:var(--num);">Core</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-question">A line graph shows a shop's weekly sales ($): Week 1: $400, Week 2: $550, Week 3: $700, Week 4: $850. If the trend continues, predict sales in Week 5 and Week 6.</div>
+      <div class="steps-wrap" id="ex3-steps">
+        <div class="step show" id="ex3-s1">
+          <div class="step-row"><div class="step-num">1</div><div class="step-content">
+            <div class="step-action">Identify the pattern</div>
+            <div class="step-math">Each week, sales increase by approximately $150.</div>
+            <div class="step-why">Calculate the difference between consecutive weeks: 550−400=150, 700−550=150, 850−700=150. The increase is constant.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex3-s2">
+          <div class="step-row"><div class="step-num">2</div><div class="step-content">
+            <div class="step-action">Apply the pattern to predict</div>
+            <div class="step-math">Week 5: $850 + $150 = $1,000<br>Week 6: $1,000 + $150 = $1,150</div>
+            <div class="step-why">Extend the pattern by adding $150 for each additional week.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex3-s3">
+          <div class="step-row"><div class="step-num">3</div><div class="step-content">
+            <div class="step-action">State the prediction with a caveat</div>
+            <div class="step-math" style="background:var(--ok-bg);color:var(--ok);">Predicted Week 5: $1,000; Week 6: $1,150, assuming the linear trend of +$150 per week continues. In practice, the trend may change.</div>
+            <div class="step-why">Predictions are estimates based on the observed pattern — always note that real data may not follow the trend perfectly.</div>
+          </div></div>
+        </div>
+      </div>
+      <div class="ex-nav">
+        <button class="btn btn-green" onclick="nextStep('ex3',3)">Show Next Step</button>
+        <button class="btn btn-outline" onclick="resetEx('ex3',3)">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="example-block" id="ex4">
+    <div class="ex-header">
+      <span class="ex-title">Example 4 — Spotting a misleading sector graph</span>
+      <span class="ex-tier" style="background:#EBF3FC;color:var(--num);">Core</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-question">A company publishes a sector graph showing 4 product categories. Category A appears to take up about half the circle, but the label says 30%. Categories B, C, D show 25%, 25%, 20% respectively. Identify the misleading technique and explain its effect.</div>
+      <div class="steps-wrap" id="ex4-steps">
+        <div class="step show" id="ex4-s1">
+          <div class="step-row"><div class="step-num">1</div><div class="step-content">
+            <div class="step-action">Check if percentages add to 100%</div>
+            <div class="step-math">30 + 25 + 25 + 20 = 100% ✓</div>
+            <div class="step-why">The percentages are correct — so the distortion is in the visual representation, not the numbers.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex4-s2">
+          <div class="step-row"><div class="step-num">2</div><div class="step-content">
+            <div class="step-action">Identify the likely cause</div>
+            <div class="step-math">A 3D perspective effect tilts the graph — sectors at the "front" of the tilted circle appear larger than their true angle suggests.</div>
+            <div class="step-why">Category A is placed at the front of the 3D sector graph, making its 30% slice look like ~50%.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex4-s3">
+          <div class="step-row"><div class="step-num">3</div><div class="step-content">
+            <div class="step-action">State the effect and correction</div>
+            <div class="step-math" style="background:var(--ok-bg);color:var(--ok);">The 3D effect makes Category A appear more dominant than it is (30% looks like ~50%). Fix: use a flat 2D sector graph where angles accurately represent proportions.</div>
+          </div></div>
+        </div>
+      </div>
+      <div class="ex-nav">
+        <button class="btn btn-green" onclick="nextStep('ex4',3)">Show Next Step</button>
+        <button class="btn btn-outline" onclick="resetEx('ex4',3)">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="example-block" id="ex5">
+    <div class="ex-header">
+      <span class="ex-title">Example 5 — Drawing a conclusion from a dot plot</span>
+      <span class="ex-tier" style="background:#F4EDFC;color:#7B3F9E;">Extension</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-question">A dot plot shows the number of books read by 15 students: most dots cluster at 2 and 3, with one dot at 12. Write a detailed conclusion identifying the outlier, cluster, and what the data suggests about reading habits.</div>
+      <div class="steps-wrap" id="ex5-steps">
+        <div class="step show" id="ex5-s1">
+          <div class="step-row"><div class="step-num">1</div><div class="step-content">
+            <div class="step-action">Identify the cluster</div>
+            <div class="step-math">Most students read 2–3 books — the dots cluster at 2 and 3 on the number line.</div>
+            <div class="step-why">Clustering tells us where the most common values are.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex5-s2">
+          <div class="step-row"><div class="step-num">2</div><div class="step-content">
+            <div class="step-action">Identify and interpret the outlier</div>
+            <div class="step-math">The value of 12 is an outlier — it is significantly higher than the rest of the data (next highest is likely 4–5).</div>
+            <div class="step-why">An outlier is a value far from the main cluster. It may represent an exceptionally avid reader, or possibly a data recording error.</div>
+          </div></div>
+        </div>
+        <div class="step" id="ex5-s3">
+          <div class="step-row"><div class="step-num">3</div><div class="step-content">
+            <div class="step-action">Draw a justified conclusion</div>
+            <div class="step-math" style="background:var(--ok-bg);color:var(--ok);">Most of the 15 students (the cluster at 2–3 books) read only a few books during the period. One student read 12 books — an outlier that skews the average higher. The median of 2–3 better represents a "typical" student than the mean, which would be inflated by the outlier.</div>
+            <div class="step-why">A strong conclusion addresses the cluster, the outlier, and considers how each affects statistical measures.</div>
+          </div></div>
+        </div>
+      </div>
+      <div class="ex-nav">
+        <button class="btn btn-green" onclick="nextStep('ex5',3)">Show Next Step</button>
+        <button class="btn btn-outline" onclick="resetEx('ex5',3)">Reset</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TAB 5: ERROR DETECTIVE ===== -->
+<div id="tab-ed" class="tab-panel">
+  <div class="card" style="background:#FFF8F0;border-color:#E8C99A;margin-bottom:8px;">
+    <h2>🔍 Error Detective</h2>
+    <p style="font-size:0.92rem;">Each case shows a student drawing conclusions from a graph. One line contains an incorrect or unjustified conclusion. Click the line you think is wrong, then reveal the explanation.</p>
+  </div>
+
+  <div class="detective-block">
+    <div class="det-header"><span style="font-size:1.4rem;">🕵️</span>
+      <div><h3>Case 1 — Conclusion about a line graph</h3>
+      <div style="font-size:0.85rem;color:var(--muted);">A student reads a line graph showing rainfall over 5 years. Find the unjustified conclusion.</div></div>
+    </div>
+    <div class="working-line" onclick="selectLine(this,'ed1')"><div class="line-num">1</div><div>The rainfall graph shows values for 2019, 2020, 2021, 2022, and 2023.</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed1')"><div class="line-num">2</div><div>Rainfall increased from 520 mm in 2019 to 680 mm in 2023 — an overall upward trend.</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed1')"><div class="line-num">3</div><div>Rainfall will continue increasing every year forever into the future. ← click if wrong</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed1')"><div class="line-num">4</div><div>Based on the trend, rainfall in 2024 may be higher than 680 mm, though this cannot be guaranteed.</div></div>
+    <div style="padding:14px 24px;"><button class="btn btn-green" onclick="revealDet('ed1')">Reveal Explanation</button></div>
+    <div class="det-reveal" id="ed1-reveal">
+      <strong style="color:var(--err);">❌ The error is on Line 3.</strong>
+      <p style="margin-top:8px;font-size:0.92rem;">A 5-year upward trend does not mean rainfall will increase <strong>forever</strong>. Trends observed in a dataset can change — rainfall is affected by climate cycles, weather patterns, and other variables. Line 3 overgeneralises the trend far beyond what the data justifies.</p>
+      <div class="det-correct"><strong>✅ Correct approach:</strong> Line 4 is correct — "may be higher" and "cannot be guaranteed" appropriately acknowledge uncertainty. Predictions should be specific (e.g. one or two steps ahead) and qualified.</div>
+      <p style="margin-top:10px;font-size:0.85rem;font-style:italic;color:var(--muted);">Common error: Extending short-term trends indefinitely. Always qualify predictions with "if the trend continues" or similar language.</p>
+    </div>
+  </div>
+
+  <div class="detective-block">
+    <div class="det-header"><span style="font-size:1.4rem;">🕵️</span>
+      <div><h3>Case 2 — Conclusion about a sector graph</h3>
+      <div style="font-size:0.85rem;color:var(--muted);">A student interprets a sector graph showing transport methods. Find the unsupported conclusion.</div></div>
+    </div>
+    <div class="working-line" onclick="selectLine(this,'ed2')"><div class="line-num">1</div><div>The sector graph shows 40% of students travel by bus, 30% by car, 20% on foot, and 10% by other means.</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed2')"><div class="line-num">2</div><div>Bus is the most common travel method — it represents the largest sector (40%).</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed2')"><div class="line-num">3</div><div>Therefore, bus is also the most popular method at other schools in NSW. ← click if wrong</div></div>
+    <div class="working-line" onclick="selectLine(this,'ed2')"><div class="line-num">4</div><div>This data was collected from one school — conclusions apply only to that school's students.</div></div>
+    <div style="padding:14px 24px;"><button class="btn btn-green" onclick="revealDet('ed2')">Reveal Explanation</button></div>
+    <div class="det-reveal" id="ed2-reveal">
+      <strong style="color:var(--err);">❌ The error is on Line 3.</strong>
+      <p style="margin-top:8px;font-size:0.92rem;">A sector graph of one school's data cannot be used to draw conclusions about all NSW schools. This is an <strong>overgeneralisation</strong> — the sample is not representative of all schools, which may differ in location, access to transport, and demographics.</p>
+      <div class="det-correct"><strong>✅ Correct approach:</strong> Line 4 is correct — conclusions should be limited to the population the data was collected from. To generalise to other schools, data from a representative sample of multiple schools would be needed.</div>
+      <p style="margin-top:10px;font-size:0.85rem;font-style:italic;color:var(--muted);">Common error: Generalising a conclusion beyond the scope of the data. Always identify who the data was collected from and limit conclusions accordingly.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 6: WORD PROBLEMS ===== -->
+<div id="tab-wp" class="tab-panel">
+  <div class="card" style="margin-bottom:8px;">
+    <h2>📖 Word Problems — Newman's Framework</h2>
+    <p style="font-size:0.92rem;color:var(--muted);">Work through each step. Solutions are hidden until you're ready.</p>
+  </div>
+
+  <div class="wp-block">
+    <div class="wp-header">Problem 1 — Interpret a graph and draw a conclusion</div>
+    <div class="wp-scenario">A dot plot shows the number of hours Year 7 students spend on social media per day. Most values cluster at 2 and 3 hours, with one value at 9 hours. The range is 8 hours.</div>
+    <div class="newman-step"><div class="newman-label">① Read</div><div class="frame">The graph shows _______ for _______. The type of graph is _______.</div></div>
+    <div class="newman-step"><div class="newman-label">② Define</div><div class="frame">The cluster is at _______. There is an outlier at _______. The range is _______.</div></div>
+    <div class="newman-step"><div class="newman-label">③ Write</div><div class="frame">The outlier means _______. The range of _______ is affected because _______.</div></div>
+    <div class="newman-step"><div class="newman-label">④ Solve</div><div class="frame">A typical student spends about _______ hours on social media because _______.</div></div>
+    <div class="newman-step"><div class="newman-label">⑤ Answer</div><div class="frame">Conclusion: _______. The outlier _______ the mean, which means _______ better represents the typical student.</div></div>
+    <div style="padding:14px 24px;"><button class="btn btn-green" onclick="toggleSol('wp1-sol')">Show Full Solution</button></div>
+    <div class="wp-sol" id="wp1-sol">
+      <strong>Full Solution:</strong>
+      <p style="margin-top:8px;font-size:0.93rem;">The dot plot shows a cluster at 2–3 hours — most students spend 2 or 3 hours daily on social media. The value of 9 hours is an outlier; it is much higher than the rest of the data. The outlier inflates the mean (pulling it above 3 hours), meaning the median (likely 2–3 hours) better represents the typical student. Conclusion: most Year 7 students spend 2–3 hours per day on social media; one unusually high value inflates the mean, so the median is the better measure of centre for this dataset.</p>
+    </div>
+  </div>
+
+  <div class="wp-block">
+    <div class="wp-header">Problem 2 — Justify a prediction from a line graph</div>
+    <div class="wp-scenario">A line graph shows a school's enrolment over 4 years: 2021: 820, 2022: 855, 2023: 890, 2024: 925. The principal wants to know how many students to plan for in 2025.</div>
+    <div class="newman-step"><div class="newman-label">① Read</div><div class="frame">The graph shows _______ from 2021 to 2024. The purpose is to _______.</div></div>
+    <div class="newman-step"><div class="newman-label">② Define</div><div class="frame">The change each year is: 2021→2022: _______, 2022→2023: _______, 2023→2024: _______.</div></div>
+    <div class="newman-step"><div class="newman-label">③ Write</div><div class="frame">The trend is _______ by approximately _______ students each year.</div></div>
+    <div class="newman-step"><div class="newman-label">④ Solve</div><div class="frame">Predicted 2025 enrolment: _______ + _______ = _______.</div></div>
+    <div class="newman-step"><div class="newman-label">⑤ Answer</div><div class="frame">If the trend continues, the school can expect approximately _______ students in 2025. This prediction assumes _______.</div></div>
+    <div style="padding:14px 24px;"><button class="btn btn-green" onclick="toggleSol('wp2-sol')">Show Full Solution</button></div>
+    <div class="wp-sol" id="wp2-sol">
+      <strong>Full Solution:</strong>
+      <p style="margin-top:8px;font-size:0.93rem;">Annual increases: 855−820=35, 890−855=35, 925−890=35. The enrolment increases by exactly 35 students per year — a consistent linear trend. Predicted 2025 enrolment: 925 + 35 = <strong>960 students</strong>. This prediction assumes the trend continues at the same rate, which may be affected by factors such as new housing developments, school policy changes, or demographic shifts.</p>
+    </div>
+  </div>
+
+  <div class="wp-block">
+    <div class="wp-header">Problem 3 — Evaluate whether a graph could mislead (Extension)</div>
+    <div class="wp-scenario">A health-food company publishes a bar graph showing its product's sales grew from 10,000 units to 10,800 units over one year. The y-axis starts at 9,500. They claim: "Sales have skyrocketed — growth of over 50%!" Evaluate this claim using the data.</div>
+    <div class="newman-step"><div class="newman-label">① Read</div><div class="frame">The claim is that sales grew by over _______%. The actual sales figures are: start _______, end _______.</div></div>
+    <div class="newman-step"><div class="newman-label">② Define</div><div class="frame">Actual growth = _______ units. Percentage increase = (_______ ÷ _______) × 100 = _______%.</div></div>
+    <div class="newman-step"><div class="newman-label">③ Write</div><div class="frame">The y-axis starts at _______ instead of _______. This makes the bar for 10,800 appear _______ times taller than the bar for 10,000.</div></div>
+    <div class="newman-step"><div class="newman-label">④ Solve</div><div class="frame">The visual impression suggests approximately _______% growth. The actual growth is _______%. The difference is caused by _______.</div></div>
+    <div class="newman-step"><div class="newman-label">⑤ Answer</div><div class="frame">The company's claim of "over 50% growth" is _______. The actual growth was _______%. The graph is misleading because _______.</div></div>
+    <div style="padding:14px 24px;"><button class="btn btn-green" onclick="toggleSol('wp3-sol')">Show Full Solution</button></div>
+    <div class="wp-sol" id="wp3-sol">
+      <strong>Full Solution:</strong>
+      <p style="margin-top:8px;font-size:0.93rem;">Actual growth: 10,800 − 10,000 = 800 units. Percentage increase: (800 ÷ 10,000) × 100 = <strong>8%</strong>. The claim of "over 50% growth" is <strong>false and misleading</strong>. The y-axis starts at 9,500 — a truncated axis. The bar for 10,800 rises from 9,500 to 10,800 (height of 1,300 units on the axis), while the bar for 10,000 rises from 9,500 to 10,000 (height of 500 units). Visually, 1,300 ÷ 500 = 2.6× — so the graph looks like the bar more than doubled. In reality, sales grew by only 8%. The company's claim is inaccurate and the graph uses a truncated y-axis to manufacture a false visual impression of dramatic growth.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== TAB 7: PRACTICE ===== -->
+<div id="tab-prac" class="tab-panel">
+  <div class="card" style="margin-bottom:8px;"><h2>✅ Practice — Choose your level</h2></div>
+  <div class="tier-switch">
+    <button class="tier-btn active" onclick="switchTier('foundation')">🟢 Foundation</button>
+    <button class="tier-btn" onclick="switchTier('core')">🔵 Core</button>
+    <button class="tier-btn" onclick="switchTier('extension')">🟣 Extension</button>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="tier-panel active" id="tier-foundation">
+    <div class="tier-desc">Foundation — Read values from graphs and identify basic features.</div>
+    <div class="mcq-block">
+      <div class="mcq-q">1. A line graph shows a plant's height (cm) over 6 weeks: 2, 5, 9, 14, 20, 27 cm. Which best describes the trend?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The values 2, 5, 9, 14, 20, 27 are all increasing — there is no decrease." onclick="mcqAns(this)">A. Decreasing over time</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! Each week the height increases — and the increases get larger each week (3, 4, 5, 6, 7 cm), so the growth is accelerating." onclick="mcqAns(this)">B. Increasing over time</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ There is no period where the values stay the same — every week shows a larger height than the week before." onclick="mcqAns(this)">C. Remaining steady</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The data goes consistently in one direction (up) — there is no alternating pattern." onclick="mcqAns(this)">D. Alternating up and down</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Compare the first value to the last — is it higher or lower?</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">2. A dot plot shows: 3, 3, 4, 4, 4, 5, 5, 5, 5, 18. Which value is the outlier?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 3 is within the main cluster of values (3–5) — it is not unusually different from the rest." onclick="mcqAns(this)">A. 3</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 5 appears most frequently — it is the mode. It is not an outlier." onclick="mcqAns(this)">B. 5</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! 18 is far from the cluster of 3–5. It is an outlier — significantly different from all other values in the dataset." onclick="mcqAns(this)">C. 18</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 4 is close to the middle of the cluster — it is not an outlier." onclick="mcqAns(this)">D. 4</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">An outlier is a value far away from where most of the data clusters.</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">3. A frequency histogram has bars at: 0–9 (freq 4), 10–19 (freq 8), 20–29 (freq 6), 30–39 (freq 2). How many values are in the dataset altogether?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ There are 4 bars (intervals), but the number of data values is the sum of all frequencies." onclick="mcqAns(this)">A. 4</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 8 is the highest frequency (mode), not the total number of values." onclick="mcqAns(this)">B. 8</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! Add all frequencies: 4 + 8 + 6 + 2 = 20 values in total." onclick="mcqAns(this)">C. 20</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 39 is the maximum value in the dataset, not the number of values." onclick="mcqAns(this)">D. 39</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">The total number of data values equals the sum of all frequencies (bar heights).</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">4. Looking at a line graph, how would you describe the trend if the line goes consistently upward from left to right?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ If the line goes upward (left to right), the variable is increasing, not decreasing." onclick="mcqAns(this)">A. The variable is decreasing</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A consistent upward line means the variable is changing — not staying the same." onclick="mcqAns(this)">B. There is no trend</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! A line that consistently goes upward from left to right shows an increasing trend — the variable is growing over time." onclick="mcqAns(this)">C. The variable is increasing — a positive trend</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A cyclic pattern goes up and down repeatedly. An always-rising line is not cyclic." onclick="mcqAns(this)">D. There is a cyclic pattern</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Think about what it means when something goes "up" over time on a graph.</div>
+    </div>
+  </div>
+
+  <!-- CORE -->
+  <div class="tier-panel" id="tier-core">
+    <div class="tier-desc">Core — Identify features and trends; make predictions with justification.</div>
+    <div class="mcq-block">
+      <div class="mcq-q">1. A line graph shows temperatures for 7 days: Mon 18, Tue 20, Wed 22, Thu 21, Wed 23, Fri 25, Sat 24, Sun 26°C. A student predicts next Monday will be 32°C. Is this prediction well-justified?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A prediction should be based on the observed trend — not a random guess. The issue is whether 32°C is supported by the pattern." onclick="mcqAns(this)">A. Yes — any prediction is acceptable as long as it's higher than the last value</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! The temperatures increase by about 1–2°C per day. Predicting 27–28°C for next Monday would be well-justified. 32°C is an overestimate that doesn't follow the observed rate of increase." onclick="mcqAns(this)">B. No — the trend shows an increase of about 1–2°C per day; predicting 32°C overstates the pattern</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A clear upward trend is visible. A prediction in the same direction is reasonable — the issue is the magnitude." onclick="mcqAns(this)">C. No — no prediction can be made because there is no clear trend</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The trend is consistently upward — predicting the same temperature as today ignores the pattern." onclick="mcqAns(this)">D. Yes — the best prediction is always the most recent value</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Calculate the average daily increase. Does 32°C match that rate?</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">2. A histogram shows most students scored in the 60–69 band (frequency 15), and one student scored 98 (in the 90–99 band, frequency 1). How does the outlier affect the mean?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Outliers are part of the dataset and do affect the mean — they pull it in the direction of the outlier." onclick="mcqAns(this)">A. Outliers never affect the mean</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The outlier is above the cluster, not below it — it would pull the mean upward, not downward." onclick="mcqAns(this)">B. The outlier pulls the mean downward</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! The high outlier of 98 pulls the mean above 65 — making the mean higher than the typical score. The median (within the 60–69 band) better represents the typical student." onclick="mcqAns(this)">C. The outlier pulls the mean upward, above the typical score</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ An outlier at 98 does affect the mean significantly when most scores are in the 60s." onclick="mcqAns(this)">D. The outlier has no effect because it's only one value</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Think about what adding a very large number to a sum does to the average.</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">3. A sector graph shows that 35% of a class chose pizza as their favourite food. A student concludes: "More than a third of ALL Australian teenagers prefer pizza." What is wrong with this conclusion?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 35% is correctly described as more than a third (33.3%). The mathematical reading is correct. The problem is about generalisation." onclick="mcqAns(this)">A. 35% is not more than a third</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! The conclusion generalises from one class to all Australian teenagers. One class is not a representative sample of all teenagers — location, culture, and demographics vary." onclick="mcqAns(this)">B. The conclusion overgeneralises from one class to all Australian teenagers</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A sector graph is appropriate for showing proportions of food preferences — the graph type isn't the problem." onclick="mcqAns(this)">C. A sector graph cannot show food preferences</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Conclusions about food preferences are perfectly valid data interpretations. The issue is the scope of the generalisation." onclick="mcqAns(this)">D. Food preferences cannot be studied with statistics</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Think about how big and representative the sample is before generalising.</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">4. A dot plot of daily step counts shows: most dots between 6,000–9,000 steps, one dot at 800 steps. What is the most reasonable interpretation of the 800-step value?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 800 steps is far below the cluster — this makes it an outlier, not a typical value." onclick="mcqAns(this)">A. It is a typical value for this person</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! 800 steps is far below the cluster of 6,000–9,000 and could represent a day the person was sick, injured, or for some other reason barely moved. It's an outlier worth investigating." onclick="mcqAns(this)">B. It is an outlier — possibly a sick day or recording error</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Outliers don't always indicate errors — they can represent genuine unusual events like illness." onclick="mcqAns(this)">C. It must be a data entry error and should be deleted</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 800 steps is at the far low end — far below the cluster. It's an outlier, not the minimum of a typical range." onclick="mcqAns(this)">D. It shows the person usually walks very little</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">What real-world events might cause someone to take only 800 steps in a day?</div>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div class="tier-panel" id="tier-extension">
+    <div class="tier-desc">Extension — Evaluate whether graphs mislead and critique claims made using data.</div>
+    <div class="mcq-block">
+      <div class="mcq-q">1. A politician publishes a bar graph where the y-axis goes from 85% to 100%. The graph shows their party's approval rating rising from 88% to 91%. They claim: "Approval has nearly doubled!" Evaluate this claim.</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 88% to 91% is a 3 percentage point rise — nowhere near doubling (which would require going from 88% to 176%)." onclick="mcqAns(this)">A. The claim is correct — the bar appears to double in height</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! The actual increase is 3 percentage points (from 88% to 91%) — about a 3.4% relative increase. The truncated y-axis (starting at 85%) makes the bar appear to grow dramatically, but the claim of 'nearly doubled' is false." onclick="mcqAns(this)">B. False — the truncated axis makes a 3% increase look dramatic; approval did not nearly double</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ While cherry-picking data is a real issue, the specific technique here is a truncated y-axis — the axis starts at 85%, not 0%." onclick="mcqAns(this)">C. Partially true — cherry-picked data explains the discrepancy</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A bar graph is appropriate for showing approval ratings. The graph type itself isn't the problem." onclick="mcqAns(this)">D. The claim might be true — bar graphs are always accurate</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">What would the bar heights look like if the y-axis started at 0 instead of 85%?</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">2. Two students describe the same line graph of temperature data. Student A: "Temperature increased by 8°C from January to August." Student B: "Temperature has been skyrocketing!" Which description is more appropriate for a statistical report?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! Student A gives a specific, evidence-based description referencing actual values and a time period. Student B's language ('skyrocketing') is vague and emotive — not appropriate for statistical reporting." onclick="mcqAns(this)">A. Student A — specific values and time period are cited</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ 'Skyrocketing' is emotive and imprecise. Statistical reporting requires specific values and justified language." onclick="mcqAns(this)">B. Student B — the language is more engaging</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The two descriptions are not equally valid — one uses evidence and specific values, the other uses vague language." onclick="mcqAns(this)">C. Both are equally valid statistical descriptions</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Neither is extreme in its claims. Student A's description is appropriately precise for a statistical report." onclick="mcqAns(this)">D. Neither — both are too extreme for a statistical report</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">What does a well-supported statistical conclusion include?</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">3. A company's annual report shows revenue grew every year for 10 years. A journalist concludes the company will keep growing forever. Which principle of data interpretation does this violate?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The issue is not about graph type — it's about overextending a prediction beyond what the data justifies." onclick="mcqAns(this)">A. Using the wrong graph type</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The conclusion references data from the report — it is not entirely unsupported. The problem is how far it extends the trend." onclick="mcqAns(this)">B. Drawing a conclusion without referring to the data</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! Predictions should be qualified — past trends do not guarantee future performance. Extending a 10-year trend 'forever' ignores economic cycles, market changes, and uncertainty." onclick="mcqAns(this)">C. Extending a trend infinitely into the future without acknowledging uncertainty</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Consistent growth data is not itself misleading — the problem is the journalist's unjustified extrapolation." onclick="mcqAns(this)">D. Using cherry-picked data to show only the growth years</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">What phrase should always qualify a prediction made from a trend?</div>
+    </div>
+    <div class="mcq-block">
+      <div class="mcq-q">4. A histogram shows two datasets for the same variable side by side. Dataset A has a cluster between 50–70. Dataset B has a cluster between 70–90. Which conclusion is most justified?</div>
+      <div class="mcq-opts">
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ The modal class of Dataset A is lower than Dataset B — without knowing the context, we can't determine which is 'better.'" onclick="mcqAns(this)">A. Dataset A performed better than Dataset B</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ Two histograms showing different clusters means the data is clearly different — the spreads may differ too, but the centres are clearly different." onclick="mcqAns(this)">B. Both datasets are identical</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✅ Correct! Dataset B has a higher central cluster (70–90) compared to Dataset A (50–70), suggesting Dataset B's values are generally higher. Whether this is 'better' depends on context." onclick="mcqAns(this)">C. Dataset B's values are generally higher — it has a greater central tendency</button>
+        <button class="mcq-opt" data-result="wrong" data-msg="❌ A conclusion comparing two distributions is entirely valid — as long as it's based on what's visible in the data." onclick="mcqAns(this)">D. No conclusion can be drawn from comparing two histograms</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-btn" onclick="toggleHint(this)">💡 Hint</button>
+      <div class="hint-box">Where does the cluster sit for each dataset? What does a higher cluster mean?</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function openTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+const exStep={};
+function nextStep(id,total){
+  if(!exStep[id]) exStep[id]=1;
+  if(exStep[id]<total){exStep[id]++;document.getElementById(id+'-s'+exStep[id]).classList.add('show');}
+}
+function resetEx(id,total){
+  exStep[id]=1;
+  for(let i=2;i<=total;i++) document.getElementById(id+'-s'+i).classList.remove('show');
+}
+function mcqAns(btn){
+  const block=btn.closest('.mcq-block');
+  block.querySelectorAll('.mcq-opt').forEach(b=>{b.disabled=true;});
+  const fb=block.querySelector('.mcq-fb');
+  if(btn.dataset.result==='correct'){btn.classList.add('correct');fb.className='mcq-fb show ok';}
+  else{btn.classList.add('wrong');fb.className='mcq-fb show bad';}
+  fb.textContent=btn.dataset.msg;
+}
+function toggleHint(btn){btn.nextElementSibling.classList.toggle('show');}
+function switchTier(t){
+  document.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tier-'+t).classList.add('active');
+  event.target.classList.add('active');
+}
+function selectLine(el,caseId){
+  el.closest('.detective-block').querySelectorAll('.working-line').forEach(l=>l.classList.remove('selected-wrong'));
+  el.classList.add('selected-wrong');
+}
+function revealDet(id){document.getElementById(id+'-reveal').classList.add('show');}
+function toggleSol(id){document.getElementById(id).classList.toggle('show');}
+
+// Misleading detector
+const flawDone={};
+function flawChoice(btn,num){
+  if(flawDone[num]) return;
+  flawDone[num]=true;
+  const opts=document.getElementById('flaw'+num+'-opts');
+  opts.querySelectorAll('.flaw-opt').forEach(b=>{b.disabled=true;});
+  const fb=document.getElementById('flaw'+num+'-fb');
+  fb.style.display='block';
+  if(btn.dataset.result==='correct'){
+    btn.classList.add('correct');
+    fb.className='flaw-fb show ok';
+    document.getElementById('det'+num+'-btn').classList.add('show');
+  } else {
+    btn.classList.add('wrong');
+    fb.className='flaw-fb show bad';
+  }
+  fb.textContent=btn.dataset.msg;
+}
+function showFix(id){
+  document.getElementById(id+'-fix').classList.add('show');
+  document.getElementById(id+'-btn').style.display='none';
+}
+</script>
+</body>
+</html>

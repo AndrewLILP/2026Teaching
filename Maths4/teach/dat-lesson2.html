@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 2 — Displaying Data | MA4-DAT-C-01</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F4EFE9;--card:#FFFFFF;--border:#DDD5CA;--text:#2C2C2C;--muted:#6B6B6B;
+  --accent:#3A7D68;--accent-light:#E6F3EF;
+  --num:#2B6CB0;--num-light:#EBF4FF;
+  --cat:#C47A1E;--cat-light:#FFF4E0;
+  --ok:#3D7054;--ok-light:#E8F5EE;
+  --err:#C75B39;--err-light:#FDF0EC;
+  --radius:16px;--shadow:0 4px 20px rgba(0,0,0,0.08)
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);font-size:17px;line-height:1.75}
+.topbar{background:var(--accent);color:white;padding:12px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.back-btn{background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.4);color:white;padding:6px 14px;border-radius:8px;font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;text-decoration:none}
+.topbar-title{font-size:1rem;font-weight:800}
+.topbar-sub{font-size:.82rem;opacity:.8;margin-left:auto}
+.tab-bar{background:var(--card);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;gap:2px;position:sticky;top:0;z-index:100}
+.tab-btn{background:none;border:none;padding:14px 18px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:color .15s,border-color .15s;min-height:54px}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none;max-width:860px;margin:0 auto;padding:36px 24px 60px}
+.tab-panel.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);border:2px solid var(--border);padding:28px;box-shadow:var(--shadow);margin-bottom:24px}
+.card h2{font-size:1.25rem;font-weight:800;margin-bottom:16px;color:var(--accent)}
+.page-title{font-size:1.5rem;font-weight:900;margin-bottom:6px;color:var(--accent)}
+.page-sub{font-size:.95rem;color:var(--muted);margin-bottom:28px}
+/* Flip cards */
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.flip-card{height:240px;perspective:1000px;cursor:pointer}
+.flip-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-front,.flip-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:20px;border:2px solid var(--border);display:flex;flex-direction:column}
+.flip-front{background:var(--card);align-items:center;justify-content:center;text-align:center;box-shadow:var(--shadow)}
+.flip-back{background:var(--accent-light);transform:rotateY(180deg);overflow:auto}
+.flip-front .term{font-size:1.3rem;font-weight:900;margin-bottom:8px;color:var(--accent)}
+.flip-front .hint{font-size:.82rem;color:var(--muted)}
+.frayer{display:grid;grid-template-columns:1fr 1fr;gap:8px;height:100%}
+.frayer-cell{background:white;border-radius:8px;padding:8px 10px;border:1.5px solid var(--border);font-size:.8rem}
+.frayer-cell strong{display:block;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+/* Graph type cards */
+.graph-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.graph-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+.graph-card h4{font-size:.95rem;font-weight:800;margin-bottom:10px;color:var(--accent)}
+.graph-card p{font-size:.82rem;color:var(--muted);margin-bottom:12px}
+.graph-label{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.75rem;font-weight:800;margin-bottom:10px}
+/* SVG graphs */
+svg text{font-family:'Nunito',sans-serif}
+/* Interactive */
+.scenario-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.scenario-item{background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:16px 20px;cursor:pointer;transition:border-color .15s}
+.scenario-item.selected{border-color:var(--accent);background:var(--accent-light)}
+.scenario-item h4{font-weight:800;font-size:.95rem;margin-bottom:4px}
+.scenario-item p{font-size:.88rem;color:var(--muted)}
+.graph-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.graph-opt-btn{background:white;border:2px solid var(--border);border-radius:10px;padding:12px 14px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .15s;text-align:center}
+.graph-opt-btn:hover:not(:disabled){background:var(--accent-light);border-color:var(--accent)}
+.graph-opt-btn.correct{background:var(--ok-light);border-color:var(--ok);color:var(--ok)}
+.graph-opt-btn.incorrect{background:var(--err-light);border-color:var(--err);color:var(--err)}
+/* Worked example */
+.example-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);margin-bottom:24px}
+.ex-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.ex-badge{background:var(--accent);color:white;border-radius:8px;padding:4px 14px;font-size:.82rem;font-weight:800}
+.tier-badge{border-radius:8px;padding:4px 12px;font-size:.78rem;font-weight:800}
+.step-block{display:none;border-left:4px solid var(--accent);background:var(--accent-light);border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:10px}
+.step-block.shown{display:block}
+.step-action{font-weight:800;font-size:.95rem;margin-bottom:4px}
+.step-why{font-style:italic;color:var(--muted);font-size:.88rem}
+.step-btn{background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:10px;transition:opacity .15s}
+.step-btn:hover{opacity:.85}
+.step-btn:disabled{opacity:.4;cursor:not-allowed}
+/* Error detective */
+.case-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);margin-bottom:24px}
+.wrong-line{background:#FFF3CD;border-left:4px solid #E6A817;padding:8px 14px;border-radius:0 8px 8px 0;margin:4px 0;font-size:.92rem}
+.correct-line{background:var(--ok-light);border-left:4px solid var(--ok);padding:8px 14px;border-radius:0 8px 8px 0;margin:4px 0;font-size:.92rem}
+.reveal-box{background:var(--err-light);border:2px solid var(--err);border-radius:10px;padding:16px;margin-top:14px;display:none}
+.reveal-box.shown{display:block}
+.guess-btn{background:var(--err);color:white;border:none;border-radius:10px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:12px}
+/* Word problems */
+.problem-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);margin-bottom:24px}
+.newman-step{background:var(--accent-light);border-radius:10px;padding:14px 18px;margin-bottom:10px;border-left:4px solid var(--accent)}
+.newman-label{font-size:.78rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.frame{font-size:.95rem;color:var(--muted);font-style:italic}
+.sol-box{background:#F0FDF4;border:2px solid #86EFAC;border-radius:10px;padding:16px;margin-top:14px;display:none}
+.sol-box.shown{display:block}
+.sol-btn{background:var(--accent);color:white;border:none;border-radius:10px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;margin-top:14px}
+/* Practice */
+.tier-switch{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
+.tier-btn{background:white;border:2px solid var(--border);border-radius:10px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .15s}
+.tier-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.tier-panel{display:none}
+.tier-panel.active{display:block}
+.mcq-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:24px;margin-bottom:18px;box-shadow:var(--shadow)}
+.mcq-q{font-weight:700;font-size:1rem;margin-bottom:14px}
+.mcq-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.opt-btn{background:white;border:2px solid var(--border);border-radius:10px;padding:11px 16px;font-family:'Nunito',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.opt-btn:hover:not(:disabled){background:var(--accent-light);border-color:var(--accent)}
+.opt-btn.correct{background:var(--ok-light);border-color:var(--ok);color:var(--ok)}
+.opt-btn.incorrect{background:var(--err-light);border-color:var(--err);color:var(--err)}
+.opt-btn:disabled{cursor:default}
+.mcq-fb{font-size:.88rem;font-weight:700;padding:10px 14px;border-radius:8px;display:none}
+.mcq-fb.ok{background:var(--ok-light);color:var(--ok);display:block}
+.mcq-fb.err{background:var(--err-light);color:var(--err);display:block}
+.hint-toggle{background:none;border:1.5px solid var(--accent);color:var(--accent);border-radius:8px;padding:6px 14px;font-family:'Nunito',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px}
+.hint-box{background:#FFFDE7;border:1.5px solid #F9A825;border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.88rem;display:none}
+.hint-box.shown{display:block}
+.int-fb{font-size:.9rem;font-weight:700;padding:12px 16px;border-radius:10px;margin-top:10px;display:none}
+.int-fb.ok{background:var(--ok-light);color:var(--ok);display:block}
+.int-fb.err{background:var(--err-light);color:var(--err);display:block}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="back-btn" href="dat-index.html">&#8592; Unit Hub</a>
+  <div class="topbar-title">Lesson 2 &mdash; Displaying Data</div>
+  <div class="topbar-sub">MA4-DAT-C-01 &middot; Stage 4</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('t1',this)">&#128218; Key Words</button>
+  <button class="tab-btn" onclick="showTab('t2',this)">&#128161; Concepts</button>
+  <button class="tab-btn" onclick="showTab('t3',this)">&#128202; Graph Selector</button>
+  <button class="tab-btn" onclick="showTab('t4',this)">&#9999;&#65039; Worked Examples</button>
+  <button class="tab-btn" onclick="showTab('t5',this)">&#128269; Error Detective</button>
+  <button class="tab-btn" onclick="showTab('t6',this)">&#128214; Word Problems</button>
+  <button class="tab-btn" onclick="showTab('t7',this)">&#9989; Practice</button>
+</div>
+
+<!-- TAB 1 -->
+<div id="t1" class="tab-panel active">
+  <h1 class="page-title">Key Words</h1>
+  <p class="page-sub">Click each card to flip it and see the full Frayer model.</p>
+  <div class="flip-grid">
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Frequency</div><div style="font-size:.9rem;color:var(--muted)">In data displays</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>How many times a value or category occurs in a dataset</div>
+          <div class="frayer-cell"><strong>Examples</strong>"Blue eyes" appeared 12 times; the score 7 had a frequency of 5</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>The actual data value itself (e.g. "blue") — that's the category, not the frequency</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>Frequency = COUNT of occurrences. Used on the y-axis of many graphs.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Histogram</div><div style="font-size:.9rem;color:var(--muted)">Graph type</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>A graph using touching bars (no gaps) to display the frequency of continuous numerical data grouped into intervals</div>
+          <div class="frayer-cell"><strong>Examples</strong>Heights of students grouped in 5 cm intervals; test scores in 10-point bands</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>A column graph for categorical data — those have gaps between bars</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>NO GAPS between bars. Bars touch because the data is continuous.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Dot Plot</div><div style="font-size:.9rem;color:var(--muted)">Graph type</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>A graph where each data value is represented by a dot above a number line — good for small datasets</div>
+          <div class="frayer-cell"><strong>Examples</strong>Number of books read by each student; goals scored per game</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>Large datasets with many different values — too many dots makes it unreadable</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>One dot = one data point. Shows the shape of data clearly for small sets.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Stem-and-Leaf</div><div style="font-size:.9rem;color:var(--muted)">Graph type</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>A display where each data value is split into a "stem" (tens digit) and a "leaf" (units digit) — preserves the original data</div>
+          <div class="frayer-cell"><strong>Examples</strong>Test scores 67, 72, 74 → stems: 6|7, 7|2 4</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>Categorical data (e.g. colours) — cannot be split into stems and leaves</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>Preserves all original data values. Good for spotting the median and shape.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Sector Graph</div><div style="font-size:.9rem;color:var(--muted)">Also called pie chart</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>A circle divided into sectors (slices) where each sector's angle represents a proportion of the whole</div>
+          <div class="frayer-cell"><strong>Examples</strong>Proportion of students in each sport; budget breakdown by category</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>Data showing change over time — use a line graph instead</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>Best for showing PARTS OF A WHOLE. All sectors must add to 100%.</div>
+        </div></div>
+      </div>
+    </div>
+    <div class="flip-card" onclick="this.classList.toggle('flipped')">
+      <div class="flip-inner">
+        <div class="flip-front"><div class="term">Infographic</div><div style="font-size:.9rem;color:var(--muted)">Statistical display</div><div class="hint">Click to flip &#8594;</div></div>
+        <div class="flip-back"><div class="frayer">
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Definition</strong>A visual representation combining graphs, icons, text and colour to communicate a dataset clearly to a general audience</div>
+          <div class="frayer-cell"><strong>Examples</strong>A poster showing school recycling data with icons, percentages, and a bar chart</div>
+          <div class="frayer-cell"><strong>Non-examples</strong>A raw data table — that is not an infographic</div>
+          <div class="frayer-cell" style="grid-column:1/-1"><strong>Key idea</strong>Designed to be understood quickly. Combines multiple representations in one display.</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: CONCEPTS -->
+<div id="t2" class="tab-panel">
+  <h1 class="page-title">Concepts</h1>
+  <p class="page-sub">Each graph type is suited to different kinds of data. Learn the rules for selecting graphs.</p>
+
+  <div class="card">
+    <h2>Graph Types at a Glance</h2>
+    <div class="graph-grid">
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--num-light);color:var(--num)">Numerical data</span>
+        <h4>Frequency Histogram</h4>
+        <svg viewBox="0 0 160 90" width="100%" style="margin-bottom:8px">
+          <rect x="10" y="50" width="24" height="30" fill="#5B9BD5" opacity=".9"/>
+          <rect x="34" y="30" width="24" height="50" fill="#5B9BD5" opacity=".9"/>
+          <rect x="58" y="20" width="24" height="60" fill="#5B9BD5" opacity=".9"/>
+          <rect x="82" y="40" width="24" height="40" fill="#5B9BD5" opacity=".9"/>
+          <rect x="106" y="60" width="24" height="20" fill="#5B9BD5" opacity=".9"/>
+          <line x1="10" y1="80" x2="150" y2="80" stroke="#888" stroke-width="1.5"/>
+          <text x="10" y="88" font-size="7" fill="#888">Bars touch — no gaps</text>
+        </svg>
+        <p>For continuous numerical data grouped into intervals. Bars touch because data is continuous.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--num-light);color:var(--num)">Numerical data</span>
+        <h4>Dot Plot</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <line x1="10" y1="78" x2="150" y2="78" stroke="#888" stroke-width="1.5"/>
+          <circle cx="30" cy="68" r="5" fill="#5B9BD5"/><circle cx="50" cy="68" r="5" fill="#5B9BD5"/>
+          <circle cx="50" cy="56" r="5" fill="#5B9BD5"/><circle cx="70" cy="68" r="5" fill="#5B9BD5"/>
+          <circle cx="70" cy="56" r="5" fill="#5B9BD5"/><circle cx="70" cy="44" r="5" fill="#5B9BD5"/>
+          <circle cx="90" cy="68" r="5" fill="#5B9BD5"/><circle cx="110" cy="68" r="5" fill="#5B9BD5"/>
+          <circle cx="110" cy="56" r="5" fill="#5B9BD5"/><circle cx="130" cy="68" r="5" fill="#5B9BD5"/>
+          <text x="10" y="88" font-size="7" fill="#888">One dot per data point</text>
+        </svg>
+        <p>Best for small discrete datasets. Each dot represents one data value above a number line.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--num-light);color:var(--num)">Numerical data</span>
+        <h4>Stem-and-Leaf Plot</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <rect x="10" y="8" width="140" height="72" rx="6" fill="#EBF4FF"/>
+          <line x1="50" y1="8" x2="50" y2="80" stroke="#2B6CB0" stroke-width="2"/>
+          <text x="20" y="26" font-size="10" font-weight="700" fill="#2B6CB0">6</text>
+          <text x="60" y="26" font-size="10" fill="#333">3  7  9</text>
+          <text x="20" y="44" font-size="10" font-weight="700" fill="#2B6CB0">7</text>
+          <text x="60" y="44" font-size="10" fill="#333">1  2  4  8</text>
+          <text x="20" y="62" font-size="10" font-weight="700" fill="#2B6CB0">8</text>
+          <text x="60" y="62" font-size="10" fill="#333">0  5</text>
+          <text x="10" y="86" font-size="7" fill="#888">Stem | Leaves</text>
+        </svg>
+        <p>Preserves original data. Good for spotting the middle value and shape of the distribution.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--cat-light);color:var(--cat)">Categorical data</span>
+        <h4>Column Graph</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <rect x="15" y="40" width="22" height="40" fill="#C47A1E" rx="2"/>
+          <rect x="47" y="20" width="22" height="60" fill="#C47A1E" rx="2"/>
+          <rect x="79" y="55" width="22" height="25" fill="#C47A1E" rx="2"/>
+          <rect x="111" y="35" width="22" height="45" fill="#C47A1E" rx="2"/>
+          <line x1="10" y1="80" x2="150" y2="80" stroke="#888" stroke-width="1.5"/>
+          <text x="10" y="88" font-size="7" fill="#888">Gaps between bars</text>
+        </svg>
+        <p>For categorical or discrete data. Bars have gaps between them to show separate categories.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--num-light);color:var(--num)">Trend over time</span>
+        <h4>Line Graph</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <polyline points="20,70 45,50 70,35 95,55 120,25 145,40" fill="none" stroke="#3A7D68" stroke-width="2.5"/>
+          <circle cx="20" cy="70" r="4" fill="#3A7D68"/><circle cx="45" cy="50" r="4" fill="#3A7D68"/>
+          <circle cx="70" cy="35" r="4" fill="#3A7D68"/><circle cx="95" cy="55" r="4" fill="#3A7D68"/>
+          <circle cx="120" cy="25" r="4" fill="#3A7D68"/><circle cx="145" cy="40" r="4" fill="#3A7D68"/>
+          <line x1="10" y1="80" x2="150" y2="80" stroke="#888" stroke-width="1.5"/>
+          <text x="10" y="88" font-size="7" fill="#888">Shows change over time</text>
+        </svg>
+        <p>Best for showing how data changes over time. Points connected by lines suggest a continuous trend.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--cat-light);color:var(--cat)">Parts of a whole</span>
+        <h4>Sector Graph</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <circle cx="70" cy="44" r="36" fill="none" stroke="#DDD5CA" stroke-width="0.5"/>
+          <path d="M70,44 L70,8 A36,36,0,0,1,106,44 Z" fill="#C47A1E"/>
+          <path d="M70,44 L106,44 A36,36,0,0,1,54,78 Z" fill="#D4962A"/>
+          <path d="M70,44 L54,78 A36,36,0,0,1,34,44 Z" fill="#A0641A"/>
+          <path d="M70,44 L34,44 A36,36,0,0,1,70,8 Z" fill="#E8C07A"/>
+          <text x="108" y="30" font-size="7" fill="#C47A1E">&#11044; Sport A</text>
+          <text x="108" y="44" font-size="7" fill="#D4962A">&#11044; Sport B</text>
+          <text x="108" y="58" font-size="7" fill="#A0641A">&#11044; Sport C</text>
+          <text x="108" y="72" font-size="7" fill="#E8C07A">&#11044; Sport D</text>
+        </svg>
+        <p>Shows each category as a proportion of the whole. All sectors must add to 100%.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--cat-light);color:var(--cat)">Parts of a whole</span>
+        <h4>Divided Bar Graph</h4>
+        <svg viewBox="0 0 160 70" width="100%">
+          <rect x="10" y="20" width="56" height="28" fill="#C47A1E"/>
+          <rect x="66" y="20" width="38" height="28" fill="#D4962A"/>
+          <rect x="104" y="20" width="22" height="28" fill="#A0641A"/>
+          <rect x="126" y="20" width="24" height="28" fill="#E8C07A"/>
+          <text x="10" y="60" font-size="7" fill="#888">One bar divided into sections</text>
+        </svg>
+        <p>Like a sector graph but in bar form. One bar divided into sections representing proportions.</p>
+      </div>
+      <div class="graph-card">
+        <span class="graph-label" style="background:var(--cat-light);color:var(--cat)">Pictorial</span>
+        <h4>Pictogram</h4>
+        <svg viewBox="0 0 160 90" width="100%">
+          <text x="10" y="22" font-size="10">&#127774;&#127774;&#127774;&#127774;</text>
+          <text x="10" y="44" font-size="10">&#127774;&#127774;&#127774;</text>
+          <text x="10" y="66" font-size="10">&#127774;&#127774;&#127774;&#127774;&#127774;</text>
+          <text x="92" y="22" font-size="8" fill="#888">Mon</text>
+          <text x="92" y="44" font-size="8" fill="#888">Tue</text>
+          <text x="92" y="66" font-size="8" fill="#888">Wed</text>
+          <text x="10" y="84" font-size="7" fill="#888">Each &#9728; = 2 units</text>
+        </svg>
+        <p>Uses icons or pictures to represent data. Each icon represents a fixed quantity. Needs a key.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Rules for all graphs — always include:</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+      <div style="background:var(--accent-light);border-radius:10px;padding:14px;border-left:4px solid var(--accent)"><strong>Title</strong><p style="font-size:.88rem;margin-top:4px">Clearly describes what the graph shows. Example: "Favourite Sports of Year 7 Students"</p></div>
+      <div style="background:var(--accent-light);border-radius:10px;padding:14px;border-left:4px solid var(--accent)"><strong>Axis Labels</strong><p style="font-size:.88rem;margin-top:4px">Both axes labelled with the variable name and units where relevant. Example: "Frequency" and "Height (cm)"</p></div>
+      <div style="background:var(--accent-light);border-radius:10px;padding:14px;border-left:4px solid var(--accent)"><strong>Scale</strong><p style="font-size:.88rem;margin-top:4px">Equal intervals on axes. Scale must start at 0 unless clearly stated otherwise.</p></div>
+      <div style="background:var(--accent-light);border-radius:10px;padding:14px;border-left:4px solid var(--accent)"><strong>Source</strong><p style="font-size:.88rem;margin-top:4px">Where did the data come from? Example: "Source: 2024 Year 7 survey, Trinity College"</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: INTERACTIVE -->
+<div id="t3" class="tab-panel">
+  <h1 class="page-title">Graph-Type Selector</h1>
+  <p class="page-sub">Read each dataset description, then choose the most appropriate graph type and justify your choice.</p>
+
+  <div class="card" id="gs-card">
+    <h3 style="margin-bottom:16px">Choose a scenario:</h3>
+    <div class="scenario-list">
+      <div class="scenario-item" onclick="selectScenario(0,this)">
+        <h4>Scenario A &mdash; Favourite Sports</h4>
+        <p>50 students were asked to name their favourite sport. Results: Football 18, Basketball 12, Swimming 10, Tennis 7, Other 3.</p>
+      </div>
+      <div class="scenario-item" onclick="selectScenario(1,this)">
+        <h4>Scenario B &mdash; Daily Temperature</h4>
+        <p>A weather station records the maximum temperature (&deg;C) every day for a month: values range from 14.2 to 31.8&deg;C.</p>
+      </div>
+      <div class="scenario-item" onclick="selectScenario(2,this)">
+        <h4>Scenario C &mdash; Goals Per Game</h4>
+        <p>A soccer team records the number of goals they score in each of 20 games. Values: 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 0, 1, 2, 3, 2</p>
+      </div>
+      <div class="scenario-item" onclick="selectScenario(3,this)">
+        <h4>Scenario D &mdash; School Budget</h4>
+        <p>The school budget is split: Sports 35%, Arts 25%, Technology 20%, Library 12%, Other 8%. Show how the budget is divided.</p>
+      </div>
+    </div>
+    <div id="gs-question" style="display:none">
+      <p style="font-weight:700;margin-bottom:12px">Which graph type is MOST appropriate for this dataset?</p>
+      <div class="graph-opts" id="gs-opts">
+        <button class="graph-opt-btn" onclick="checkGraph(this,'histogram')">Histogram</button>
+        <button class="graph-opt-btn" onclick="checkGraph(this,'column')">Column Graph</button>
+        <button class="graph-opt-btn" onclick="checkGraph(this,'dot')">Dot Plot</button>
+        <button class="graph-opt-btn" onclick="checkGraph(this,'line')">Line Graph</button>
+        <button class="graph-opt-btn" onclick="checkGraph(this,'sector')">Sector Graph</button>
+        <button class="graph-opt-btn" onclick="checkGraph(this,'stem')">Stem-and-Leaf</button>
+      </div>
+      <div id="gs-fb" class="int-fb"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: WORKED EXAMPLES -->
+<div id="t4" class="tab-panel">
+  <h1 class="page-title">Worked Examples</h1>
+  <p class="page-sub">Click "Show Next Step" to reveal each step. Each example covers a different graph type.</p>
+
+  <!-- Example 1: Frequency histogram -->
+  <div class="example-card">
+    <div class="ex-header"><span class="ex-badge">Example 1</span><span class="tier-badge" style="background:var(--num-light);color:var(--num)">Frequency Histogram</span></div>
+    <p style="margin-bottom:14px"><strong>Question:</strong> The heights (in cm) of 20 students were recorded. Construct a frequency histogram using the data grouped into intervals: 150–155, 155–160, 160–165, 165–170, 170–175. Frequencies: 2, 5, 8, 4, 1.</p>
+    <div id="h1s1" class="step-block shown">
+      <div class="step-action">Step 1 — Identify the graph type</div>
+      <div class="step-why">Height is continuous numerical data grouped into intervals. A frequency histogram is appropriate — bars will touch because the intervals are continuous.</div>
+    </div>
+    <div id="h1s2" class="step-block">
+      <div class="step-action">Step 2 — Set up the axes</div>
+      <div class="step-why">Horizontal axis (x): Height in cm, labelled with interval boundaries (150, 155, 160, 165, 170, 175). Vertical axis (y): Frequency, starting at 0, scale up to at least 8 in equal steps.</div>
+    </div>
+    <div id="h1s3" class="step-block">
+      <div class="step-action">Step 3 — Draw the bars</div>
+      <svg viewBox="0 0 360 200" width="100%" style="background:white;border-radius:8px;margin:8px 0">
+        <line x1="50" y1="170" x2="320" y2="170" stroke="#888" stroke-width="1.5"/>
+        <line x1="50" y1="20" x2="50" y2="170" stroke="#888" stroke-width="1.5"/>
+        <!-- bars: freq 2,5,8,4,1 → scale: max 8, height per unit ~17px, bar width ~50 -->
+        <rect x="50" y="136" width="50" height="34" fill="#5B9BD5"/>
+        <rect x="100" y="85" width="50" height="85" fill="#5B9BD5"/>
+        <rect x="150" y="34" width="50" height="136" fill="#5B9BD5"/>
+        <rect x="200" y="102" width="50" height="68" fill="#5B9BD5"/>
+        <rect x="250" y="153" width="50" height="17" fill="#5B9BD5"/>
+        <!-- gridlines -->
+        <line x1="46" y1="153" x2="50" y2="153" stroke="#888" stroke-width="1"/><text x="38" y="157" font-size="9" fill="#888" text-anchor="end">1</text>
+        <line x1="46" y1="136" x2="50" y2="136" stroke="#888" stroke-width="1"/><text x="38" y="140" font-size="9" fill="#888" text-anchor="end">2</text>
+        <line x1="46" y1="102" x2="50" y2="102" stroke="#888" stroke-width="1"/><text x="38" y="106" font-size="9" fill="#888" text-anchor="end">5</text>
+        <line x1="46" y1="85" x2="50" y2="85" stroke="#888" stroke-width="1"/><text x="38" y="89" font-size="9" fill="#888" text-anchor="end">5</text>
+        <line x1="46" y1="34" x2="50" y2="34" stroke="#888" stroke-width="1"/><text x="38" y="38" font-size="9" fill="#888" text-anchor="end">8</text>
+        <!-- x labels -->
+        <text x="50" y="183" font-size="9" fill="#555" text-anchor="middle">150</text>
+        <text x="100" y="183" font-size="9" fill="#555" text-anchor="middle">155</text>
+        <text x="150" y="183" font-size="9" fill="#555" text-anchor="middle">160</text>
+        <text x="200" y="183" font-size="9" fill="#555" text-anchor="middle">165</text>
+        <text x="250" y="183" font-size="9" fill="#555" text-anchor="middle">170</text>
+        <text x="300" y="183" font-size="9" fill="#555" text-anchor="middle">175</text>
+        <!-- axis labels -->
+        <text x="175" y="198" font-size="10" fill="#333" text-anchor="middle">Height (cm)</text>
+        <text x="18" y="100" font-size="10" fill="#333" text-anchor="middle" transform="rotate(-90,18,100)">Frequency</text>
+        <text x="175" y="14" font-size="10" font-weight="700" fill="#3A7D68" text-anchor="middle">Heights of 20 Students</text>
+      </svg>
+      <div class="step-why">Notice bars touch — no gaps. This signals continuous data. Each bar spans exactly one interval.</div>
+    </div>
+    <div id="h1s4" class="step-block">
+      <div class="step-action">Step 4 — Add required elements</div>
+      <div class="step-why">Title: "Heights of 20 Students". Axis labels: "Height (cm)" and "Frequency". Scale: 0–8 in equal steps. Source: note where the data came from. These four elements must always be present.</div>
+    </div>
+    <button class="step-btn" id="h1-btn" onclick="nextStep('h1',4)">Show Next Step</button>
+  </div>
+
+  <!-- Example 2: Stem and leaf -->
+  <div class="example-card">
+    <div class="ex-header"><span class="ex-badge">Example 2</span><span class="tier-badge" style="background:var(--num-light);color:var(--num)">Stem-and-Leaf Plot</span></div>
+    <p style="margin-bottom:14px"><strong>Question:</strong> Test scores for 12 students: 63, 67, 71, 74, 74, 78, 80, 81, 85, 88, 92, 95. Construct a stem-and-leaf plot.</p>
+    <div id="h2s1" class="step-block shown">
+      <div class="step-action">Step 1 — Identify stems</div>
+      <div class="step-why">The tens digits are: 6, 7, 8, 9. These become the stems. List them in order from smallest to largest.</div>
+    </div>
+    <div id="h2s2" class="step-block">
+      <div class="step-action">Step 2 — Write each leaf</div>
+      <svg viewBox="0 0 320 130" width="100%" style="background:white;border-radius:8px;margin:8px 0">
+        <rect x="10" y="10" width="300" height="110" rx="8" fill="#EBF4FF"/>
+        <line x1="70" y1="10" x2="70" y2="120" stroke="#2B6CB0" stroke-width="2"/>
+        <text x="40" y="38" font-size="13" font-weight="700" fill="#2B6CB0">6</text>
+        <text x="80" y="38" font-size="13" fill="#333">3  7</text>
+        <text x="40" y="62" font-size="13" font-weight="700" fill="#2B6CB0">7</text>
+        <text x="80" y="62" font-size="13" fill="#333">1  4  4  8</text>
+        <text x="40" y="86" font-size="13" font-weight="700" fill="#2B6CB0">8</text>
+        <text x="80" y="86" font-size="13" fill="#333">0  1  5  8</text>
+        <text x="40" y="110" font-size="13" font-weight="700" fill="#2B6CB0">9</text>
+        <text x="80" y="110" font-size="13" fill="#333">2  5</text>
+        <text x="160" y="126" font-size="9" fill="#888" text-anchor="middle">Key: 6 | 3 means 63</text>
+      </svg>
+      <div class="step-why">Each leaf is the units digit. Write leaves in order from smallest to largest in each row. Include a key!</div>
+    </div>
+    <div id="h2s3" class="step-block">
+      <div class="step-action">Step 3 — Read back the data</div>
+      <div class="step-why">Check: Row 6 → 63, 67. Row 7 → 71, 74, 74, 78. Row 8 → 80, 81, 85, 88. Row 9 → 92, 95. All 12 original values are preserved — this is a key advantage of stem-and-leaf plots.</div>
+    </div>
+    <button class="step-btn" id="h2-btn" onclick="nextStep('h2',3)">Show Next Step</button>
+  </div>
+
+  <!-- Example 3: Dot plot -->
+  <div class="example-card">
+    <div class="ex-header"><span class="ex-badge">Example 3</span><span class="tier-badge" style="background:var(--num-light);color:var(--num)">Dot Plot</span></div>
+    <p style="margin-bottom:14px"><strong>Question:</strong> The number of goals scored by a team in 15 games: 0, 1, 0, 2, 3, 1, 1, 2, 0, 4, 2, 1, 3, 2, 1. Construct a dot plot.</p>
+    <div id="h3s1" class="step-block shown">
+      <div class="step-action">Step 1 — Draw a number line</div>
+      <div class="step-why">The values range from 0 to 4. Draw a horizontal number line from 0 to 4 with equal spacing. Label it "Goals Scored".</div>
+    </div>
+    <div id="h3s2" class="step-block">
+      <div class="step-action">Step 2 — Place one dot per value</div>
+      <svg viewBox="0 0 320 120" width="100%" style="background:white;border-radius:8px;margin:8px 0">
+        <line x1="20" y1="90" x2="300" y2="90" stroke="#333" stroke-width="1.5"/>
+        <text x="50" y="108" font-size="11" fill="#333" text-anchor="middle">0</text>
+        <text x="110" y="108" font-size="11" fill="#333" text-anchor="middle">1</text>
+        <text x="170" y="108" font-size="11" fill="#333" text-anchor="middle">2</text>
+        <text x="230" y="108" font-size="11" fill="#333" text-anchor="middle">3</text>
+        <text x="290" y="108" font-size="11" fill="#333" text-anchor="middle">4</text>
+        <!-- 0: 3 dots -->
+        <circle cx="50" cy="78" r="7" fill="#5B9BD5"/><circle cx="50" cy="62" r="7" fill="#5B9BD5"/><circle cx="50" cy="46" r="7" fill="#5B9BD5"/>
+        <!-- 1: 5 dots -->
+        <circle cx="110" cy="78" r="7" fill="#5B9BD5"/><circle cx="110" cy="62" r="7" fill="#5B9BD5"/>
+        <circle cx="110" cy="46" r="7" fill="#5B9BD5"/><circle cx="110" cy="30" r="7" fill="#5B9BD5"/>
+        <circle cx="110" cy="14" r="7" fill="#5B9BD5"/>
+        <!-- 2: 4 dots -->
+        <circle cx="170" cy="78" r="7" fill="#5B9BD5"/><circle cx="170" cy="62" r="7" fill="#5B9BD5"/>
+        <circle cx="170" cy="46" r="7" fill="#5B9BD5"/><circle cx="170" cy="30" r="7" fill="#5B9BD5"/>
+        <!-- 3: 2 dots -->
+        <circle cx="230" cy="78" r="7" fill="#5B9BD5"/><circle cx="230" cy="62" r="7" fill="#5B9BD5"/>
+        <!-- 4: 1 dot -->
+        <circle cx="290" cy="78" r="7" fill="#5B9BD5"/>
+        <text x="160" y="118" font-size="9" fill="#888" text-anchor="middle">Goals Scored</text>
+      </svg>
+      <div class="step-why">Stack dots vertically above each value. Tally: 0 appears 3 times, 1 appears 5 times, 2 appears 4 times, 3 appears 2 times, 4 appears 1 time. Total = 15 ✓</div>
+    </div>
+    <div id="h3s3" class="step-block">
+      <div class="step-action">Step 3 — Read the display</div>
+      <div class="step-why">The tallest stack (most dots) is at 1 — the most common number of goals. The shape shows most games had 1–2 goals. This is easy to see on a dot plot for small datasets.</div>
+    </div>
+    <button class="step-btn" id="h3-btn" onclick="nextStep('h3',3)">Show Next Step</button>
+  </div>
+
+  <!-- Example 4: Selecting graph type -->
+  <div class="example-card">
+    <div class="ex-header"><span class="ex-badge">Example 4</span><span class="tier-badge" style="background:var(--cat-light);color:var(--cat)">Selecting graph type</span></div>
+    <p style="margin-bottom:14px"><strong>Question:</strong> A student has collected data on the favourite subjects of 80 Year 7 students. Which graph type should they use and why?</p>
+    <div id="h4s1" class="step-block shown">
+      <div class="step-action">Step 1 — Identify the type of data</div>
+      <div class="step-why">"Favourite subject" is categorical data — the values are labels (Maths, English, PE, etc.), not numbers. This rules out graphs designed for numerical data (histogram, stem-and-leaf, dot plot).</div>
+    </div>
+    <div id="h4s2" class="step-block">
+      <div class="step-action">Step 2 — Identify the purpose</div>
+      <div class="step-why">We want to compare how many students chose each subject. This is a frequency comparison across categories — not showing proportions or trends over time.</div>
+    </div>
+    <div id="h4s3" class="step-block">
+      <div class="step-action">Step 3 — Select and justify</div>
+      <div class="step-why">Best choice: <strong>Column graph</strong> (or bar graph). Columns show frequency for each category. Gaps between bars correctly signal that the categories are separate, not continuous. A sector graph could also work if showing proportions is the goal.</div>
+    </div>
+    <button class="step-btn" id="h4-btn" onclick="nextStep('h4',3)">Show Next Step</button>
+  </div>
+
+  <!-- Example 5: Line graph -->
+  <div class="example-card">
+    <div class="ex-header"><span class="ex-badge">Example 5</span><span class="tier-badge" style="background:var(--num-light);color:var(--num)">Line Graph</span></div>
+    <p style="margin-bottom:14px"><strong>Question:</strong> A school records average monthly rainfall (mm) over 6 months: Jan 80, Feb 65, Mar 110, Apr 95, May 55, Jun 40. Display this data appropriately.</p>
+    <div id="h5s1" class="step-block shown">
+      <div class="step-action">Step 1 — Identify data type and purpose</div>
+      <div class="step-why">Monthly rainfall over time — this is continuous numerical data showing change over time. A line graph is most appropriate: it shows the trend across time clearly.</div>
+    </div>
+    <div id="h5s2" class="step-block">
+      <div class="step-action">Step 2 — Draw the line graph</div>
+      <svg viewBox="0 0 340 180" width="100%" style="background:white;border-radius:8px;margin:8px 0">
+        <line x1="50" y1="150" x2="320" y2="150" stroke="#888" stroke-width="1.5"/>
+        <line x1="50" y1="10" x2="50" y2="150" stroke="#888" stroke-width="1.5"/>
+        <!-- y scale: 0=150, 40=122, 55=115, 65=109, 80=100, 95=91, 110=83 → scale: 150 - val*0.7 -->
+        <!-- Jan=80: 150-56=94; Feb=65: 150-45.5=104.5; Mar=110: 150-77=73; Apr=95: 150-66.5=83.5; May=55: 150-38.5=111.5; Jun=40: 150-28=122 -->
+        <polyline points="80,94 125,104.5 170,73 215,83.5 260,111.5 305,122" fill="none" stroke="#3A7D68" stroke-width="2.5"/>
+        <circle cx="80" cy="94" r="5" fill="#3A7D68"/>
+        <circle cx="125" cy="104.5" r="5" fill="#3A7D68"/>
+        <circle cx="170" cy="73" r="5" fill="#3A7D68"/>
+        <circle cx="215" cy="83.5" r="5" fill="#3A7D68"/>
+        <circle cx="260" cy="111.5" r="5" fill="#3A7D68"/>
+        <circle cx="305" cy="122" r="5" fill="#3A7D68"/>
+        <!-- x labels -->
+        <text x="80" y="163" font-size="9" fill="#555" text-anchor="middle">Jan</text>
+        <text x="125" y="163" font-size="9" fill="#555" text-anchor="middle">Feb</text>
+        <text x="170" y="163" font-size="9" fill="#555" text-anchor="middle">Mar</text>
+        <text x="215" y="163" font-size="9" fill="#555" text-anchor="middle">Apr</text>
+        <text x="260" y="163" font-size="9" fill="#555" text-anchor="middle">May</text>
+        <text x="305" y="163" font-size="9" fill="#555" text-anchor="middle">Jun</text>
+        <!-- y labels -->
+        <text x="44" y="150" font-size="9" fill="#888" text-anchor="end">0</text>
+        <text x="44" y="94" font-size="9" fill="#888" text-anchor="end">80</text>
+        <text x="44" y="73" font-size="9" fill="#888" text-anchor="end">110</text>
+        <text x="185" y="175" font-size="10" fill="#333" text-anchor="middle">Month</text>
+        <text x="18" y="90" font-size="10" fill="#333" text-anchor="middle" transform="rotate(-90,18,90)">Rainfall (mm)</text>
+        <text x="185" y="10" font-size="10" font-weight="700" fill="#3A7D68" text-anchor="middle">Average Monthly Rainfall</text>
+      </svg>
+      <div class="step-why">Dots mark exact values; the line shows the trend between months. March had the highest rainfall, June the lowest.</div>
+    </div>
+    <button class="step-btn" id="h5-btn" onclick="nextStep('h5',2)">Show Next Step</button>
+  </div>
+</div>
+
+<!-- TAB 5: ERROR DETECTIVE -->
+<div id="t5" class="tab-panel">
+  <h1 class="page-title">Error Detective</h1>
+  <p class="page-sub">Each case contains exactly one error. Identify it, then reveal the explanation.</p>
+
+  <div class="case-card">
+    <div class="ex-header"><span class="ex-badge" style="background:var(--err)">Case 1</span><span style="font-size:.9rem;color:var(--muted)">Graph construction</span></div>
+    <p style="margin-bottom:16px"><strong>Scenario:</strong> A student draws a histogram to display the number of pets owned by students in a class (values: 0, 1, 2, 3, 4). They draw bars with gaps between them. Evaluate their approach.</p>
+    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+      <div class="correct-line">Step 1: I have numerical data (number of pets) — a histogram is an appropriate graph type. ✓</div>
+      <div class="correct-line">Step 2: I will use the frequency of each value on the y-axis and the number of pets on the x-axis. ✓</div>
+      <div class="wrong-line">Step 3: I drew gaps between the bars so the reader knows these are separate values. ✗</div>
+    </div>
+    <button class="guess-btn" onclick="revealCase('d1')">Reveal Explanation</button>
+    <div id="d1-reveal" class="reveal-box">
+      <strong style="color:var(--err)">&#10060; Error in Step 3</strong>
+      <p style="margin-top:8px">In a histogram, bars must NOT have gaps. But wait — there is a deeper issue here. "Number of pets" is <strong>discrete</strong> data (0, 1, 2, 3...), not continuous. A histogram with touching bars is designed for <em>continuous</em> grouped data. For small discrete datasets, a <strong>dot plot or column graph</strong> (with gaps) is more appropriate.</p>
+      <div style="background:var(--ok-light);border-radius:8px;padding:10px 14px;margin-top:10px;border-left:4px solid var(--ok)">
+        <strong style="color:var(--ok)">Better choice:</strong> A dot plot (for a small class dataset) or a column graph with gaps (to signal discrete separate values).
+      </div>
+      <p style="margin-top:10px;font-size:.88rem;color:var(--muted)"><strong>Common error pattern:</strong> Using a histogram for any numerical data. Histograms are specifically for continuous data grouped into intervals.</p>
+    </div>
+  </div>
+
+  <div class="case-card">
+    <div class="ex-header"><span class="ex-badge" style="background:var(--err)">Case 2</span><span style="font-size:.9rem;color:var(--muted)">Missing graph elements</span></div>
+    <p style="margin-bottom:16px"><strong>Scenario:</strong> A student produces the following column graph for favourite sports data. Identify what is missing.</p>
+    <svg viewBox="0 0 320 160" width="100%" style="background:white;border-radius:8px;margin-bottom:14px;border:2px solid var(--border)">
+      <rect x="30" y="40" width="40" height="80" fill="#C47A1E" rx="2"/>
+      <rect x="90" y="60" width="40" height="60" fill="#C47A1E" rx="2"/>
+      <rect x="150" y="80" width="40" height="40" fill="#C47A1E" rx="2"/>
+      <rect x="210" y="100" width="40" height="20" fill="#C47A1E" rx="2"/>
+      <line x1="20" y1="120" x2="300" y2="120" stroke="#888" stroke-width="1.5"/>
+      <line x1="20" y1="20" x2="20" y2="120" stroke="#888" stroke-width="1.5"/>
+      <text x="50" y="135" font-size="10" fill="#555" text-anchor="middle">Football</text>
+      <text x="110" y="135" font-size="10" fill="#555" text-anchor="middle">Basketball</text>
+      <text x="170" y="135" font-size="10" fill="#555" text-anchor="middle">Swimming</text>
+      <text x="230" y="135" font-size="10" fill="#555" text-anchor="middle">Tennis</text>
+      <!-- intentionally missing: title, y-axis label, y-axis scale, source -->
+    </svg>
+    <button class="guess-btn" onclick="revealCase('d2')">Reveal What's Missing</button>
+    <div id="d2-reveal" class="reveal-box">
+      <strong style="color:var(--err)">&#10060; Four required elements are missing</strong>
+      <ul style="margin-top:10px;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:.95rem">
+        <li><strong>Title</strong> — there is no heading telling the reader what this graph shows</li>
+        <li><strong>Y-axis label</strong> — the vertical axis has no label (it should say "Frequency" or "Number of Students")</li>
+        <li><strong>Y-axis scale</strong> — there are no numbers on the vertical axis, so values cannot be read</li>
+        <li><strong>Source</strong> — no information about where the data came from</li>
+      </ul>
+      <p style="margin-top:10px;font-size:.88rem;color:var(--muted)"><strong>Common error pattern:</strong> Only labelling the x-axis categories and forgetting the y-axis, title, and source. All four must be present in every graph.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: WORD PROBLEMS -->
+<div id="t6" class="tab-panel">
+  <h1 class="page-title">Word Problems</h1>
+  <p class="page-sub">Use Newman's five-step framework to work through each problem.</p>
+
+  <div class="problem-card">
+    <div class="ex-header"><span class="ex-badge">Problem 1</span><span class="tier-badge" style="background:var(--num-light);color:var(--num)">Foundation</span></div>
+    <p style="margin-bottom:16px"><strong>A class of 24 students was asked how many books they read in the last month. The results were: 0, 1, 0, 2, 1, 3, 2, 0, 1, 1, 2, 4, 1, 3, 0, 2, 1, 1, 2, 0, 3, 1, 2, 1. Display this data in an appropriate graph and justify your choice.</strong></p>
+    <div class="newman-step"><div class="newman-label">1 — Read</div><div class="frame">The dataset contains _____ values. The variable is "number of books read", which is a __________ variable.</div></div>
+    <div class="newman-step"><div class="newman-label">2 — Define</div><div class="frame">I need to select a graph type for __________ data with _____ possible values.</div></div>
+    <div class="newman-step"><div class="newman-label">3 — Write</div><div class="frame">A __________ graph is appropriate because __________. I would NOT use a __________ because __________.</div></div>
+    <div class="newman-step"><div class="newman-label">4–5 — Solve and Answer</div><div class="frame">Construct the graph. Include: title, axis labels, scale, source. Write a sentence justifying your graph choice.</div></div>
+    <button class="sol-btn" onclick="revealSol('p1')">Show Full Solution</button>
+    <div id="p1-sol" class="sol-box">
+      <strong style="color:var(--ok)">Full Solution</strong>
+      <p style="margin-top:8px;font-size:.95rem"><strong>Graph choice:</strong> Dot plot. The data is discrete numerical with a small range (0–4). A dot plot shows every data value clearly and the shape of the distribution is easy to see with a small dataset of 24 values.</p>
+      <svg viewBox="0 0 340 140" width="100%" style="background:white;border-radius:8px;margin:10px 0">
+        <line x1="30" y1="120" x2="310" y2="120" stroke="#333" stroke-width="1.5"/>
+        <text x="80" y="134" font-size="10" fill="#333" text-anchor="middle">0</text>
+        <text x="140" y="134" font-size="10" fill="#333" text-anchor="middle">1</text>
+        <text x="200" y="134" font-size="10" fill="#333" text-anchor="middle">2</text>
+        <text x="260" y="134" font-size="10" fill="#333" text-anchor="middle">3</text>
+        <text x="320" y="134" font-size="10" fill="#333" text-anchor="middle">4</text>
+        <!-- 0: freq 5 -->
+        <circle cx="80" cy="108" r="6" fill="#5B9BD5"/><circle cx="80" cy="94" r="6" fill="#5B9BD5"/><circle cx="80" cy="80" r="6" fill="#5B9BD5"/><circle cx="80" cy="66" r="6" fill="#5B9BD5"/><circle cx="80" cy="52" r="6" fill="#5B9BD5"/>
+        <!-- 1: freq 9 -->
+        <circle cx="140" cy="108" r="6" fill="#5B9BD5"/><circle cx="140" cy="94" r="6" fill="#5B9BD5"/><circle cx="140" cy="80" r="6" fill="#5B9BD5"/><circle cx="140" cy="66" r="6" fill="#5B9BD5"/><circle cx="140" cy="52" r="6" fill="#5B9BD5"/><circle cx="140" cy="38" r="6" fill="#5B9BD5"/><circle cx="140" cy="24" r="6" fill="#5B9BD5"/><circle cx="140" cy="10" r="6" fill="#5B9BD5"/>
+        <!-- clipped last for space -->
+        <!-- 2: freq 6 -->
+        <circle cx="200" cy="108" r="6" fill="#5B9BD5"/><circle cx="200" cy="94" r="6" fill="#5B9BD5"/><circle cx="200" cy="80" r="6" fill="#5B9BD5"/><circle cx="200" cy="66" r="6" fill="#5B9BD5"/><circle cx="200" cy="52" r="6" fill="#5B9BD5"/><circle cx="200" cy="38" r="6" fill="#5B9BD5"/>
+        <!-- 3: freq 3 -->
+        <circle cx="260" cy="108" r="6" fill="#5B9BD5"/><circle cx="260" cy="94" r="6" fill="#5B9BD5"/><circle cx="260" cy="80" r="6" fill="#5B9BD5"/>
+        <!-- 4: freq 1 -->
+        <circle cx="320" cy="108" r="6" fill="#5B9BD5"/>
+        <text x="175" y="148" font-size="9" fill="#888" text-anchor="middle">Number of Books Read Last Month — Source: Year 7 Class Survey 2024</text>
+      </svg>
+      <p style="margin-top:8px;font-size:.88rem;color:var(--muted)">NOT a histogram: histograms are for continuous data in intervals. NOT a stem-and-leaf: with only 5 possible values, a stem-and-leaf would only have one stem row per value (not useful here).</p>
+    </div>
+  </div>
+
+  <div class="problem-card">
+    <div class="ex-header"><span class="ex-badge">Problem 2</span><span class="tier-badge" style="background:var(--cat-light);color:var(--cat)">Core</span></div>
+    <p style="margin-bottom:16px"><strong>A school canteen records daily sales for five food items over one week. Which graph would best compare total sales for each item, and which would best show how daily sales change over the week? Justify both choices.</strong></p>
+    <div class="newman-step"><div class="newman-label">1–2 — Read and Define</div><div class="frame">This question asks for _____ different graphs because there are _____ different purposes.</div></div>
+    <div class="newman-step"><div class="newman-label">3–5 — Solve and Answer</div><div class="frame">For comparing totals: __________ because __________. For showing change over time: __________ because __________.</div></div>
+    <button class="sol-btn" onclick="revealSol('p2')">Show Full Solution</button>
+    <div id="p2-sol" class="sol-box">
+      <strong style="color:var(--ok)">Full Solution</strong>
+      <p style="margin-top:8px;font-size:.95rem"><strong>Comparing totals across items:</strong> Column graph. Each food item is a separate category. A column for each item with height showing total sales makes comparison easy.</p>
+      <p style="margin-top:8px;font-size:.95rem"><strong>Showing daily change over the week:</strong> Line graph (one line per item, or one line for total sales). A line graph shows how a value changes over time — the slope of the line makes trends visible.</p>
+      <p style="margin-top:8px;font-size:.88rem;color:var(--muted)">This illustrates that the same dataset can be displayed in different ways depending on the question being asked. Graph choice must always be justified by purpose.</p>
+    </div>
+  </div>
+
+  <div class="problem-card">
+    <div class="ex-header"><span class="ex-badge">Problem 3</span><span class="tier-badge" style="background:#F3E8FF;color:#7B3F9E">Extension</span></div>
+    <p style="margin-bottom:16px"><strong>A student wants to create a statistical infographic about their school's environmental sustainability. They have: (a) percentage of waste recycled each month for a year, (b) breakdown of waste types (paper, plastic, food, other), (c) number of trees planted each year for the past 5 years. Design the infographic structure, justifying the graph chosen for each dataset.</strong></p>
+    <div class="newman-step"><div class="newman-label">1–3 — Analyse each dataset</div><div class="frame">Dataset (a) shows __________ over __________. Dataset (b) shows __________. Dataset (c) shows __________.</div></div>
+    <div class="newman-step"><div class="newman-label">4–5 — Design and justify</div><div class="frame">For (a): __________ because __________. For (b): __________ because __________. For (c): __________ because __________.</div></div>
+    <button class="sol-btn" onclick="revealSol('p3')">Show Full Solution</button>
+    <div id="p3-sol" class="sol-box">
+      <strong style="color:var(--ok)">Full Solution</strong>
+      <ul style="margin-top:10px;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:.95rem">
+        <li><strong>(a) Monthly recycling %:</strong> Line graph — shows how the recycling rate changes over 12 months. Trends (improving/declining) are clearly visible.</li>
+        <li><strong>(b) Waste types breakdown:</strong> Sector graph — each waste type is a category, and we want to show each as a proportion of total waste. All sectors sum to 100%.</li>
+        <li><strong>(c) Trees planted each year:</strong> Column graph or dot plot — discrete data (whole trees) over 5 separate years. Columns show comparison across years clearly.</li>
+      </ul>
+      <p style="margin-top:10px;font-size:.88rem;color:var(--muted)">A well-designed infographic would arrange these three graphs with a clear title, colour scheme, icons to reinforce the environmental theme, and source information.</p>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 7: PRACTICE -->
+<div id="t7" class="tab-panel">
+  <h1 class="page-title">Practice</h1>
+  <p class="page-sub">Choose your tier. All questions are self-marking.</p>
+  <div class="tier-switch">
+    <button class="tier-btn active" onclick="switchTier('f',this)">&#127807; Foundation</button>
+    <button class="tier-btn" onclick="switchTier('c',this)">&#128218; Core</button>
+    <button class="tier-btn" onclick="switchTier('e',this)">&#9889; Extension</button>
+  </div>
+
+  <div id="tier-f" class="tier-panel active">
+    <div style="background:var(--num-light);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:.9rem;border-left:4px solid var(--num)"><strong>Foundation:</strong> Match graph types to their definitions and key features.</div>
+    <div class="mcq-card"><div class="mcq-q">1. Which graph type uses bars that TOUCH each other with no gaps?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A column graph has gaps between bars to show separate categories." onclick="mcqAns(this)">Column graph</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! A histogram has no gaps between bars because it represents continuous data in intervals. Touching bars signal continuous data." onclick="mcqAns(this)">Frequency histogram</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A dot plot uses individual dots above a number line, not bars." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A pictogram uses icons to represent data — no bars involved." onclick="mcqAns(this)">Pictogram</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hf1')">&#128161; Hint</button>
+      <div class="hint-box" id="hf1">Think about what "continuous" means — values have no gaps between them. How should the bars reflect that?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">2. A stem-and-leaf plot shows data: 4 | 2  5  8. What data values does this represent?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The stem is the tens digit. 4 | 2 means 42, not 4.2." onclick="mcqAns(this)">4.2, 4.5, 4.8</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! The stem (4) is the tens digit and each leaf (2, 5, 8) is the units digit. So 4|2 = 42, 4|5 = 45, 4|8 = 48." onclick="mcqAns(this)">42, 45, 48</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; You always combine the stem and leaf. Stem 4 + leaf 2 = 42, not just 2, 5, 8." onclick="mcqAns(this)">2, 5, 8</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The stem comes before the vertical line — it is the tens digit. 4 is the stem, so values start with 4." onclick="mcqAns(this)">24, 54, 84</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hf2')">&#128161; Hint</button>
+      <div class="hint-box" id="hf2">Remember: Stem = tens digit (before |). Leaf = units digit (after |). Combine them: stem then leaf.</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">3. Which of the following MUST be included in every graph?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A legend is only needed when a graph has multiple datasets. It is not required in every graph." onclick="mcqAns(this)">A legend</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Grid lines can be helpful but are not a required element of every graph." onclick="mcqAns(this)">Grid lines</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! Every graph must have: a title, axis labels, a scale, and a source. These four elements are always required." onclick="mcqAns(this)">Title, axis labels, scale, and source</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Colour is useful but not a required element. Some graphs work in black and white." onclick="mcqAns(this)">Colour coding</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hf3')">&#128161; Hint</button>
+      <div class="hint-box" id="hf3">What would a reader need to understand the graph without any extra explanation?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">4. What does "one dot = one data point" describe?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A pictogram uses icons (pictures), not dots. Each icon represents a fixed quantity, not necessarily one unit." onclick="mcqAns(this)">Pictogram</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A scatter plot uses dots to show the relationship between two variables — each dot represents one individual, but for two variables simultaneously." onclick="mcqAns(this)">Scatter plot</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! A dot plot places one dot per data value above a number line. The height of the stack shows the frequency." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A frequency polygon uses points connected by lines to represent grouped frequencies — not individual dots per data point." onclick="mcqAns(this)">Frequency polygon</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hf4')">&#128161; Hint</button>
+      <div class="hint-box" id="hf4">Which graph type stacks individual dots above a number line?</div>
+    </div>
+  </div>
+
+  <div id="tier-c" class="tier-panel">
+    <div style="background:var(--cat-light);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:.9rem;border-left:4px solid var(--cat)"><strong>Core:</strong> Select the most appropriate graph type for each scenario.</div>
+    <div class="mcq-card"><div class="mcq-q">1. You want to display the proportion of students choosing each lunch option. Which graph is BEST?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A line graph shows change over time. Lunch choices on one day are not a time series." onclick="mcqAns(this)">Line graph</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A dot plot is for small datasets of individual values — not ideal for showing proportions of categories." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! A sector graph shows each category as a proportion of the whole — exactly right for showing what fraction of students chose each option." onclick="mcqAns(this)">Sector graph</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A histogram is for continuous data in intervals — not suitable for categorical choices." onclick="mcqAns(this)">Histogram</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hc1')">&#128161; Hint</button>
+      <div class="hint-box" id="hc1">The key word is "proportion" — which graph shows parts of a whole?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">2. A dataset contains 200 heights (in cm). Which graph is MOST appropriate?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A dot plot with 200 values would be very crowded and hard to read. It works for small datasets." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! Heights are continuous numerical data. With 200 values, grouping into intervals and using a histogram makes the distribution clear and readable." onclick="mcqAns(this)">Frequency histogram with intervals</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A column graph is for categorical data with separate bars. Height is continuous — bars should touch." onclick="mcqAns(this)">Column graph</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A sector graph shows proportions of a whole, not the distribution of a continuous variable." onclick="mcqAns(this)">Sector graph</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hc2')">&#128161; Hint</button>
+      <div class="hint-box" id="hc2">Height is continuous. 200 values is a large dataset. Which graph handles large continuous datasets best?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">3. A researcher records the average global temperature each year from 2000 to 2024. Which graph best shows whether temperatures are rising?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! A line graph connects points over time, making the trend (rising, falling, stable) immediately visible. It is the standard choice for time-series data." onclick="mcqAns(this)">Line graph</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A stem-and-leaf plot shows the distribution of values — it doesn't link values over time, so trends are invisible." onclick="mcqAns(this)">Stem-and-leaf plot</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A sector graph shows proportions — it can't show change over time." onclick="mcqAns(this)">Sector graph</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A pictogram can show quantities with icons, but it is not suited to showing a trend over many time periods." onclick="mcqAns(this)">Pictogram</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hc3')">&#128161; Hint</button>
+      <div class="hint-box" id="hc3">The purpose is to see the TREND over time. Which graph type makes trends most visible?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">4. A student draws a column graph for the data "heights of 30 students in cm". What is the main error?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The number of students is not the issue. The graph type choice is the problem." onclick="mcqAns(this)">The sample size is too small for a column graph</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Correct! Height is continuous numerical data that should be displayed in a histogram (bars touching, data in intervals). A column graph with gaps implies separate categories — which is wrong for continuous data." onclick="mcqAns(this)">Height is continuous — a histogram with touching bars is more appropriate</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The number of bars is not the key issue — the graph type is wrong for this data." onclick="mcqAns(this)">Column graphs can only have up to 5 bars</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Axis labels may or may not be missing, but the fundamental error is choosing the wrong graph type for continuous data." onclick="mcqAns(this)">The axes are not labelled</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('hc4')">&#128161; Hint</button>
+      <div class="hint-box" id="hc4">Is height categorical or numerical? If numerical, is it discrete or continuous? Which graph type matches?</div>
+    </div>
+  </div>
+
+  <div id="tier-e" class="tier-panel">
+    <div style="background:#F3E8FF;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:.9rem;border-left:4px solid #7B3F9E"><strong>Extension:</strong> Evaluate graph choices and justify decisions.</div>
+    <div class="mcq-card"><div class="mcq-q">1. A student argues: "A sector graph is always better than a column graph for categorical data because it looks more professional." Evaluate this claim.</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The claim is not correct — both graph types have different strengths for different purposes." onclick="mcqAns(this)">The student is correct — sector graphs are always preferred for categorical data</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Column graphs are often the better choice when comparing frequencies — not when showing proportions." onclick="mcqAns(this)">The student is incorrect — column graphs are always better</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Excellent! Sector graphs are best when showing proportions (parts of a whole). Column graphs are better when comparing actual frequencies or when there are many categories. 'Looks professional' is not a statistical justification." onclick="mcqAns(this)">The student is incorrect — sector graphs suit proportions; column graphs suit frequency comparisons</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Both have clearly defined uses — it is not just a style preference." onclick="mcqAns(this)">Both graphs are equally valid in all situations — it is just a matter of style</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('he1')">&#128161; Hint</button>
+      <div class="hint-box" id="he1">When is a sector graph most useful? When is a column graph most useful? Compare the purposes.</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">2. A frequency polygon connects the midpoints of histogram bars with a line. What is the advantage of a frequency polygon over a histogram?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A frequency polygon represents the same data as a histogram — it does not show individual values." onclick="mcqAns(this)">It shows individual data values, unlike a histogram</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Excellent! Because frequency polygons are lines (not bars), multiple distributions can be overlaid on the same graph without the bars blocking each other. This makes comparison between groups much clearer." onclick="mcqAns(this)">Multiple frequency polygons can be overlaid on one graph for easy comparison</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A frequency polygon shows the same information as a histogram — it doesn't show more data." onclick="mcqAns(this)">It can display more data than a histogram</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A frequency polygon is used for the same type of data as a histogram — grouped continuous numerical data." onclick="mcqAns(this)">It is used for categorical data, unlike a histogram</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('he2')">&#128161; Hint</button>
+      <div class="hint-box" id="he2">Think about what happens when you try to put two histograms on the same graph. What problem arises? How does a line solve it?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">3. A pictogram uses &#127814; icons where each icon represents 10 students. There are 3.5 icons for "Swimming". What issue does this cause?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; This is actually fine — half icons are sometimes used in pictograms. The real issue is about interpretation, not the visual itself." onclick="mcqAns(this)">The icon cannot be drawn as half</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; The pictogram still shows a real frequency — 35 students chose swimming. Colour is not the issue." onclick="mcqAns(this)">The icon needs a different colour for partial values</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Excellent! If each icon = 10 students, then 3.5 icons implies 35 students — which is fine. But half-icons are harder to read precisely, and readers may miscount. Pictograms can mislead if the key value doesn't divide evenly into the frequencies. A better key value would be 5." onclick="mcqAns(this)">Half icons are imprecise and can cause misreading — a better key value (e.g. 5) avoids this</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Having 3.5 icons does not make the graph statistically invalid — but it does reduce clarity." onclick="mcqAns(this)">The graph is statistically invalid with 3.5 icons</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('he3')">&#128161; Hint</button>
+      <div class="hint-box" id="he3">What frequency does 3.5 icons represent if 1 icon = 10? Is there a cleaner way to represent this?</div>
+    </div>
+    <div class="mcq-card"><div class="mcq-q">4. A researcher has monthly sales data for three products over 12 months. Which combination of graphs is most useful for a complete analysis?</div>
+      <div class="mcq-opts">
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Three separate histograms are for continuous data in intervals. Monthly sales over time is better shown with line graphs." onclick="mcqAns(this)">Three separate histograms, one per product</button>
+        <button class="opt-btn" data-result="right" data-msg="&#9989; Excellent! A multi-line graph (one line per product) shows how each product's sales change over time and allows direct comparison. A column graph (grouped or stacked) shows total sales per product for overall comparison. Together they give a complete picture." onclick="mcqAns(this)">A multi-line graph (trends over time) plus a column graph (overall totals)</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; Three sector graphs would show proportions of total sales — useful but they don't show the time trend, which is important with 12 months of data." onclick="mcqAns(this)">Three separate sector graphs, one per month</button>
+        <button class="opt-btn" data-result="wrong" data-msg="&#10060; A stem-and-leaf plot is useful for seeing the distribution of values but doesn't show time trends or comparisons between products." onclick="mcqAns(this)">A single stem-and-leaf plot combining all data</button>
+      </div>
+      <div class="mcq-fb"></div>
+      <button class="hint-toggle" onclick="toggleHint('he4')">&#128161; Hint</button>
+      <div class="hint-box" id="he4">There are two questions to answer: (1) how do sales trend over time? (2) which product sold most overall? Different graphs suit different questions.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+function mcqAns(btn){
+  var card=btn.closest('.mcq-card');
+  card.querySelectorAll('.opt-btn').forEach(o=>o.disabled=true);
+  var fb=card.querySelector('.mcq-fb');
+  if(btn.dataset.result==='right'){btn.classList.add('correct');fb.className='mcq-fb ok';fb.textContent=btn.dataset.msg;}
+  else{btn.classList.add('incorrect');fb.className='mcq-fb err';fb.textContent=btn.dataset.msg;}
+}
+function toggleHint(id){document.getElementById(id).classList.toggle('shown');}
+function switchTier(t,btn){
+  document.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tier-'+t).classList.add('active');
+  btn.classList.add('active');
+}
+var stepState={};
+function nextStep(ex,total){
+  if(!stepState[ex])stepState[ex]=1;
+  stepState[ex]++;
+  var s=document.getElementById(ex+'s'+stepState[ex]);
+  if(s)s.classList.add('shown');
+  if(stepState[ex]>=total)document.getElementById(ex+'-btn').disabled=true;
+}
+function revealCase(id){document.getElementById(id+'-reveal').classList.add('shown');}
+function revealSol(id){document.getElementById(id+'-sol').classList.add('shown');}
+
+// Graph selector
+var scenarios=[
+  {ans:'column',fb:'&#9989; Column graph is correct! Favourite sport is categorical data. A column graph with gaps between bars shows frequency per category clearly. A sector graph could also work if you want to show proportions.'},
+  {ans:'histogram',fb:'&#9989; Histogram is correct! Daily temperature is continuous numerical data over a month (30 values). Grouping into intervals and using a histogram with touching bars shows the distribution clearly.'},
+  {ans:'dot',fb:'&#9989; Dot plot is the best fit here! Goals per game are discrete values (0–5) with a small dataset of 20 games. A dot plot shows every value and the shape is easy to read. A stem-and-leaf could also work.'},
+  {ans:'sector',fb:'&#9989; Sector graph is correct! The data is given as percentages of a whole budget. A sector graph shows each category as a proportion — all sectors will sum to 100%.'},
+];
+var curScenario=-1;
+function selectScenario(idx,el){
+  document.querySelectorAll('.scenario-item').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  curScenario=idx;
+  document.getElementById('gs-question').style.display='block';
+  document.querySelectorAll('#gs-opts .graph-opt-btn').forEach(b=>{b.disabled=false;b.className='graph-opt-btn';});
+  document.getElementById('gs-fb').className='int-fb';
+  document.getElementById('gs-fb').textContent='';
+}
+function checkGraph(btn,choice){
+  if(curScenario<0)return;
+  document.querySelectorAll('#gs-opts .graph-opt-btn').forEach(b=>b.disabled=true);
+  var sc=scenarios[curScenario];
+  var fb=document.getElementById('gs-fb');
+  if(choice===sc.ans){btn.classList.add('correct');fb.className='int-fb ok';fb.textContent=sc.fb;}
+  else{btn.classList.add('incorrect');fb.className='int-fb err';fb.textContent='&#10060; Not the best fit. Think about the data type and the purpose. '+sc.fb;}
+}
+</script>
+</body>
+</html>
