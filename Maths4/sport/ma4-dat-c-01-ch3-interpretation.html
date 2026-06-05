@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interpreting Data | MA4-DAT-C-01</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --bg:       #F4EFE9;
+  --card:     #FFFFFF;
+  --text:     #2C2C2C;
+  --muted:    #6B6B6B;
+  --border:   #E2D9CF;
+  --shadow:   0 2px 14px rgba(0,0,0,0.07);
+  --r:        14px;
+  --rsm:      8px;
+  --font:     'Nunito', sans-serif;
+  --ch:       #1A6FA5;
+  --ch-d:     #114E76;
+  --ch-l:     #E6F2FA;
+  --amber:    #D98A0A;
+  --amber-l:  #FEF3DC;
+  --terra:    #C94233;
+  --terra-l:  #FDEAE7;
+  --forest:   #2B7A4B;
+  --forest-l: #E4F3EB;
+  --purple:   #6A3FB5;
+  --purple-l: #F0EAFB;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── HEADER ─────────────────────────────────────────── */
+.ch-header {
+  background:linear-gradient(135deg,var(--ch-d) 0%,var(--ch) 100%);
+  color:#fff; padding:20px 28px 16px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.ch-back {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  border-radius:6px; padding:5px 11px;
+  font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:#fff; text-decoration:none; white-space:nowrap; transition:background .15s;
+}
+.ch-back:hover { background:rgba(255,255,255,.25); }
+.ch-label { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; opacity:.65; margin-bottom:3px; }
+.ch-title { font-size:21px; font-weight:900; line-height:1.15; }
+.ch-sub   { font-size:12px; opacity:.7; margin-top:2px; }
+
+/* ── TAB NAV ─────────────────────────────────────────── */
+.tab-nav {
+  background:var(--ch-d); padding:0 28px;
+  display:flex; overflow-x:auto; scrollbar-width:none;
+}
+.tab-nav::-webkit-scrollbar { display:none; }
+.tab-btn {
+  background:none; border:none; color:rgba(255,255,255,.55);
+  font-family:var(--font); font-size:11.5px; font-weight:700;
+  padding:11px 14px 9px; cursor:pointer;
+  border-bottom:3px solid transparent; transition:all .18s;
+  letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
+}
+.tab-btn:hover  { color:rgba(255,255,255,.9); }
+.tab-btn.active { color:#fff; border-bottom-color:#F5A623; }
+
+/* ── PANELS ─────────────────────────────────────────── */
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.content { max-width:920px; margin:0 auto; padding:28px 20px; }
+
+/* ── SHARED ─────────────────────────────────────────── */
+.section-title { font-size:19px; font-weight:900; color:var(--ch-d); margin-bottom:3px; }
+.section-sub   { font-size:13.5px; color:var(--muted); margin-bottom:18px; line-height:1.55; }
+.divider       { border:none; border-top:2px solid var(--border); margin:26px 0; }
+.note-box {
+  background:var(--amber-l); border-left:4px solid var(--amber);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:12px 15px; font-size:13px; font-weight:600; color:#7a4800;
+  line-height:1.5; margin-bottom:16px;
+}
+.info-box {
+  background:var(--ch-l); border-left:4px solid var(--ch);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:12px 15px; font-size:13px; font-weight:600; color:var(--ch-d);
+  line-height:1.5; margin-bottom:16px;
+}
+.warn-box {
+  background:var(--terra-l); border-left:4px solid var(--terra);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:12px 15px; font-size:13px; font-weight:600; color:#8b1a0e;
+  line-height:1.5; margin-bottom:16px;
+}
+.graph-display {
+  background:#fff; border-radius:var(--r); padding:20px 16px;
+  box-shadow:var(--shadow); margin-bottom:14px; overflow-x:auto;
+}
+.graph-display svg { display:block; max-width:100%; height:auto; }
+.graph-source { font-size:10px; color:var(--muted); text-align:right; margin-top:6px; font-style:italic; }
+
+/* ── HOOK ─────────────────────────────────────────── */
+.hero {
+  background:linear-gradient(135deg,var(--ch-d) 0%,var(--ch) 60%,#2596d8 100%);
+  border-radius:var(--r); padding:32px 28px 28px; color:#fff;
+  margin-bottom:22px; position:relative; overflow:hidden;
+}
+.hero::after {
+  content:'🔍'; position:absolute; right:24px; top:50%;
+  transform:translateY(-50%); font-size:86px; opacity:.1; pointer-events:none;
+}
+.hero h1 { font-size:23px; font-weight:900; margin-bottom:7px; line-height:1.2; }
+.hero p  { font-size:13.5px; opacity:.85; max-width:540px; line-height:1.65; }
+
+.claim-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:22px; }
+.claim-card { background:#fff; border-radius:var(--r); padding:18px; box-shadow:var(--shadow); border-top:4px solid var(--terra); }
+.claim-tag  { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:6px; }
+.claim-text { font-size:14px; font-weight:800; color:var(--terra); line-height:1.3; margin-bottom:8px; }
+.claim-sub  { font-size:12px; color:var(--muted); line-height:1.5; }
+
+.preview-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(195px,1fr)); gap:12px; }
+.prev-card   {
+  background:#fff; border-radius:var(--r); padding:15px 16px;
+  box-shadow:var(--shadow); display:flex; gap:12px; align-items:flex-start;
+}
+.prev-num {
+  width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; font-weight:900; color:#fff; flex-shrink:0;
+}
+.prev-card:nth-child(1) .prev-num { background:var(--ch); }
+.prev-card:nth-child(2) .prev-num { background:var(--forest); }
+.prev-card:nth-child(3) .prev-num { background:var(--amber); }
+.prev-card:nth-child(4) .prev-num { background:var(--terra); }
+.prev-card h4 { font-size:13px; font-weight:800; margin-bottom:2px; }
+.prev-card p  { font-size:11.5px; color:var(--muted); line-height:1.4; }
+
+/* ── EXPLORE ─────────────────────────────────────────── */
+.explore-q {
+  background:#fff; border-radius:var(--r); padding:20px;
+  box-shadow:var(--shadow); margin-bottom:14px;
+}
+.eq-num  { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+.eq-stem { font-size:14px; font-weight:700; margin-bottom:8px; line-height:1.55; }
+.eq-ctx  {
+  font-size:12px; color:var(--muted); font-style:italic;
+  background:var(--bg); border-radius:var(--rsm); padding:8px 12px;
+  margin-bottom:12px; line-height:1.5;
+}
+.eq-opts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+@media (max-width:480px) { .eq-opts { grid-template-columns:1fr; } }
+.opt {
+  background:#fff; border:2px solid var(--border); border-radius:var(--rsm);
+  padding:10px 13px; font-family:var(--font); font-size:12px; font-weight:600;
+  cursor:pointer; text-align:left; transition:all .15s; line-height:1.4;
+}
+.opt:not(:disabled):hover { border-color:var(--ch); background:var(--ch-l); }
+.opt.correct          { border-color:var(--forest)!important; background:var(--forest-l)!important; color:var(--forest)!important; }
+.opt.wrong-opt        { border-color:#ddd!important; background:#f8f8f8!important; color:#b0b0b0!important; }
+.opt.selected-correct { border-color:var(--forest); background:var(--forest-l); color:var(--forest); font-weight:800; }
+.opt.selected-wrong   { border-color:var(--terra);  background:var(--terra-l);  color:var(--terra);  font-weight:800; }
+.opt:disabled { cursor:default; }
+.feedback {
+  border-radius:var(--rsm); padding:10px 13px;
+  font-size:12px; font-weight:600; display:none; line-height:1.55;
+}
+.fb-correct { background:var(--forest-l); color:var(--forest); border:1.5px solid var(--forest); }
+.fb-wrong   { background:var(--terra-l);  color:var(--terra);  border:1.5px solid var(--terra); }
+
+/* ── LEARN ─────────────────────────────────────────── */
+.learn-pills { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:22px; }
+.lpill {
+  background:#fff; border:2px solid var(--border); border-radius:24px;
+  padding:7px 14px; font-family:var(--font); font-size:11.5px; font-weight:700;
+  cursor:pointer; transition:all .15s; color:var(--text); white-space:nowrap;
+}
+.lpill:hover { border-color:var(--ch); color:var(--ch); }
+.lpill.active { background:var(--ch); border-color:var(--ch); color:#fff; }
+.learn-panel { display:none; }
+.learn-panel.active { display:block; }
+
+/* Reveal card */
+.reveal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+@media (max-width:540px) { .reveal-grid { grid-template-columns:1fr; } }
+.reveal-card {
+  background:#fff; border-radius:var(--rsm); padding:15px;
+  box-shadow:var(--shadow); border-left:4px solid var(--border);
+}
+.reveal-card.rd1 { border-color:var(--ch); }
+.reveal-card.rd2 { border-color:var(--forest); }
+.reveal-card.rd3 { border-color:var(--amber); }
+.reveal-card.rd4 { border-color:var(--terra); }
+.rc-q { font-size:13px; font-weight:700; margin-bottom:9px; line-height:1.45; }
+.rc-answer { display:none; font-size:12.5px; line-height:1.55; color:var(--muted); margin-bottom:9px; }
+.reveal-btn {
+  background:var(--bg); border:1.5px solid var(--border);
+  border-radius:var(--rsm); padding:6px 14px;
+  font-family:var(--font); font-size:11.5px; font-weight:700;
+  cursor:pointer; transition:all .15s; display:inline-block;
+}
+.reveal-btn:hover { border-color:var(--ch); color:var(--ch); }
+.reveal-btn.shown { background:var(--ch-l); border-color:var(--ch); color:var(--ch-d); }
+
+/* Feature annotation strip (conclusions) */
+.feature-strip { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+.feat-pill {
+  display:flex; align-items:center; gap:7px;
+  padding:8px 14px; border-radius:10px;
+  font-size:12px; font-weight:700;
+}
+.feat-pill.fp-range   { background:var(--ch-l); color:var(--ch-d); }
+.feat-pill.fp-cluster { background:var(--amber-l); color:#7a4800; }
+.feat-pill.fp-mode    { background:var(--forest-l); color:#1a5030; }
+.feat-pill.fp-outlier { background:var(--terra-l); color:var(--terra); }
+.feat-pill.fp-gap     { background:var(--purple-l); color:var(--purple); }
+
+/* Prediction toggle */
+.pred-toggle {
+  background:var(--bg); border:2px solid var(--border); border-radius:var(--rsm);
+  padding:7px 14px; font-family:var(--font); font-size:11.5px; font-weight:700;
+  cursor:pointer; transition:all .15s; margin-bottom:12px;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.pred-toggle.on { background:var(--forest-l); border-color:var(--forest); color:var(--forest); }
+.pred-toggle:not(.on):hover { border-color:var(--forest); color:var(--forest); }
+
+/* Misleading section */
+.mislead-type { margin-bottom:28px; }
+.mis-head {
+  display:flex; align-items:center; gap:10px; margin-bottom:8px;
+}
+.mis-badge {
+  background:var(--terra); color:#fff;
+  font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+  padding:3px 9px; border-radius:4px; white-space:nowrap;
+}
+.mis-name  { font-size:16px; font-weight:900; color:var(--terra); }
+.mis-desc  { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.55; }
+.side-by-side { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:12px; }
+@media (max-width:540px) { .side-by-side { grid-template-columns:1fr; } }
+.sbs-card {
+  background:#fff; border-radius:var(--r); padding:14px; box-shadow:var(--shadow);
+}
+.sbs-card h4 { font-size:12px; font-weight:800; text-align:center; margin-bottom:10px; }
+.sbs-card.mis h4 { color:var(--terra); }
+.sbs-card.hon h4 { color:var(--forest); }
+.sbs-card svg { display:block; max-width:100%; }
+
+/* ── PRACTISE ─────────────────────────────────────────── */
+.spot-section { margin-bottom:28px; }
+.spot-q { background:#fff; border-radius:var(--r); padding:20px; box-shadow:var(--shadow); margin-bottom:16px; }
+.spot-tag { display:inline-block; background:var(--terra-l); color:var(--terra); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; padding:3px 9px; border-radius:4px; margin-bottom:10px; }
+.spot-stem { font-size:14px; font-weight:700; margin-bottom:14px; line-height:1.55; }
+.spot-graph { overflow-x:auto; margin-bottom:14px; }
+.spot-ctx { font-size:12px; color:var(--muted); font-style:italic; background:var(--bg); border-radius:var(--rsm); padding:8px 12px; margin-bottom:12px; line-height:1.5; }
+
+.tier-picker { display:flex; gap:9px; margin-bottom:22px; flex-wrap:wrap; }
+.tier-btn {
+  padding:9px 20px; border-radius:var(--rsm); border:2px solid var(--border);
+  background:#fff; font-family:var(--font); font-size:12px; font-weight:800;
+  cursor:pointer; transition:all .15s;
+}
+.tier-btn:not(.active):hover { border-color:var(--ch); }
+.tier-btn[data-tier="foundation"].active { background:var(--forest); color:#fff; border-color:var(--forest); }
+.tier-btn[data-tier="core"].active       { background:var(--ch);     color:#fff; border-color:var(--ch); }
+.tier-btn[data-tier="extension"].active  { background:var(--terra);  color:#fff; border-color:var(--terra); }
+.tier-qs { display:none; }
+.tier-qs.active { display:block; }
+.tier-bar { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.09em; padding:3px 10px; border-radius:4px; display:inline-block; margin-bottom:18px; }
+.tb-f { background:var(--forest-l); color:#1a5030; }
+.tb-c { background:var(--ch-l);     color:var(--ch-d); }
+.tb-e { background:var(--terra-l);  color:var(--terra); }
+.mcq-q { background:#fff; border-radius:var(--r); padding:20px; box-shadow:var(--shadow); margin-bottom:14px; }
+.mcq-num  { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+.mcq-stem { font-size:14px; font-weight:700; margin-bottom:8px; line-height:1.55; }
+.mcq-ctx  { font-size:12px; color:var(--muted); font-style:italic; background:var(--bg); border-radius:var(--rsm); padding:8px 12px; margin-bottom:12px; line-height:1.5; }
+.mcq-opts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+@media (max-width:480px) { .mcq-opts { grid-template-columns:1fr; } }
+
+/* ── REFLECT ─────────────────────────────────────────── */
+.wm-card {
+  background:linear-gradient(135deg,var(--ch-d),var(--ch));
+  color:#fff; border-radius:var(--r); padding:20px 22px; margin-bottom:14px;
+}
+.wm-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; opacity:.65; margin-bottom:4px; }
+.wm-q     { font-size:14px; font-weight:700; line-height:1.55; margin-bottom:10px; }
+.wm-ta {
+  width:100%; background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.3);
+  border-radius:var(--rsm); padding:9px 12px;
+  font-family:var(--font); font-size:12.5px; color:#fff;
+  resize:vertical; min-height:70px;
+}
+.wm-ta::placeholder { color:rgba(255,255,255,.4); }
+.wm-ta:focus { outline:none; border-color:rgba(255,255,255,.7); }
+.save-row { display:flex; align-items:center; gap:10px; margin-top:7px; }
+.save-btn {
+  background:rgba(255,255,255,.18); color:#fff;
+  border:1px solid rgba(255,255,255,.35); border-radius:var(--rsm);
+  padding:7px 18px; font-family:var(--font); font-size:12px; font-weight:700; cursor:pointer;
+}
+.save-btn:hover { background:rgba(255,255,255,.28); }
+.save-ok { font-size:11px; color:rgba(255,255,255,.8); display:none; }
+.vocab-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:11px; margin-bottom:18px; }
+.vc { background:#fff; border-radius:var(--rsm); padding:13px; box-shadow:var(--shadow); border-top:3px solid var(--ch); }
+.vc:nth-child(2) { border-color:var(--forest); }
+.vc:nth-child(3) { border-color:var(--amber); }
+.vc:nth-child(4) { border-color:var(--terra); }
+.vc:nth-child(5) { border-color:var(--purple); }
+.vc:nth-child(6) { border-color:var(--ch-d); }
+.vc-term { font-size:13px; font-weight:800; color:var(--ch-d); margin-bottom:4px; }
+.vc:nth-child(2) .vc-term { color:var(--forest); }
+.vc:nth-child(3) .vc-term { color:var(--amber); }
+.vc:nth-child(4) .vc-term { color:var(--terra); }
+.vc:nth-child(5) .vc-term { color:var(--purple); }
+.vc:nth-child(6) .vc-term { color:var(--ch-d); }
+.vc-def { font-size:11.5px; color:var(--muted); line-height:1.5; margin-bottom:4px; }
+.vc-eg  { font-size:11px; color:var(--ch); font-style:italic; }
+.checklist { background:#fff; border-radius:var(--r); padding:18px; box-shadow:var(--shadow); }
+.ci { display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px; line-height:1.45; cursor:pointer; }
+.ci:last-child { border-bottom:none; }
+.ci input { margin-top:2px; width:15px; height:15px; accent-color:var(--ch); cursor:pointer; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="ch-header">
+  <a href="ma4-dat-c-01-index.html" class="ch-back">← Unit Hub</a>
+  <div>
+    <div class="ch-label">MA4-DAT-C-01 · Chapter 3 of 3</div>
+    <div class="ch-title">Interpreting Data</div>
+    <div class="ch-sub">Reading values · Drawing conclusions · Making predictions · Identifying misleading graphs</div>
+  </div>
+</header>
+
+<!-- ═══════════ TAB NAV ═══════════ -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('hook')">🏟 Hook</button>
+  <button class="tab-btn" onclick="showTab('explore')">🔍 Explore</button>
+  <button class="tab-btn" onclick="showTab('learn')">📖 Learn</button>
+  <button class="tab-btn" onclick="showTab('practise')">✏️ Practise</button>
+  <button class="tab-btn" onclick="showTab('reflect')">💭 Reflect</button>
+</nav>
+
+<!-- ════════════════════════════════
+     TAB 1 · HOOK
+════════════════════════════════ -->
+<div id="tab-hook" class="tab-panel active">
+<div class="content">
+
+  <div class="hero">
+    <h1>Can You Trust What You See?</h1>
+    <p>Reading a graph is a critical skill — but so is <em>questioning</em> one. The same data can be displayed honestly or manipulated to deceive. Sports journalists, coaches and marketers do both. This chapter teaches you to read graphs fluently and to spot when they're lying.</p>
+  </div>
+
+  <p class="section-title">Three Headlines. Three Questions.</p>
+  <p class="section-sub">Each headline came with a graph. Each graph told a partial or distorted story. As you work through this chapter, you'll learn exactly what's wrong with each one.</p>
+
+  <div class="claim-grid">
+    <div class="claim-card">
+      <div class="claim-tag">🏉 NRL · Attendance</div>
+      <div class="claim-text">"Panthers' crowd is more than TRIPLE the Storm's — the gap is growing!"</div>
+      <div class="claim-sub">The bar chart looks dramatic. But the y-axis starts at 15,000 — not zero. The actual difference is less than 20%.</div>
+    </div>
+    <div class="claim-card">
+      <div class="claim-tag">🦅 AFL · Team Form</div>
+      <div class="claim-text">"Our team is unstoppable — four straight months of improvement!"</div>
+      <div class="claim-sub">The line graph starts at Round 9. The full 12-month picture shows eight inconsistent months before that run began.</div>
+    </div>
+    <div class="claim-card">
+      <div class="claim-tag">🏊 Swimming · Survey</div>
+      <div class="claim-text">"87% of Australians prefer swimming to any other sport."</div>
+      <div class="claim-sub">The pie chart doesn't mention: the survey was an online poll on a swimming club's own website — not a representative sample.</div>
+    </div>
+  </div>
+
+  <p class="section-title">Four Skills You'll Build</p>
+  <div class="preview-row">
+    <div class="prev-card">
+      <div class="prev-num">1</div>
+      <div><h4>Reading Values</h4><p>Extract exact values and comparisons from any graph type.</p></div>
+    </div>
+    <div class="prev-card">
+      <div class="prev-num">2</div>
+      <div><h4>Drawing Conclusions</h4><p>Identify range, mode, clusters, gaps and outliers from visual data.</p></div>
+    </div>
+    <div class="prev-card">
+      <div class="prev-num">3</div>
+      <div><h4>Making Predictions</h4><p>Use trends and patterns to make reasonable predictions about future values.</p></div>
+    </div>
+    <div class="prev-card">
+      <div class="prev-num">4</div>
+      <div><h4>Spotting Misleads</h4><p>Identify truncated axes, biased samples, cherry-picked windows and unequal intervals.</p></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end hook -->
+
+<!-- ════════════════════════════════
+     TAB 2 · EXPLORE
+     Read the graph — swimming dot plot
+════════════════════════════════ -->
+<div id="tab-explore" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Read the Graph — 5 Questions</p>
+  <p class="section-sub">Study the dot plot below carefully before answering the questions. Don't skip ahead — the goal is to read the graph before checking any answers.</p>
+
+  <!-- SWIMMING CARNIVAL DOT PLOT -->
+  <div class="graph-display">
+    <svg viewBox="0 0 500 168" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;max-width:500px;"
+         aria-label="Dot plot of swimming carnival times">
+      <!-- Title -->
+      <text x="250" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">100m Freestyle Times — School Carnival Heat 3 (n = 8)</text>
+      <!-- Number line: x=40-460, range 50-66s (16s), pixPerSec=26.25 -->
+      <!-- x = 40+(time-50)*26.25 -->
+      <line x1="40" y1="132" x2="462" y2="132" stroke="#bbb" stroke-width="1.5"/>
+      <!-- Ticks at 50,52,54,56,58,60,62,64,66 (step=2s, 52.5px) -->
+      <line x1="40"  y1="132" x2="40"  y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="93"  y1="132" x2="93"  y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="145" y1="132" x2="145" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="198" y1="132" x2="198" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="250" y1="132" x2="250" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="303" y1="132" x2="303" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="355" y1="132" x2="355" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="408" y1="132" x2="408" y2="139" stroke="#888" stroke-width="1.5"/>
+      <line x1="460" y1="132" x2="460" y2="139" stroke="#888" stroke-width="1.5"/>
+      <text x="40"  y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">50s</text>
+      <text x="93"  y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">52s</text>
+      <text x="145" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">54s</text>
+      <text x="198" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">56s</text>
+      <text x="250" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">58s</text>
+      <text x="303" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">60s</text>
+      <text x="355" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">62s</text>
+      <text x="408" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">64s</text>
+      <text x="460" y="150" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">66s</text>
+      <text x="250" y="163" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Race Time (seconds)</text>
+      <!-- x = 40+(time-50)*26.25: 52→93, 53→119(×2), 55→171(×3), 58→250, 64→408 -->
+      <!-- cy: bottom=123, second=107, third=91 -->
+      <circle cx="93"  cy="123" r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="119" cy="123" r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="119" cy="107" r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="171" cy="123" r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="171" cy="107" r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="171" cy="91"  r="7" fill="#1A6FA5" opacity=".85"/>
+      <circle cx="250" cy="123" r="7" fill="#1A6FA5" opacity=".85"/>
+      <!-- 64s — outlier in red -->
+      <circle cx="408" cy="123" r="7" fill="#C94233" opacity=".9"/>
+      <!-- Subtle outlier gap indicator -->
+      <line x1="260" y1="128" x2="398" y2="128" stroke="#C94233" stroke-width="1" stroke-dasharray="3,3" opacity=".5"/>
+    </svg>
+    <div class="graph-source">Source: Hypothetical data for educational purposes | NSW Swimming 2024</div>
+  </div>
+
+  <div class="note-box">👀 Look carefully: the dot at 64s is shown in red because it sits noticeably apart from the others. All other times are clustered between 52–58 seconds.</div>
+
+  <!-- 5 read-the-graph questions -->
+  <div class="explore-q">
+    <div class="eq-num">Question 1 — Reading a value</div>
+    <div class="eq-stem">How many swimmers recorded a time of 55 seconds?</div>
+    <div class="eq-opts">
+      <button class="opt" data-result="wrong"   data-msg="❌ Count the dots above 55s on the number line. There are stacked dots there — more than 2." onclick="mcqAns(this)">2 swimmers</button>
+      <button class="opt" data-result="correct" data-msg="✅ Correct! There are 3 stacked dots above 55s on the number line — three swimmers recorded exactly 55 seconds." onclick="mcqAns(this)">3 swimmers</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ Count again — look directly above the 55s mark. More than 1 dot is stacked there." onclick="mcqAns(this)">1 swimmer</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ That's close, but look carefully — there are exactly 3 dots above 55s, not 4." onclick="mcqAns(this)">4 swimmers</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+
+  <div class="explore-q">
+    <div class="eq-num">Question 2 — Range</div>
+    <div class="eq-stem">What is the range of times shown in this dot plot?</div>
+    <div class="eq-opts">
+      <button class="opt" data-result="wrong"   data-msg="❌ Range = maximum − minimum. Minimum = 52s, Maximum = 64s. 64 − 52 = 12, not 6." onclick="mcqAns(this)">6 seconds</button>
+      <button class="opt" data-result="correct" data-msg="✅ Correct! Range = maximum − minimum = 64 − 52 = 12 seconds." onclick="mcqAns(this)">12 seconds</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ 14 seconds would mean min=50 or max=64. The leftmost dot is at 52s, not 50s." onclick="mcqAns(this)">14 seconds</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ 8 seconds would only be true if the minimum was 56 and the maximum was 64. The minimum is actually 52s." onclick="mcqAns(this)">8 seconds</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+
+  <div class="explore-q">
+    <div class="eq-num">Question 3 — Mode</div>
+    <div class="eq-stem">What is the modal (most common) time for this group of swimmers?</div>
+    <div class="eq-ctx">The mode is the value that appears most often — the tallest stack of dots.</div>
+    <div class="eq-opts">
+      <button class="opt" data-result="wrong"   data-msg="❌ 53s has 2 dots stacked. Count the stacks and find which one has the most." onclick="mcqAns(this)">53 seconds</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ 52s has only 1 dot. The mode is the value with the most dots." onclick="mcqAns(this)">52 seconds</button>
+      <button class="opt" data-result="correct" data-msg="✅ Correct! The stack above 55s has 3 dots — more than any other value. The mode is 55 seconds." onclick="mcqAns(this)">55 seconds</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ 58s has only 1 dot. The tallest stack of dots (3 dots) is above 55s." onclick="mcqAns(this)">58 seconds</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+
+  <div class="explore-q">
+    <div class="eq-num">Question 4 — Outlier</div>
+    <div class="eq-stem">One value is highlighted in red because it stands apart from the others. Which statement best describes this value?</div>
+    <div class="eq-opts">
+      <button class="opt" data-result="wrong"   data-msg="❌ An outlier is unusual because it is far from the other values — not because it is the largest. Being the largest is part of why it's unusual, but the key is the distance." onclick="mcqAns(this)">It is the largest value, which makes it the most important</button>
+      <button class="opt" data-result="correct" data-msg="✅ Correct! The value 64s is an outlier — it sits well away from the cluster of values between 52–58s. It is unusual and may warrant investigation (e.g. illness, false start, incorrect timing)." onclick="mcqAns(this)">It is an outlier — it sits well apart from the main cluster and may indicate something unusual</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ An outlier should not be ignored — it provides important information about the data and may indicate something worth investigating." onclick="mcqAns(this)">It should be ignored when reading the graph</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ An outlier is an unusual value, not necessarily an error. It could be a real result caused by illness, fatigue, or an error. The key point is that it sits far from the cluster." onclick="mcqAns(this)">It is definitely a data entry error and should be removed</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+
+  <div class="explore-q">
+    <div class="eq-num">Question 5 — Prediction</div>
+    <div class="eq-stem">A 9th swimmer is entering the same heat. Based on this dot plot, what is the most reasonable prediction for their time?</div>
+    <div class="eq-ctx">Use the pattern of the existing data — not the outlier — as the basis for your prediction.</div>
+    <div class="eq-opts">
+      <button class="opt" data-result="wrong"   data-msg="❌ 64s is the outlier. Most swimmers in this heat recorded times between 52–58s. A typical time would be within the cluster, not at the extreme." onclick="mcqAns(this)">64 seconds — because that's the last recorded value</button>
+      <button class="opt" data-result="correct" data-msg="✅ Correct! Seven of the eight swimmers recorded times between 52–58 seconds, with the cluster centred around 55s. A reasonable prediction is somewhere in that range." onclick="mcqAns(this)">Somewhere between 52–58 seconds, near the cluster</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ 50s is below the minimum recorded time (52s) and would require a prediction faster than the fastest swimmer in the group — not reasonable." onclick="mcqAns(this)">50 seconds or faster — based on the trend</button>
+      <button class="opt" data-result="wrong"   data-msg="❌ You cannot use a single dot plot to predict an exact time. Statistical predictions give a likely range, not a precise value." onclick="mcqAns(this)">Exactly 55.47 seconds</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+
+</div>
+</div><!-- end explore -->
+
+<!-- ════════════════════════════════
+     TAB 3 · LEARN
+     4 pill sections
+════════════════════════════════ -->
+<div id="tab-learn" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Four Interpretation Skills</p>
+  <p class="section-sub">Each section builds a distinct skill. Work through them in order, or jump to the one you need.</p>
+
+  <div class="learn-pills">
+    <button class="lpill active" onclick="showLearn('read')">📊 Reading Values</button>
+    <button class="lpill" onclick="showLearn('conclude')">🔎 Drawing Conclusions</button>
+    <button class="lpill" onclick="showLearn('predict')">📈 Making Predictions</button>
+    <button class="lpill" onclick="showLearn('mislead')">⚠️ Misleading Graphs</button>
+  </div>
+
+  <!-- ═══ SECTION 1: READING VALUES ═══ -->
+  <div id="lp-read" class="learn-panel active">
+    <div class="info-box">📊 <strong>Reading a graph</strong> means extracting specific values accurately — the highest/lowest bars, exact coordinates, differences between groups, and totals. Always check the scale before reading any value.</div>
+
+    <div class="graph-display">
+      <!-- AFL column graph — same data as Ch2 but used here for reading practice -->
+      <svg viewBox="0 0 510 290" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:510px;"
+           aria-label="AFL column graph for reading practice">
+        <text x="255" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Goals Scored Per Quarter — AFL Round 15: Hawthorn v Sydney (2024)</text>
+        <line x1="62" y1="28" x2="62" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <line x1="62" y1="250" x2="480" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <line x1="62" y1="187" x2="480" y2="187" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="123" x2="480" y2="123" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="60"  x2="480" y2="60"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="54" y="254" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">0</text>
+        <text x="54" y="191" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">2</text>
+        <text x="54" y="127" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">4</text>
+        <text x="54" y="64"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">6</text>
+        <text x="16" y="143" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 16 143)">Goals</text>
+        <!-- Hawks (3,5,4,6): x=84,179,274,369 w=28 -->
+        <rect x="84"  y="155" width="28" height="95"  fill="#8B5E3C" rx="3"/>
+        <rect x="179" y="91"  width="28" height="159" fill="#8B5E3C" rx="3"/>
+        <rect x="274" y="123" width="28" height="127" fill="#8B5E3C" rx="3"/>
+        <rect x="369" y="60"  width="28" height="190" fill="#8B5E3C" rx="3"/>
+        <!-- Swans (2,4,6,3): x=116,211,306,401 w=28 -->
+        <rect x="116" y="187" width="28" height="63"  fill="#CE1126" rx="3"/>
+        <rect x="211" y="123" width="28" height="127" fill="#CE1126" rx="3"/>
+        <rect x="306" y="60"  width="28" height="190" fill="#CE1126" rx="3"/>
+        <rect x="401" y="155" width="28" height="95"  fill="#CE1126" rx="3"/>
+        <!-- Value labels -->
+        <text x="98"  y="151" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">3</text>
+        <text x="130" y="183" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">2</text>
+        <text x="193" y="87"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">5</text>
+        <text x="225" y="119" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">4</text>
+        <text x="288" y="119" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">4</text>
+        <text x="320" y="56"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">6</text>
+        <text x="383" y="56"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">6</text>
+        <text x="415" y="151" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">3</text>
+        <!-- X labels -->
+        <text x="115" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q1</text>
+        <text x="210" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q2</text>
+        <text x="305" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q3</text>
+        <text x="400" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q4</text>
+        <text x="271" y="280" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Quarter</text>
+        <rect x="72"  y="30" width="12" height="12" fill="#8B5E3C" rx="2"/><text x="88"  y="41" font-family="Nunito,sans-serif" font-size="11" fill="#444">Hawthorn</text>
+        <rect x="162" y="30" width="12" height="12" fill="#CE1126" rx="2"/><text x="178" y="41" font-family="Nunito,sans-serif" font-size="11" fill="#444">Sydney Swans</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data | AFL 2024</div>
+    </div>
+
+    <p style="font-size:13px;font-weight:700;color:var(--ch-d);margin-bottom:12px;">Click each question to reveal the answer:</p>
+    <div class="reveal-grid">
+      <div class="reveal-card rd1">
+        <div class="rc-q">Which team scored more goals in total across the match?</div>
+        <div class="rc-answer" id="ra1">Hawthorn: 3+5+4+6 = <strong>18 goals</strong> total.<br>Sydney: 2+4+6+3 = <strong>15 goals</strong> total.<br>Hawthorn won the match on goals 18–15.</div>
+        <button class="reveal-btn" onclick="toggleReveal('ra1',this)">Reveal →</button>
+      </div>
+      <div class="reveal-card rd2">
+        <div class="rc-q">In which quarter was the total goals scored (both teams combined) the highest?</div>
+        <div class="rc-answer" id="ra2">Q1: 3+2=5 · Q2: 5+4=9 · Q3: 4+6=<strong>10</strong> · Q4: 6+3=9<br><strong>Quarter 3</strong> had the most combined goals (10), making it the highest-scoring quarter of the match.</div>
+        <button class="reveal-btn" onclick="toggleReveal('ra2',this)">Reveal →</button>
+      </div>
+      <div class="reveal-card rd3">
+        <div class="rc-q">What was the biggest single-quarter lead? Which team held it and in which quarter?</div>
+        <div class="rc-answer" id="ra3">Differences per quarter:<br>Q1: 3−2=1 · Q2: 5−4=1 · Q3: 6−4=<strong>2 (Swans)</strong> · Q4: 6−3=<strong>3 (Hawks)</strong><br>The biggest lead was <strong>3 goals by Hawthorn in Q4</strong>.</div>
+        <button class="reveal-btn" onclick="toggleReveal('ra3',this)">Reveal →</button>
+      </div>
+      <div class="reveal-card rd4">
+        <div class="rc-q">Sydney led after Q3. What conclusion can you draw about Hawthorn's Q4 performance?</div>
+        <div class="rc-answer" id="ra4">After 3 quarters: Hawthorn 12, Sydney 12 — tied. In Q4: Hawks scored 6, Swans scored 3. <strong>Hawthorn's Q4 was decisive</strong> — they outscored Sydney 6–3 in the final quarter to win by 3 goals. This shows strong finishing under pressure.</div>
+        <button class="reveal-btn" onclick="toggleReveal('ra4',this)">Reveal →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 2: DRAWING CONCLUSIONS ═══ -->
+  <div id="lp-conclude" class="learn-panel">
+    <div class="info-box">🔎 <strong>Drawing conclusions</strong> means identifying patterns and features within a graph — not just reading individual values. Key features to find: range, mode, clusters, gaps and outliers.</div>
+
+    <div class="feature-strip">
+      <div class="feat-pill fp-range">📏 Range = max − min</div>
+      <div class="feat-pill fp-cluster">🔵 Cluster = dense group of values</div>
+      <div class="feat-pill fp-mode">🏆 Mode = most frequent value</div>
+      <div class="feat-pill fp-outlier">🔴 Outlier = value far from the rest</div>
+      <div class="feat-pill fp-gap">⬜ Gap = interval with no values</div>
+    </div>
+
+    <div class="graph-display">
+      <!-- NRL metres dot plot — annotated with feature labels -->
+      <!-- Data: 55,58,62,62,65,68,68,68,72,75,82,95 -->
+      <!-- Range: 50-100 (50 units), x=50-455 (405px), pixPerUnit=8.1 -->
+      <!-- x = 50+(val-50)*8.1: 55→90,58→114,62→147(×2),65→171,68→195(×3),72→228,75→252,82→309,95→406 -->
+      <svg viewBox="0 0 490 195" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:490px;"
+           aria-label="Annotated dot plot of NRL metres per game">
+        <text x="245" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Metres Gained Per Game — Selected NRL Player (12 Games, 2024)</text>
+        <!-- Cluster shading -->
+        <rect x="106" y="74" width="160" height="56" fill="#1A6FA5" opacity=".06" rx="4"/>
+        <text x="186" y="68" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#D98A0A">Cluster (58–75 m)</text>
+        <!-- Number line -->
+        <line x1="50" y1="140" x2="456" y2="140" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Ticks at 50,60,70,80,90,100 -->
+        <line x1="50"  y1="140" x2="50"  y2="147" stroke="#888" stroke-width="1.5"/>
+        <line x1="131" y1="140" x2="131" y2="147" stroke="#888" stroke-width="1.5"/>
+        <line x1="212" y1="140" x2="212" y2="147" stroke="#888" stroke-width="1.5"/>
+        <line x1="293" y1="140" x2="293" y2="147" stroke="#888" stroke-width="1.5"/>
+        <line x1="374" y1="140" x2="374" y2="147" stroke="#888" stroke-width="1.5"/>
+        <line x1="455" y1="140" x2="455" y2="147" stroke="#888" stroke-width="1.5"/>
+        <text x="50"  y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">50</text>
+        <text x="131" y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">60</text>
+        <text x="212" y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">70</text>
+        <text x="293" y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">80</text>
+        <text x="374" y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">90</text>
+        <text x="455" y="158" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">100</text>
+        <text x="252" y="172" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Metres</text>
+        <!-- Dots -->
+        <circle cx="90"  cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="114" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="147" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="147" cy="115" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="171" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- Mode: 68m ×3 -->
+        <circle cx="195" cy="131" r="7.5" fill="#2B7A4B" opacity=".9"/>
+        <circle cx="195" cy="115" r="7.5" fill="#2B7A4B" opacity=".9"/>
+        <circle cx="195" cy="99"  r="7.5" fill="#2B7A4B" opacity=".9"/>
+        <circle cx="228" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="252" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="309" cy="131" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- Outlier: 95m -->
+        <circle cx="406" cy="131" r="7.5" fill="#C94233" opacity=".9"/>
+        <!-- Mode label -->
+        <text x="195" y="88" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#2B7A4B" font-weight="800">Mode = 68 m</text>
+        <!-- Outlier label -->
+        <text x="406" y="119" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#C94233" font-weight="800">Outlier: 95 m</text>
+        <!-- Gap indicator -->
+        <text x="358" y="135" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#6A3FB5" font-weight="700">Gap (83–94)</text>
+        <!-- Range bracket -->
+        <line x1="90" y1="183" x2="406" y2="183" stroke="#1A6FA5" stroke-width="1.5"/>
+        <line x1="90"  y1="178" x2="90"  y2="188" stroke="#1A6FA5" stroke-width="1.5"/>
+        <line x1="406" y1="178" x2="406" y2="188" stroke="#1A6FA5" stroke-width="1.5"/>
+        <text x="248" y="193" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#1A6FA5">Range = 95 − 55 = 40 metres</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data | NRL 2024</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:4px;">
+      <div class="feat-card" style="background:#fff;border-radius:var(--rsm);padding:14px;box-shadow:var(--shadow);">
+        <h4 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px;">📏 Range</h4>
+        <p style="font-size:12px;line-height:1.6;">Max (95m) − Min (55m) = <strong>40 metres</strong>. A large range shows high variability — this player's output was quite inconsistent.</p>
+      </div>
+      <div class="feat-card" style="background:#fff;border-radius:var(--rsm);padding:14px;box-shadow:var(--shadow);">
+        <h4 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px;">🏆 Mode</h4>
+        <p style="font-size:12px;line-height:1.6;">68 metres appears 3 times (tallest stack, shown in green). The mode is the most typical game performance.</p>
+      </div>
+      <div class="feat-card" style="background:#fff;border-radius:var(--rsm);padding:14px;box-shadow:var(--shadow);">
+        <h4 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px;">🔵 Cluster</h4>
+        <p style="font-size:12px;line-height:1.6;">Most values fall between 58–75 metres (10 of 12 games). This is where the player's typical game-day performance lies.</p>
+      </div>
+      <div class="feat-card" style="background:#fff;border-radius:var(--rsm);padding:14px;box-shadow:var(--shadow);">
+        <h4 style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:7px;">🔴 Outlier + ⬜ Gap</h4>
+        <p style="font-size:12px;line-height:1.6;">95 metres is an outlier — it sits far above the cluster. The gap from 83–94m means no game landed in that range, making 95m even more isolated.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 3: MAKING PREDICTIONS ═══ -->
+  <div id="lp-predict" class="learn-panel">
+    <div class="info-box">📈 <strong>Making predictions</strong> means using the trend or pattern in existing data to estimate future values. A prediction should be <em>reasonable</em> — close to the trend — not a guess at an extreme value.</div>
+
+    <button class="pred-toggle" id="pred-btn" onclick="togglePrediction()">📍 Show Prediction (Races 9–10)</button>
+
+    <div class="graph-display">
+      <!-- Swimming line graph with prediction extension -->
+      <!-- ViewBox 560×270. Races 1-10: x=78-510, step=48 -->
+      <!-- 78,126,174,222,270,318,366,414,462,510 -->
+      <!-- y = 242-(59-time)*54.5 -->
+      <!-- 58.2→198, 57.8→177, 57.1→138, 56.9→128, 57.3→149, 56.4→100, 56.1→84, 55.8→68, 55.5→51, 55.2→35 -->
+      <svg viewBox="0 0 560 272" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:560px;"
+           aria-label="Swimming line graph with prediction">
+        <text x="280" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Dylan's 100m Freestyle Times — 2024 Season with Predicted Improvement</text>
+        <!-- Axes -->
+        <line x1="68" y1="24" x2="68" y2="242" stroke="#bbb" stroke-width="1.5"/>
+        <line x1="68" y1="242" x2="530" y2="242" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Grid at 55,56,57,58,59s: y=24,79,133,188,242 -->
+        <line x1="68" y1="24"  x2="530" y2="24"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="79"  x2="530" y2="79"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="133" x2="530" y2="133" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="188" x2="530" y2="188" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Y labels -->
+        <text x="60" y="246" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">59s</text>
+        <text x="60" y="192" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">58s</text>
+        <text x="60" y="137" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">57s</text>
+        <text x="60" y="83"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">56s</text>
+        <text x="60" y="28"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">55s</text>
+        <text x="20" y="135" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 20 135)">Time (seconds)</text>
+        <!-- Shaded area under solid line -->
+        <polygon points="78,198 126,177 174,138 222,128 270,149 318,100 366,84 414,68 414,242 78,242"
+                 fill="#1A6FA5" opacity=".05"/>
+        <!-- Solid line: races 1-8 -->
+        <polyline points="78,198 126,177 174,138 222,128 270,149 318,100 366,84 414,68"
+                  fill="none" stroke="#1A6FA5" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Dots (solid) -->
+        <circle cx="78"  cy="198" r="5" fill="#1A6FA5"/>
+        <circle cx="126" cy="177" r="5" fill="#1A6FA5"/>
+        <circle cx="174" cy="138" r="5" fill="#1A6FA5"/>
+        <circle cx="222" cy="128" r="5" fill="#1A6FA5"/>
+        <circle cx="270" cy="149" r="5" fill="#D98A0A"/>
+        <circle cx="318" cy="100" r="5" fill="#1A6FA5"/>
+        <circle cx="366" cy="84"  r="5" fill="#1A6FA5"/>
+        <circle cx="414" cy="68"  r="5" fill="#2B7A4B"/>
+        <!-- Setback + PB labels -->
+        <text x="270" y="143" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#D98A0A" font-weight="700">Setback</text>
+        <text x="414" y="62"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700">PB 55.8s</text>
+        <!-- PREDICTION (hidden initially) -->
+        <polyline id="pred-line"
+                  points="414,68 462,51 510,35"
+                  fill="none" stroke="#2B7A4B" stroke-width="2" stroke-dasharray="7,4"
+                  style="display:none;"/>
+        <circle id="pred-dot1" cx="462" cy="51" r="5" fill="none" stroke="#2B7A4B" stroke-width="2" style="display:none;"/>
+        <circle id="pred-dot2" cx="510" cy="35" r="5" fill="none" stroke="#2B7A4B" stroke-width="2" style="display:none;"/>
+        <text id="pred-label1" x="462" y="44" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700" style="display:none;">~55.5s</text>
+        <text id="pred-label2" x="510" y="28" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700" style="display:none;">~55.2s</text>
+        <rect id="pred-note" x="390" y="220" width="140" height="18" rx="4" fill="#E4F3EB" style="display:none;"/>
+        <text id="pred-note-txt" x="460" y="232" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700" style="display:none;">Predicted — not certain!</text>
+        <!-- X labels -->
+        <text x="78"  y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">1</text>
+        <text x="126" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">2</text>
+        <text x="174" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">3</text>
+        <text x="222" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">4</text>
+        <text x="270" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">5</text>
+        <text x="318" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">6</text>
+        <text x="366" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">7</text>
+        <text x="414" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">8</text>
+        <text id="pred-x9"  x="462" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#2B7A4B" font-style="italic" style="display:none;">9?</text>
+        <text id="pred-x10" x="510" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#2B7A4B" font-style="italic" style="display:none;">10?</text>
+        <text x="299" y="268" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Race Number</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data | NSW Swimming 2024</div>
+    </div>
+
+    <div class="note-box">📍 Toggle the prediction above. Notice it shows as a <em>dashed line with open circles</em> — a visual convention meaning "this is estimated, not measured." Predictions should be clearly distinguished from actual data.</div>
+
+    <div style="background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow);margin-top:14px;">
+      <p style="font-size:14px;font-weight:800;color:var(--ch-d);margin-bottom:10px;">Rules for Making Reasonable Predictions</p>
+      <ul style="list-style:none;font-size:13px;line-height:2.1;">
+        <li>✅ <strong>Follow the trend</strong> — if times are decreasing, predict a slight further decrease</li>
+        <li>✅ <strong>Allow for setbacks</strong> — not every race will be a personal best</li>
+        <li>✅ <strong>Stay within a reasonable range</strong> — don't predict a value far outside existing data</li>
+        <li>❌ <strong>Don't predict an exact value</strong> — say "approximately 55s" not "exactly 55.13s"</li>
+        <li>❌ <strong>Don't extend too far</strong> — the further ahead you predict, the less reliable it is</li>
+        <li>❌ <strong>Don't use outliers as the basis for prediction</strong> — use the overall pattern</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 4: MISLEADING GRAPHS ═══ -->
+  <div id="lp-mislead" class="learn-panel">
+    <div class="warn-box">⚠️ A graph can display accurate data but still <em>mislead</em> the reader through design choices — axis manipulation, selective time windows, biased data sources, or distorted visual proportions. Each type below is common in real sports media.</div>
+
+    <!-- TYPE 1: TRUNCATED Y-AXIS -->
+    <div class="mislead-type">
+      <div class="mis-head">
+        <div class="mis-badge">Type 1</div>
+        <div class="mis-name">Truncated Y-Axis</div>
+      </div>
+      <div class="mis-desc">Starting the y-axis above zero makes small differences look dramatically large. The bars appear to show a huge gap, when the actual proportional difference is minor. <strong>This is the most common misleading graph technique in sports media.</strong></div>
+      <div class="side-by-side">
+        <div class="sbs-card mis">
+          <h4>❌ As Published — "Panthers crowd is TRIPLE the Storm's!"</h4>
+          <!-- Truncated: y=15k-20k. Plot x=45-245, y=20-178 (158px). Range=5000. pixPer1000=158/5=31.6 -->
+          <!-- Bars at x=55,100,145,190, w=34 -->
+          <!-- Storm: (16250-15000)/5000*158=39.5≈40, y=178-40=138 -->
+          <!-- Roosters: (17840-15000)/5000*158=89.7≈90, y=88 -->
+          <!-- Broncos: (18920-15000)/5000*158=124≈124, y=54 -->
+          <!-- Panthers: (19300-15000)/5000*158=135.9≈136, y=42 -->
+          <svg viewBox="0 0 260 205" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:260px;">
+            <line x1="45" y1="20" x2="45" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="178" x2="240" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <!-- Grid: 15k→178, 17.5k→99, 20k→20 (158px/5=31.6px/1000, 2.5k=79px) -->
+            <line x1="45" y1="99" x2="240" y2="99" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+            <text x="37" y="182" text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">15k</text>
+            <text x="37" y="103" text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">17.5k</text>
+            <text x="37" y="24"  text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">20k</text>
+            <rect x="55"  y="138" width="34" height="40"  fill="#1A6FA5" rx="2"/>
+            <rect x="100" y="88"  width="34" height="90"  fill="#1A6FA5" rx="2"/>
+            <rect x="145" y="54"  width="34" height="124" fill="#1A6FA5" rx="2"/>
+            <rect x="190" y="42"  width="34" height="136" fill="#1A6FA5" rx="2"/>
+            <text x="72"  y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Storm</text>
+            <text x="117" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Roosters</text>
+            <text x="162" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Broncos</text>
+            <text x="207" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Panthers</text>
+            <!-- Zigzag break marker on y-axis -->
+            <polyline points="40,174 50,170 40,166 50,162" fill="none" stroke="#C94233" stroke-width="2"/>
+            <text x="140" y="202" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#C94233" font-weight="700">⚠ y-axis starts at 15,000!</text>
+          </svg>
+        </div>
+        <div class="sbs-card hon">
+          <h4>✅ Honest Version — y-axis from zero</h4>
+          <!-- Honest: y=0-20k. Plot: same area. pixPer1000=158/20=7.9 -->
+          <!-- Storm: 16250/20000*158=128.4≈128, y=178-128=50 -->
+          <!-- Roosters: 17840/20000*158=141.0≈141, y=37 -->
+          <!-- Broncos: 18920/20000*158=149.5≈150, y=28 -->
+          <!-- Panthers: 19300/20000*158=152.5≈153, y=25 -->
+          <svg viewBox="0 0 260 205" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:260px;">
+            <line x1="45" y1="20" x2="45" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="178" x2="240" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="99" x2="240" y2="99" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+            <text x="37" y="182" text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">0</text>
+            <text x="37" y="103" text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">10k</text>
+            <text x="37" y="24"  text-anchor="end" font-family="Nunito,sans-serif" font-size="9.5" fill="#666">20k</text>
+            <rect x="55"  y="50"  width="34" height="128" fill="#2B7A4B" rx="2"/>
+            <rect x="100" y="37"  width="34" height="141" fill="#2B7A4B" rx="2"/>
+            <rect x="145" y="28"  width="34" height="150" fill="#2B7A4B" rx="2"/>
+            <rect x="190" y="25"  width="34" height="153" fill="#2B7A4B" rx="2"/>
+            <text x="72"  y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Storm</text>
+            <text x="117" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Roosters</text>
+            <text x="162" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Broncos</text>
+            <text x="207" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Panthers</text>
+            <text x="140" y="202" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700">All four teams very similar</text>
+          </svg>
+        </div>
+      </div>
+      <div class="info-box" style="margin-bottom:0;">💡 The actual data: Storm 16,250 · Roosters 17,840 · Broncos 18,920 · Panthers 19,300. The largest gap is 3,050 — about 19% more than the smallest. Not "triple". The truncated axis makes a 19% difference look like a 300% difference.</div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- TYPE 2: CHERRY-PICKED TIME WINDOW -->
+    <div class="mislead-type">
+      <div class="mis-head">
+        <div class="mis-badge">Type 2</div>
+        <div class="mis-name">Cherry-Picked Time Window</div>
+      </div>
+      <div class="mis-desc">Showing only the most favourable section of a time period hides earlier poor performance. The graph may be entirely accurate — but by selecting the window, the presenter controls the impression it creates.</div>
+      <div class="side-by-side">
+        <div class="sbs-card mis">
+          <h4>❌ Club announcement: "We're on fire — wins improving every month!"</h4>
+          <!-- Cherry-picked: months 9-12: 6,5,7,8 -->
+          <!-- y=0-8, pixPerWin=155/8=19.4. x=60,110,170,230 -->
+          <!-- 6→178-116.4=61.6≈62, 5→81, 7→42.2≈42, 8→23 -->
+          <svg viewBox="0 0 260 205" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:260px;">
+            <line x1="45" y1="23" x2="45" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="178" x2="245" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <!-- Grid: 0→178, 4→100, 8→23 (155/8=19.4px/win; 4wins=77.6px) -->
+            <line x1="45" y1="100" x2="245" y2="100" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+            <text x="37" y="182" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">0</text>
+            <text x="37" y="104" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">4</text>
+            <text x="37" y="27"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">8</text>
+            <!-- Points: (60,62),(110,81),(170,42),(230,23) -->
+            <polygon points="60,62 110,81 170,42 230,23 230,178 60,178" fill="#C94233" opacity=".05"/>
+            <polyline points="60,62 110,81 170,42 230,23" fill="none" stroke="#C94233" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="60"  cy="62"  r="5" fill="#C94233"/>
+            <circle cx="110" cy="81"  r="5" fill="#C94233"/>
+            <circle cx="170" cy="42"  r="5" fill="#C94233"/>
+            <circle cx="230" cy="23"  r="5" fill="#C94233"/>
+            <!-- X labels -->
+            <text x="60"  y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Sep</text>
+            <text x="110" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Oct</text>
+            <text x="170" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Nov</text>
+            <text x="230" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#444">Dec</text>
+            <text x="145" y="203" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#C94233" font-weight="700">⚠ Shows only last 4 months</text>
+          </svg>
+        </div>
+        <div class="sbs-card hon">
+          <h4>✅ Full 12 months — January to December</h4>
+          <!-- Full: 2,4,3,1,4,2,5,3,6,5,7,8. Same scale 0-8 -->
+          <!-- x: 12pts from x=50 to x=235, step=185/11=16.8 -->
+          <!-- 50,67,84,101,118,135,152,169,186,202,219,235 -->
+          <!-- y=178-val*19.4: 2→139, 4→100, 3→120, 1→159, 4→100, 2→139, 5→81, 3→120, 6→61, 5→81, 7→42, 8→23 -->
+          <svg viewBox="0 0 260 205" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:260px;">
+            <line x1="45" y1="23" x2="45" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="178" x2="245" y2="178" stroke="#bbb" stroke-width="1.5"/>
+            <line x1="45" y1="100" x2="245" y2="100" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+            <text x="37" y="182" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">0</text>
+            <text x="37" y="104" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">4</text>
+            <text x="37" y="27"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">8</text>
+            <polyline points="50,139 67,100 84,120 101,159 118,100 135,139 152,81 169,120 186,61 202,81 219,42 235,23"
+                      fill="none" stroke="#2B7A4B" stroke-width="2.5" stroke-linejoin="round"/>
+            <circle cx="50"  cy="139" r="4" fill="#2B7A4B"/>
+            <circle cx="67"  cy="100" r="4" fill="#2B7A4B"/>
+            <circle cx="84"  cy="120" r="4" fill="#2B7A4B"/>
+            <circle cx="101" cy="159" r="4" fill="#2B7A4B"/>
+            <circle cx="118" cy="100" r="4" fill="#2B7A4B"/>
+            <circle cx="135" cy="139" r="4" fill="#2B7A4B"/>
+            <circle cx="152" cy="81"  r="4" fill="#2B7A4B"/>
+            <circle cx="169" cy="120" r="4" fill="#2B7A4B"/>
+            <circle cx="186" cy="61"  r="4" fill="#2B7A4B"/>
+            <circle cx="202" cy="81"  r="4" fill="#2B7A4B"/>
+            <circle cx="219" cy="42"  r="4" fill="#2B7A4B"/>
+            <circle cx="235" cy="23"  r="4" fill="#2B7A4B"/>
+            <!-- Highlight cherry-picked zone -->
+            <rect x="183" y="21" width="56" height="162" fill="#C94233" opacity=".07" rx="3"/>
+            <text x="211" y="192" text-anchor="middle" font-family="Nunito,sans-serif" font-size="8.5" fill="#C94233" font-weight="700">← Used ↑</text>
+            <text x="145" y="203" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700">Inconsistent first 8 months hidden</text>
+          </svg>
+        </div>
+      </div>
+      <div class="info-box" style="margin-bottom:0;">💡 Always ask: <em>What time period is this graph showing?</em> A team that won 8 games in December looks great — until you see they won only 1 in April. The trend may be real, but the full context changes the story.</div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- TYPE 3: BIASED SAMPLE -->
+    <div class="mislead-type">
+      <div class="mis-head">
+        <div class="mis-badge">Type 3</div>
+        <div class="mis-name">Biased (Non-Representative) Sample</div>
+      </div>
+      <div class="mis-desc">A graph can only be trusted if the data came from a sample that represents the broader population. When the sample is self-selected or drawn from a narrow group, the graph's conclusion doesn't apply to everyone.</div>
+      <div class="warn-box">📢 Claim: <strong>"87% of Australians prefer swimming to any other sport"</strong><br>Source: Online poll run on SwimAustralia.com (n = 150 respondents)</div>
+      <div class="g2col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;" id="bias-chart-row">
+        <div class="sbs-card mis">
+          <h4>❌ What the pie chart looks like</h4>
+          <svg id="bias-pie" viewBox="0 0 220 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:220px;">
+            <g id="bias-slices"></g>
+            <rect x="110" y="62"  width="12" height="12" fill="#1A6FA5" rx="2"/>
+            <text x="126" y="73" font-family="Nunito,sans-serif" font-size="11" fill="#444">Swimming (87%)</text>
+            <rect x="110" y="82"  width="12" height="12" fill="#ccc" rx="2"/>
+            <text x="126" y="93" font-family="Nunito,sans-serif" font-size="11" fill="#444">Other (13%)</text>
+          </svg>
+        </div>
+        <div style="background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);">
+          <p style="font-size:13px;font-weight:800;color:var(--terra);margin-bottom:8px;">What's wrong?</p>
+          <ul style="list-style:none;font-size:12px;line-height:1.9;">
+            <li>❌ Sample drawn from a <strong>swimming website</strong> — inherently biased toward swimmers</li>
+            <li>❌ <strong>Self-selected</strong> — only people who care about swimming completed the poll</li>
+            <li>❌ <strong>n = 150</strong> is too small to represent 26 million Australians</li>
+            <li>❌ No mention of how "prefer" was defined</li>
+            <li>✅ The graph itself is fine — it's the <strong>data collection</strong> that's flawed</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- TYPE 4: UNEQUAL INTERVALS -->
+    <div class="mislead-type">
+      <div class="mis-head">
+        <div class="mis-badge">Type 4</div>
+        <div class="mis-name">Unequal Class Intervals in Histograms</div>
+      </div>
+      <div class="mis-desc">In a frequency histogram, the <em>area</em> of each bar represents frequency — not just the height. When bars have different widths, a wide-but-short bar can appear visually larger than a narrow-but-tall bar, even if its frequency is lower.</div>
+      <div class="graph-display">
+        <!-- Unequal intervals histogram -->
+        <!-- Intervals: [24-26):freq8, [26-28):freq12, [28-30):freq15, [30-34):freq10 -->
+        <!-- Units: 2,2,2,4. Total 5 units (but I'll call it proportional to interval width) -->
+        <!-- Plot x=52-285, y=20-165. 4 bars. Total range=10, x-scale: 1m/s = 23.3px -->
+        <!-- Bar widths: [24-26)=2*23.3=46.6≈47, [26-28)=47, [28-30)=47, [30-34)=4*23.3=93.2≈93 -->
+        <!-- Max freq=15, pixPerFreq=145/15=9.67. Heights: 8→77, 12→116, 15→145, 10→97 -->
+        <!-- Y-tops: 8→165-77=88, 12→49, 15→20, 10→68 -->
+        <svg viewBox="0 0 340 210" xmlns="http://www.w3.org/2000/svg"
+             style="width:100%;max-width:340px;"
+             aria-label="Histogram with unequal bar widths">
+          <text x="170" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12" font-weight="800" fill="#2C2C2C">NRL Player Sprint Speed Distribution ⚠️ Unequal Intervals</text>
+          <line x1="52" y1="20" x2="52" y2="165" stroke="#bbb" stroke-width="1.5"/>
+          <line x1="52" y1="165" x2="286" y2="165" stroke="#bbb" stroke-width="1.5"/>
+          <!-- Y-axis: 0→165, 5→117, 10→69, 15→20 (145/15=9.67, 5*9.67=48.3) -->
+          <text x="44" y="169" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">0</text>
+          <text x="44" y="121" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">5</text>
+          <text x="44" y="73"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">10</text>
+          <text x="44" y="24"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">15</text>
+          <text x="16" y="96" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#888" transform="rotate(-90 16 96)">Frequency</text>
+          <!-- Bar 1: x=52, w=47, freq=8, h=77, y=88. Equal width -->
+          <rect x="52"  y="88"  width="47"  height="77" fill="#1A6FA5" stroke="white" stroke-width="1.5" opacity=".85"/>
+          <!-- Bar 2: x=99, w=47, freq=12, h=116, y=49 -->
+          <rect x="99"  y="49"  width="47"  height="116" fill="#1A6FA5" stroke="white" stroke-width="1.5" opacity=".85"/>
+          <!-- Bar 3: x=146, w=47, freq=15, h=145, y=20 -->
+          <rect x="146" y="20"  width="47"  height="145" fill="#1A6FA5" stroke="white" stroke-width="1.5" opacity=".85"/>
+          <!-- Bar 4: x=193, w=93 (DOUBLE WIDTH), freq=10, h=97, y=68 -->
+          <rect x="193" y="68"  width="93"  height="97" fill="#C94233" stroke="white" stroke-width="1.5" opacity=".85"/>
+          <!-- Warning annotation on bar 4 -->
+          <text x="239" y="60" text-anchor="middle" font-family="Nunito,sans-serif" font-size="8.5" fill="#C94233" font-weight="800">Double-wide!</text>
+          <text x="239" y="70" text-anchor="middle" font-family="Nunito,sans-serif" font-size="8.5" fill="#C94233">freq=10</text>
+          <!-- Freq labels -->
+          <text x="75"  y="84" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="white">8</text>
+          <text x="122" y="45" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="white">12</text>
+          <text x="169" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="white">15</text>
+          <text x="239" y="116" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="white">10</text>
+          <!-- X labels at interval boundaries -->
+          <text x="52"  y="179" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">24</text>
+          <text x="99"  y="179" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">26</text>
+          <text x="146" y="179" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">28</text>
+          <text x="193" y="179" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">30</text>
+          <text x="286" y="179" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#C94233" font-weight="700">34</text>
+          <text x="169" y="197" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Speed (m/s)</text>
+        </svg>
+        <div class="graph-source">Source: Hypothetical data | NRL Sports Science 2024</div>
+      </div>
+      <div class="warn-box" style="margin-bottom:0;">⚠️ Bar 4 (30–34 m/s, freq=10) looks visually larger than Bar 3 (28–30 m/s, freq=15) even though it has <em>fewer</em> players. This is because the bar is twice as wide — its area is misleadingly large. <strong>In a correct histogram, all class intervals must be equal width.</strong></div>
+    </div>
+
+  </div><!-- end lp-mislead -->
+
+</div>
+</div><!-- end learn -->
+
+<!-- ════════════════════════════════
+     TAB 4 · PRACTISE
+════════════════════════════════ -->
+<div id="tab-practise" class="tab-panel">
+<div class="content">
+
+  <!-- SPOT THE MISLEAD ACTIVITY -->
+  <p class="section-title">Spot the Mislead 🔍</p>
+  <p class="section-sub">Three real-looking graphs below. Each has a problem — some more obvious than others. Read the question and select the best answer.</p>
+
+  <div class="spot-section">
+
+    <!-- SPOT Q1 -->
+    <div class="spot-q" id="sq1">
+      <div class="spot-tag">⚠️ Spot the Mislead · Q1</div>
+      <div class="spot-stem">A sports supplement company publishes this bar chart with the headline: <em>"Basketball participation has nearly DOUBLED netball since 2022!"</em> What is the main problem with this graph?</div>
+      <div class="spot-graph">
+        <!-- School sport participation: Basketball 84%, Netball 72%, Swimming 68%, AFL 78% -->
+        <!-- TRUNCATED y-axis: 60-90%, pixPerPct = 155/30 = 5.17 -->
+        <!-- Heights: Bball=(84-60)*5.17=124, Netball=(72-60)*5.17=62, Swim=(68-60)*5.17=41, AFL=(78-60)*5.17=93 -->
+        <!-- Y-tops: Bball=170-124=46, Netball=108, Swim=129, AFL=77 -->
+        <svg viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg"
+             style="width:100%;max-width:320px;"
+             aria-label="Misleading bar chart with truncated y-axis">
+          <text x="160" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11.5" font-weight="800" fill="#2C2C2C">School Sports Participation — NSW 2024</text>
+          <line x1="52" y1="22" x2="52" y2="170" stroke="#bbb" stroke-width="1.5"/>
+          <line x1="52" y1="170" x2="295" y2="170" stroke="#bbb" stroke-width="1.5"/>
+          <!-- Grid: 60%→170, 75%→170-77.5=92.5≈93, 90%→22 (155/30=5.17, 15*5.17=77.5) -->
+          <line x1="52" y1="93"  x2="295" y2="93"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="44" y="174" text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">60%</text>
+          <text x="44" y="97"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">75%</text>
+          <text x="44" y="26"  text-anchor="end" font-family="Nunito,sans-serif" font-size="10" fill="#666">90%</text>
+          <rect x="62"  y="46"  width="40" height="124" fill="#1A6FA5" rx="3"/>
+          <rect x="117" y="108" width="40" height="62"  fill="#CE1126" rx="3"/>
+          <rect x="172" y="129" width="40" height="41"  fill="#2B7A4B" rx="3"/>
+          <rect x="227" y="77"  width="40" height="93"  fill="#D98A0A" rx="3"/>
+          <text x="82"  y="193" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">Basketball</text>
+          <text x="137" y="193" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">Netball</text>
+          <text x="192" y="193" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">Swimming</text>
+          <text x="247" y="193" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">AFL</text>
+          <!-- Break marker -->
+          <polyline points="46,166 56,162 46,158 56,154" fill="none" stroke="#C94233" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="spot-ctx">Actual values: Basketball 84% · Netball 72% · Swimming 68% · AFL 78%</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The graph type is fine — column graphs are appropriate for comparing participation across sports. The problem is in how the scale is set up." onclick="mcqAns(this)">Column graphs shouldn't be used for percentages</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The y-axis starts at 60%, not 0. Basketball (84%) looks dramatically taller than Netball (72%), but the actual difference is only 12 percentage points — not 'double'. The truncated axis makes a small gap look enormous." onclick="mcqAns(this)">The y-axis starts at 60% instead of 0, making a 12% difference look like a huge gap</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The categories are all separate sports — a column graph is the right choice here." onclick="mcqAns(this)">The wrong sports were chosen for comparison</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Different colours actually help distinguish the bars — that's not the problem here." onclick="mcqAns(this)">The bars should all be the same colour</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <!-- SPOT Q2 -->
+    <div class="spot-q" id="sq2">
+      <div class="spot-tag">⚠️ Spot the Mislead · Q2</div>
+      <div class="spot-stem">A sector graph is published with the caption: <em>"Survey shows 87% of Australians prefer swimming over all other sports."</em> The small print reads: "n = 150. Source: Visitor survey at the 2024 Australian Swimming Championships." What is the primary flaw?</div>
+      <div class="spot-graph">
+        <svg id="spot2-pie" viewBox="0 0 250 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:250px;">
+          <text x="125" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12" font-weight="800" fill="#2C2C2C">Favourite Sport Survey 2024</text>
+          <g id="spot2-slices"></g>
+          <rect x="140" y="52"  width="12" height="12" fill="#1A6FA5" rx="2"/><text x="157" y="63"  font-family="Nunito,sans-serif" font-size="11" fill="#444">Swimming (87%)</text>
+          <rect x="140" y="72"  width="12" height="12" fill="#ccc"     rx="2"/><text x="157" y="83"  font-family="Nunito,sans-serif" font-size="11" fill="#444">Other (13%)</text>
+          <text x="125" y="155" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#C94233" font-style="italic">n=150, Swim Championships venue</text>
+        </svg>
+      </div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The graph type is appropriate — sector graphs work well for proportions like this. The problem is not the graph type." onclick="mcqAns(this)">A sector graph is the wrong type for this data</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 87% + 13% = 100%. The percentages are correct. The problem is about who was surveyed, not the mathematics." onclick="mcqAns(this)">The percentages don't add up to 100%</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! People attending the Australian Swimming Championships are self-selected swimming fans — not representative of all Australians. Surveying people at a swimming event to determine the nation's favourite sport is like asking cricket fans at the MCG which sport they prefer. The sample is biased." onclick="mcqAns(this)">The sample is biased — people at a swimming event are not representative of all Australians</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 150 is small for a national survey, but the sample size alone isn't the main problem — it's the fact that the sample is drawn from a biased location." onclick="mcqAns(this)">The sample size of 150 is too large</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <!-- SPOT Q3 -->
+    <div class="spot-q" id="sq3">
+      <div class="spot-tag">⚠️ Spot the Mislead · Q3</div>
+      <div class="spot-stem">A frequency histogram shows cricket batters' scores at a club competition. One bar (60–80 runs) is twice as wide as the other bars but the same height. A club statistician claims: "The 60–80 range has the same number of batters as the 40–50 range." Is he right?</div>
+      <div class="spot-ctx">The 40–50 bar and the 60–80 bar are the same height, but the 60–80 bar covers twice the interval width.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Actually the statistician is WRONG. In a histogram, equal height but different width means the wider bar has more data — area represents frequency, not height alone." onclick="mcqAns(this)">Yes — same height means same frequency</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! In a histogram, the AREA of the bar represents frequency (or frequency density), not height alone. The 60–80 bar covers twice the interval (20 runs vs 10 runs), so at the same height it actually contains twice as many batters as the 40–50 bar. The statistician is wrong." onclick="mcqAns(this)">No — the wider bar covers twice the interval, so it actually contains more batters for the same height</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We can draw a conclusion here. The area difference is the key. Same height + double width = double frequency for a frequency-density histogram." onclick="mcqAns(this)">We cannot determine anything from a histogram with unequal intervals</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The same height with a wider bar actually means MORE data, not less. Think about it: double the interval width at the same height = double the area = double the frequency." onclick="mcqAns(this)">No — the wider bar has fewer batters because it spreads them over more values</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+  </div><!-- end spot section -->
+
+  <hr class="divider">
+
+  <!-- TIERED MCQ -->
+  <p class="section-title">Practice Questions</p>
+  <p class="section-sub">Select your level.</p>
+  <div class="tier-picker">
+    <button class="tier-btn active" data-tier="foundation" onclick="selectTier('foundation')">🟢 Foundation</button>
+    <button class="tier-btn" data-tier="core" onclick="selectTier('core')">🔵 Core</button>
+    <button class="tier-btn" data-tier="extension" onclick="selectTier('extension')">🔴 Extension</button>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="tier-qs active" id="qs-foundation">
+    <div class="tier-bar tb-f">🟢 Foundation — Reading &amp; Basic Interpretation</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A dot plot of cricket scores shows values at: 8, 12, 15, 15, 18, 22, 22, 22, 28, 35. What is the mode?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 15 appears twice but 22 appears three times. The mode is the value that appears most often." onclick="mcqAns(this)">15</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 18 appears only once. Look for the value with the most dots stacked above it." onclick="mcqAns(this)">18</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! 22 appears three times — the most of any value. The mode is 22 runs." onclick="mcqAns(this)">22</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 35 appears only once. The mode is the most common value, not the largest." onclick="mcqAns(this)">35</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A line graph of a swimmer's times goes steadily downward from left to right. What does this show?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Downward = lower values = faster times. Lower times mean improvement, not deterioration." onclick="mcqAns(this)">The swimmer is getting slower</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! On a time graph, downward slope means times are decreasing (getting smaller). Smaller times = faster swimming = improvement." onclick="mcqAns(this)">The swimmer is improving over time</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A downward slope is a clear, consistent pattern — not random variation." onclick="mcqAns(this)">The data is completely random</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Temperature isn't measured here. The y-axis shows race times in seconds." onclick="mcqAns(this)">The temperature is dropping</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A column graph shows NRL team scores: Panthers 24, Storm 18, Roosters 22, Broncos 14. What is the range?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 24 is the maximum value, but range = max − min = 24 − 14 = 10, not 24." onclick="mcqAns(this)">24 points</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Range = maximum − minimum = 24 − 14 = 10 points." onclick="mcqAns(this)">10 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 6 points would mean max − min = 6. Check: 24 − 14 = 10, not 6." onclick="mcqAns(this)">6 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 78 is the total (24+18+22+14=78). Range = max − min, not the sum." onclick="mcqAns(this)">78 points</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">In a dot plot of netball shooting accuracy, most values fall between 80–92% but one value is at 47%. What is 47% called, and what might it suggest?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The mode is the most common value — 47% appears to be a single unusual value, not the most common." onclick="mcqAns(this)">The mode — it suggests average performance</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The range is a measure of spread (max − min), not a label for a single unusual value." onclick="mcqAns(this)">The range — it shows how spread the data is</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A value that sits far from the main cluster is called an outlier. 47% sits well below the 80–92% cluster. It might suggest injury, illness, an off game, or possibly a data entry error." onclick="mcqAns(this)">An outlier — it might suggest illness, injury, an off-game, or a data error</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A cluster is where data is densely packed together — that's the 80–92% region, not 47%." onclick="mcqAns(this)">A cluster — it shows where most data falls</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A bar chart of AFL match scores has a y-axis starting at 50 instead of 0. A student says: "Team A's bar is twice as tall as Team B's, so Team A scored twice as many points." Why is this conclusion wrong?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ AFL scores can definitely be displayed on a bar chart — the problem is about how the axis is set up, not the graph type." onclick="mcqAns(this)">AFL scores cannot be shown on a bar chart</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! When the y-axis starts at 50, the bar heights don't represent actual values — they represent the excess above 50. If Team A=80 and Team B=60, bar A is 30 units tall and bar B is 10 units (A looks triple B), but the actual ratio is 80:60 = 4:3, not 2:1." onclick="mcqAns(this)">The bar heights show the excess above 50, not the actual scores — the ratio of heights is not the ratio of scores</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The student can read the bar heights — but the problem is that bar height doesn't equal score when the axis starts at 50." onclick="mcqAns(this)">The student cannot read bar heights from a graph</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The conclusion is definitely wrong — but the reason is about the y-axis starting at 50, not about reading skills." onclick="mcqAns(this)">The student read the bars incorrectly</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- CORE -->
+  <div class="tier-qs" id="qs-core">
+    <div class="tier-bar tb-c">🔵 Core — Patterns, Features &amp; Conclusions</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A frequency histogram of 100m sprint times shows a large peak at 12.0–12.5s. Two students interpret this differently: Student A says "most runners take 12–12.5 seconds"; Student B says "all runners take exactly 12 seconds." Who is correct?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Student B is incorrect — the bar represents a class interval (12.0–12.5s), not a single exact value." onclick="mcqAns(this)">Student B — the bar shows runners taking exactly 12s</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Student A is right. A histogram bar represents a class interval — all runners in that bar have times within 12.0 to 12.5 seconds. Student B has confused a bar with an exact value." onclick="mcqAns(this)">Student A — the bar represents a class interval, not a single value</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Student A's interpretation is correct — each bar covers a range of values, not one exact time." onclick="mcqAns(this)">Neither — histograms cannot be interpreted this way</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ There is enough information to determine which interpretation is correct — Student A is right." onclick="mcqAns(this)">Both — the histogram doesn't give enough detail to decide</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A back-to-back stem-and-leaf of two NRL players' metres per game shows Player A has leaves mainly in the 7| and 8| rows, while Player B has leaves mainly in the 5| and 6| rows. What can you conclude?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Without knowing the exact values, we can't determine the range from stem information alone." onclick="mcqAns(this)">Player A has a wider range of values</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! If Player A's data clusters in the 70s and 80s while Player B's clusters in the 50s and 60s, Player A typically gains more metres per game. Their median and mode will both be higher." onclick="mcqAns(this)">Player A typically gains more metres per game than Player B</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We can make a valid comparison — the stems tell us where each player's typical performance lies." onclick="mcqAns(this)">Nothing — you need the full dataset to compare players</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The leaves show where each player's data is concentrated — Player A in 70s-80s and Player B in 50s-60s. This is a meaningful performance difference." onclick="mcqAns(this)">Player B is more consistent because they have fewer stems</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A line graph of a basketball player's scoring over 12 games shows a clear upward trend from game 1 to game 10, then a sharp dip in games 11 and 12. Based on this, what is the most reasonable prediction for game 13?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Predicting their game 1 score ignores the overall upward trend. The recent dip is concerning but doesn't erase 10 games of improvement." onclick="mcqAns(this)">They will score the same as game 1 — the trend has reversed</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The overall 12-game trend is upward. Games 11–12 show a dip but are only 2 data points. A reasonable prediction is that scoring will likely recover toward the overall trend — neither the career low nor the career high." onclick="mcqAns(this)">Scoring will likely recover somewhat toward the overall upward trend</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Predicting a new career high ignores the recent dip. Statistical predictions should be based on patterns, not optimistic extrapolation." onclick="mcqAns(this)">They will definitely score a new career high in game 13</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Two games don't constitute a new trend. A reasonable prediction requires more data points before concluding the trend has permanently reversed." onclick="mcqAns(this)">Nothing can be predicted — two poor games means the trend is over</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A frequency polygon of netball player heights is roughly symmetric and bell-shaped, peaking at 175–180 cm. What can be concluded about the mean and median?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ For a symmetric distribution the mean and median are approximately equal — not different." onclick="mcqAns(this)">The mean will be much higher than the median</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! When a distribution is symmetric and bell-shaped, the mean and median are approximately equal — both will be near the peak (modal class) at 175–180 cm." onclick="mcqAns(this)">The mean and median will be approximately equal, both near 175–180 cm</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The mean and median can be calculated from any numerical dataset. A bell shape makes them approximately equal." onclick="mcqAns(this)">The mean and median cannot be determined from a frequency polygon</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ For a symmetric distribution the mean and median are close together, not widely different." onclick="mcqAns(this)">The median will be much higher than the mean</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A divided bar graph shows Melbourne United's points: 2-pointers 48%, 3-pointers 31%, free throws 21%. The club's total points scored was 2,180. How many points came from 3-pointers?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 31% × 2,180 = 675.8. Not 310. The percentage must be multiplied by the actual total, not treated as a raw number." onclick="mcqAns(this)">310 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ That would be 100% of 676, not 31% of 2,180." onclick="mcqAns(this)">676 points</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! 31% of 2,180 = 0.31 × 2,180 = 675.8 ≈ 676 points from 3-pointers." onclick="mcqAns(this)">676 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 2,180 would be 100% of the points. We need 31% of that total." onclick="mcqAns(this)">2,180 points</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div class="tier-qs" id="qs-extension">
+    <div class="tier-bar tb-e">🔴 Extension — Critical Evaluation &amp; Justification</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A graph of an NRL team's average crowd numbers shows a sharp visual increase using a y-axis that starts at 14,000. A journalist writes: "Attendance has surged 400% in just two seasons." The actual attendance went from 16,500 to 18,200. Evaluate this claim.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 400% increase would mean the crowd went from 16,500 to 82,500. That's nowhere near 18,200." onclick="mcqAns(this)">The claim is correct — the y-axis proves it</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The actual increase is (18,200 − 16,500) / 16,500 × 100 ≈ 10.3%. The visual impression from the truncated y-axis is misleading — the bar appears much taller, but the real growth is just over 10%, nowhere near 400%." onclick="mcqAns(this)">The claim is false — the actual increase is about 10%, not 400%, and the visual is created by the truncated axis</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We can absolutely evaluate this with arithmetic: (18,200 − 16,500) / 16,500 × 100 ≈ 10.3%. The graph's impression of 400% is caused by the truncated y-axis." onclick="mcqAns(this)">The claim cannot be evaluated without more data</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 10% growth can be significant in context, but it's nowhere near the claimed 400%. The claim is factually wrong." onclick="mcqAns(this)">The claim is minor — a 10% increase is the same as 400% when rounded</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A sports scientist produces a frequency polygon of AFL players' max sprint speed from two different training sessions. The polygons have the same peak location but Session B's polygon is noticeably wider than Session A's. What does this tell us?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Same peak means the modal speed is the same — more players peaked at the same speed, not a higher one." onclick="mcqAns(this)">Session B had faster average sprint speeds</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A wider polygon indicates greater spread (variability) in the data. Both sessions had similar modal speeds, but in Session B players' speeds were more spread out — some went much faster, some much slower than the typical speed." onclick="mcqAns(this)">Session B had more variability — players' speeds were more spread out from the typical value</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The same peak means the most common speed was similar in both sessions — but the spread (width) tells us about variability, not the typical value." onclick="mcqAns(this)">Session B had fewer players at the modal speed</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A wider polygon actually indicates MORE variability, not less consistency in a positive sense." onclick="mcqAns(this)">Session B was more consistent because the curve is smoother</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A line graph of a swimming squad's times shows improvement from January to March, a plateau from April to June, and improvement again from July onwards. A coach argues the April–June plateau proves the training program failed. Critically evaluate this interpretation.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ One isolated period of plateau doesn't prove failure — the coach is cherry-picking the plateau while ignoring the improvements before and after it." onclick="mcqAns(this)">The coach is correct — any plateau in a line graph indicates program failure</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The coach is cherry-picking the plateau while ignoring two periods of clear improvement. A plateau can be normal — performance rarely improves linearly. The full graph shows overall progress. A better interpretation is that the program shows results with expected periods of consolidation." onclick="mcqAns(this)">The coach is cherry-picking one period — the full graph shows overall improvement with a normal consolidation plateau</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Line graphs can show plateaus, declines and improvements over time — they're entirely appropriate here." onclick="mcqAns(this)">A line graph is the wrong graph type for showing training progress</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We do have enough data. The key issue is the coach's selective interpretation — focusing on the plateau while ignoring the improvements before and after it." onclick="mcqAns(this)">There is not enough data to evaluate the program from this graph alone</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">Two sector graphs compare the scoring methods of two NBL teams, drawn at different sizes. The larger circle represents Team A and the smaller represents Team B. A commentator says: "Team A's 3-pointer slice is visually bigger, so they shoot more 3-pointers." Is this valid?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The physical size of the circle doesn't represent a comparison between teams — it just represents the whole (100%) for each team. You can't compare slice sizes across different-sized circles." onclick="mcqAns(this)">Yes — larger slices always mean more of that type</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The size of the circle represents 100% of that team's shots — not a comparison to the other team. A 30% slice in a large circle and a 30% slice in a small circle represent the same proportion. You cannot compare slice areas across different-sized sector graphs." onclick="mcqAns(this)">No — the size of the circle represents 100% for that team, not a comparison between teams</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Different sizes make the graphs even harder to compare directly — sector graphs of different sizes should never be compared by visual area." onclick="mcqAns(this)">Yes — larger circles contain more data, so larger slices mean more shots</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We can evaluate this — the commentator is making an error about how to compare sector graphs of different sizes." onclick="mcqAns(this)">There is not enough information to determine whether this is valid</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A sports researcher makes a prediction: "Based on the downward trend in our swimmers' times, by 2030 the 100m freestyle world record will be below 40 seconds." The current world record is about 46 seconds, and times have improved roughly 0.3s per year for the past 10 years. Evaluate this prediction.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Mathematical extrapolation does allow for predictions — but those predictions must be evaluated for reasonableness. Extending a linear trend indefinitely leads to absurd results." onclick="mcqAns(this)">The prediction is valid — mathematical extrapolation always gives accurate results</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Based on a trend, predictions can be made — the issue here is HOW FAR we extend the trend and whether it remains realistic." onclick="mcqAns(this)">No prediction can be made from a trend line</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! At 0.3s/year over 6 years (to 2030), the prediction extrapolates to 46 − 1.8 = 44.2s — not below 40s. More critically, performance improvements slow as humans approach physiological limits. Linear trends don't continue indefinitely — extending them too far produces unreasonable predictions." onclick="mcqAns(this)">The prediction is unreasonable — linear trends slow near physiological limits and extending 6 years gives ~44s, not below 40s</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The trend would predict roughly 44.2s, not below 40s. And even that figure is unreliable because human performance improvements plateau near physical limits." onclick="mcqAns(this)">The prediction is correct — 0.3s per year for 6 years gives 46 − 1.8 = 44.2s, which is below 40s</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end practise -->
+
+<!-- ════════════════════════════════
+     TAB 5 · REFLECT
+════════════════════════════════ -->
+<div id="tab-reflect" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Working Mathematically — Reflect</p>
+  <p class="section-sub">These prompts synthesise all three chapters of this unit. Saved in this browser.</p>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Communicating</div>
+    <div class="wm-q">Imagine you are a sports journalist reviewing a graph submitted by a club for publication. Write a checklist of five questions you would ask yourself before deciding whether the graph is trustworthy and fair. Justify each question.</div>
+    <textarea class="wm-ta" id="wm1" placeholder="Write your journalist checklist here…" oninput="autoSave('wm1')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm1')">Save</button>
+      <span class="save-ok" id="ok-wm1">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Reasoning</div>
+    <div class="wm-q">A friend says: "Graphs don't lie — the data is right there in front of you." Using specific examples from this chapter, explain why this view is incomplete.</div>
+    <textarea class="wm-ta" id="wm2" placeholder="Write your response here…" oninput="autoSave('wm2')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm2')">Save</button>
+      <span class="save-ok" id="ok-wm2">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Connecting</div>
+    <div class="wm-q">How does knowing the variable type (from Chapter 1) affect how you interpret a graph (Chapter 3)? Give one concrete example where misclassifying a variable could lead to a wrong conclusion when reading a graph.</div>
+    <textarea class="wm-ta" id="wm3" placeholder="Connect your learning across all three chapters here…" oninput="autoSave('wm3')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm3')">Save</button>
+      <span class="save-ok" id="ok-wm3">✓ Saved</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Key Vocabulary</p>
+  <div class="vocab-grid">
+    <div class="vc"><div class="vc-term">Outlier</div><div class="vc-def">A value that sits well apart from the main cluster of data — unusually high or low.</div><div class="vc-eg">e.g. 64s when others cluster at 52–58s</div></div>
+    <div class="vc"><div class="vc-term">Cluster</div><div class="vc-def">A dense group of data values — where most of the data falls.</div><div class="vc-eg">e.g. NRL metres clustering in the 60s–80s</div></div>
+    <div class="vc"><div class="vc-term">Trend</div><div class="vc-def">A consistent direction of change shown in a line graph — upward, downward, or plateau.</div><div class="vc-eg">e.g. swimmer's times decreasing over a season</div></div>
+    <div class="vc"><div class="vc-term">Prediction</div><div class="vc-def">An estimate of a future value based on an existing trend or pattern. Should be reasonable and close to the trend.</div><div class="vc-eg">e.g. "likely around 55s next race"</div></div>
+    <div class="vc"><div class="vc-term">Truncated axis</div><div class="vc-def">A y-axis that starts above zero, making small differences appear visually large.</div><div class="vc-eg">e.g. crowd chart starting at 15,000</div></div>
+    <div class="vc"><div class="vc-term">Biased sample</div><div class="vc-def">A sample that is not representative of the broader population — drawn from a narrow or self-selected group.</div><div class="vc-eg">e.g. surveying swim fans about favourite sport</div></div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Unit Self-Assessment — All Three Chapters</p>
+  <div class="checklist">
+    <label class="ci"><input type="checkbox"> I can classify any variable as numerical discrete, numerical continuous, categorical nominal or categorical ordinal.</label>
+    <label class="ci"><input type="checkbox"> I can explain the four required features of every graph and identify when one is missing.</label>
+    <label class="ci"><input type="checkbox"> I can identify and draw all eight graph types covered in Chapter 2.</label>
+    <label class="ci"><input type="checkbox"> I can choose the most appropriate graph for a given dataset and justify my choice.</label>
+    <label class="ci"><input type="checkbox"> I can read specific values from any of the eight graph types accurately.</label>
+    <label class="ci"><input type="checkbox"> I can identify and describe range, mode, clusters, gaps and outliers from a graph.</label>
+    <label class="ci"><input type="checkbox"> I can use patterns in a graph to make a reasonable, justified prediction.</label>
+    <label class="ci"><input type="checkbox"> I can identify a truncated y-axis and explain why it can mislead a reader.</label>
+    <label class="ci"><input type="checkbox"> I can identify a cherry-picked time window and explain what additional data would be needed.</label>
+    <label class="ci"><input type="checkbox"> I can explain why a biased sample makes a graph's conclusion unreliable.</label>
+    <label class="ci"><input type="checkbox"> I can explain why unequal histogram bar widths mislead readers about frequency.</label>
+  </div>
+
+</div>
+</div><!-- end reflect -->
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+/* ── Tab navigation ── */
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'" + id + "'") !== -1) {
+      b.classList.add('active');
+    }
+  });
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'practise') ensureSpot2Pie();
+}
+
+/* ── Learn pill navigation ── */
+function showLearn(id) {
+  document.querySelectorAll('.learn-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.lpill').forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'" + id + "'") !== -1) {
+      b.classList.add('active');
+    }
+  });
+  document.getElementById('lp-' + id).classList.add('active');
+  if (id === 'mislead' && !window.biasDrawn) { drawBiasPie(); window.biasDrawn = true; }
+}
+
+/* ── MCQ handler ── */
+function mcqAns(btn) {
+  const q = btn.closest('.mcq-q') || btn.closest('.explore-q') || btn.closest('.spot-q');
+  if (q.classList.contains('answered')) return;
+  q.classList.add('answered');
+  const isCorrect = btn.dataset.result === 'correct';
+  q.querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.result === 'correct') b.classList.add('correct');
+    else b.classList.add('wrong-opt');
+  });
+  btn.classList.remove('correct','wrong-opt');
+  btn.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+  const fb = q.querySelector('.feedback');
+  fb.textContent = btn.dataset.msg;
+  fb.className = 'feedback ' + (isCorrect ? 'fb-correct' : 'fb-wrong');
+  fb.style.display = 'block';
+}
+
+/* ── Tier selection ── */
+function selectTier(tier) {
+  document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tier-qs').forEach(q => q.classList.remove('active'));
+  document.querySelector('[data-tier="' + tier + '"]').classList.add('active');
+  document.getElementById('qs-' + tier).classList.add('active');
+}
+
+/* ── Reveal cards (Learn S1) ── */
+function toggleReveal(answerId, btn) {
+  const ans = document.getElementById(answerId);
+  const showing = ans.style.display === 'block';
+  ans.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? 'Reveal →' : 'Hide ↑';
+  btn.classList.toggle('shown', !showing);
+}
+
+/* ── Prediction toggle ── */
+let predOn = false;
+const predElements = ['pred-line','pred-dot1','pred-dot2','pred-label1','pred-label2','pred-note','pred-note-txt','pred-x9','pred-x10'];
+function togglePrediction() {
+  predOn = !predOn;
+  predElements.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = predOn ? 'block' : 'none';
+  });
+  const btn = document.getElementById('pred-btn');
+  btn.classList.toggle('on', predOn);
+  btn.textContent = predOn ? '📍 Hide Prediction' : '📍 Show Prediction (Races 9–10)';
+}
+
+/* ── Pie charts ── */
+function buildPie(svgId, groupId, data, cx, cy, r) {
+  const g = document.getElementById(groupId);
+  if (!g) return;
+  let angle = -Math.PI / 2;
+  data.forEach(d => {
+    const sweep = (d.pct / 100) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    const x2 = cx + r * Math.cos(angle + sweep);
+    const y2 = cy + r * Math.sin(angle + sweep);
+    const large = sweep > Math.PI ? 1 : 0;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z`);
+    path.setAttribute('fill', d.color);
+    path.setAttribute('stroke','white');
+    path.setAttribute('stroke-width','2');
+    g.appendChild(path);
+    if (d.pct > 8) {
+      const mid = angle + sweep / 2;
+      const lx = cx + r * 0.6 * Math.cos(mid);
+      const ly = cy + r * 0.6 * Math.sin(mid);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', lx.toFixed(1));
+      txt.setAttribute('y', ly.toFixed(1));
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('dominant-baseline','middle');
+      txt.setAttribute('font-family','Nunito, sans-serif');
+      txt.setAttribute('font-size','11');
+      txt.setAttribute('font-weight','800');
+      txt.setAttribute('fill','white');
+      txt.textContent = d.pct + '%';
+      g.appendChild(txt);
+    }
+    angle += sweep;
+  });
+}
+
+/* Draw bias pie when mislead section opens */
+function drawBiasPie() {
+  buildPie('bias-pie','bias-slices',[{pct:87,color:'#1A6FA5'},{pct:13,color:'#bbb'}], 65, 95, 70);
+  buildPie('spot2-pie','spot2-slices',[{pct:87,color:'#1A6FA5'},{pct:13,color:'#bbb'}], 65, 95, 70);
+}
+
+/* Draw spot2 pie on practise tab open if not yet drawn */
+function ensureSpot2Pie() {
+  if (!window.spot2Drawn) {
+    buildPie('spot2-pie','spot2-slices',[{pct:87,color:'#1A6FA5'},{pct:13,color:'#bbb'}], 65, 95, 70);
+    window.spot2Drawn = true;
+  }
+}
+
+
+
+
+/* ── Journal ── */
+function saveJournal(id) {
+  localStorage.setItem('dat-ch3-' + id, document.getElementById(id).value);
+  const ok = document.getElementById('ok-' + id);
+  ok.style.display = 'inline';
+  setTimeout(() => { ok.style.display = 'none'; }, 2000);
+}
+function autoSave(id) {
+  localStorage.setItem('dat-ch3-' + id, document.getElementById(id).value);
+}
+['wm1','wm2','wm3'].forEach(id => {
+  const saved = localStorage.getItem('dat-ch3-' + id);
+  if (saved) document.getElementById(id).value = saved;
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classifying Variables | MA4-DAT-C-01</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --bg:       #F4EFE9;
+  --card:     #FFFFFF;
+  --text:     #2C2C2C;
+  --muted:    #6B6B6B;
+  --border:   #E2D9CF;
+  --shadow:   0 2px 14px rgba(0,0,0,0.07);
+  --r:        14px;
+  --rsm:      8px;
+  --font:     'Nunito', sans-serif;
+
+  /* Chapter palette — Data blue */
+  --ch:       #1A6FA5;
+  --ch-d:     #114E76;
+  --ch-l:     #E6F2FA;
+
+  /* Semantic */
+  --amber:    #D98A0A;
+  --amber-l:  #FEF3DC;
+  --terra:    #C94233;
+  --terra-l:  #FDEAE7;
+  --forest:   #2B7A4B;
+  --forest-l: #E4F3EB;
+  --purple:   #6A3FB5;
+  --purple-l: #F0EAFB;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── HEADER ──────────────────────────────────────────── */
+.ch-header {
+  background: linear-gradient(135deg, var(--ch-d) 0%, var(--ch) 100%);
+  color: #fff;
+  padding: 20px 28px 16px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+}
+.ch-back {
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px; padding: 5px 11px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: #fff; text-decoration: none;
+  white-space: nowrap; transition: background .15s;
+}
+.ch-back:hover { background: rgba(255,255,255,0.25); }
+.ch-titles { flex: 1; }
+.ch-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; opacity: .65; margin-bottom: 3px;
+}
+.ch-title  { font-size: 21px; font-weight: 900; line-height: 1.15; }
+.ch-sub    { font-size: 12px; opacity: .7; margin-top: 2px; }
+
+/* ── TAB NAV ─────────────────────────────────────────── */
+.tab-nav {
+  background: var(--ch-d); padding: 0 28px;
+  display: flex; gap: 0; overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-btn {
+  background: none; border: none;
+  color: rgba(255,255,255,.55);
+  font-family: var(--font); font-size: 11.5px; font-weight: 700;
+  padding: 11px 14px 9px; cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all .18s;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.tab-btn:hover  { color: rgba(255,255,255,.9); }
+.tab-btn.active { color: #fff; border-bottom-color: #F5A623; }
+
+/* ── PANELS ──────────────────────────────────────────── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.content { max-width: 900px; margin: 0 auto; padding: 28px 20px; }
+
+/* ── SHARED COMPONENTS ───────────────────────────────── */
+.card { background: var(--card); border-radius: var(--r); padding: 22px; box-shadow: var(--shadow); margin-bottom: 18px; }
+.section-title { font-size: 19px; font-weight: 900; color: var(--ch-d); margin-bottom: 3px; }
+.section-sub   { font-size: 13.5px; color: var(--muted); margin-bottom: 18px; line-height: 1.55; }
+.divider       { border: none; border-top: 2px solid var(--border); margin: 26px 0; }
+
+.note-box {
+  background: var(--amber-l); border-left: 4px solid var(--amber);
+  border-radius: 0 var(--rsm) var(--rsm) 0;
+  padding: 12px 15px; font-size: 13px; font-weight: 600;
+  color: #7a4800; line-height: 1.5; margin-bottom: 16px;
+}
+.info-box {
+  background: var(--ch-l); border-left: 4px solid var(--ch);
+  border-radius: 0 var(--rsm) var(--rsm) 0;
+  padding: 12px 15px; font-size: 13px; font-weight: 600;
+  color: var(--ch-d); line-height: 1.5; margin-bottom: 16px;
+}
+
+.tag {
+  display: inline-block; padding: 2px 9px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+}
+.tag-nd { background: var(--ch-l);     color: var(--ch-d); }
+.tag-nc { background: var(--forest-l); color: #1a5030; }
+.tag-cn { background: var(--amber-l);  color: #7a4800; }
+.tag-co { background: var(--purple-l); color: var(--purple); }
+
+/* ── HOOK TAB ────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, var(--ch-d) 0%, var(--ch) 60%, #2596d8 100%);
+  border-radius: var(--r); padding: 32px 28px 28px; color: #fff;
+  margin-bottom: 22px; position: relative; overflow: hidden;
+}
+.hero::after {
+  content: '🏷'; position: absolute; right: 24px; top: 50%;
+  transform: translateY(-50%); font-size: 86px; opacity: .1; pointer-events: none;
+}
+.hero h1 { font-size: 23px; font-weight: 900; margin-bottom: 7px; line-height: 1.2; }
+.hero p  { font-size: 13.5px; opacity: .85; max-width: 540px; line-height: 1.65; }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 13px; margin-bottom: 22px;
+}
+.stat-card {
+  background: #fff; border-radius: var(--r); padding: 16px;
+  box-shadow: var(--shadow); border-left: 4px solid var(--ch);
+  transition: transform .15s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card:nth-child(2) { border-color: var(--terra); }
+.stat-card:nth-child(3) { border-color: var(--forest); }
+.stat-card:nth-child(4) { border-color: var(--amber); }
+.stat-card:nth-child(5) { border-color: var(--purple); }
+.sc-sport { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 2px; }
+.sc-emoji { font-size: 22px; margin-bottom: 3px; }
+.sc-val   { font-size: 26px; font-weight: 900; color: var(--ch); line-height: 1; margin-bottom: 2px; }
+.stat-card:nth-child(2) .sc-val { color: var(--terra); }
+.stat-card:nth-child(3) .sc-val { color: var(--forest); }
+.stat-card:nth-child(4) .sc-val { color: var(--amber); }
+.stat-card:nth-child(5) .sc-val { color: var(--purple); }
+.sc-desc  { font-size: 11.5px; color: var(--text); line-height: 1.4; }
+
+.def-box {
+  background: var(--ch-l); border: 2px solid var(--ch);
+  border-radius: var(--r); padding: 17px 20px; margin-bottom: 20px;
+}
+.def-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--ch-d); margin-bottom: 4px; }
+.def-text  { font-size: 15px; font-weight: 700; color: var(--ch-d); line-height: 1.5; }
+.def-eg    { margin-top: 7px; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+.preview-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px;
+}
+.preview-card {
+  background: #fff; border-radius: var(--r); padding: 16px;
+  box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start;
+}
+.pv-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+}
+.pv-icon.nd { background: var(--ch-l); }
+.pv-icon.nc { background: var(--forest-l); }
+.pv-icon.cn { background: var(--amber-l); }
+.pv-icon.co { background: var(--purple-l); }
+.pv-head { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+.pv-head.nd { color: var(--ch-d); }
+.pv-head.nc { color: var(--forest); }
+.pv-head.cn { color: var(--amber); }
+.pv-head.co { color: var(--purple); }
+.pv-body { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+
+/* ── EXPLORE TAB ─────────────────────────────────────── */
+.tree-scroll { overflow-x: auto; margin-bottom: 22px; padding-bottom: 4px; }
+
+/* Classify activity */
+.cl-wrap { background: #fff; border-radius: var(--r); padding: 24px; box-shadow: var(--shadow); }
+.cl-progress-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.cl-track { display: flex; gap: 5px; margin-bottom: 22px; }
+.cl-pip {
+  flex: 1; height: 7px; border-radius: 4px; background: var(--border); transition: background .3s;
+}
+.cl-pip.done    { background: var(--forest); }
+.cl-pip.current { background: var(--ch); }
+.cl-pip.wrong-done { background: var(--terra); }
+
+.cl-sport-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--ch-l); color: var(--ch-d);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 12px;
+}
+.cl-var     { font-size: 19px; font-weight: 900; margin-bottom: 6px; line-height: 1.3; text-align: center; }
+.cl-ctx     { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto; }
+.cl-btns    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 520px; margin: 0 auto 16px; }
+.cl-btn {
+  background: #fff; border: 2px solid var(--border);
+  border-radius: var(--rsm); padding: 13px 14px;
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: var(--text); cursor: pointer; transition: all .15s; text-align: left; line-height: 1.3;
+}
+.cl-btn:not(:disabled):hover { border-color: var(--ch); background: var(--ch-l); }
+.cl-btn .btn-sub { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 2px; }
+.cl-btn.is-correct   { border-color: var(--forest)  !important; background: var(--forest-l) !important; color: var(--forest) !important; }
+.cl-btn.is-wrong     { border-color: var(--terra)   !important; background: var(--terra-l)  !important; color: var(--terra)  !important; }
+.cl-btn.show-correct { border-color: var(--forest)  !important; background: var(--forest-l) !important; color: var(--forest) !important; }
+.cl-btn:disabled { cursor: default; opacity: .6; }
+
+.cl-fb {
+  border-radius: var(--rsm); padding: 12px 14px;
+  font-size: 12.5px; font-weight: 600;
+  display: none; margin-bottom: 14px; line-height: 1.55; text-align: left;
+}
+.cl-fb.correct { background: var(--forest-l); color: var(--forest); border: 1.5px solid var(--forest); }
+.cl-fb.wrong   { background: var(--terra-l);  color: var(--terra);  border: 1.5px solid var(--terra);  }
+
+.cl-next-row { display: none; justify-content: center; gap: 12px; }
+.cl-next {
+  background: var(--ch); color: #fff; border: none;
+  border-radius: var(--rsm); padding: 11px 28px;
+  font-family: var(--font); font-size: 13px; font-weight: 800; cursor: pointer;
+  transition: background .15s;
+}
+.cl-next:hover { background: var(--ch-d); }
+
+.cl-result { display: none; text-align: center; padding: 28px 16px; }
+.cl-score-big   { font-size: 62px; font-weight: 900; color: var(--ch); line-height: 1; }
+.cl-score-label { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.cl-score-msg   { font-size: 13px; color: var(--muted); max-width: 340px; margin: 0 auto 18px; line-height: 1.6; }
+.retry-btn {
+  background: var(--ch); color: #fff; border: none;
+  border-radius: var(--rsm); padding: 11px 28px;
+  font-family: var(--font); font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.retry-btn:hover { background: var(--ch-d); }
+
+/* ── LEARN TAB ───────────────────────────────────────── */
+.type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 14px; margin-bottom: 24px; }
+.type-card {
+  background: #fff; border-radius: var(--r); padding: 18px;
+  box-shadow: var(--shadow); border-top: 4px solid var(--ch);
+}
+.type-card.nd { border-color: var(--ch); }
+.type-card.nc { border-color: var(--forest); }
+.type-card.cn { border-color: var(--amber); }
+.type-card.co { border-color: var(--purple); }
+
+.tc-type  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 4px; }
+.tc-name  { font-size: 16px; font-weight: 900; margin-bottom: 6px; }
+.tc-name.nd { color: var(--ch-d); }
+.tc-name.nc { color: var(--forest); }
+.tc-name.cn { color: var(--amber); }
+.tc-name.co { color: var(--purple); }
+.tc-body  { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 10px; }
+.tc-key   {
+  background: var(--bg); border-radius: var(--rsm);
+  padding: 9px 12px; font-size: 12px; font-weight: 700;
+  margin-bottom: 10px; line-height: 1.4;
+}
+.tc-eg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 5px; }
+.tc-eg-list  { display: flex; flex-wrap: wrap; gap: 5px; }
+.tc-chip {
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 14px;
+}
+.tc-chip.nd { background: var(--ch-l);     color: var(--ch-d); }
+.tc-chip.nc { background: var(--forest-l); color: #1a5030; }
+.tc-chip.cn { background: var(--amber-l);  color: #7a4800; }
+.tc-chip.co { background: var(--purple-l); color: var(--purple); }
+
+.compare-table {
+  width: 100%; border-collapse: collapse;
+  background: #fff; border-radius: var(--r);
+  overflow: hidden; box-shadow: var(--shadow); margin-bottom: 20px;
+  font-size: 12.5px;
+}
+.compare-table th {
+  padding: 10px 14px; background: var(--ch); color: #fff;
+  font-weight: 800; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+}
+.compare-table th:first-child { background: var(--ch-d); }
+.compare-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:nth-child(even) td { background: #faf8f5; }
+.compare-table td:first-child { font-weight: 700; }
+.q-key {
+  font-size: 13px; font-weight: 800;
+  background: var(--ch-l); color: var(--ch-d);
+  border-radius: var(--rsm); padding: 12px 16px;
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-bottom: 13px; line-height: 1.5;
+}
+
+/* ── PRACTISE TAB ────────────────────────────────────── */
+.tier-picker { display: flex; gap: 9px; margin-bottom: 22px; flex-wrap: wrap; }
+.tier-btn {
+  padding: 9px 20px; border-radius: var(--rsm); border: 2px solid var(--border);
+  background: #fff; font-family: var(--font); font-size: 12px; font-weight: 800;
+  cursor: pointer; transition: all .15s;
+}
+.tier-btn:not(.active):hover { border-color: var(--ch); }
+.tier-btn[data-tier="foundation"].active { background: var(--forest); color: #fff; border-color: var(--forest); }
+.tier-btn[data-tier="core"].active       { background: var(--ch);     color: #fff; border-color: var(--ch); }
+.tier-btn[data-tier="extension"].active  { background: var(--terra);  color: #fff; border-color: var(--terra); }
+
+.tier-qs { display: none; }
+.tier-qs.active { display: block; }
+
+.tier-bar {
+  font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
+  padding: 3px 10px; border-radius: 4px; display: inline-block; margin-bottom: 18px;
+}
+.tb-f { background: var(--forest-l); color: #1a5030; }
+.tb-c { background: var(--ch-l);     color: var(--ch-d); }
+.tb-e { background: var(--terra-l);  color: var(--terra); }
+
+.score-tracker {
+  background: #fff; border-radius: var(--rsm); box-shadow: var(--shadow);
+  padding: 12px 18px; display: flex; align-items: center; gap: 14px;
+  margin-bottom: 18px; font-size: 13px; font-weight: 700;
+}
+.score-pips { display: flex; gap: 5px; flex-wrap: wrap; }
+.score-pip  { width: 11px; height: 11px; border-radius: 50%; background: var(--border); transition: background .3s; }
+.score-pip.got-it { background: var(--forest); }
+.score-pip.missed { background: var(--terra); }
+
+.mcq-q {
+  background: #fff; border-radius: var(--r); padding: 20px;
+  box-shadow: var(--shadow); margin-bottom: 14px;
+}
+.mcq-num  { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; }
+.mcq-stem { font-size: 14px; font-weight: 700; margin-bottom: 6px; line-height: 1.55; }
+.mcq-ctx  {
+  font-size: 12px; color: var(--muted); font-style: italic;
+  background: var(--bg); border-radius: var(--rsm); padding: 8px 12px;
+  margin-bottom: 12px; line-height: 1.5;
+}
+.mcq-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+@media (max-width:480px) { .mcq-opts { grid-template-columns: 1fr; } }
+.opt {
+  background: #fff; border: 2px solid var(--border);
+  border-radius: var(--rsm); padding: 10px 13px;
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  cursor: pointer; text-align: left; transition: all .15s; line-height: 1.4;
+}
+.opt:not(:disabled):hover { border-color: var(--ch); background: var(--ch-l); }
+.opt.correct          { border-color: var(--forest) !important; background: var(--forest-l) !important; color: var(--forest) !important; }
+.opt.wrong-opt        { border-color: #ddd !important; background: #f8f8f8 !important; color: #b0b0b0 !important; }
+.opt.selected-correct { border-color: var(--forest); background: var(--forest-l); color: var(--forest); font-weight: 800; }
+.opt.selected-wrong   { border-color: var(--terra);  background: var(--terra-l);  color: var(--terra);  font-weight: 800; }
+.opt:disabled { cursor: default; }
+.feedback {
+  border-radius: var(--rsm); padding: 10px 13px;
+  font-size: 12px; font-weight: 600; display: none; line-height: 1.55;
+}
+.fb-correct { background: var(--forest-l); color: var(--forest); border: 1.5px solid var(--forest); }
+.fb-wrong   { background: var(--terra-l);  color: var(--terra);  border: 1.5px solid var(--terra);  }
+
+/* ── REFLECT TAB ─────────────────────────────────────── */
+.wm-card {
+  background: linear-gradient(135deg, var(--ch-d), var(--ch));
+  color: #fff; border-radius: var(--r); padding: 20px 22px; margin-bottom: 14px;
+}
+.wm-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; opacity: .65; margin-bottom: 4px; }
+.wm-q     { font-size: 14px; font-weight: 700; line-height: 1.55; margin-bottom: 10px; }
+.wm-ta {
+  width: 100%; background: rgba(255,255,255,.12);
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: var(--rsm); padding: 9px 12px;
+  font-family: var(--font); font-size: 12.5px; color: #fff;
+  resize: vertical; min-height: 70px;
+}
+.wm-ta::placeholder { color: rgba(255,255,255,.4); }
+.wm-ta:focus { outline: none; border-color: rgba(255,255,255,.7); }
+.save-row { display: flex; align-items: center; gap: 10px; margin-top: 7px; }
+.save-btn {
+  background: rgba(255,255,255,.18); color: #fff;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: var(--rsm); padding: 7px 18px;
+  font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.save-btn:hover { background: rgba(255,255,255,.28); }
+.save-ok { font-size: 11px; color: rgba(255,255,255,.8); display: none; }
+
+.vocab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px,1fr)); gap: 11px; margin-bottom: 18px; }
+.vc {
+  background: #fff; border-radius: var(--rsm); padding: 13px;
+  box-shadow: var(--shadow); border-top: 3px solid var(--ch);
+}
+.vc:nth-child(2) { border-color: var(--forest); }
+.vc:nth-child(3) { border-color: var(--amber); }
+.vc:nth-child(4) { border-color: var(--purple); }
+.vc:nth-child(5) { border-color: var(--terra); }
+.vc:nth-child(6) { border-color: var(--ch-d); }
+.vc-term { font-size: 13px; font-weight: 800; color: var(--ch-d); margin-bottom: 5px; }
+.vc:nth-child(2) .vc-term { color: var(--forest); }
+.vc:nth-child(3) .vc-term { color: var(--amber); }
+.vc:nth-child(4) .vc-term { color: var(--purple); }
+.vc:nth-child(5) .vc-term { color: var(--terra); }
+.vc:nth-child(6) .vc-term { color: var(--ch-d); }
+.vc-def { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin-bottom: 5px; }
+.vc-eg  { font-size: 11px; color: var(--ch); font-style: italic; }
+
+.checklist { background: #fff; border-radius: var(--r); padding: 18px; box-shadow: var(--shadow); }
+.ci {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 9px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px; line-height: 1.45; cursor: pointer;
+}
+.ci:last-child { border-bottom: none; }
+.ci input { margin-top: 2px; width: 15px; height: 15px; accent-color: var(--ch); cursor: pointer; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     HEADER
+════════════════════════════════ -->
+<header class="ch-header">
+  <a href="ma4-dat-c-01-index.html" class="ch-back">← Unit Hub</a>
+  <div class="ch-titles">
+    <div class="ch-label">MA4-DAT-C-01 · Chapter 1 of 3</div>
+    <div class="ch-title">Classifying Variables</div>
+    <div class="ch-sub">Numerical · Categorical · Discrete · Continuous · Nominal · Ordinal</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════
+     TAB NAV
+════════════════════════════════ -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('hook')">🏟 Hook</button>
+  <button class="tab-btn" onclick="showTab('explore')">🔍 Explore</button>
+  <button class="tab-btn" onclick="showTab('learn')">📖 Learn</button>
+  <button class="tab-btn" onclick="showTab('practise')">✏️ Practise</button>
+  <button class="tab-btn" onclick="showTab('reflect')">💭 Reflect</button>
+</nav>
+
+<!-- ═══════════════════════════════
+     TAB 1 · HOOK
+════════════════════════════════ -->
+<div id="tab-hook" class="tab-panel active">
+<div class="content">
+
+  <div class="hero">
+    <h1>Every Number in Sport is a Variable</h1>
+    <p>Coaches, scouts and journalists collect thousands of data points every season. Before any of that data is useful, someone has to answer a simple question: <em>what kind of variable is this?</em> That's exactly what this chapter is about.</p>
+  </div>
+
+  <p class="section-title">Sports Variables — Can You Spot the Difference?</p>
+  <p class="section-sub">Each card below shows a real value recorded in Australian sport. Notice how different they are from each other — not just in size, but in <em>type</em>.</p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="sc-sport">NRL</div>
+      <div class="sc-emoji">🏉</div>
+      <div class="sc-val">4</div>
+      <div class="sc-desc">Tries scored — a <em>counted</em> whole number</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-sport">Athletics</div>
+      <div class="sc-emoji">🏃</div>
+      <div class="sc-val">49.17s</div>
+      <div class="sc-desc">Cathy Freeman's 400m time, Sydney 2000 — a <em>measured</em> decimal</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-sport">AFL</div>
+      <div class="sc-emoji">🦅</div>
+      <div class="sc-val">Midfielder</div>
+      <div class="sc-desc">Playing position — a <em>label</em> with no natural order</div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-sport">Swimming</div>
+      <div class="sc-emoji">🏊</div>
+      <div class="sc-val">Gold</div>
+      <div class="sc-desc">Emma McKeon's Tokyo medal — a category <em>with ranking</em></div>
+    </div>
+    <div class="stat-card">
+      <div class="sc-sport">Basketball</div>
+      <div class="sc-emoji">🏀</div>
+      <div class="sc-val">218 cm</div>
+      <div class="sc-desc">Player height — a <em>measured</em> value on a continuous scale</div>
+    </div>
+  </div>
+
+  <div class="def-box">
+    <div class="def-label">Key Definition — Variable</div>
+    <div class="def-text">A <strong>variable</strong> is any characteristic, number or quantity that can be measured or counted. In statistics, it is what we are collecting data <em>about</em>.</div>
+    <div class="def-eg">Sport examples: a swimmer's time, an AFL team name, a player's batting average, a sprinter's finishing position, a basketball player's height.</div>
+  </div>
+
+  <p class="section-title">The Four Types You Need to Know</p>
+  <p class="section-sub">Every variable in sport — and in life — can be classified into one of these four types. Each type requires different methods to display and analyse.</p>
+
+  <div class="preview-grid">
+    <div class="preview-card">
+      <div class="pv-icon nd">🔢</div>
+      <div>
+        <div class="pv-head nd">Numerical Discrete</div>
+        <div class="pv-body">Counted whole numbers. No fractions possible.<br><em>Tries scored, wickets taken</em></div>
+      </div>
+    </div>
+    <div class="preview-card">
+      <div class="pv-icon nc">📏</div>
+      <div>
+        <div class="pv-head nc">Numerical Continuous</div>
+        <div class="pv-body">Measured values. Any decimal possible.<br><em>Race times, heights, distances</em></div>
+      </div>
+    </div>
+    <div class="preview-card">
+      <div class="pv-icon cn">🏷</div>
+      <div>
+        <div class="pv-head cn">Categorical Nominal</div>
+        <div class="pv-body">Labels or names. No natural order.<br><em>Team name, position, sport</em></div>
+      </div>
+    </div>
+    <div class="preview-card">
+      <div class="pv-icon co">🥇</div>
+      <div>
+        <div class="pv-head co">Categorical Ordinal</div>
+        <div class="pv-body">Categories with a meaningful order.<br><em>Finishing place, performance rating</em></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end hook -->
+
+<!-- ═══════════════════════════════
+     TAB 2 · EXPLORE
+════════════════════════════════ -->
+<div id="tab-explore" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">The Classification Tree</p>
+  <p class="section-sub">Use this tree to navigate from any variable to its correct type. The two key questions are marked at the bottom.</p>
+
+  <div class="tree-scroll">
+    <svg viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;max-width:700px;font-family:'Nunito',sans-serif;">
+
+      <!-- ROOT -->
+      <rect x="240" y="10" width="220" height="50" rx="11" fill="#1A6FA5"/>
+      <text x="350" y="36" text-anchor="middle" fill="white" font-size="15" font-weight="800">VARIABLE</text>
+      <text x="350" y="52" text-anchor="middle" fill="white" font-size="10.5" opacity=".8">any measurable characteristic</text>
+
+      <!-- Root → Level 1 branches -->
+      <line x1="350" y1="60" x2="350" y2="82" stroke="#bbb" stroke-width="2"/>
+      <line x1="350" y1="82" x2="165" y2="106" stroke="#bbb" stroke-width="2"/>
+      <line x1="350" y1="82" x2="535" y2="106" stroke="#bbb" stroke-width="2"/>
+
+      <!-- NUMERICAL -->
+      <rect x="72" y="106" width="186" height="50" rx="11" fill="#1A6FA5"/>
+      <text x="165" y="132" text-anchor="middle" fill="white" font-size="13.5" font-weight="800">NUMERICAL</text>
+      <text x="165" y="148" text-anchor="middle" fill="white" font-size="10" opacity=".8">numbers with mathematical meaning</text>
+
+      <!-- CATEGORICAL -->
+      <rect x="442" y="106" width="186" height="50" rx="11" fill="#C94233"/>
+      <text x="535" y="132" text-anchor="middle" fill="white" font-size="13.5" font-weight="800">CATEGORICAL</text>
+      <text x="535" y="148" text-anchor="middle" fill="white" font-size="10" opacity=".8">groups, labels or categories</text>
+
+      <!-- Numerical → Level 2 -->
+      <line x1="165" y1="156" x2="165" y2="176" stroke="#bbb" stroke-width="2"/>
+      <line x1="165" y1="176" x2="80"  y2="200" stroke="#bbb" stroke-width="2"/>
+      <line x1="165" y1="176" x2="250" y2="200" stroke="#bbb" stroke-width="2"/>
+
+      <!-- DISCRETE -->
+      <rect x="14"  y="200" width="132" height="68" rx="11" fill="#2B7A4B"/>
+      <text x="80" y="226" text-anchor="middle" fill="white" font-size="13" font-weight="800">DISCRETE</text>
+      <text x="80" y="242" text-anchor="middle" fill="white" font-size="10" opacity=".85">counted · whole numbers</text>
+      <text x="80" y="257" text-anchor="middle" fill="white" font-size="9.5" opacity=".7" font-style="italic">tries, goals, wickets</text>
+
+      <!-- CONTINUOUS -->
+      <rect x="184" y="200" width="132" height="68" rx="11" fill="#2B7A4B"/>
+      <text x="250" y="226" text-anchor="middle" fill="white" font-size="13" font-weight="800">CONTINUOUS</text>
+      <text x="250" y="242" text-anchor="middle" fill="white" font-size="10" opacity=".85">measured · any value</text>
+      <text x="250" y="257" text-anchor="middle" fill="white" font-size="9.5" opacity=".7" font-style="italic">times, heights, distances</text>
+
+      <!-- Categorical → Level 2 -->
+      <line x1="535" y1="156" x2="535" y2="176" stroke="#bbb" stroke-width="2"/>
+      <line x1="535" y1="176" x2="450" y2="200" stroke="#bbb" stroke-width="2"/>
+      <line x1="535" y1="176" x2="620" y2="200" stroke="#bbb" stroke-width="2"/>
+
+      <!-- NOMINAL -->
+      <rect x="384" y="200" width="132" height="68" rx="11" fill="#D98A0A"/>
+      <text x="450" y="226" text-anchor="middle" fill="white" font-size="13" font-weight="800">NOMINAL</text>
+      <text x="450" y="242" text-anchor="middle" fill="white" font-size="10" opacity=".85">labels · no order</text>
+      <text x="450" y="257" text-anchor="middle" fill="white" font-size="9.5" opacity=".7" font-style="italic">team name, sport, position</text>
+
+      <!-- ORDINAL -->
+      <rect x="554" y="200" width="132" height="68" rx="11" fill="#D98A0A"/>
+      <text x="620" y="226" text-anchor="middle" fill="white" font-size="13" font-weight="800">ORDINAL</text>
+      <text x="620" y="242" text-anchor="middle" fill="white" font-size="10" opacity=".85">categories · ordered</text>
+      <text x="620" y="257" text-anchor="middle" fill="white" font-size="9.5" opacity=".7" font-style="italic">1st/2nd, Poor→Excellent</text>
+
+      <!-- KEY QUESTIONS -->
+      <rect x="10"  y="290" width="310" height="42" rx="8" fill="#E6F2FA" stroke="#1A6FA5" stroke-width="1.5"/>
+      <text x="165" y="308" text-anchor="middle" fill="#114E76" font-size="11.5" font-weight="700">Key Q (Numerical):</text>
+      <text x="165" y="324" text-anchor="middle" fill="#114E76" font-size="11">"Can it be a non-whole number?" No → Discrete</text>
+
+      <rect x="380" y="290" width="310" height="42" rx="8" fill="#FEF3DC" stroke="#D98A0A" stroke-width="1.5"/>
+      <text x="535" y="308" text-anchor="middle" fill="#7a4800" font-size="11.5" font-weight="700">Key Q (Categorical):</text>
+      <text x="535" y="324" text-anchor="middle" fill="#7a4800" font-size="11">"Is there a natural ranking?" Yes → Ordinal</text>
+    </svg>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Classify the Variable — 10 Sports Examples</p>
+  <p class="section-sub">Read each sports variable and select its correct type. Immediate feedback and an explanation follow each answer.</p>
+
+  <div class="cl-wrap">
+    <div class="cl-progress-label">Progress: <span id="cl-n">1</span> / 10</div>
+    <div class="cl-track" id="cl-track"></div>
+
+    <!-- Active question card -->
+    <div id="cl-active">
+      <div style="text-align:center;">
+        <span class="cl-sport-tag" id="cl-sport-tag"></span>
+      </div>
+      <div class="cl-var" id="cl-var"></div>
+      <div class="cl-ctx" id="cl-ctx"></div>
+      <div class="cl-btns">
+        <button class="cl-btn" id="cl-nd" onclick="classifyAns('nd')">
+          <span class="btn-sub">Numerical</span>Discrete
+        </button>
+        <button class="cl-btn" id="cl-nc" onclick="classifyAns('nc')">
+          <span class="btn-sub">Numerical</span>Continuous
+        </button>
+        <button class="cl-btn" id="cl-cn" onclick="classifyAns('cn')">
+          <span class="btn-sub">Categorical</span>Nominal
+        </button>
+        <button class="cl-btn" id="cl-co" onclick="classifyAns('co')">
+          <span class="btn-sub">Categorical</span>Ordinal
+        </button>
+      </div>
+      <div class="cl-fb" id="cl-fb"></div>
+      <div class="cl-next-row" id="cl-next-row">
+        <button class="cl-next" onclick="nextClassify()">Next →</button>
+      </div>
+    </div>
+
+    <!-- Result screen -->
+    <div class="cl-result" id="cl-result">
+      <div class="cl-score-big" id="cl-score-big"></div>
+      <div class="cl-score-label">out of 10</div>
+      <div class="cl-score-msg" id="cl-score-msg"></div>
+      <button class="retry-btn" onclick="resetClassify()">Try Again ↺</button>
+    </div>
+  </div>
+
+</div>
+</div><!-- end explore -->
+
+<!-- ═══════════════════════════════
+     TAB 3 · LEARN
+════════════════════════════════ -->
+<div id="tab-learn" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">The Four Variable Types — In Detail</p>
+  <p class="section-sub">Each type has a specific definition, a key identifying question, and multiple Australian sports examples. Study these before the practice questions.</p>
+
+  <div class="type-grid">
+    <div class="type-card nd">
+      <div class="tc-type">Numerical</div>
+      <div class="tc-name nd">Discrete</div>
+      <div class="tc-body">Values are <strong>counted</strong> — they can only take specific, separate whole-number values. You cannot have half a unit.</div>
+      <div class="tc-key">🔑 Key test: "Can this be a fraction?" If <strong>no</strong> → discrete.</div>
+      <div class="tc-eg-label">Australian sports examples</div>
+      <div class="tc-eg-list">
+        <span class="tc-chip nd">🏉 NRL tries</span>
+        <span class="tc-chip nd">🏏 Cricket wickets</span>
+        <span class="tc-chip nd">🦅 AFL goals</span>
+        <span class="tc-chip nd">🏀 Points scored</span>
+        <span class="tc-chip nd">🏐 Netball goals</span>
+        <span class="tc-chip nd">🏊 Laps swum</span>
+      </div>
+    </div>
+    <div class="type-card nc">
+      <div class="tc-type">Numerical</div>
+      <div class="tc-name nc">Continuous</div>
+      <div class="tc-body">Values are <strong>measured</strong> — they can take any value within a range, including decimals. Precision depends on measurement equipment.</div>
+      <div class="tc-key">🔑 Key test: "Can this be a non-whole number?" If <strong>yes</strong> → continuous.</div>
+      <div class="tc-eg-label">Australian sports examples</div>
+      <div class="tc-eg-list">
+        <span class="tc-chip nc">🏃 Sprint time (s)</span>
+        <span class="tc-chip nc">🏊 Freestyle time (s)</span>
+        <span class="tc-chip nc">🏀 Height (cm)</span>
+        <span class="tc-chip nc">🏏 Batting average</span>
+        <span class="tc-chip nc">🦅 GPS distance (km)</span>
+        <span class="tc-chip nc">🤾 Jump height (m)</span>
+      </div>
+    </div>
+    <div class="type-card cn">
+      <div class="tc-type">Categorical</div>
+      <div class="tc-name cn">Nominal</div>
+      <div class="tc-body">Values are <strong>labels or names</strong> — they have no natural ordering and no numerical meaning. You cannot say one is "greater than" another.</div>
+      <div class="tc-key">🔑 Key test: "Is there a natural ranking?" If <strong>no</strong> → nominal.</div>
+      <div class="tc-eg-label">Australian sports examples</div>
+      <div class="tc-eg-list">
+        <span class="tc-chip cn">🦅 AFL team</span>
+        <span class="tc-chip cn">🏉 NRL club name</span>
+        <span class="tc-chip cn">🏐 Netball position</span>
+        <span class="tc-chip cn">🏏 Batting hand</span>
+        <span class="tc-chip cn">🏊 Stroke type</span>
+        <span class="tc-chip cn">🏃 Athlete's state</span>
+      </div>
+    </div>
+    <div class="type-card co">
+      <div class="tc-type">Categorical</div>
+      <div class="tc-name co">Ordinal</div>
+      <div class="tc-body">Values are <strong>ordered categories</strong> — there is a clear ranking but the gaps between categories are not necessarily equal.</div>
+      <div class="tc-key">🔑 Key test: "Are there ordered categories with unequal gaps?" → ordinal.</div>
+      <div class="tc-eg-label">Australian sports examples</div>
+      <div class="tc-eg-list">
+        <span class="tc-chip co">🏃 Finishing place</span>
+        <span class="tc-chip co">🏊 Heat→Final</span>
+        <span class="tc-chip co">🦅 Player rating</span>
+        <span class="tc-chip co">🥇 Bronze/Silver/Gold</span>
+        <span class="tc-chip co">🏀 Division (1st/2nd)</span>
+        <span class="tc-chip co">🏉 NRL rankings</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Side-by-Side Comparison</p>
+  <p class="section-sub">This table helps you spot the key differences quickly.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Num. Discrete</th>
+        <th>Num. Continuous</th>
+        <th>Cat. Nominal</th>
+        <th>Cat. Ordinal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Values are…</td>
+        <td>Counted numbers</td>
+        <td>Measured numbers</td>
+        <td>Labels / names</td>
+        <td>Ordered categories</td>
+      </tr>
+      <tr>
+        <td>Fractions possible?</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>N/A</td>
+        <td>N/A</td>
+      </tr>
+      <tr>
+        <td>Natural ranking?</td>
+        <td>Yes (by size)</td>
+        <td>Yes (by size)</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Equal gaps?</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>N/A</td>
+        <td>Not necessarily</td>
+      </tr>
+      <tr>
+        <td>Can you calculate a mean?</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>Usually no</td>
+      </tr>
+      <tr>
+        <td>NRL example</td>
+        <td>Tries scored (3)</td>
+        <td>Player speed (8.3 m/s)</td>
+        <td>Team name</td>
+        <td>Ladder position (3rd)</td>
+      </tr>
+      <tr>
+        <td>Netball example</td>
+        <td>Goals scored (42)</td>
+        <td>Shooting accuracy (87.3%)</td>
+        <td>Court position (GS)</td>
+        <td>Performance rating</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+  <p class="section-title">⚠️ Watch Out — Common Traps</p>
+  <p class="section-sub">These are the most common classification mistakes students make.</p>
+
+  <div class="q-key">
+    🚨 <div><strong>Jersey numbers are categorical nominal</strong> — not numerical. Umpire #7 is not "less than" Umpire #12. The numbers are labels. You can't calculate a meaningful average jersey number.</div>
+  </div>
+  <div class="q-key" style="background:var(--forest-l);color:#1a5030;">
+    ✅ <div><strong>Batting average is numerical continuous</strong> — not discrete. A batting average of 52.4 runs per dismissal is a calculated decimal, not a count of whole runs.</div>
+  </div>
+  <div class="q-key" style="background:var(--purple-l);color:var(--purple);">
+    🎯 <div><strong>Finishing positions are ordinal, not discrete</strong> — even though we write "1st, 2nd, 3rd", the gaps are unequal (1st and 2nd might be 0.01s apart; 2nd and 3rd might be 2s apart).</div>
+  </div>
+
+</div>
+</div><!-- end learn -->
+
+<!-- ═══════════════════════════════
+     TAB 4 · PRACTISE
+════════════════════════════════ -->
+<div id="tab-practise" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Practice Questions</p>
+  <p class="section-sub">Select your level and work through the questions. All sports are represented.</p>
+
+  <div class="tier-picker">
+    <button class="tier-btn active" data-tier="foundation" onclick="selectTier('foundation')">🟢 Foundation</button>
+    <button class="tier-btn" data-tier="core" onclick="selectTier('core')">🔵 Core</button>
+    <button class="tier-btn" data-tier="extension" onclick="selectTier('extension')">🔴 Extension</button>
+  </div>
+
+  <!-- ── FOUNDATION ── -->
+  <div class="tier-qs active" id="qs-foundation">
+    <div class="tier-bar tb-f">🟢 Foundation — Identifying Variable Types</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">An NRL scoreboard records the number of points scored by each team at full time. What type of variable is "points scored"?</div>
+      <div class="mcq-ctx">Points values: 24–18, 14–6, 38–12, 20–20 (from four recent matches).</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Continuous variables can take any decimal value — like 0.5 points. Can you score half a point in the NRL? No. These are counted whole numbers." onclick="mcqAns(this)">Numerical continuous</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Points are counted in whole numbers (2s, 4s and 6s in the NRL). You can't score 15.5 points — that makes this numerical discrete." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Categorical nominal variables are labels (like team names). Points scored is an actual number with mathematical meaning." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal variables are ordered categories, not actual numbers. You can calculate an average of points scored — something you can't do with ordinal data." onclick="mcqAns(this)">Categorical ordinal</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">At the world athletics championships, an athlete's 400m hurdles time is recorded as 52.83 seconds. What type of variable is "race time"?</div>
+      <div class="mcq-ctx">Times at this standard range from roughly 47 to 55 seconds, measured to the nearest hundredth of a second.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Discrete variables are counted whole numbers. Race times like 52.83s clearly show a decimal — they are measured, not counted." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Race times are measured on a continuous scale. The value 52.83s shows this is not a whole number — it can take any decimal value, making it numerical continuous." onclick="mcqAns(this)">Numerical continuous</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Time in seconds is a number you can add, average and compare mathematically. Categorical variables are labels or groups, not measured quantities." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal variables have ordered categories like 1st, 2nd, 3rd. A time in seconds is a measured numerical value, not a ranked category." onclick="mcqAns(this)">Categorical ordinal</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A Super Netball club surveys all players and records which team each player belongs to (Swifts, Vixens, Firebirds, Lightning…). What type of variable is "team"?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Team names are labels — there is no natural order (Swifts is not 'greater than' Vixens) and no numerical meaning. That's categorical nominal." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal variables have a meaningful ranking. Is there a natural order between Swifts and Firebirds based on their names alone? No — team names are just labels." onclick="mcqAns(this)">Categorical ordinal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Team names aren't numbers — you can't add or average them." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Team names can't be measured on a scale. They're categorical labels with no numerical value." onclick="mcqAns(this)">Numerical continuous</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">At the school swimming carnival, students finish in positions: 1st, 2nd, 3rd, 4th, 5th. What type of variable is "finishing position"?</div>
+      <div class="mcq-ctx">1st and 2nd may be separated by 0.04s. 4th and 5th might be 3s apart. The gaps between positions are unequal.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Nominal variables have no natural order — like team colours or sport types. Finishing positions definitely have an order (1st is better than 5th)." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Although positions look like numbers (1, 2, 3…), the gaps between them are unequal — the difference between 1st and 2nd is not the same as between 4th and 5th. They are ordered categories, not true numbers." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Finishing positions are ordered (1st is better than 5th) but the gaps between positions are unequal — that's the hallmark of categorical ordinal." onclick="mcqAns(this)">Categorical ordinal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Positions are whole-number labels with unequal gaps, not measurements on a continuous scale." onclick="mcqAns(this)">Numerical continuous</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A basketball scout rates each player's defensive performance as: Poor / Fair / Good / Very Good / Excellent. What type of variable is this "defensive rating"?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Nominal variables have no natural order. But Poor/Fair/Good/Excellent clearly have an order — Excellent is better than Good. So this can't be nominal." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The ratings have a clear order (Excellent > Very Good > Good > Fair > Poor) but the gaps between them aren't equal — the jump from 'Good' to 'Very Good' isn't the same as from 'Very Good' to 'Excellent'. That's categorical ordinal." onclick="mcqAns(this)">Categorical ordinal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Defensive ratings are categories, not counted whole numbers. Even if you assigned numbers 1–5, the gaps between ratings aren't guaranteed to be equal." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ You can't measure 'Very Good' on a ruler or stopwatch. It's a category, not a continuous measurement." onclick="mcqAns(this)">Numerical continuous</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- ── CORE ── -->
+  <div class="tier-qs" id="qs-core">
+    <div class="tier-bar tb-c">🔵 Core — Applying Classification in Context</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A cricket statistician records each player's jersey number (e.g. Warner = 31, Starc = 56). What type of variable is "jersey number"?</div>
+      <div class="mcq-ctx">Jersey numbers identify players — they are not chosen by performance and have no mathematical relationship.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Although jersey numbers look numerical, ask yourself: is there a meaningful difference between Umpire #31 and #56? Can you average jersey numbers to get useful information? No — they are identifiers, not quantities." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Jersey numbers aren't measured values — you can't have jersey number 31.5." onclick="mcqAns(this)">Numerical continuous</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Jersey numbers are used as labels or identifiers, not as quantities. Just like house numbers — #31 is not 'more than' #7 in any meaningful sense. Categorical nominal." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal variables have a meaningful ranking. Is there a natural order to jersey numbers? No — they're just identification labels." onclick="mcqAns(this)">Categorical ordinal</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">Which of these AFL variables is <strong>numerical continuous</strong>?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Goals kicked in a match are counted whole numbers (0, 1, 2…) — numerical discrete, not continuous." onclick="mcqAns(this)">Goals kicked in a match</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Team name is a label with no numerical meaning — categorical nominal." onclick="mcqAns(this)">An AFL team's name</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! GPS distance covered (e.g. 11.84 km) is measured on a continuous scale and can take any decimal value. Numerical continuous." onclick="mcqAns(this)">GPS distance covered in a match (km)</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ladder position is an ordered category (1st, 2nd, 3rd…) — categorical ordinal." onclick="mcqAns(this)">AFL ladder position at season end</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A swimming coach collects data on her squad. Which variable below is <strong>categorical ordinal</strong>?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Stroke type (freestyle, backstroke, breaststroke, butterfly) has no natural order — one isn't 'more than' another. That's nominal." onclick="mcqAns(this)">The swimmer's stroke type</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Qualifying round results have a clear order (Final > Semi-Final > Heat) but the categories are unequal in what they represent. Categorical ordinal." onclick="mcqAns(this)">The round they qualified for (Heat / Semi-Final / Final)</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Race time in seconds is a measured decimal value — numerical continuous." onclick="mcqAns(this)">The swimmer's personal best time (s)</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Number of races entered is a counted whole number — numerical discrete." onclick="mcqAns(this)">Number of events entered at the carnival</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A PE teacher collects data from 30 students. She records: name, 100m time, finishing place, and favourite sport. How many of these four variables are <em>numerical</em>?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Check each one: Name (nominal), 100m time (continuous ✓), finishing place (ordinal — it looks numerical but gaps are unequal), favourite sport (nominal). Only one is truly numerical." onclick="mcqAns(this)">None of them</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Only 100m time is numerical (continuous). Name = categorical nominal. Finishing place = categorical ordinal (ordered categories, not true numbers). Favourite sport = categorical nominal." onclick="mcqAns(this)">One of them</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 100m time is numerical continuous ✓. Finishing place looks like a number but the gaps are unequal — it's categorical ordinal. Name and favourite sport are both nominal." onclick="mcqAns(this)">Two of them</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Carefully check finishing place — it looks like a number (1st, 2nd, 3rd) but the gaps between positions are unequal, making it ordinal, not numerical." onclick="mcqAns(this)">Three of them</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A cricket statistician records a batsman's <strong>batting average</strong> (total runs ÷ number of dismissals) across a season. Steve Smith's average was 65.8. What type of variable is "batting average"?</div>
+      <div class="mcq-ctx">Batting averages are calculated values that often include decimals.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Discrete variables are whole counted numbers. A batting average of 65.8 clearly has a decimal — it's a calculated quotient, not a count." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A batting average is a calculated ratio — it can take any decimal value (e.g. 65.8, 52.40, 73.125). Numerical continuous." onclick="mcqAns(this)">Numerical continuous</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A batting average is a calculated number you can do maths with. It's not a category or label." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal variables are ordered categories — like ratings or rankings. A batting average is a real number you can calculate." onclick="mcqAns(this)">Categorical ordinal</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- ── EXTENSION ── -->
+  <div class="tier-qs" id="qs-extension">
+    <div class="tier-bar tb-e">🔴 Extension — Edge Cases &amp; Justification</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">In a 100m sprint final, each athlete is assigned a lane: Lane 1, Lane 2, … Lane 8. What type of variable is "lane number", and <em>why</em> does it matter which type it is?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Although lane numbers look like integers (1–8), they are used as identifiers, not quantities. You wouldn't calculate an average lane number and expect it to mean something useful." onclick="mcqAns(this)">Numerical discrete — they are whole numbers in order</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Ordinal means there is a meaningful ranking. Is Lane 1 actually 'better' or 'worse' than Lane 8 in a way that is consistent across events? No — lane assignments don't imply performance ranking." onclick="mcqAns(this)">Categorical ordinal — lanes are ranked by prestige</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Lane numbers are labels used to identify positions, not quantities. Knowing this matters because it prevents misleading analysis — for example, calculating 'average lane number' would be meaningless. Nominal." onclick="mcqAns(this)">Categorical nominal — numbers used as labels, not quantities</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Lane numbers are whole-number labels, not measured values on a continuous scale." onclick="mcqAns(this)">Numerical continuous — lane positions exist on a scale</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A cricket tournament uses the Duckworth–Lewis–Stern (DLS) method to set revised run targets. A revised target might be "127.4 runs". What type of variable is a "DLS target"?</div>
+      <div class="mcq-ctx">DLS targets are mathematically derived from complex formulas and can be non-integer values.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Discrete variables take only whole-number values. A DLS target of 127.4 clearly shows it can be a decimal — not discrete." onclick="mcqAns(this)">Numerical discrete</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! DLS targets are calculated values that can include decimals (e.g. 127.4). They are measured/calculated quantities on a continuous scale — numerical continuous." onclick="mcqAns(this)">Numerical continuous</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A DLS target is a number with mathematical meaning — you can add to it, compare it, average it. It's not a label or category." onclick="mcqAns(this)">Categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ DLS targets are precise numerical values, not ranked categories. You can do full arithmetic with them." onclick="mcqAns(this)">Categorical ordinal</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A researcher classifies Australian football grounds by <em>surface type</em>: Natural Grass, Synthetic Grass, or Hybrid. Another researcher also records <em>average bounce height</em> of the ball on that surface in centimetres. How should these two variables be classified?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Surface type has no natural order (Natural Grass isn't 'greater than' Hybrid), so it can't be ordinal. Check your reasoning for both variables." onclick="mcqAns(this)">Surface type = ordinal; bounce height = discrete</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Surface type is a category with no order — nominal, not ordinal. Bounce height is a measured value — continuous, not discrete." onclick="mcqAns(this)">Surface type = ordinal; bounce height = continuous</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Surface type is a label with no natural order (neither Natural Grass nor Synthetic is inherently 'more than' the other) → categorical nominal. Bounce height is measured in cm and can take any decimal value → numerical continuous." onclick="mcqAns(this)">Surface type = nominal; bounce height = continuous</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Surface type is nominal (labels, no order). Bounce height is continuous (measured in cm, can be decimal — not a whole counted number)." onclick="mcqAns(this)">Surface type = nominal; bounce height = discrete</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A sports science study measures blood lactate concentration in NBL basketball players immediately after a sprint test. Results range from 4.2 to 18.7 mmol/L. Meanwhile, researchers also note whether each player <em>experienced cramping</em>: Yes or No. How should these variables be classified?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Blood lactate (4.2–18.7 mmol/L) is a measured decimal value → numerical continuous. Cramping (Yes/No) is a two-category label — categories have no natural order (Yes isn't 'more than' No) → categorical nominal." onclick="mcqAns(this)">Lactate = numerical continuous; cramping = categorical nominal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Lactate levels include decimals (4.2, 18.7) — they are continuous, not discrete. And Yes/No has no inherent order, making it nominal rather than ordinal." onclick="mcqAns(this)">Lactate = numerical discrete; cramping = categorical ordinal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Lactate is a measured value (continuous), not a label. Cramping (Yes/No) is categorical but with only two unordered categories — that's nominal." onclick="mcqAns(this)">Lactate = categorical nominal; cramping = categorical ordinal</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Cramping (Yes/No) is categorical, not numerical — you can't calculate a meaningful average of 'Yes' and 'No'." onclick="mcqAns(this)">Lactate = numerical continuous; cramping = numerical discrete</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">Why is it important to correctly classify a variable <em>before</em> choosing how to display or analyse data? Which answer best justifies this?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Variable type does influence graph choice — for example, you use a histogram for continuous data and a column graph for discrete or nominal data. The choice isn't free." onclick="mcqAns(this)">It doesn't matter — any graph can display any variable</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Classification applies to all variables, not just large datasets. Even a single data point has a type." onclick="mcqAns(this)">It only matters when you have more than 50 data points</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The variable type determines which statistical measures are valid (e.g. you can't calculate a mean for nominal data), which graphs are appropriate, and what conclusions are legitimate. Misclassification leads to misleading analysis." onclick="mcqAns(this)">It determines which graphs, statistical measures and conclusions are valid for that data</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Classification is not about memorising names — it directly affects the mathematical tools you apply and the graphs you draw." onclick="mcqAns(this)">It is only needed for the exam — not for real-world data analysis</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end practise -->
+
+<!-- ═══════════════════════════════
+     TAB 5 · REFLECT
+════════════════════════════════ -->
+<div id="tab-reflect" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Working Mathematically — Reflect</p>
+  <p class="section-sub">These prompts connect your thinking to the Working Mathematically outcomes. Write your response below each question — your answers are saved in this browser.</p>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Communicating</div>
+    <div class="wm-q">In your own words, explain the difference between a <em>numerical discrete</em> and a <em>numerical continuous</em> variable. Use one example from Australian sport for each.</div>
+    <textarea class="wm-ta" id="wm1" placeholder="Write your explanation here…" oninput="autoSave('wm1')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm1')">Save</button>
+      <span class="save-ok" id="ok-wm1">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Reasoning</div>
+    <div class="wm-q">A teammate says: "A player's jersey number is numerical discrete because it's a whole number." Do you agree or disagree? Justify your answer.</div>
+    <textarea class="wm-ta" id="wm2" placeholder="Write your reasoning here…" oninput="autoSave('wm2')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm2')">Save</button>
+      <span class="save-ok" id="ok-wm2">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Connecting</div>
+    <div class="wm-q">Choose a sport you follow or play. List four different variables you could record about that sport. For each, state its type and explain why correct classification matters for how we analyse it.</div>
+    <textarea class="wm-ta" id="wm3" placeholder="Write your response here…" oninput="autoSave('wm3')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm3')">Save</button>
+      <span class="save-ok" id="ok-wm3">✓ Saved</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Key Vocabulary</p>
+  <p class="section-sub">Review these terms. Each connects to a distinct concept from the NSW Stage 4 syllabus.</p>
+
+  <div class="vocab-grid">
+    <div class="vc">
+      <div class="vc-term">Variable</div>
+      <div class="vc-def">Any characteristic, number or quantity that can be measured or counted.</div>
+      <div class="vc-eg">e.g. sprint time, team name, medal type</div>
+    </div>
+    <div class="vc">
+      <div class="vc-term">Numerical Discrete</div>
+      <div class="vc-def">Counted values — only whole numbers are possible.</div>
+      <div class="vc-eg">e.g. tries scored, wickets taken, goals kicked</div>
+    </div>
+    <div class="vc">
+      <div class="vc-term">Numerical Continuous</div>
+      <div class="vc-def">Measured values — any decimal in a range is possible.</div>
+      <div class="vc-eg">e.g. race time, height, distance thrown</div>
+    </div>
+    <div class="vc">
+      <div class="vc-term">Categorical Nominal</div>
+      <div class="vc-def">Labels or names with no natural order.</div>
+      <div class="vc-eg">e.g. team name, court position, stroke type</div>
+    </div>
+    <div class="vc">
+      <div class="vc-term">Categorical Ordinal</div>
+      <div class="vc-def">Categories with a meaningful order, but unequal gaps between them.</div>
+      <div class="vc-eg">e.g. finishing place, performance rating, medal type</div>
+    </div>
+    <div class="vc">
+      <div class="vc-term">Classification</div>
+      <div class="vc-def">Identifying the type of variable — determines which graphs and statistics are appropriate.</div>
+      <div class="vc-eg">e.g. "batting average is numerical continuous"</div>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Self-Assessment Checklist</p>
+  <p class="section-sub">Tick each statement when you're confident you can do it independently.</p>
+
+  <div class="checklist">
+    <label class="ci"><input type="checkbox"> I can define a variable in the context of statistics using my own words.</label>
+    <label class="ci"><input type="checkbox"> I can classify any variable as either numerical or categorical.</label>
+    <label class="ci"><input type="checkbox"> I can identify whether a numerical variable is discrete or continuous, and explain why.</label>
+    <label class="ci"><input type="checkbox"> I can identify whether a categorical variable is nominal or ordinal, and explain why.</label>
+    <label class="ci"><input type="checkbox"> I can explain why jersey numbers are categorical nominal, not numerical discrete.</label>
+    <label class="ci"><input type="checkbox"> I can explain why finishing positions are categorical ordinal, not numerical discrete.</label>
+    <label class="ci"><input type="checkbox"> I can correctly classify at least four different variables from any Australian sport.</label>
+    <label class="ci"><input type="checkbox"> I can justify my classification decisions using mathematical reasoning.</label>
+  </div>
+
+</div>
+</div><!-- end reflect -->
+
+<!-- ═══════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script>
+/* ── Tab navigation ── */
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'" + id + "'") !== -1) {
+      b.classList.add('active');
+    }
+  });
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+/* ── Tier selection ── */
+function selectTier(tier) {
+  document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tier-qs').forEach(q => q.classList.remove('active'));
+  document.querySelector('[data-tier="' + tier + '"]').classList.add('active');
+  document.getElementById('qs-' + tier).classList.add('active');
+}
+
+/* ── MCQ handler ── */
+function mcqAns(btn) {
+  const q = btn.closest('.mcq-q');
+  if (q.classList.contains('answered')) return;
+  q.classList.add('answered');
+  const isCorrect = btn.dataset.result === 'correct';
+  q.querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.result === 'correct') b.classList.add('correct');
+    else b.classList.add('wrong-opt');
+  });
+  btn.classList.remove('correct', 'wrong-opt');
+  btn.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+  const fb = q.querySelector('.feedback');
+  fb.textContent = btn.dataset.msg;
+  fb.className = 'feedback ' + (isCorrect ? 'fb-correct' : 'fb-wrong');
+  fb.style.display = 'block';
+}
+
+/* ── Classify activity data ── */
+const clData = [
+  {
+    sport: '🏉 NRL',
+    variable: 'Number of tries scored in a match',
+    context: 'The scoreboard records final try tallies: South Sydney 3, Parramatta 2.',
+    answer: 'nd',
+    explanation: 'You can count exactly 0, 1, 2, 3… tries. You can\'t score 2.5 tries — that makes this <strong>numerical discrete</strong>.'
+  },
+  {
+    sport: '🏊 Swimming',
+    variable: 'A swimmer\'s 100m freestyle race time',
+    context: 'Kyle Chalmers\' winning time was recorded as 47.08 seconds.',
+    answer: 'nc',
+    explanation: 'Race times are measured on a continuous scale. 47.08s shows it can take decimal values — <strong>numerical continuous</strong>.'
+  },
+  {
+    sport: '🦅 AFL',
+    variable: 'The AFL team a player belongs to',
+    context: 'Player registrations list: Hawthorn, Sydney Swans, Brisbane Lions, Richmond…',
+    answer: 'cn',
+    explanation: 'Team names are labels with no natural order. Hawthorn is not "more than" Richmond — <strong>categorical nominal</strong>.'
+  },
+  {
+    sport: '🏃 Athletics',
+    variable: 'A sprinter\'s finishing place in a state final',
+    context: 'Runners finished 1st, 2nd, 3rd… 8th. The gap between 1st and 2nd was 0.02s; between 7th and 8th was 1.4s.',
+    answer: 'co',
+    explanation: 'Places have a clear order (1st is best) but the gaps are unequal — <strong>categorical ordinal</strong>.'
+  },
+  {
+    sport: '🏀 Basketball',
+    variable: 'A player\'s height in centimetres',
+    context: 'Heights recorded at the NBL combine: 193.5 cm, 210.2 cm, 201.8 cm…',
+    answer: 'nc',
+    explanation: 'Height is measured — it can take any decimal value (e.g. 201.8 cm). <strong>Numerical continuous</strong>.'
+  },
+  {
+    sport: '🏏 Cricket',
+    variable: 'Number of wickets taken in an innings',
+    context: 'Mitchell Starc took 5 wickets; Pat Cummins took 3 in the same innings.',
+    answer: 'nd',
+    explanation: 'Wickets are counted exactly — 0, 1, 2, 3… You can\'t take 4.5 wickets. <strong>Numerical discrete</strong>.'
+  },
+  {
+    sport: '🏐 Netball',
+    variable: 'A netball player\'s court position',
+    context: 'Starting seven: GS, GA, WA, C, WD, GD, GK — all different positions.',
+    answer: 'cn',
+    explanation: 'Court positions are labels with no natural order. GS is not "more than" C — <strong>categorical nominal</strong>.'
+  },
+  {
+    sport: '🦅 AFL',
+    variable: 'A scout\'s performance rating of a player',
+    context: 'The club rates players: Poor / Average / Good / Excellent. These are used to rank draft prospects.',
+    answer: 'co',
+    explanation: 'Ratings have a clear order (Excellent > Good > Average > Poor) but unequal gaps — <strong>categorical ordinal</strong>.'
+  },
+  {
+    sport: '🏊 Swimming',
+    variable: 'The number of laps in a 1500m freestyle race',
+    context: 'In a 50m pool, athletes complete exactly 30 laps.',
+    answer: 'nd',
+    explanation: 'Laps are counted exactly — you can\'t swim 29.6 laps. <strong>Numerical discrete</strong>.'
+  },
+  {
+    sport: '🏃 Athletics',
+    variable: 'A high jumper\'s best jump height (metres)',
+    context: 'Eleanor Patterson cleared 2.02 m at the World Athletics Championships.',
+    answer: 'nc',
+    explanation: 'Jump heights are measured precisely (2.02 m, 2.025 m…) — <strong>numerical continuous</strong>.'
+  }
+];
+
+let clIndex = 0, clScore = 0;
+const wrongMsgMap = {
+  nd: 'Can you score a fraction of a try/wicket/goal? If no, think discrete. If the value is measured (can be decimal) → continuous.',
+  nc: 'This value is measured, not counted. Does it include decimals? Measured values → continuous.',
+  cn: 'This is a label with no natural order — not a counted or measured number. Labels → nominal.',
+  co: 'These categories have a meaningful order but unequal gaps. Think: can you rank them? Is the gap equal? → ordinal.'
+};
+
+function renderClassify() {
+  const d = clData[clIndex];
+  document.getElementById('cl-n').textContent = clIndex + 1;
+  document.getElementById('cl-sport-tag').textContent = d.sport;
+  document.getElementById('cl-var').textContent = d.variable;
+  document.getElementById('cl-ctx').textContent = d.context;
+
+  // Reset buttons
+  ['nd','nc','cn','co'].forEach(id => {
+    const btn = document.getElementById('cl-' + id);
+    btn.className = 'cl-btn';
+    btn.disabled = false;
+  });
+  const fb = document.getElementById('cl-fb');
+  fb.style.display = 'none';
+  fb.className = 'cl-fb';
+  document.getElementById('cl-next-row').style.display = 'none';
+
+  // Update progress pips
+  const track = document.getElementById('cl-track');
+  track.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'cl-pip';
+    if (i < clIndex) pip.classList.add('done');
+    else if (i === clIndex) pip.classList.add('current');
+    track.appendChild(pip);
+  }
+}
+
+function classifyAns(chosen) {
+  const d = clData[clIndex];
+  const isCorrect = chosen === d.answer;
+  if (isCorrect) clScore++;
+
+  ['nd','nc','cn','co'].forEach(id => {
+    document.getElementById('cl-' + id).disabled = true;
+  });
+
+  const chosenBtn = document.getElementById('cl-' + chosen);
+  const correctBtn = document.getElementById('cl-' + d.answer);
+
+  if (isCorrect) {
+    chosenBtn.classList.add('is-correct');
+  } else {
+    chosenBtn.classList.add('is-wrong');
+    correctBtn.classList.add('show-correct');
+  }
+
+  const fb = document.getElementById('cl-fb');
+  fb.innerHTML = (isCorrect ? '✅ ' : '❌ ') + d.explanation;
+  fb.className = 'cl-fb ' + (isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+
+  document.getElementById('cl-next-row').style.display = 'flex';
+
+  // Update current pip
+  const pips = document.querySelectorAll('.cl-pip');
+  if (isCorrect) pips[clIndex].classList.add('done');
+  else { pips[clIndex].classList.remove('current'); pips[clIndex].classList.add('wrong-done'); }
+}
+
+function nextClassify() {
+  clIndex++;
+  if (clIndex >= 10) {
+    showResult();
+  } else {
+    renderClassify();
+  }
+}
+
+function showResult() {
+  document.getElementById('cl-active').style.display = 'none';
+  const result = document.getElementById('cl-result');
+  result.style.display = 'block';
+  document.getElementById('cl-score-big').textContent = clScore + '/10';
+  let msg = '';
+  if (clScore === 10) msg = 'Perfect! You have a solid grasp of all four variable types.';
+  else if (clScore >= 8) msg = 'Great work! Review the ones you missed in the Learn tab.';
+  else if (clScore >= 6) msg = 'Good start. Head to the Learn tab to sharpen the distinctions between types.';
+  else msg = 'Keep going — revisit the classification tree and Learn tab, then try again.';
+  document.getElementById('cl-score-msg').textContent = msg;
+
+  // Final pip update
+  const track = document.getElementById('cl-track');
+  const pips = track.querySelectorAll('.cl-pip');
+  pips.forEach(p => { if (!p.classList.contains('done') && !p.classList.contains('wrong-done')) p.classList.add('done'); });
+}
+
+function resetClassify() {
+  clIndex = 0; clScore = 0;
+  document.getElementById('cl-active').style.display = 'block';
+  document.getElementById('cl-result').style.display = 'none';
+  renderClassify();
+}
+
+// Initialise on load
+renderClassify();
+
+/* ── Journal persistence ── */
+function saveJournal(id) {
+  localStorage.setItem('dat-ch1-' + id, document.getElementById(id).value);
+  const ok = document.getElementById('ok-' + id);
+  ok.style.display = 'inline';
+  setTimeout(() => { ok.style.display = 'none'; }, 2000);
+}
+
+function autoSave(id) {
+  localStorage.setItem('dat-ch1-' + id, document.getElementById(id).value);
+}
+
+// Restore saved journals
+['wm1','wm2','wm3'].forEach(id => {
+  const saved = localStorage.getItem('dat-ch1-' + id);
+  if (saved) document.getElementById(id).value = saved;
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Displaying Data | MA4-DAT-C-01</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────── */
+:root {
+  --bg:      #F4EFE9;
+  --card:    #FFFFFF;
+  --text:    #2C2C2C;
+  --muted:   #6B6B6B;
+  --border:  #E2D9CF;
+  --shadow:  0 2px 14px rgba(0,0,0,0.07);
+  --r:       14px;
+  --rsm:     8px;
+  --font:    'Nunito', sans-serif;
+  --ch:      #1A6FA5;
+  --ch-d:    #114E76;
+  --ch-l:    #E6F2FA;
+  --amber:   #D98A0A;
+  --amber-l: #FEF3DC;
+  --terra:   #C94233;
+  --terra-l: #FDEAE7;
+  --forest:  #2B7A4B;
+  --forest-l:#E4F3EB;
+  --purple:  #6A3FB5;
+  --purple-l:#F0EAFB;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── HEADER ─────────────────────────────── */
+.ch-header {
+  background:linear-gradient(135deg,var(--ch-d) 0%,var(--ch) 100%);
+  color:#fff; padding:20px 28px 16px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.ch-back {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  border-radius:6px; padding:5px 11px;
+  font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  color:#fff; text-decoration:none; white-space:nowrap; transition:background .15s;
+}
+.ch-back:hover { background:rgba(255,255,255,.25); }
+.ch-titles { flex:1; }
+.ch-label  { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; opacity:.65; margin-bottom:3px; }
+.ch-title  { font-size:21px; font-weight:900; line-height:1.15; }
+.ch-sub    { font-size:12px; opacity:.7; margin-top:2px; }
+
+/* ── TAB NAV ─────────────────────────────── */
+.tab-nav {
+  background:var(--ch-d); padding:0 28px;
+  display:flex; overflow-x:auto; scrollbar-width:none;
+}
+.tab-nav::-webkit-scrollbar { display:none; }
+.tab-btn {
+  background:none; border:none;
+  color:rgba(255,255,255,.55);
+  font-family:var(--font); font-size:11.5px; font-weight:700;
+  padding:11px 14px 9px; cursor:pointer;
+  border-bottom:3px solid transparent;
+  transition:all .18s; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
+}
+.tab-btn:hover { color:rgba(255,255,255,.9); }
+.tab-btn.active { color:#fff; border-bottom-color:#F5A623; }
+
+/* ── PANELS ─────────────────────────────── */
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.content { max-width:920px; margin:0 auto; padding:28px 20px; }
+
+/* ── SHARED ─────────────────────────────── */
+.section-title { font-size:19px; font-weight:900; color:var(--ch-d); margin-bottom:3px; }
+.section-sub   { font-size:13.5px; color:var(--muted); margin-bottom:18px; line-height:1.55; }
+.divider       { border:none; border-top:2px solid var(--border); margin:26px 0; }
+.note-box {
+  background:var(--amber-l); border-left:4px solid var(--amber);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:12px 15px; font-size:13px; font-weight:600;
+  color:#7a4800; line-height:1.5; margin-bottom:16px;
+}
+.info-box {
+  background:var(--ch-l); border-left:4px solid var(--ch);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:12px 15px; font-size:13px; font-weight:600;
+  color:var(--ch-d); line-height:1.5; margin-bottom:16px;
+}
+.when-to-use {
+  background:var(--ch-l); border-left:4px solid var(--ch);
+  border-radius:0 var(--rsm) var(--rsm) 0;
+  padding:11px 15px; font-size:13px; font-weight:600;
+  color:var(--ch-d); line-height:1.5; margin-bottom:14px;
+}
+
+/* ── HOOK TAB ────────────────────────────── */
+.hero {
+  background:linear-gradient(135deg,var(--ch-d) 0%,var(--ch) 60%,#2596d8 100%);
+  border-radius:var(--r); padding:32px 28px 28px; color:#fff;
+  margin-bottom:22px; position:relative; overflow:hidden;
+}
+.hero::after {
+  content:'📊'; position:absolute; right:24px; top:50%;
+  transform:translateY(-50%); font-size:86px; opacity:.1; pointer-events:none;
+}
+.hero h1  { font-size:23px; font-weight:900; margin-bottom:7px; line-height:1.2; }
+.hero p   { font-size:13.5px; opacity:.85; max-width:540px; line-height:1.65; }
+
+.sport-data-grid {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px; margin-bottom:22px;
+}
+.sdc {
+  background:#fff; border-radius:var(--r); padding:18px;
+  box-shadow:var(--shadow); border-left:4px solid var(--ch);
+}
+.sdc:nth-child(2) { border-color:var(--forest); }
+.sdc:nth-child(3) { border-color:var(--terra); }
+.sdc:nth-child(4) { border-color:var(--amber); }
+.sdc-sport { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+.sdc-val   { font-size:22px; font-weight:900; color:var(--ch); line-height:1; margin-bottom:3px; }
+.sdc:nth-child(2) .sdc-val { color:var(--forest); }
+.sdc:nth-child(3) .sdc-val { color:var(--terra); }
+.sdc:nth-child(4) .sdc-val { color:var(--amber); }
+.sdc-desc  { font-size:12px; color:var(--text); line-height:1.4; }
+
+.graph-type-row {
+  display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px;
+}
+.gt-chip {
+  background:#fff; border:1.5px solid var(--border);
+  border-radius:10px; padding:8px 14px;
+  display:flex; align-items:center; gap:7px;
+  font-size:12px; font-weight:700;
+  box-shadow:var(--shadow);
+}
+
+/* ── EXPLORE TAB ─────────────────────────── */
+.audit-wrap { background:#fff; border-radius:var(--r); padding:24px; box-shadow:var(--shadow); margin-bottom:20px; }
+.audit-title { font-size:15px; font-weight:800; color:var(--ch-d); margin-bottom:4px; }
+.audit-sub   { font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5; }
+.audit-grid  { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; }
+@media (max-width:620px) { .audit-grid { grid-template-columns:1fr; } }
+.audit-svg-wrap { overflow-x:auto; }
+.audit-svg-wrap svg { display:block; max-width:100%; }
+
+.feature-list { display:flex; flex-direction:column; gap:10px; }
+.feat-item {
+  background:var(--bg); border-radius:var(--rsm); padding:12px 14px;
+  display:flex; align-items:flex-start; gap:10px;
+  border:2px solid var(--border); cursor:pointer; transition:border-color .15s;
+}
+.feat-item:hover { border-color:var(--ch); }
+.feat-item.found     { border-color:var(--forest); background:var(--forest-l); }
+.feat-item.not-found { border-color:var(--terra);  background:var(--terra-l); }
+.feat-icon { font-size:18px; flex-shrink:0; }
+.feat-body h4 { font-size:13px; font-weight:800; margin-bottom:2px; }
+.feat-body p  { font-size:12px; color:var(--muted); line-height:1.4; }
+.feat-badge {
+  margin-left:auto; font-size:11px; font-weight:700; padding:2px 8px;
+  border-radius:12px; white-space:nowrap; flex-shrink:0; display:none;
+}
+.feat-item.found     .feat-badge { display:block; background:var(--forest); color:#fff; }
+.feat-item.not-found .feat-badge { display:block; background:var(--terra);  color:#fff; }
+
+.audit-check-btn {
+  background:var(--ch); color:#fff; border:none;
+  border-radius:var(--rsm); padding:11px 26px;
+  font-family:var(--font); font-size:13px; font-weight:800; cursor:pointer;
+  margin-top:14px; display:block;
+}
+.audit-check-btn:hover { background:var(--ch-d); }
+.audit-result { display:none; margin-top:14px; border-radius:var(--rsm); padding:14px 16px; font-size:13px; font-weight:600; line-height:1.6; }
+.audit-result.good { background:var(--forest-l); color:var(--forest); border:1.5px solid var(--forest); }
+.audit-result.partial { background:var(--amber-l); color:#7a4800; border:1.5px solid var(--amber); }
+
+/* ── LEARN TAB — GALLERY ─────────────────── */
+.graph-pills { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:22px; }
+.graph-pill {
+  background:#fff; border:2px solid var(--border); border-radius:24px;
+  padding:7px 14px; font-family:var(--font); font-size:11.5px; font-weight:700;
+  cursor:pointer; transition:all .15s; color:var(--text); white-space:nowrap;
+}
+.graph-pill:hover { border-color:var(--ch); color:var(--ch); }
+.graph-pill.active { background:var(--ch); border-color:var(--ch); color:#fff; }
+
+.graph-panel { display:none; }
+.graph-panel.active { display:block; }
+
+.graph-display {
+  background:#fff; border-radius:var(--r); padding:22px 18px;
+  box-shadow:var(--shadow); margin-bottom:14px; overflow-x:auto;
+}
+.graph-display svg   { display:block; max-width:100%; height:auto; }
+.graph-source { font-size:10px; color:var(--muted); text-align:right; margin-top:6px; font-style:italic; }
+
+.g2col { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+@media (max-width:560px) { .g2col { grid-template-columns:1fr; } }
+.feat-card {
+  background:#fff; border-radius:var(--rsm); padding:14px; box-shadow:var(--shadow);
+}
+.feat-card h4 { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:7px; }
+.feat-card ul { list-style:none; font-size:12px; line-height:1.85; }
+.feat-card ul li::before { content:'→ '; color:var(--ch); font-weight:700; }
+
+/* Stem-and-leaf table */
+.sl-wrap { overflow-x:auto; }
+.sl-table { font-family:'Courier New',monospace; font-size:15px; border-collapse:collapse; margin:12px auto; }
+.sl-table td { padding:6px 18px; border:1px solid var(--border); text-align:center; }
+.sl-table .sl-h { background:var(--bg); font-family:var(--font); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.sl-table .sl-stem { background:var(--ch); color:#fff; font-weight:700; width:52px; }
+.sl-table .sl-leaf { text-align:left; min-width:140px; letter-spacing:.12em; }
+
+/* Pictogram table */
+.pic-wrap { overflow-x:auto; }
+.pic-table { border-collapse:collapse; margin:12px auto; font-size:13px; min-width:360px; }
+.pic-table th, .pic-table td { padding:8px 16px; border:1px solid var(--border); }
+.pic-table th { background:var(--ch); color:#fff; font-weight:700; text-align:left; }
+.pic-table tr:nth-child(even) td { background:#faf8f5; }
+.medals { font-size:19px; letter-spacing:3px; line-height:1.6; }
+
+/* Toggle button for polygon */
+.toggle-poly {
+  background:var(--bg); border:2px solid var(--border); border-radius:var(--rsm);
+  padding:7px 14px; font-family:var(--font); font-size:11.5px; font-weight:700;
+  cursor:pointer; transition:all .15s; margin-bottom:12px; display:inline-flex; align-items:center; gap:6px;
+}
+.toggle-poly.on { background:var(--terra-l); border-color:var(--terra); color:var(--terra); }
+.toggle-poly:not(.on):hover { border-color:var(--terra); color:var(--terra); }
+
+/* ── PRACTISE TAB ────────────────────────── */
+/* Which Graph activity */
+.wg-section { margin-bottom:28px; }
+.wg-intro { font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.55; }
+.wg-q { margin-bottom:22px; }
+.scenario-box {
+  font-size:14px; font-weight:700; background:var(--bg);
+  padding:13px 17px; border-radius:var(--rsm); margin-bottom:13px;
+  line-height:1.55; border-left:4px solid var(--amber);
+}
+.wg-opts { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+@media (max-width:520px) { .wg-opts { grid-template-columns:repeat(2,1fr); } }
+.wg-opt {
+  background:#fff; border:2px solid var(--border); border-radius:var(--rsm);
+  padding:11px 6px; font-family:var(--font); font-size:11px; font-weight:700;
+  cursor:pointer; text-align:center; transition:all .15s;
+}
+.wg-opt span.gi { font-size:26px; display:block; margin-bottom:4px; }
+.wg-opt:not(:disabled):hover { border-color:var(--ch); background:var(--ch-l); }
+.wg-opt.correct   { border-color:var(--forest) !important; background:var(--forest-l) !important; color:var(--forest) !important; }
+.wg-opt.wrong-sel { border-color:var(--terra)  !important; background:var(--terra-l)  !important; color:var(--terra)  !important; }
+.wg-opt.show-cor  { border-color:var(--forest) !important; background:var(--forest-l) !important; color:var(--forest) !important; }
+.wg-opt:disabled  { cursor:default; opacity:.65; }
+.wg-fb { display:none; border-radius:var(--rsm); padding:12px 14px; font-size:12.5px; font-weight:600; margin-top:10px; line-height:1.5; }
+.wg-fb.correct { background:var(--forest-l); color:var(--forest); border:1.5px solid var(--forest); }
+.wg-fb.wrong   { background:var(--terra-l);  color:var(--terra);  border:1.5px solid var(--terra); }
+
+/* MCQ */
+.tier-picker { display:flex; gap:9px; margin-bottom:22px; flex-wrap:wrap; }
+.tier-btn {
+  padding:9px 20px; border-radius:var(--rsm); border:2px solid var(--border);
+  background:#fff; font-family:var(--font); font-size:12px; font-weight:800;
+  cursor:pointer; transition:all .15s;
+}
+.tier-btn:not(.active):hover { border-color:var(--ch); }
+.tier-btn[data-tier="foundation"].active { background:var(--forest); color:#fff; border-color:var(--forest); }
+.tier-btn[data-tier="core"].active       { background:var(--ch);     color:#fff; border-color:var(--ch); }
+.tier-btn[data-tier="extension"].active  { background:var(--terra);  color:#fff; border-color:var(--terra); }
+.tier-qs { display:none; }
+.tier-qs.active { display:block; }
+.tier-bar {
+  font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.09em;
+  padding:3px 10px; border-radius:4px; display:inline-block; margin-bottom:18px;
+}
+.tb-f { background:var(--forest-l); color:#1a5030; }
+.tb-c { background:var(--ch-l);     color:var(--ch-d); }
+.tb-e { background:var(--terra-l);  color:var(--terra); }
+
+.mcq-q {
+  background:#fff; border-radius:var(--r); padding:20px;
+  box-shadow:var(--shadow); margin-bottom:14px;
+}
+.mcq-num  { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:4px; }
+.mcq-stem { font-size:14px; font-weight:700; margin-bottom:8px; line-height:1.55; }
+.mcq-ctx  {
+  font-size:12px; color:var(--muted); font-style:italic;
+  background:var(--bg); border-radius:var(--rsm); padding:8px 12px;
+  margin-bottom:12px; line-height:1.5;
+}
+.mcq-opts { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+@media (max-width:480px) { .mcq-opts { grid-template-columns:1fr; } }
+.opt {
+  background:#fff; border:2px solid var(--border); border-radius:var(--rsm);
+  padding:10px 13px; font-family:var(--font); font-size:12px; font-weight:600;
+  cursor:pointer; text-align:left; transition:all .15s; line-height:1.4;
+}
+.opt:not(:disabled):hover { border-color:var(--ch); background:var(--ch-l); }
+.opt.correct          { border-color:var(--forest) !important; background:var(--forest-l) !important; color:var(--forest) !important; }
+.opt.wrong-opt        { border-color:#ddd !important; background:#f8f8f8 !important; color:#b0b0b0 !important; }
+.opt.selected-correct { border-color:var(--forest); background:var(--forest-l); color:var(--forest); font-weight:800; }
+.opt.selected-wrong   { border-color:var(--terra);  background:var(--terra-l);  color:var(--terra);  font-weight:800; }
+.opt:disabled { cursor:default; }
+.feedback {
+  border-radius:var(--rsm); padding:10px 13px;
+  font-size:12px; font-weight:600; display:none; line-height:1.55;
+}
+.fb-correct { background:var(--forest-l); color:var(--forest); border:1.5px solid var(--forest); }
+.fb-wrong   { background:var(--terra-l);  color:var(--terra);  border:1.5px solid var(--terra); }
+
+/* ── REFLECT TAB ─────────────────────────── */
+.wm-card {
+  background:linear-gradient(135deg,var(--ch-d),var(--ch));
+  color:#fff; border-radius:var(--r); padding:20px 22px; margin-bottom:14px;
+}
+.wm-label { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; opacity:.65; margin-bottom:4px; }
+.wm-q     { font-size:14px; font-weight:700; line-height:1.55; margin-bottom:10px; }
+.wm-ta {
+  width:100%; background:rgba(255,255,255,.12);
+  border:1.5px solid rgba(255,255,255,.3); border-radius:var(--rsm);
+  padding:9px 12px; font-family:var(--font); font-size:12.5px;
+  color:#fff; resize:vertical; min-height:70px;
+}
+.wm-ta::placeholder { color:rgba(255,255,255,.4); }
+.wm-ta:focus { outline:none; border-color:rgba(255,255,255,.7); }
+.save-row { display:flex; align-items:center; gap:10px; margin-top:7px; }
+.save-btn {
+  background:rgba(255,255,255,.18); color:#fff;
+  border:1px solid rgba(255,255,255,.35); border-radius:var(--rsm);
+  padding:7px 18px; font-family:var(--font); font-size:12px; font-weight:700; cursor:pointer;
+}
+.save-btn:hover { background:rgba(255,255,255,.28); }
+.save-ok { font-size:11px; color:rgba(255,255,255,.8); display:none; }
+
+.vocab-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:11px; margin-bottom:18px; }
+.vc {
+  background:#fff; border-radius:var(--rsm); padding:13px;
+  box-shadow:var(--shadow); border-top:3px solid var(--ch);
+}
+.vc:nth-child(2) { border-color:var(--forest); }
+.vc:nth-child(3) { border-color:var(--amber); }
+.vc:nth-child(4) { border-color:var(--terra); }
+.vc:nth-child(5) { border-color:var(--purple); }
+.vc:nth-child(6) { border-color:var(--ch-d); }
+.vc:nth-child(7) { border-color:var(--forest); }
+.vc:nth-child(8) { border-color:var(--amber); }
+.vc-term { font-size:13px; font-weight:800; color:var(--ch-d); margin-bottom:4px; }
+.vc:nth-child(2) .vc-term { color:var(--forest); }
+.vc:nth-child(3) .vc-term { color:var(--amber); }
+.vc:nth-child(4) .vc-term { color:var(--terra); }
+.vc:nth-child(5) .vc-term { color:var(--purple); }
+.vc:nth-child(6) .vc-term { color:var(--ch-d); }
+.vc:nth-child(7) .vc-term { color:var(--forest); }
+.vc:nth-child(8) .vc-term { color:var(--amber); }
+.vc-def { font-size:11.5px; color:var(--muted); line-height:1.5; margin-bottom:4px; }
+.vc-eg  { font-size:11px; color:var(--ch); font-style:italic; }
+
+.checklist { background:#fff; border-radius:var(--r); padding:18px; box-shadow:var(--shadow); }
+.ci {
+  display:flex; gap:11px; align-items:flex-start;
+  padding:9px 0; border-bottom:1px solid var(--border);
+  font-size:13px; line-height:1.45; cursor:pointer;
+}
+.ci:last-child { border-bottom:none; }
+.ci input { margin-top:2px; width:15px; height:15px; accent-color:var(--ch); cursor:pointer; flex-shrink:0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="ch-header">
+  <a href="ma4-dat-c-01-index.html" class="ch-back">← Unit Hub</a>
+  <div class="ch-titles">
+    <div class="ch-label">MA4-DAT-C-01 · Chapter 2 of 3</div>
+    <div class="ch-title">Displaying Data</div>
+    <div class="ch-sub">8 graph types · Australian sports datasets · Required features · Graph selection</div>
+  </div>
+</header>
+
+<!-- ═══════════ TAB NAV ═══════════ -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('hook')">🏟 Hook</button>
+  <button class="tab-btn" onclick="showTab('explore')">🔍 Explore</button>
+  <button class="tab-btn" onclick="showTab('learn')">📊 Learn</button>
+  <button class="tab-btn" onclick="showTab('practise')">✏️ Practise</button>
+  <button class="tab-btn" onclick="showTab('reflect')">💭 Reflect</button>
+</nav>
+
+<!-- ═══════════════════════
+     TAB 1 · HOOK
+════════════════════════ -->
+<div id="tab-hook" class="tab-panel active">
+<div class="content">
+
+  <div class="hero">
+    <h1>The Right Graph Tells the Right Story</h1>
+    <p>Eight different graph types are on the NSW Stage 4 curriculum — each one designed for a specific kind of data and a specific purpose. A statistician who picks the wrong graph can accidentally mislead an entire audience. A good one makes a complex dataset instantly clear.</p>
+  </div>
+
+  <p class="section-title">The Data Behind Australian Sport</p>
+  <p class="section-sub">Each dataset below will appear in this chapter — watch how different graph types reveal different things about the same sport.</p>
+
+  <div class="sport-data-grid">
+    <div class="sdc">
+      <div class="sdc-sport">🦅 AFL</div>
+      <div class="sdc-val">3, 5, 4, 6</div>
+      <div class="sdc-desc">Hawthorn's goals per quarter, Round 15. Compare against Sydney across four quarters.</div>
+    </div>
+    <div class="sdc">
+      <div class="sdc-sport">🏊 Swimming</div>
+      <div class="sdc-val">55.8–58.2s</div>
+      <div class="sdc-desc">Dylan's 100m freestyle times across 8 races — a season of improvement.</div>
+    </div>
+    <div class="sdc">
+      <div class="sdc-sport">🏏 Cricket</div>
+      <div class="sdc-val">0 → 42</div>
+      <div class="sdc-desc">Individual T20 batting scores from one team's innings — spread and outliers.</div>
+    </div>
+    <div class="sdc">
+      <div class="sdc-sport">🏃 Athletics</div>
+      <div class="sdc-val">n = 50</div>
+      <div class="sdc-desc">Year 9 students' 100m sprint times — a continuous dataset with a bell shape.</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    ⭐ <strong>Syllabus reminder — required features:</strong> Every graph you draw must include a <strong>title</strong>, <strong>labels</strong> on each axis or category, a <strong>scale</strong>, and a <strong>source</strong>. Look out for all four in every example in this chapter.
+  </div>
+
+  <p class="section-title">The 8 Graph Types You'll Master</p>
+  <p class="section-sub">Use these chips to preview what's coming. Full examples in the Learn tab.</p>
+
+  <div class="graph-type-row">
+    <div class="gt-chip"><span>📊</span>Column Graph</div>
+    <div class="gt-chip"><span>📈</span>Line Graph</div>
+    <div class="gt-chip"><span>⚫</span>Dot Plot</div>
+    <div class="gt-chip"><span>🌿</span>Stem-and-Leaf</div>
+    <div class="gt-chip"><span>▬</span>Frequency Histogram</div>
+    <div class="gt-chip"><span>〰</span>Frequency Polygon</div>
+    <div class="gt-chip"><span>🥧</span>Sector Graph</div>
+    <div class="gt-chip"><span>▌</span>Divided Bar</div>
+    <div class="gt-chip"><span>🖼</span>Pictogram</div>
+  </div>
+
+</div>
+</div><!-- end hook -->
+
+<!-- ═══════════════════════
+     TAB 2 · EXPLORE
+     "Graph Doctor" — audit an incomplete graph
+════════════════════════ -->
+<div id="tab-explore" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Graph Doctor 🩺</p>
+  <p class="section-sub">The graph below was submitted to a sports journalist — but it's missing some required features. Can you identify what's wrong before reading the answer?</p>
+
+  <div class="audit-wrap">
+    <div class="audit-title">The Audit Challenge</div>
+    <div class="audit-sub">Examine the graph below carefully. Then use the checklist on the right (or below on mobile) to record whether each required feature is present or absent. Click "Check my audit" to see the result.</div>
+
+    <div class="audit-grid">
+      <!-- INCOMPLETE GRAPH: missing title, y-axis label, source -->
+      <div class="audit-svg-wrap">
+        <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"
+             style="width:100%;max-width:400px;font-family:'Nunito',sans-serif;"
+             aria-label="Incomplete graph missing title, y-axis label, and source">
+          <!-- Axes -->
+          <line x1="52" y1="20" x2="52" y2="210" stroke="#ccc" stroke-width="1.5"/>
+          <line x1="52" y1="210" x2="380" y2="210" stroke="#ccc" stroke-width="1.5"/>
+          <!-- Gridlines -->
+          <line x1="52" y1="163" x2="380" y2="163" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="52" y1="116" x2="380" y2="116" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="52" y1="69"  x2="380" y2="69"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+          <!-- Y-axis labels (scale present but NO axis title) -->
+          <text x="44" y="214" text-anchor="end" font-size="11" fill="#666">0</text>
+          <text x="44" y="167" text-anchor="end" font-size="11" fill="#666">2</text>
+          <text x="44" y="120" text-anchor="end" font-size="11" fill="#666">4</text>
+          <text x="44" y="73"  text-anchor="end" font-size="11" fill="#666">6</text>
+          <!-- Bars: NRL teams across 3 rounds (simplified) -->
+          <!-- 3 groups, 2 bars each. pixPerGoal=(210-22)/7=26.9 -->
+          <!-- Heights: 3→80.7, 4→107.5, 5→134.3, 6→161.1, 2→53.8 -->
+          <!-- Round 1: Team A=4(h=107,y=103), Team B=2(h=54,y=156) -->
+          <!-- Round 2: Team A=6(h=161,y=49), Team B=3(h=81,y=129) -->
+          <!-- Round 3: Team A=3(h=81,y=129), Team B=5(h=134,y=76) -->
+          <rect x="72"  y="103" width="30" height="107" fill="#1A6FA5" rx="3"/>
+          <rect x="106" y="156" width="30" height="54"  fill="#C94233" rx="3"/>
+          <rect x="175" y="49"  width="30" height="161" fill="#1A6FA5" rx="3"/>
+          <rect x="209" y="129" width="30" height="81"  fill="#C94233" rx="3"/>
+          <rect x="278" y="129" width="30" height="81"  fill="#1A6FA5" rx="3"/>
+          <rect x="312" y="76"  width="30" height="134" fill="#C94233" rx="3"/>
+          <!-- X-axis group labels (present) -->
+          <text x="101"  y="224" text-anchor="middle" font-size="11" fill="#444">Round 1</text>
+          <text x="204"  y="224" text-anchor="middle" font-size="11" fill="#444">Round 2</text>
+          <text x="307"  y="224" text-anchor="middle" font-size="11" fill="#444">Round 3</text>
+          <text x="216"  y="246" text-anchor="middle" font-size="11" font-weight="700" fill="#888">Round</text>
+          <!-- Legend (present) -->
+          <rect x="60" y="8" width="11" height="11" fill="#1A6FA5" rx="2"/>
+          <text x="75" y="18" font-size="11" fill="#444">Team A</text>
+          <rect x="130" y="8" width="11" height="11" fill="#C94233" rx="2"/>
+          <text x="145" y="18" font-size="11" fill="#444">Team B</text>
+          <!-- RED OUTLINE showing missing title area -->
+          <rect x="52" y="2" width="328" height="14" rx="3" fill="none" stroke="#C94233" stroke-width="1.5" stroke-dasharray="4,2" opacity=".5"/>
+          <text x="216" y="12" text-anchor="middle" font-size="9" fill="#C94233" opacity=".7">[ No title ]</text>
+        </svg>
+        <p style="font-size:11px;color:var(--terra);font-style:italic;margin-top:6px;">⚠️ No source is listed below this graph.</p>
+      </div>
+
+      <!-- AUDIT CHECKLIST -->
+      <div>
+        <div class="feature-list" id="feat-list">
+          <div class="feat-item" id="fi-title" onclick="toggleFeat('fi-title','not-found')">
+            <div class="feat-icon">🏷</div>
+            <div class="feat-body">
+              <h4>Title</h4>
+              <p>Does the graph have a clear title describing what data is shown?</p>
+            </div>
+            <div class="feat-badge">Missing</div>
+          </div>
+          <div class="feat-item" id="fi-xlabel" onclick="toggleFeat('fi-xlabel','found')">
+            <div class="feat-icon">↔</div>
+            <div class="feat-body">
+              <h4>Axis labels</h4>
+              <p>Are both axes (or categories) clearly labelled?</p>
+            </div>
+            <div class="feat-badge">Present</div>
+          </div>
+          <div class="feat-item" id="fi-scale" onclick="toggleFeat('fi-scale','found')">
+            <div class="feat-icon">📐</div>
+            <div class="feat-body">
+              <h4>Scale</h4>
+              <p>Can the reader determine actual values from the graph?</p>
+            </div>
+            <div class="feat-badge">Present</div>
+          </div>
+          <div class="feat-item" id="fi-source" onclick="toggleFeat('fi-source','not-found')">
+            <div class="feat-icon">📎</div>
+            <div class="feat-body">
+              <h4>Source</h4>
+              <p>Does the graph tell us where the data came from?</p>
+            </div>
+            <div class="feat-badge">Missing</div>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin-top:10px;">Click each feature to mark it as <strong>Present</strong> or <strong>Missing</strong>.</p>
+        <button class="audit-check-btn" onclick="checkAudit()">Check my audit →</button>
+        <div class="audit-result" id="audit-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <p class="section-title">The Complete Version</p>
+  <p class="section-sub">Here is the same graph with all required features added. Note where each feature appears.</p>
+
+  <div style="background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--shadow);overflow-x:auto;">
+    <svg viewBox="0 0 420 285" xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;max-width:420px;font-family:'Nunito',sans-serif;">
+      <!-- TITLE ✅ -->
+      <text x="210" y="16" text-anchor="middle" font-size="12" font-weight="800" fill="#2C2C2C">NRL Goals Scored Per Round — Teams A &amp; B, Rounds 1–3 (2024)</text>
+      <!-- Axes -->
+      <line x1="60" y1="28" x2="60" y2="218" stroke="#ccc" stroke-width="1.5"/>
+      <line x1="60" y1="218" x2="390" y2="218" stroke="#ccc" stroke-width="1.5"/>
+      <!-- Gridlines -->
+      <line x1="60" y1="171" x2="390" y2="171" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="60" y1="124" x2="390" y2="124" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+      <line x1="60" y1="77"  x2="390" y2="77"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+      <!-- Y-axis labels + AXIS LABEL ✅ -->
+      <text x="52" y="222" text-anchor="end" font-size="11" fill="#666">0</text>
+      <text x="52" y="175" text-anchor="end" font-size="11" fill="#666">2</text>
+      <text x="52" y="128" text-anchor="end" font-size="11" fill="#666">4</text>
+      <text x="52" y="81"  text-anchor="end" font-size="11" fill="#666">6</text>
+      <text x="18" y="130" text-anchor="middle" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 18 130)">Goals Scored ✅</text>
+      <!-- Bars (same data) -->
+      <rect x="80"  y="112" width="30" height="106" fill="#1A6FA5" rx="3"/>
+      <rect x="114" y="164" width="30" height="54"  fill="#C94233" rx="3"/>
+      <rect x="183" y="58"  width="30" height="160" fill="#1A6FA5" rx="3"/>
+      <rect x="217" y="138" width="30" height="80"  fill="#C94233" rx="3"/>
+      <rect x="286" y="138" width="30" height="80"  fill="#1A6FA5" rx="3"/>
+      <rect x="320" y="84"  width="30" height="134" fill="#C94233" rx="3"/>
+      <!-- X-axis labels + LABEL ✅ -->
+      <text x="109"  y="232" text-anchor="middle" font-size="11" fill="#444">Round 1</text>
+      <text x="212"  y="232" text-anchor="middle" font-size="11" fill="#444">Round 2</text>
+      <text x="315"  y="232" text-anchor="middle" font-size="11" fill="#444">Round 3</text>
+      <text x="225"  y="248" text-anchor="middle" font-size="11" font-weight="700" fill="#888">Round ✅</text>
+      <!-- Legend -->
+      <rect x="70" y="22" width="11" height="11" fill="#1A6FA5" rx="2"/>
+      <text x="85" y="32" font-size="11" fill="#444">Team A</text>
+      <rect x="150" y="22" width="11" height="11" fill="#C94233" rx="2"/>
+      <text x="165" y="32" font-size="11" fill="#444">Team B</text>
+      <!-- SOURCE ✅ -->
+      <text x="390" y="268" text-anchor="end" font-size="9" fill="#999" font-style="italic">Source: Hypothetical data for educational purposes | NRL 2024 ✅</text>
+      <!-- Annotation callouts -->
+      <rect x="62" y="254" width="80" height="18" rx="4" fill="#E4F3EB" stroke="#2B7A4B" stroke-width="1"/>
+      <text x="102" y="266" text-anchor="middle" font-size="9" fill="#2B7A4B" font-weight="700">✅ Source present</text>
+    </svg>
+  </div>
+
+  <div class="info-box" style="margin-top:16px;">
+    💡 <strong>The four required features are not optional.</strong> Without a title, a reader doesn't know what the graph is about. Without a source, they can't check the data. Without a scale, values can't be read accurately. Without labels, axes have no meaning.
+  </div>
+
+</div>
+</div><!-- end explore -->
+
+<!-- ═══════════════════════
+     TAB 3 · LEARN
+     Graph Gallery (8 types)
+════════════════════════ -->
+<div id="tab-learn" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Graph Gallery</p>
+  <p class="section-sub">Select any graph type. Each example uses authentic Australian sports data with all required features included.</p>
+
+  <div class="graph-pills">
+    <button class="graph-pill active" onclick="showGraph('col')">📊 Column</button>
+    <button class="graph-pill" onclick="showGraph('line')">📈 Line</button>
+    <button class="graph-pill" onclick="showGraph('dot')">⚫ Dot Plot</button>
+    <button class="graph-pill" onclick="showGraph('stem')">🌿 Stem-and-Leaf</button>
+    <button class="graph-pill" onclick="showGraph('hist')">▬ Histogram</button>
+    <button class="graph-pill" onclick="showGraph('sector')">🥧 Sector</button>
+    <button class="graph-pill" onclick="showGraph('divbar')">▌ Divided Bar</button>
+    <button class="graph-pill" onclick="showGraph('picto')">🖼 Pictogram</button>
+  </div>
+
+  <!-- ════ 1. COLUMN GRAPH ════ -->
+  <div id="gp-col" class="graph-panel active">
+    <div class="when-to-use">📌 <strong>Use a column graph when</strong> comparing counts or totals across separate, distinct categories — teams, rounds, players. Bars do <em>not</em> touch.</div>
+    <div class="graph-display">
+      <svg viewBox="0 0 510 290" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:510px;"
+           aria-label="Column graph showing AFL goals per quarter">
+        <!-- Title -->
+        <text x="255" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Goals Scored Per Quarter — AFL Round 15: Hawthorn v Sydney (2024)</text>
+        <!-- Y-axis -->
+        <line x1="62" y1="28" x2="62" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <!-- X-axis -->
+        <line x1="62" y1="250" x2="480" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Gridlines at 2, 4, 6 goals -->
+        <!-- pixPerGoal = (250-28)/7 = 31.7. Heights: 2→63, 3→95, 4→127, 5→159, 6→190 -->
+        <!-- Grid y: 2→250-63=187, 4→250-127=123, 6→250-190=60 -->
+        <line x1="62" y1="187" x2="480" y2="187" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="123" x2="480" y2="123" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="60"  x2="480" y2="60"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Y labels -->
+        <text x="54" y="254" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">0</text>
+        <text x="54" y="191" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">2</text>
+        <text x="54" y="127" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">4</text>
+        <text x="54" y="64"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">6</text>
+        <!-- Y-axis title -->
+        <text x="16" y="143" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 16 143)">Goals</text>
+        <!-- BARS — groups at x=115, 210, 305, 400 -->
+        <!-- Hawks bar: x=group-31, w=28. Swans bar: x=group+3, w=28 -->
+        <!-- Hawk goals: 3,5,4,6. Swans goals: 2,4,6,3 -->
+        <!-- Heights: 3→95, 5→159, 4→127, 6→190, 2→63 -->
+        <!-- Y-tops: 3→155, 5→91, 4→123, 6→60, 2→187 -->
+        <!-- Q1: Hawks x=84, y=155, h=95; Swans x=118, y=187, h=63 -->
+        <rect x="84"  y="155" width="28" height="95"  fill="#8B5E3C" rx="3"/>
+        <rect x="116" y="187" width="28" height="63"  fill="#CE1126" rx="3"/>
+        <!-- Q2: Hawks x=179, y=91, h=159; Swans x=213, y=123, h=127 -->
+        <rect x="179" y="91"  width="28" height="159" fill="#8B5E3C" rx="3"/>
+        <rect x="211" y="123" width="28" height="127" fill="#CE1126" rx="3"/>
+        <!-- Q3: Hawks x=274, y=123, h=127; Swans x=308, y=60, h=190 -->
+        <rect x="274" y="123" width="28" height="127" fill="#8B5E3C" rx="3"/>
+        <rect x="306" y="60"  width="28" height="190" fill="#CE1126" rx="3"/>
+        <!-- Q4: Hawks x=369, y=60, h=190; Swans x=403, y=155, h=95 -->
+        <rect x="369" y="60"  width="28" height="190" fill="#8B5E3C" rx="3"/>
+        <rect x="401" y="155" width="28" height="95"  fill="#CE1126" rx="3"/>
+        <!-- Value labels above bars -->
+        <text x="98"  y="151" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">3</text>
+        <text x="130" y="183" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">2</text>
+        <text x="193" y="87"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">5</text>
+        <text x="225" y="119" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">4</text>
+        <text x="288" y="119" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">4</text>
+        <text x="320" y="56"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">6</text>
+        <text x="383" y="56"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#8B5E3C">6</text>
+        <text x="415" y="151" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" font-weight="700" fill="#CE1126">3</text>
+        <!-- X labels at group centers -->
+        <text x="115" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q1</text>
+        <text x="210" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q2</text>
+        <text x="305" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q3</text>
+        <text x="400" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Q4</text>
+        <text x="271" y="280" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Quarter</text>
+        <!-- Legend -->
+        <rect x="72"  y="30" width="12" height="12" fill="#8B5E3C" rx="2"/>
+        <text x="88"  y="41" font-family="Nunito,sans-serif" font-size="11" fill="#444">Hawthorn</text>
+        <rect x="162" y="30" width="12" height="12" fill="#CE1126" rx="2"/>
+        <text x="178" y="41" font-family="Nunito,sans-serif" font-size="11" fill="#444">Sydney Swans</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | AFL 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul>
+          <li>Title (what, who, when)</li>
+          <li>X-axis label: Quarter</li>
+          <li>Y-axis label: Goals</li>
+          <li>Scale: 0–6 on y-axis</li>
+          <li>Legend for two teams</li>
+          <li>Source listed below</li>
+        </ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul>
+          <li>Bars do <strong>not</strong> touch — data is categorical (quarters)</li>
+          <li>Goals = numerical discrete (whole numbers only)</li>
+          <li>Good for: comparing separate groups side-by-side</li>
+          <li>Sydney surged in Q3; Hawthorn dominated Q4</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 2. LINE GRAPH ════ -->
+  <div id="gp-line" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a line graph when</strong> showing change over time or sequence — the connected line emphasises the trend and direction of change.</div>
+    <div class="graph-display">
+      <svg viewBox="0 0 510 270" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:510px;"
+           aria-label="Line graph of swimming times over 8 races">
+        <!-- Title -->
+        <text x="255" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Dylan's 100m Freestyle Times — School Carnival Season 2024</text>
+        <!-- Axes -->
+        <line x1="68" y1="24" x2="68" y2="242" stroke="#bbb" stroke-width="1.5"/>
+        <line x1="68" y1="242" x2="500" y2="242" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Grid at 55,56,57,58,59s -->
+        <!-- Plot: x=68-500 (432px), y=24-242 (218px). Range 55-59s (4s). pixPerSec=54.5 -->
+        <!-- y=242→59.0s; y=242-54.5=187.5→58.0; y=242-109=133→57.0; y=242-163.5=78.5→56.0; y=24→55.0 -->
+        <line x1="68" y1="242" x2="500" y2="242" stroke="#f0ece8" stroke-width="1"/>
+        <line x1="68" y1="188" x2="500" y2="188" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="133" x2="500" y2="133" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="79"  x2="500" y2="79"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="68" y1="24"  x2="500" y2="24"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Y labels: 59s at 242, 58s at 188, 57s at 133, 56s at 79, 55s at 24 -->
+        <text x="60" y="246" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">59s</text>
+        <text x="60" y="192" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">58s</text>
+        <text x="60" y="137" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">57s</text>
+        <text x="60" y="83"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">56s</text>
+        <text x="60" y="28"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">55s</text>
+        <text x="20" y="135" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 20 135)">Time (seconds)</text>
+        <!-- Data: 58.2,57.8,57.1,56.9,57.3,56.4,56.1,55.8 -->
+        <!-- y = 242 - (59.0-time)*54.5 -->
+        <!-- 58.2: 242-(0.8*54.5)=242-43.6=198.4→198 -->
+        <!-- 57.8: 242-(1.2*54.5)=242-65.4=176.6→177 -->
+        <!-- 57.1: 242-(1.9*54.5)=242-103.6=138.4→138 -->
+        <!-- 56.9: 242-(2.1*54.5)=242-114.5=127.5→128 -->
+        <!-- 57.3: 242-(1.7*54.5)=242-92.7=149.3→149 -->
+        <!-- 56.4: 242-(2.6*54.5)=242-141.7=100.3→100 -->
+        <!-- 56.1: 242-(2.9*54.5)=242-158.1=83.9→84 -->
+        <!-- 55.8: 242-(3.2*54.5)=242-174.4=67.6→68 -->
+        <!-- X: 8 races from x=88 to x=492, step=404/7=57.7 -->
+        <!-- 88,146,203,261,318,376,433,491 -->
+        <!-- Shaded area (light) -->
+        <polygon points="88,198 146,177 203,138 261,128 318,149 376,100 433,84 491,68 491,242 88,242"
+                 fill="#1A6FA5" opacity=".06"/>
+        <!-- Line -->
+        <polyline points="88,198 146,177 203,138 261,128 318,149 376,100 433,84 491,68"
+                  fill="none" stroke="#1A6FA5" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- Points -->
+        <circle cx="88"  cy="198" r="5" fill="#1A6FA5"/>
+        <circle cx="146" cy="177" r="5" fill="#1A6FA5"/>
+        <circle cx="203" cy="138" r="5" fill="#1A6FA5"/>
+        <circle cx="261" cy="128" r="5" fill="#1A6FA5"/>
+        <circle cx="318" cy="149" r="5" fill="#D98A0A"/>
+        <circle cx="376" cy="100" r="5" fill="#1A6FA5"/>
+        <circle cx="433" cy="84"  r="5" fill="#1A6FA5"/>
+        <circle cx="491" cy="68"  r="5" fill="#2B7A4B"/>
+        <!-- Slight setback label -->
+        <text x="318" y="143" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#D98A0A" font-weight="700">Slight setback</text>
+        <!-- PB label -->
+        <text x="491" y="62"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#2B7A4B" font-weight="700">PB! 55.8s</text>
+        <!-- X labels -->
+        <text x="88"  y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">1</text>
+        <text x="146" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">2</text>
+        <text x="203" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">3</text>
+        <text x="261" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">4</text>
+        <text x="318" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">5</text>
+        <text x="376" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">6</text>
+        <text x="433" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">7</text>
+        <text x="491" y="256" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#444">8</text>
+        <text x="289" y="268" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Race Number</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | NSW Swimming 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (subject, event, season)</li><li>X-axis label: Race Number</li><li>Y-axis label: Time (seconds)</li><li>Scale on both axes</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Time = numerical continuous (measured)</li><li>Downward slope = improving (lower time = faster)</li><li>Race 5 shows a slight setback — common in real sport</li><li>Line connects points to show the trend clearly</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 3. DOT PLOT ════ -->
+  <div id="gp-dot" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a dot plot when</strong> displaying a small-to-medium dataset (up to ~30 values) and you want to show where values cluster, repeat, or stand out as outliers.</div>
+    <div class="graph-display">
+      <svg viewBox="0 0 500 178" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:500px;"
+           aria-label="Dot plot of cricket T20 batting scores">
+        <!-- Title -->
+        <text x="250" y="14" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Individual Batting Scores — T20 Match, Melbourne Cricket Ground 2024</text>
+        <!-- Number line: x=44 to x=464, range 0-45, pixPerRun=420/45=9.33 -->
+        <!-- x = 44 + score*9.33 -->
+        <line x1="44" y1="138" x2="465" y2="138" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Tick marks at 0,5,10,15,20,25,30,35,40,45 -->
+        <!-- x = 44 + n*9.33*5 = 44 + n*46.67 -->
+        <!-- 0→44, 5→91, 10→137, 15→184, 20→231, 25→277, 30→324, 35→370, 40→417, 45→464 -->
+        <line x1="44"  y1="138" x2="44"  y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="91"  y1="138" x2="91"  y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="137" y1="138" x2="137" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="184" y1="138" x2="184" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="231" y1="138" x2="231" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="277" y1="138" x2="277" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="324" y1="138" x2="324" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="370" y1="138" x2="370" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="417" y1="138" x2="417" y2="144" stroke="#888" stroke-width="1.5"/>
+        <line x1="464" y1="138" x2="464" y2="144" stroke="#888" stroke-width="1.5"/>
+        <text x="44"  y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">0</text>
+        <text x="91"  y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">5</text>
+        <text x="137" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">10</text>
+        <text x="184" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">15</text>
+        <text x="231" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">20</text>
+        <text x="277" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">25</text>
+        <text x="324" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">30</text>
+        <text x="370" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">35</text>
+        <text x="417" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">40</text>
+        <text x="464" y="156" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#666">45</text>
+        <text x="254" y="170" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Runs Scored</text>
+        <!-- Dots: scores 0,4,8,12,15,15,18,22,24,24,28,30,35,35,42 -->
+        <!-- x = 44 + score*9.33. Dot r=7.5. Bottom row cy=130, second row cy=113 -->
+        <!-- 0→44, 4→81, 8→119, 12→156, 15→184, 18→212, 22→249, 24→268, 28→305, 30→324, 35→371, 42→436 -->
+        <circle cx="44"  cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="81"  cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="119" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="156" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- 15 x2 -->
+        <circle cx="184" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="184" cy="114" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="212" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="249" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- 24 x2 -->
+        <circle cx="268" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="268" cy="114" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="305" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="324" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- 35 x2 -->
+        <circle cx="371" cy="130" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <circle cx="371" cy="114" r="7.5" fill="#1A6FA5" opacity=".85"/>
+        <!-- 42 — outlier in red -->
+        <circle cx="436" cy="130" r="7.5" fill="#C94233" opacity=".9"/>
+        <text x="436" y="104" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9" fill="#C94233" font-weight="800">Outlier</text>
+        <line x1="436" y1="107" x2="436" y2="122" stroke="#C94233" stroke-width="1.5" stroke-dasharray="2,2"/>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | Cricket Australia 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (event, venue, year)</li><li>Labelled number line: Runs Scored</li><li>Scale: 0–45 with regular tick marks</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Each dot = one player's score</li><li>Stacked dots = repeated values (e.g. 15, 24, 35)</li><li>Score of 42 is a clear outlier</li><li>Variable = numerical discrete (whole run counts)</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 4. STEM-AND-LEAF ════ -->
+  <div id="gp-stem" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a stem-and-leaf plot when</strong> you need to display all individual values AND see the distribution shape — ideal for 10–50 values.</div>
+    <div class="graph-display">
+      <p style="text-align:center;font-size:13px;font-weight:800;color:#2C2C2C;margin-bottom:6px;">Metres Gained Per Game — NRL 2024: Selected Player (12 Games)</p>
+      <div class="sl-wrap">
+        <table class="sl-table">
+          <tr><td class="sl-h sl-stem">Stem<br>(10s)</td><td class="sl-h sl-leaf">Leaves (units)</td></tr>
+          <tr><td class="sl-stem">4</td><td class="sl-leaf">2&nbsp;&nbsp;&nbsp;7</td></tr>
+          <tr><td class="sl-stem">5</td><td class="sl-leaf">5&nbsp;&nbsp;&nbsp;8</td></tr>
+          <tr><td class="sl-stem">6</td><td class="sl-leaf">3&nbsp;&nbsp;&nbsp;7</td></tr>
+          <tr><td class="sl-stem">7</td><td class="sl-leaf">1&nbsp;&nbsp;&nbsp;4&nbsp;&nbsp;&nbsp;8</td></tr>
+          <tr><td class="sl-stem">8</td><td class="sl-leaf">5</td></tr>
+          <tr><td class="sl-stem">9</td><td class="sl-leaf">2&nbsp;&nbsp;&nbsp;4</td></tr>
+        </table>
+      </div>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px;">
+        <strong>Key:</strong> 4 | 2 means 42 metres &nbsp;&nbsp;|&nbsp;&nbsp;
+        <strong>Data:</strong> 42, 47, 55, 58, 63, 67, 71, 74, 78, 85, 92, 94
+      </p>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | NRL 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (who, what, when)</li><li>Stems labelled (tens column)</li><li>Leaves ordered low to high</li><li>Key explaining stem|leaf notation</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>All 12 original values are preserved</li><li>Most values fall in the 70s (mode stem)</li><li>Range = 94 − 42 = 52 metres</li><li>Variable = numerical discrete (metres counted)</li><li>Find median between 6th &amp; 7th values: (67+71)÷2 = 69</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 5. FREQUENCY HISTOGRAM ════ -->
+  <div id="gp-hist" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a frequency histogram when</strong> data is numerical and continuous — group values into equal class intervals. Bars MUST touch (no gap). An optional frequency polygon overlays the shape.</div>
+    <button class="toggle-poly" id="poly-toggle" onclick="togglePolygon()">〰 Show Frequency Polygon</button>
+    <div class="graph-display">
+      <svg viewBox="0 0 510 290" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:510px;"
+           aria-label="Frequency histogram of 100m sprint times">
+        <!-- Title -->
+        <text x="255" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Year 9 Student 100m Sprint Times — Athletics Carnival 2024 (n = 50)</text>
+        <!-- Axes -->
+        <line x1="62" y1="26" x2="62" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <line x1="62" y1="250" x2="502" y2="250" stroke="#bbb" stroke-width="1.5"/>
+        <!-- Grid at freq 5,10,15,20 -->
+        <!-- Plot: y=26-250 (224px). Max=20. pixPerFreq=224/20=11.2 -->
+        <!-- 5→250-56=194, 10→250-112=138, 15→250-168=82, 20→250-224=26 -->
+        <line x1="62" y1="194" x2="502" y2="194" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="138" x2="502" y2="138" stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="82"  x2="502" y2="82"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <line x1="62" y1="26"  x2="502" y2="26"  stroke="#f0ece8" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- Y labels -->
+        <text x="54" y="254" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">0</text>
+        <text x="54" y="198" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">5</text>
+        <text x="54" y="142" text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">10</text>
+        <text x="54" y="86"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">15</text>
+        <text x="54" y="30"  text-anchor="end" font-family="Nunito,sans-serif" font-size="11" fill="#666">20</text>
+        <text x="18" y="142" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888" transform="rotate(-90 18 142)">Frequency</text>
+        <!-- Bars TOUCHING: 5 bins each w=88 (62 to 502 = 440px / 5 = 88) -->
+        <!-- Bins: [11.0-11.5):4, [11.5-12.0):12, [12.0-12.5):18, [12.5-13.0):11, [13.0-13.5]:5 -->
+        <!-- Heights: freq*11.2. 4→44.8≈45, 12→134.4≈134, 18→201.6≈202, 11→123.2≈123, 5→56 -->
+        <!-- Y-tops: 4→205, 12→116, 18→48, 11→127, 5→194 -->
+        <rect x="62"  y="205" width="88" height="45"  fill="#1A6FA5" stroke="white" stroke-width="1.5"/>
+        <rect x="150" y="116" width="88" height="134" fill="#1A6FA5" stroke="white" stroke-width="1.5"/>
+        <rect x="238" y="48"  width="88" height="202" fill="#1A6FA5" stroke="white" stroke-width="1.5"/>
+        <rect x="326" y="127" width="88" height="123" fill="#1A6FA5" stroke="white" stroke-width="1.5"/>
+        <rect x="414" y="194" width="88" height="56"  fill="#1A6FA5" stroke="white" stroke-width="1.5"/>
+        <!-- Frequency labels on bars -->
+        <text x="106" y="201" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="white">4</text>
+        <text x="194" y="112" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="white">12</text>
+        <text x="282" y="44"  text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="white">18</text>
+        <text x="370" y="123" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="white">11</text>
+        <text x="458" y="190" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="white">5</text>
+        <!-- X-axis labels at bin boundaries -->
+        <text x="62"  y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">11.0</text>
+        <text x="150" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">11.5</text>
+        <text x="238" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">12.0</text>
+        <text x="326" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">12.5</text>
+        <text x="414" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">13.0</text>
+        <text x="502" y="265" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10.5" fill="#444">13.5</text>
+        <text x="282" y="280" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" font-weight="700" fill="#888">Time (seconds)</text>
+        <!-- FREQUENCY POLYGON (hidden initially): connect bar midpoints -->
+        <!-- Midpoints: (106,205),(194,116),(282,48),(370,127),(458,194) -->
+        <polyline id="freq-poly"
+                  points="106,205 194,116 282,48 370,127 458,194"
+                  fill="none" stroke="#C94233" stroke-width="2.5" stroke-dasharray="6,3" stroke-linejoin="round"
+                  style="display:none;"/>
+        <circle id="pp1" cx="106" cy="205" r="4.5" fill="#C94233" style="display:none;"/>
+        <circle id="pp2" cx="194" cy="116" r="4.5" fill="#C94233" style="display:none;"/>
+        <circle id="pp3" cx="282" cy="48"  r="4.5" fill="#C94233" style="display:none;"/>
+        <circle id="pp4" cx="370" cy="127" r="4.5" fill="#C94233" style="display:none;"/>
+        <circle id="pp5" cx="458" cy="194" r="4.5" fill="#C94233" style="display:none;"/>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | NSW Athletics 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (who, what, when, n=)</li><li>Bars TOUCH — continuous data</li><li>Class intervals on x-axis</li><li>Frequency on y-axis with scale</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Times = numerical continuous (measured)</li><li>Peak at 12.0–12.5s (18 students) — modal class</li><li>Roughly bell-shaped distribution</li><li>Polygon joins bar midpoints — shows the curve shape</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 6. SECTOR GRAPH ════ -->
+  <div id="gp-sector" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a sector (pie) graph when</strong> showing how a whole is divided into parts. Each slice is a proportion of 100%. Best when you have 3–6 categories.</div>
+    <div class="graph-display">
+      <!-- Pie built by JS. SVG container with space for chart + legend -->
+      <svg id="pie-svg" viewBox="0 0 500 288" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:500px;"
+           aria-label="Sector graph of netball scoring breakdown">
+        <!-- Title -->
+        <text x="250" y="16" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">How the Sunshine Coast Lightning Scored — Super Netball 2024</text>
+        <!-- Pie slices generated by JS into this group -->
+        <g id="pie-slices"></g>
+        <!-- Legend (right side) positioned from x=320 -->
+        <rect x="318" y="72"  width="13" height="13" fill="#1A6FA5" rx="2"/>
+        <text x="335" y="83"  font-family="Nunito,sans-serif" font-size="12" fill="#2C2C2C" font-weight="700">Centre pass</text>
+        <text x="335" y="97"  font-family="Nunito,sans-serif" font-size="11" fill="#666">conversions (42%)</text>
+        <rect x="318" y="112" width="13" height="13" fill="#2B7A4B" rx="2"/>
+        <text x="335" y="123" font-family="Nunito,sans-serif" font-size="12" fill="#2C2C2C" font-weight="700">Turnover</text>
+        <text x="335" y="137" font-family="Nunito,sans-serif" font-size="11" fill="#666">conversions (28%)</text>
+        <rect x="318" y="152" width="13" height="13" fill="#D98A0A" rx="2"/>
+        <text x="335" y="163" font-family="Nunito,sans-serif" font-size="12" fill="#2C2C2C" font-weight="700">Rebound</text>
+        <text x="335" y="177" font-family="Nunito,sans-serif" font-size="11" fill="#666">conversions (18%)</text>
+        <rect x="318" y="192" width="13" height="13" fill="#C94233" rx="2"/>
+        <text x="335" y="203" font-family="Nunito,sans-serif" font-size="12" fill="#2C2C2C" font-weight="700">Missed shots</text>
+        <text x="335" y="217" font-family="Nunito,sans-serif" font-size="11" fill="#666">(12%)</text>
+      </svg>
+      <div class="graph-source">Source: Hypothetical data for educational purposes | Suncorp Super Netball 2024</div>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (team, competition, year)</li><li>All slices labelled with category + %</li><li>Slices add to 100%</li><li>Legend with colours</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Scoring type = categorical nominal</li><li>Best for: showing parts of a whole</li><li>Avoid if any slice is very small (&lt;5%)</li><li>A divided bar graph can show the same thing but is easier to compare across groups</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 7. DIVIDED BAR GRAPH ════ -->
+  <div id="gp-divbar" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a divided bar graph when</strong> showing how a total is split into parts — especially useful when comparing proportions across multiple groups.</div>
+    <div class="graph-display">
+      <svg viewBox="0 0 500 155" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;max-width:500px;"
+           aria-label="Divided bar graph of NBL basketball points by shot type">
+        <!-- Title -->
+        <text x="250" y="15" text-anchor="middle" font-family="Nunito,sans-serif" font-size="12.5" font-weight="800" fill="#2C2C2C">Melbourne United — Points by Shot Type, NBL Season 2024</text>
+        <!-- Scale at top (0%-100%): x=50 to x=450 = 400px -->
+        <line x1="50" y1="30" x2="450" y2="30" stroke="#ccc" stroke-width="1"/>
+        <!-- Tick marks at 0,20,40,60,80,100% (every 20% = 80px) -->
+        <line x1="50"  y1="27" x2="50"  y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="130" y1="27" x2="130" y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="210" y1="27" x2="210" y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="290" y1="27" x2="290" y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="370" y1="27" x2="370" y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <line x1="450" y1="27" x2="450" y2="33" stroke="#aaa" stroke-width="1.5"/>
+        <text x="50"  y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">0%</text>
+        <text x="130" y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">20%</text>
+        <text x="210" y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">40%</text>
+        <text x="290" y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">60%</text>
+        <text x="370" y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">80%</text>
+        <text x="450" y="25" text-anchor="middle" font-family="Nunito,sans-serif" font-size="9.5" fill="#888">100%</text>
+        <!-- BAR: 2-pointers 48%=192px, 3-pointers 31%=124px, free throws 21%=84px -->
+        <rect x="50"  y="38" width="192" height="54" fill="#1A6FA5"/>
+        <rect x="242" y="38" width="124" height="54" fill="#2B7A4B"/>
+        <rect x="366" y="38" width="84"  height="54" fill="#D98A0A"/>
+        <!-- Labels inside bar -->
+        <text x="146" y="68" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">48%</text>
+        <text x="304" y="68" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">31%</text>
+        <text x="408" y="68" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="white">21%</text>
+        <!-- Labels below bar -->
+        <text x="146" y="107" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">2-point shots</text>
+        <text x="304" y="107" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">3-point shots</text>
+        <text x="408" y="107" text-anchor="middle" font-family="Nunito,sans-serif" font-size="11" fill="#444">Free throws</text>
+        <!-- Colour key boxes under labels -->
+        <rect x="120" y="111" width="52" height="5" fill="#1A6FA5" rx="2"/>
+        <rect x="278" y="111" width="52" height="5" fill="#2B7A4B" rx="2"/>
+        <rect x="382" y="111" width="52" height="5" fill="#D98A0A" rx="2"/>
+        <!-- Source -->
+        <text x="450" y="145" text-anchor="end" font-family="Nunito,sans-serif" font-size="9" fill="#999" font-style="italic">Source: Hypothetical data | NBL 2024</text>
+      </svg>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (team, competition, year)</li><li>Bar spans 0–100%</li><li>Each section labelled with category + %</li><li>Percentage scale shown above bar</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Shot type = categorical nominal</li><li>Proportions must add to 100%</li><li>Advantage over sector: easy to compare multiple bars (e.g. compare two teams)</li><li>Use colour to distinguish sections clearly</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ 8. PICTOGRAM ════ -->
+  <div id="gp-picto" class="graph-panel">
+    <div class="when-to-use">📌 <strong>Use a pictogram when</strong> displaying simple count data for a general audience. Each symbol represents a fixed quantity — always include a clear key.</div>
+    <div class="graph-display">
+      <p style="text-align:center;font-size:13px;font-weight:800;color:#2C2C2C;margin-bottom:6px;">Swimming Gold Medals — 2022 Commonwealth Games (Top Nations)</p>
+      <div class="pic-wrap">
+        <table class="pic-table">
+          <thead>
+            <tr><th>Country</th><th>Gold Medals &nbsp;(🥇 = 1 gold medal)</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>🇦🇺 Australia</td><td class="medals">🥇🥇🥇🥇🥇🥇🥇🥇</td><td><strong>8</strong></td></tr>
+            <tr><td>🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</td><td class="medals">🥇🥇🥇</td><td><strong>3</strong></td></tr>
+            <tr><td>🇨🇦 Canada</td><td class="medals">🥇🥇</td><td><strong>2</strong></td></tr>
+            <tr><td>🇳🇿 New Zealand</td><td class="medals">🥇</td><td><strong>1</strong></td></tr>
+            <tr><td>🇿🇦 South Africa</td><td class="medals">🥇</td><td><strong>1</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px;font-style:italic;">Key: 🥇 = 1 gold medal &nbsp;|&nbsp; Source: Commonwealth Games Federation, Birmingham 2022</p>
+    </div>
+    <div class="g2col">
+      <div class="feat-card">
+        <h4>✅ Required Features Present</h4>
+        <ul><li>Title (event, year)</li><li>Countries clearly labelled</li><li>Key explaining what one symbol represents</li><li>Source listed</li></ul>
+      </div>
+      <div class="feat-card">
+        <h4>📋 Key Notes</h4>
+        <ul><li>Country = categorical nominal</li><li>Gold medals = numerical discrete</li><li>Limitation: half-symbols needed when count doesn't divide evenly</li><li>Best for: simple counts, public-facing communication</li></ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end learn -->
+
+<!-- ═══════════════════════
+     TAB 4 · PRACTISE
+════════════════════════ -->
+<div id="tab-practise" class="tab-panel">
+<div class="content">
+
+  <!-- WHICH GRAPH? ACTIVITY -->
+  <p class="section-title">Which Graph? 🤔</p>
+  <p class="section-sub">A statistician must choose the right graph for every dataset. Read each scenario and select the most appropriate graph type from the four options.</p>
+  <div class="wg-section">
+
+    <!-- WG Q1 -->
+    <div class="wg-q" id="wgq1">
+      <div class="scenario-box">🏊 <strong>Scenario 1:</strong> A swimming coach wants to show how Dylan's 100m freestyle times changed across 10 races this season — and whether he is improving.</div>
+      <div class="wg-opts">
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A sector graph shows proportions of a whole — not change over time. It can't show a trend." onclick="wgAns(this,'wgq1')"><span class="gi">🥧</span>Sector graph</button>
+        <button class="wg-opt" data-result="correct" data-msg="✅ Correct! A line graph is ideal for showing change over time. The connected line makes the trend (improvement or setback) immediately visible." onclick="wgAns(this,'wgq1')"><span class="gi">📈</span>Line graph</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A dot plot would show the distribution of times but wouldn't show the order in which races occurred — so you can't see the trend." onclick="wgAns(this,'wgq1')"><span class="gi">⚫</span>Dot plot</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A column graph compares separate categories. It could show each race, but it doesn't emphasise trend the way a connected line does." onclick="wgAns(this,'wgq1')"><span class="gi">📊</span>Column graph</button>
+      </div>
+      <div class="wg-fb" id="fb-wgq1"></div>
+    </div>
+
+    <!-- WG Q2 -->
+    <div class="wg-q" id="wgq2">
+      <div class="scenario-box">🏉 <strong>Scenario 2:</strong> A sports journalist wants to show what proportion of a 90-minute NRL broadcast is spent on: active play, ad breaks, video reviews, and half-time.</div>
+      <div class="wg-opts">
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A stem-and-leaf plot shows individual numerical values — it's not suited to categorical proportions of a whole." onclick="wgAns(this,'wgq2')"><span class="gi">🌿</span>Stem-and-leaf</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A frequency histogram is for continuous numerical data grouped into intervals. Broadcast time categories aren't continuous measurements." onclick="wgAns(this,'wgq2')"><span class="gi">▬</span>Freq. histogram</button>
+        <button class="wg-opt" data-result="correct" data-msg="✅ Correct! A sector (pie) graph is perfect for showing how a whole (90 minutes) is divided into parts (play, ads, reviews, half-time). Each slice shows the proportion." onclick="wgAns(this,'wgq2')"><span class="gi">🥧</span>Sector graph</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A pictogram uses symbols to represent counted categories — it doesn't communicate proportions of a whole as clearly as a sector or divided bar graph." onclick="wgAns(this,'wgq2')"><span class="gi">🖼</span>Pictogram</button>
+      </div>
+      <div class="wg-fb" id="fb-wgq2"></div>
+    </div>
+
+    <!-- WG Q3 -->
+    <div class="wg-q" id="wgq3">
+      <div class="scenario-box">🏃 <strong>Scenario 3:</strong> A PE teacher records 400m sprint times for 60 Year 9 students (measured to the nearest 0.1s). She wants to show how the times are distributed — where they cluster and how spread out they are.</div>
+      <div class="wg-opts">
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A column graph is for separate categorical groups. With 60 continuous times, each individual value would need its own bar — impractical. Grouping into intervals (histogram) is the solution." onclick="wgAns(this,'wgq3')"><span class="gi">📊</span>Column graph</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A divided bar shows proportions of a whole. It doesn't show the distribution shape of a continuous variable like sprint times." onclick="wgAns(this,'wgq3')"><span class="gi">▌</span>Divided bar</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A stem-and-leaf could work for smaller datasets (10–40 values) but with 60 values it gets unwieldy. A histogram groups values more efficiently." onclick="wgAns(this,'wgq3')"><span class="gi">🌿</span>Stem-and-leaf</button>
+        <button class="wg-opt" data-result="correct" data-msg="✅ Correct! A frequency histogram groups continuous data into equal class intervals, shows how many values fall in each group, and bars touch because the data is continuous. Perfect for this scenario." onclick="wgAns(this,'wgq3')"><span class="gi">▬</span>Freq. histogram</button>
+      </div>
+      <div class="wg-fb" id="fb-wgq3"></div>
+    </div>
+
+    <!-- WG Q4 -->
+    <div class="wg-q" id="wgq4">
+      <div class="scenario-box">🏏 <strong>Scenario 4:</strong> A cricket analyst records the individual T20 batting scores of 18 players in one innings and wants to display all values individually while also showing where scores cluster.</div>
+      <div class="wg-opts">
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A line graph shows change over time (sequence). Batting scores don't have a meaningful time sequence — we just want the spread." onclick="wgAns(this,'wgq4')"><span class="gi">📈</span>Line graph</button>
+        <button class="wg-opt" data-result="correct" data-msg="✅ Correct! A dot plot keeps every individual value visible on a number line and shows clustering through stacked dots. Ideal for 10–30 values like this." onclick="wgAns(this,'wgq4')"><span class="gi">⚫</span>Dot plot</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A sector graph shows proportions of a whole — it can't display individual scores on a numerical scale." onclick="wgAns(this,'wgq4')"><span class="gi">🥧</span>Sector graph</button>
+        <button class="wg-opt" data-result="wrong"   data-msg="❌ A pictogram uses symbols for counted categories. It can't effectively show individual scores spread across a continuous range." onclick="wgAns(this,'wgq4')"><span class="gi">🖼</span>Pictogram</button>
+      </div>
+      <div class="wg-fb" id="fb-wgq4"></div>
+    </div>
+
+  </div><!-- end wg-section -->
+
+  <hr class="divider">
+
+  <!-- TIERED MCQ -->
+  <p class="section-title">Practice Questions</p>
+  <p class="section-sub">Select your level.</p>
+  <div class="tier-picker">
+    <button class="tier-btn active" data-tier="foundation" onclick="selectTier('foundation')">🟢 Foundation</button>
+    <button class="tier-btn" data-tier="core"       onclick="selectTier('core')">🔵 Core</button>
+    <button class="tier-btn" data-tier="extension"  onclick="selectTier('extension')">🔴 Extension</button>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="tier-qs active" id="qs-foundation">
+    <div class="tier-bar tb-f">🟢 Foundation — Graph Features &amp; Types</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">Which graph type requires bars that <em>must</em> touch each other — with no gaps?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ In a column graph, bars do NOT touch — there is always a gap between bars because the data is categorical (separate groups)." onclick="mcqAns(this)">Column graph</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! In a frequency histogram, bars must touch because the data is continuous — there are no gaps between possible values. A gap between bars would suggest some values are impossible, which is wrong." onclick="mcqAns(this)">Frequency histogram</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A dot plot doesn't use bars at all — it uses dots placed above a number line." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A pictogram uses symbols (like medals or stars), not bars." onclick="mcqAns(this)">Pictogram</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A sector graph showing the proportion of time an NRL player spends in each position must add up to:</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 50% would mean only half the match time is accounted for. A sector graph shows a complete whole." onclick="mcqAns(this)">50%</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 360° is the total angle of the circle, but the displayed percentages must add to 100%, not 360%." onclick="mcqAns(this)">360%</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A sector graph shows how a whole is divided into parts. Every part together must equal the whole — 100%." onclick="mcqAns(this)">100%</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The number of categories doesn't determine the total percentage. The whole is always 100%." onclick="mcqAns(this)">The number of categories × 10%</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A student draws a graph showing how the AFL ladder positions changed over 10 rounds. The y-axis has no label. Which required feature is missing?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The title might be fine — the missing feature is specifically about the y-axis." onclick="mcqAns(this)">Title</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Without a y-axis label, the reader doesn't know what the numbers represent. A label like 'Ladder Position' is required." onclick="mcqAns(this)">Axis label</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ If numbers are shown on the y-axis, the scale is technically present — the issue is that there's no label to explain what those numbers mean." onclick="mcqAns(this)">Scale</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Source is a separate required feature — the specific missing element here is the y-axis label." onclick="mcqAns(this)">Source</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A pictogram key shows that each 🏀 symbol represents 10 points. A basketball player's tally shows 3 full symbols and 1 half symbol. How many points is this?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 3 full symbols = 30 points, but don't forget the half symbol! Half of 10 = 5. Total = 35." onclick="mcqAns(this)">30 points</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! 3 full symbols × 10 = 30. Half symbol = 10 ÷ 2 = 5. Total = 30 + 5 = 35 points." onclick="mcqAns(this)">35 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 3.5 symbols × 10 = 35, not 3.5 points. The symbol represents 10 points, not 1." onclick="mcqAns(this)">3.5 points</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 40 points would require 4 full symbols. We only have 3 full and 1 half = 35." onclick="mcqAns(this)">40 points</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A line graph of an athletics sprinter's 100m times across 8 competitions shows a downward slope. What does this tell us?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ In a time graph, down is actually good! Lower time = faster sprint. A downward slope means improvement." onclick="mcqAns(this)">The sprinter is getting slower</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! On a time graph, lower values are faster. A downward slope means the sprinter is running each competition in less time — they are improving." onclick="mcqAns(this)">The sprinter is getting faster over time</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A line graph with a downward slope over time shows a clear direction of change — it's not random." onclick="mcqAns(this)">The performance is random with no pattern</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A line graph can show many types of data over time — not just temperature." onclick="mcqAns(this)">The temperature is decreasing</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- CORE -->
+  <div class="tier-qs" id="qs-core">
+    <div class="tier-bar tb-c">🔵 Core — Applying Graph Knowledge</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A netball club surveys 150 members about their favourite position to watch (GS, GA, C, GD, GK). Which graph is most appropriate?</div>
+      <div class="mcq-ctx">Positions are categorical nominal data. The coach wants to compare how popular each position is.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ A frequency histogram is for continuous numerical data grouped into intervals. Court positions are categories, not numbers." onclick="mcqAns(this)">Frequency histogram</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A column graph is ideal for comparing counts across separate categorical groups. Each position gets its own bar, showing which position is most popular." onclick="mcqAns(this)">Column graph</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A dot plot is for numerical data displayed on a number line. Court positions aren't numbers." onclick="mcqAns(this)">Dot plot</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A line graph shows change over time. There is no time element in a survey of position preferences." onclick="mcqAns(this)">Line graph</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A stem-and-leaf plot of NRL metres shows: 4|2 7 &nbsp; 5|5 8 &nbsp; 6|3 7 &nbsp; 7|1 4 8 &nbsp; 8|5 &nbsp; 9|2 4. What is the median?</div>
+      <div class="mcq-ctx">There are 12 values. The median is the average of the 6th and 7th values when ordered from lowest to highest.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ 74 is the 7th value, but the median of an even dataset is the average of the 6th AND 7th values." onclick="mcqAns(this)">74 metres</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 68 would be the 6th value alone, but the median requires averaging the 6th and 7th values." onclick="mcqAns(this)">68 metres</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! Ordered values: 42,47,55,58,63,67,71,74,78,85,92,94. 6th value = 67, 7th value = 71. Median = (67+71)÷2 = 69 metres." onclick="mcqAns(this)">69 metres</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 78 is the 9th value — not the median. Find the middle of all 12 values." onclick="mcqAns(this)">78 metres</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">A frequency histogram of athletics sprint times has a peak bar at 12.0–12.5 seconds with a frequency of 18. A student says: "This means 18 students ran exactly 12 seconds." What is wrong with this statement?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The frequency is correct at 18 — but the student's interpretation of 'exactly 12 seconds' is the problem." onclick="mcqAns(this)">The frequency of 18 is incorrect</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The bar represents all students who ran between 12.0 and 12.5 seconds — not exactly 12.0. In a histogram, each bar covers a class interval, not a single exact value." onclick="mcqAns(this)">The bar represents a class interval (12.0–12.5s), not exactly 12.0s</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The graph type is appropriate for continuous data like sprint times — a histogram is the right choice." onclick="mcqAns(this)">A histogram is the wrong graph type for this data</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ 12 seconds is a valid value in the middle of the dataset range — it's not an outlier." onclick="mcqAns(this)">12 seconds is an outlier in this dataset</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A frequency polygon is drawn over a histogram of basketball players' heights. The polygon passes through the midpoint of each bar's top edge. What does the highest point of the polygon represent?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The polygon connects bar midpoints — its highest point corresponds to the tallest bar, which is the most frequent interval." onclick="mcqAns(this)">The tallest player in the dataset</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The highest point of the frequency polygon corresponds to the bar with the greatest frequency — the modal class (the height interval with the most players)." onclick="mcqAns(this)">The modal class — the height interval with the most players</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The median is the middle value, but the polygon's peak is determined by frequency (how many players), not by position in the ordered dataset." onclick="mcqAns(this)">The median player height</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The mean height isn't directly visible from the polygon's peak — you'd need the actual data values to calculate that." onclick="mcqAns(this)">The mean (average) height</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">When constructing a dot plot of cricket scores (0–42), a student needs to decide how to scale the number line. Which scale would be most appropriate?</div>
+      <div class="mcq-ctx">Scores: 0, 4, 8, 12, 15, 15, 18, 22, 24, 24, 28, 30, 35, 35, 42</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ A scale from 0 to 100 would waste too much space (scores only go to 42) and compress the data visually, making it harder to read." onclick="mcqAns(this)">0 to 100, intervals of 10</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The scale should start at 0 (or just below the minimum), extend slightly beyond the maximum (42), and use regular intervals. 0 to 45 in intervals of 5 gives clear spacing without wasted space." onclick="mcqAns(this)">0 to 45, intervals of 5</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Starting at 10 would cut off the score of 0 entirely. Always include 0 or start slightly below your minimum value." onclick="mcqAns(this)">10 to 42, intervals of 2</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ With values spread across 0–42, intervals of 1 would create 43 tick marks — far too detailed and hard to read." onclick="mcqAns(this)">0 to 42, intervals of 1</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div class="tier-qs" id="qs-extension">
+    <div class="tier-bar tb-e">🔴 Extension — Graph Design &amp; Justification</div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 1</div>
+      <div class="mcq-stem">A sports statistician wants to create a statistical infographic about the 2024 NRL season. The infographic must show: (a) total tries scored by each team, (b) how the competition's total tries were split between the eight rounds, and (c) the proportion of tries scored in each half of the game. Which combination of graphs is most appropriate?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Three dot plots can't effectively show any of these — dot plots are for showing distribution of individual values on a number line." onclick="mcqAns(this)">Three dot plots</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Three column graphs could show (a) and (b) but a column graph for (c) — two categories — is less clear than a sector or divided bar for proportions." onclick="mcqAns(this)">Three column graphs</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! (a) Column graph: compares counts across 16 categorical teams. (b) Line graph: shows change over time across 8 rounds. (c) Sector graph: shows proportions of a whole (first half vs second half). Each graph suits its data type and purpose." onclick="mcqAns(this)">(a) Column graph, (b) line graph, (c) sector graph</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Stem-and-leaf plots show distributions of individual values — they're not suited to showing team totals, trends over rounds, or proportions." onclick="mcqAns(this)">Three stem-and-leaf plots</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 2</div>
+      <div class="mcq-stem">A student draws a histogram of swimmer heights and uses class intervals of unequal widths (e.g. 160–165 cm, 165–175 cm, 175–195 cm). Why does this make the graph misleading?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Height data is appropriate for a histogram — it's numerical and continuous. The issue isn't the variable type." onclick="mcqAns(this)">Height data cannot be shown in a histogram</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! In a histogram, the visual area of each bar represents frequency. If bars have different widths, a bar covering a wider interval appears to show more data than it actually does — even if its frequency is lower than a narrower bar. Equal widths are essential for honest comparison." onclick="mcqAns(this)">Wider bars appear to contain more data even if their frequency is lower, distorting the visual comparison</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Bars touching is still correct for continuous data — but the unequal widths are the main problem here." onclick="mcqAns(this)">The bars should not touch for continuous data</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ The scale on the y-axis is a separate concern — the problem here is specifically about the unequal bar widths." onclick="mcqAns(this)">The y-axis scale is wrong</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 3</div>
+      <div class="mcq-stem">Two divided bar graphs compare the scoring breakdown of Melbourne United and Sydney Kings in the same NBL season. United shows 48% two-pointers; Kings show 52% two-pointers. A coach says: "United scored fewer two-point shots than the Kings." Is this conclusion valid?</div>
+      <div class="mcq-ctx">United played 26 games; Kings played 22 games. Total points scored: United 2,180; Kings 1,940.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ The percentages do show a difference — but does that difference tell us about the actual number of shots? We need the total points to calculate real counts." onclick="mcqAns(this)">Yes — 48% is less than 52%, so United scored fewer</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! The percentage (proportion) is not the same as the actual count. United 48% of 2,180 = 1,046 points from two-pointers. Kings 52% of 1,940 = 1,009 points. United actually scored MORE two-point points. The divided bar shows proportions, not totals." onclick="mcqAns(this)">No — a higher percentage doesn't mean a higher actual count when totals differ</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ We can actually work this out using the total points data provided. United: 48% × 2,180 = 1,046 pts from two-pointers. Kings: 52% × 1,940 = 1,009 pts. United scored more despite the lower percentage." onclick="mcqAns(this)">There is not enough information to determine this</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Divided bar graphs don't show totals directly — they show proportions. The conclusion depends on how you interpret 'fewer shots'." onclick="mcqAns(this)">Yes — divided bar graphs always show total counts</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 4</div>
+      <div class="mcq-stem">A frequency histogram of NRL players' running speeds (km/h) appears roughly bell-shaped. A frequency polygon is drawn over it. Describe what the symmetry of the polygon tells us about the data.</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Symmetry of the polygon relates to how the data is spread — not to whether there is a trend over time." onclick="mcqAns(this)">The speeds are increasing over time</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A roughly bell-shaped (symmetric) polygon means most players run at speeds near the middle of the range, with progressively fewer players at very low or very high speeds. The mean and median are approximately equal when the distribution is symmetric." onclick="mcqAns(this)">Most speeds cluster near the middle, with fewer players at the extremes — mean ≈ median</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A bell shape is actually symmetric — it's the skewed distributions (leaning left or right) that indicate most players are at one extreme." onclick="mcqAns(this)">Most players run at extremely high or low speeds</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ A bell shape indicates a specific pattern (most values in the middle) — it doesn't suggest the data is random or unrelated." onclick="mcqAns(this)">The data is random and has no pattern</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="mcq-q">
+      <div class="mcq-num">Question 5</div>
+      <div class="mcq-stem">A sports scientist wants to display the same dataset of 25 cricket scores two ways: as a dot plot AND as a stem-and-leaf plot. What can the stem-and-leaf show that the dot plot <em>cannot</em>?</div>
+      <div class="mcq-opts">
+        <button class="opt" data-result="wrong"   data-msg="❌ Both graph types preserve all individual values — you can read each score from either display." onclick="mcqAns(this)">The individual values of each data point</button>
+        <button class="opt" data-result="correct" data-msg="✅ Correct! A back-to-back stem-and-leaf plot can directly compare two datasets side by side (e.g. player A vs player B across seasons), with leaves extending in both directions from a shared stem. A dot plot can show two datasets but not as clearly in a side-by-side comparison structure." onclick="mcqAns(this)">A back-to-back layout for directly comparing two datasets on the same scale</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Both plots show clustering — where values are dense or spread out." onclick="mcqAns(this)">Where the scores cluster on the scale</button>
+        <button class="opt" data-result="wrong"   data-msg="❌ Both plots make outliers visible — the score that sits far from the others will stand out in either display." onclick="mcqAns(this)">That one score is an outlier</button>
+      </div>
+      <div class="feedback"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end practise -->
+
+<!-- ═══════════════════════
+     TAB 5 · REFLECT
+════════════════════════ -->
+<div id="tab-reflect" class="tab-panel">
+<div class="content">
+
+  <p class="section-title">Working Mathematically — Reflect</p>
+  <p class="section-sub">Connect your graph knowledge to the Working Mathematically outcomes. Saved in this browser.</p>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Communicating</div>
+    <div class="wm-q">A classmate says "just pick any graph — they all show the same thing." Write a response that explains, using at least two specific examples from this chapter, why graph choice matters.</div>
+    <textarea class="wm-ta" id="wm1" placeholder="Write your explanation here…" oninput="autoSave('wm1')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm1')">Save</button>
+      <span class="save-ok" id="ok-wm1">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Reasoning</div>
+    <div class="wm-q">A frequency histogram and a column graph look similar. Describe two key differences and explain why these differences matter when choosing which one to use.</div>
+    <textarea class="wm-ta" id="wm2" placeholder="Write your comparison here…" oninput="autoSave('wm2')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm2')">Save</button>
+      <span class="save-ok" id="ok-wm2">✓ Saved</span>
+    </div>
+  </div>
+
+  <div class="wm-card">
+    <div class="wm-label">Working Mathematically · Applying</div>
+    <div class="wm-q">Choose one Australian sport and design a statistical infographic that would tell its story for a season. Name the sport, list three different variables you'd display, choose an appropriate graph for each, and justify each choice.</div>
+    <textarea class="wm-ta" id="wm3" placeholder="Write your design plan here…" oninput="autoSave('wm3')"></textarea>
+    <div class="save-row">
+      <button class="save-btn" onclick="saveJournal('wm3')">Save</button>
+      <span class="save-ok" id="ok-wm3">✓ Saved</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Key Vocabulary</p>
+  <div class="vocab-grid">
+    <div class="vc"><div class="vc-term">Column graph</div><div class="vc-def">Bars representing counts for separate categories. Bars do not touch.</div><div class="vc-eg">e.g. AFL goals per quarter per team</div></div>
+    <div class="vc"><div class="vc-term">Line graph</div><div class="vc-def">Points connected by lines to show change over time or sequence.</div><div class="vc-eg">e.g. swim times over a season</div></div>
+    <div class="vc"><div class="vc-term">Dot plot</div><div class="vc-def">Individual values shown as dots above a number line. Stacked dots = repeated values.</div><div class="vc-eg">e.g. individual T20 batting scores</div></div>
+    <div class="vc"><div class="vc-term">Stem-and-leaf</div><div class="vc-def">All original values displayed with stems (tens) and leaves (units). Back-to-back variant compares two groups.</div><div class="vc-eg">e.g. NRL metres per game</div></div>
+    <div class="vc"><div class="vc-term">Freq. histogram</div><div class="vc-def">Bars for class intervals of continuous data. Bars must touch. Bars equal-width.</div><div class="vc-eg">e.g. 100m sprint times (50 students)</div></div>
+    <div class="vc"><div class="vc-term">Freq. polygon</div><div class="vc-def">A line connecting the midpoints of histogram bar tops — shows the distribution shape.</div><div class="vc-eg">Overlay on the sprint time histogram</div></div>
+    <div class="vc"><div class="vc-term">Sector graph</div><div class="vc-def">Circle divided into slices proportional to percentage. All slices = 100%.</div><div class="vc-eg">e.g. netball scoring breakdown</div></div>
+    <div class="vc"><div class="vc-term">Divided bar</div><div class="vc-def">Horizontal bar split into sections showing proportions. Good for comparing across groups.</div><div class="vc-eg">e.g. NBL points by shot type</div></div>
+  </div>
+
+  <hr class="divider">
+  <p class="section-title">Self-Assessment Checklist</p>
+  <div class="checklist">
+    <label class="ci"><input type="checkbox"> I can name all eight graph types covered in this chapter.</label>
+    <label class="ci"><input type="checkbox"> I can explain when to use a frequency histogram instead of a column graph (and vice versa).</label>
+    <label class="ci"><input type="checkbox"> I can state the four required features every graph must include.</label>
+    <label class="ci"><input type="checkbox"> I can read values from each of the eight graph types.</label>
+    <label class="ci"><input type="checkbox"> I know that histogram bars must touch because the data is continuous.</label>
+    <label class="ci"><input type="checkbox"> I can explain what a frequency polygon shows and how it is drawn.</label>
+    <label class="ci"><input type="checkbox"> I can select the most appropriate graph for a given dataset and justify my choice.</label>
+    <label class="ci"><input type="checkbox"> I understand that a sector graph and divided bar can show similar things, but suit different purposes.</label>
+  </div>
+
+</div>
+</div><!-- end reflect -->
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+/* ── Tab navigation ── */
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+/* ── Graph gallery ── */
+function showGraph(type) {
+  document.querySelectorAll('.graph-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.graph-pill').forEach(b => b.classList.remove('active'));
+  document.getElementById('gp-' + type).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Draw pie on first view
+  if (type === 'sector' && !window.pieDrawn) { drawPie(); window.pieDrawn = true; }
+}
+
+/* ── Pie chart (Sector graph) ── */
+function drawPie() {
+  const g = document.getElementById('pie-slices');
+  const cx = 160, cy = 158, r = 108;
+  const data = [
+    { pct: 42, color: '#1A6FA5' },
+    { pct: 28, color: '#2B7A4B' },
+    { pct: 18, color: '#D98A0A' },
+    { pct: 12, color: '#C94233' }
+  ];
+  const pctLabels = ['42%', '28%', '18%', '12%'];
+  let angle = -Math.PI / 2;
+  data.forEach((d, i) => {
+    const sweep = (d.pct / 100) * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    const x2 = cx + r * Math.cos(angle + sweep);
+    const y2 = cy + r * Math.sin(angle + sweep);
+    const large = sweep > Math.PI ? 1 : 0;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z`);
+    path.setAttribute('fill', d.color);
+    path.setAttribute('stroke', 'white');
+    path.setAttribute('stroke-width', '2.5');
+    g.appendChild(path);
+    const mid = angle + sweep / 2;
+    const lx = cx + r * 0.62 * Math.cos(mid);
+    const ly = cy + r * 0.62 * Math.sin(mid);
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', lx.toFixed(1));
+    txt.setAttribute('y', ly.toFixed(1));
+    txt.setAttribute('text-anchor', 'middle');
+    txt.setAttribute('dominant-baseline', 'middle');
+    txt.setAttribute('font-family', 'Nunito, sans-serif');
+    txt.setAttribute('font-size', '12');
+    txt.setAttribute('font-weight', '800');
+    txt.setAttribute('fill', 'white');
+    txt.textContent = pctLabels[i];
+    g.appendChild(txt);
+    angle += sweep;
+  });
+}
+
+/* ── Frequency polygon toggle ── */
+let polyOn = false;
+function togglePolygon() {
+  polyOn = !polyOn;
+  const ids = ['freq-poly','pp1','pp2','pp3','pp4','pp5'];
+  ids.forEach(id => {
+    document.getElementById(id).style.display = polyOn ? 'block' : 'none';
+  });
+  const btn = document.getElementById('poly-toggle');
+  btn.classList.toggle('on', polyOn);
+  btn.textContent = polyOn ? '〰 Hide Frequency Polygon' : '〰 Show Frequency Polygon';
+}
+
+/* ── Explore: feature audit ── */
+const featState = { 'fi-title': null, 'fi-xlabel': null, 'fi-scale': null, 'fi-source': null };
+const featCorrect = { 'fi-title': 'not-found', 'fi-xlabel': 'found', 'fi-scale': 'found', 'fi-source': 'not-found' };
+
+function toggleFeat(id, defaultState) {
+  const el = document.getElementById(id);
+  const current = el.dataset.state;
+  if (!current) {
+    el.dataset.state = defaultState;
+    el.classList.remove('found','not-found');
+    el.classList.add(defaultState === 'found' ? 'found' : 'not-found');
+    el.querySelector('.feat-badge').textContent = defaultState === 'found' ? '✅ Present' : '❌ Missing';
+  } else if (current === 'found') {
+    el.dataset.state = 'not-found';
+    el.classList.replace('found','not-found');
+    el.querySelector('.feat-badge').textContent = '❌ Missing';
+  } else {
+    el.dataset.state = 'found';
+    el.classList.replace('not-found','found');
+    el.querySelector('.feat-badge').textContent = '✅ Present';
+  }
+}
+
+function checkAudit() {
+  const ids = ['fi-title','fi-xlabel','fi-scale','fi-source'];
+  let score = 0;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    const state = el.dataset.state;
+    if (state === featCorrect[id]) score++;
+    // Highlight correct/incorrect
+    el.classList.remove('found','not-found');
+    if (featCorrect[id] === 'found') {
+      el.classList.add('found');
+      el.querySelector('.feat-badge').textContent = '✅ Present';
+    } else {
+      el.classList.add('not-found');
+      el.querySelector('.feat-badge').textContent = '❌ Missing';
+    }
+  });
+  const res = document.getElementById('audit-result');
+  if (score === 4) {
+    res.className = 'audit-result good';
+    res.innerHTML = '✅ Perfect audit! You correctly identified all four features. Title ❌, Axis labels ✅ (x-axis label "Round" is present), Scale ✅ (y-axis numbers 0–6 are present), Source ❌. The graph is missing its title and source — two of the four required features.';
+  } else {
+    res.className = 'audit-result partial';
+    res.innerHTML = `You identified ${score}/4 correctly. Check your answers: <strong>Title</strong> is Missing ❌ (the blank/dashed area at the top has no title text). <strong>Axis labels</strong> are Present ✅ (x-axis says "Round"). <strong>Scale</strong> is Present ✅ (y-axis shows 0, 2, 4, 6). <strong>Source</strong> is Missing ❌ (no source is listed below the graph).`;
+  }
+  res.style.display = 'block';
+}
+
+/* ── Which Graph activity ── */
+function wgAns(btn, qId) {
+  const q = document.getElementById(qId);
+  if (q.classList.contains('answered')) return;
+  q.classList.add('answered');
+  const isCorrect = btn.dataset.result === 'correct';
+  q.querySelectorAll('.wg-opt').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.result === 'correct') b.classList.add('correct');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'wrong-sel');
+  if (!isCorrect) {
+    q.querySelector('.wg-opt[data-result="correct"]').classList.add('show-cor');
+  }
+  const fb = document.getElementById('fb-' + qId);
+  fb.textContent = btn.dataset.msg;
+  fb.className = 'wg-fb ' + (isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+}
+
+/* ── Tier selection ── */
+function selectTier(tier) {
+  document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tier-qs').forEach(q => q.classList.remove('active'));
+  document.querySelector('[data-tier="' + tier + '"]').classList.add('active');
+  document.getElementById('qs-' + tier).classList.add('active');
+}
+
+/* ── MCQ handler ── */
+function mcqAns(btn) {
+  const q = btn.closest('.mcq-q');
+  if (q.classList.contains('answered')) return;
+  q.classList.add('answered');
+  const isCorrect = btn.dataset.result === 'correct';
+  q.querySelectorAll('.opt').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.result === 'correct') b.classList.add('correct');
+    else b.classList.add('wrong-opt');
+  });
+  btn.classList.remove('correct','wrong-opt');
+  btn.classList.add(isCorrect ? 'selected-correct' : 'selected-wrong');
+  const fb = q.querySelector('.feedback');
+  fb.textContent = btn.dataset.msg;
+  fb.className = 'feedback ' + (isCorrect ? 'fb-correct' : 'fb-wrong');
+  fb.style.display = 'block';
+}
+
+/* ── Journal ── */
+function saveJournal(id) {
+  localStorage.setItem('dat-ch2-' + id, document.getElementById(id).value);
+  const ok = document.getElementById('ok-' + id);
+  ok.style.display = 'inline';
+  setTimeout(() => { ok.style.display = 'none'; }, 2000);
+}
+function autoSave(id) {
+  localStorage.setItem('dat-ch2-' + id, document.getElementById(id).value);
+}
+['wm1','wm2','wm3'].forEach(id => {
+  const saved = localStorage.getItem('dat-ch2-' + id);
+  if (saved) document.getElementById(id).value = saved;
+});
+</script>
+
+</body>
+</html>
