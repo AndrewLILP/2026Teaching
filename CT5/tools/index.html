@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT5 Tools — Computing Technology</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────────────── */
+:root {
+  --bg:           #0b0d18;
+  --surface:      #10121f;
+  --surface-2:    #161928;
+  --surface-3:    #1c2030;
+  --border:       rgba(255,255,255,0.07);
+  --border-md:    rgba(255,255,255,0.13);
+
+  /* Amber — primary workspace accent */
+  --amber:        #f4a261;
+  --amber-light:  #f7bc8a;
+  --amber-deep:   #c47a3a;
+  --amber-dim:    rgba(244,162,97,0.14);
+  --amber-glow:   rgba(244,162,97,0.06);
+
+  /* Supporting */
+  --violet:       #5b4dd4;
+  --violet-light: #7c6fea;
+  --violet-dim:   rgba(91,77,212,0.14);
+  --teal:         #2ec4b6;
+  --teal-dim:     rgba(46,196,182,0.12);
+  --rose:         #e76f8a;
+  --rose-dim:     rgba(231,111,138,0.12);
+  --sage:         #7ecba1;
+  --sage-dim:     rgba(126,203,161,0.12);
+  --sky:          #60b8e0;
+  --sky-dim:      rgba(96,184,224,0.12);
+
+  --text:         #e8e4f8;
+  --text-muted:   #9490b8;
+  --text-faint:   #5a5678;
+  --mono:         'JetBrains Mono', monospace;
+  --sans:         'DM Sans', sans-serif;
+  --display:      'Syne', sans-serif;
+  --radius:       12px;
+  --radius-lg:    20px;
+}
+
+/* ─── RESET ──────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── TEXTURE ────────────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.02; pointer-events: none; z-index: 0;
+}
+
+/* ─── ORBS ───────────────────────────────────────────────────────── */
+.orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+.orb-1 { width: 500px; height: 500px; background: rgba(244,162,97,0.10); top: -100px; right: -80px; }
+.orb-2 { width: 400px; height: 400px; background: rgba(91,77,212,0.12);  bottom: 10%; left: -60px; }
+.orb-3 { width: 300px; height: 300px; background: rgba(46,196,182,0.06); top: 50%;   left: 45%; }
+
+/* ─── NAV ────────────────────────────────────────────────────────── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,13,24,0.9);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; gap: 1.5rem; height: 56px;
+}
+.nav-logo {
+  font-family: 'Courier New', monospace; font-size: 0.9rem; font-weight: 700;
+  color: #AFA9EC; letter-spacing: -0.02em; text-decoration: none; flex-shrink: 0;
+}
+.nav-logo span { color: var(--text-muted); }
+.nav-crumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-faint); }
+.nav-crumb a { color: var(--text-faint); text-decoration: none; transition: color 0.2s; }
+.nav-crumb a:hover { color: var(--text-muted); }
+.nav-crumb .sep { opacity: 0.5; }
+.nav-crumb .current { color: var(--amber-light); }
+.nav-back {
+  margin-left: auto; font-family: var(--mono); font-size: 0.72rem;
+  color: var(--text-faint); text-decoration: none; border: 1px solid var(--border);
+  padding: 0.3rem 0.75rem; border-radius: 6px; transition: color 0.2s, border-color 0.2s;
+}
+.nav-back:hover { color: var(--amber-light); border-color: rgba(244,162,97,0.4); }
+
+/* ─── LAYOUT ─────────────────────────────────────────────────────── */
+.wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+/* ─── HERO ───────────────────────────────────────────────────────── */
+.hero { padding: 4.5rem 0 2rem; }
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber-light); margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--amber-light); display: inline-block; }
+.hero h1 {
+  font-family: var(--display); font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 800; line-height: 1.06; letter-spacing: -0.035em;
+  color: var(--text); margin-bottom: 1rem; max-width: 700px;
+}
+.hero h1 em { font-style: normal; color: var(--amber-light); }
+.hero-sub { font-size: 1rem; color: var(--text-muted); max-width: 540px; line-height: 1.7; }
+
+/* ─── TOOL CATEGORY SECTIONS ─────────────────────────────────────── */
+.tool-section { padding: 3rem 0; border-top: 1px solid var(--border); }
+.section-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+.section-label {
+  font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--amber-light);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.section-label::before { content: ''; width: 16px; height: 1px; background: var(--amber-light); display: inline-block; }
+.section-status {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 100px; border: 1px solid;
+}
+.status-live   { color: var(--sage); border-color: rgba(126,203,161,0.4); background: var(--sage-dim); }
+.status-soon   { color: var(--text-faint); border-color: var(--border); background: rgba(255,255,255,0.03); }
+h2.tool-title {
+  font-family: var(--display); font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 0.5rem;
+}
+.section-intro { font-size: 0.9rem; color: var(--text-muted); max-width: 600px; line-height: 1.7; margin-bottom: 1.8rem; }
+
+/* ─── COMING SOON CARDS ──────────────────────────────────────────── */
+.coming-soon-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.coming-soon-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.4rem;
+  opacity: 0.6;
+}
+.cs-icon { font-size: 1.6rem; margin-bottom: 0.7rem; display: block; filter: grayscale(0.4); }
+.cs-title { font-family: var(--display); font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 0.3rem; }
+.cs-desc  { font-size: 0.8rem; color: var(--text-faint); line-height: 1.5; margin-bottom: 0.8rem; }
+.cs-badge {
+  font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text-faint); border: 1px solid var(--border);
+  padding: 0.2rem 0.55rem; border-radius: 4px; display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATASET EXPLORER
+═══════════════════════════════════════════════════════════════════ */
+.explorer {
+  background: var(--surface);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ── Explorer header ── */
+.explorer-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+}
+.explorer-title { font-family: var(--display); font-size: 1rem; font-weight: 700; color: var(--text); }
+.explorer-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-left: auto; }
+
+/* ── Dataset tabs ── */
+.dataset-tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.dataset-tabs::-webkit-scrollbar { display: none; }
+.ds-tab {
+  font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.07em; padding: 0.9rem 1.2rem;
+  border: none; background: none; color: var(--text-faint);
+  cursor: pointer; white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.ds-tab:hover { color: var(--text-muted); }
+.ds-tab.active { color: var(--amber-light); border-bottom-color: var(--amber); }
+
+/* ── Explorer body ── */
+.explorer-body { display: grid; grid-template-columns: 280px 1fr; min-height: 480px; }
+.explorer-sidebar {
+  border-right: 1px solid var(--border);
+  padding: 1.25rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+}
+.explorer-main { padding: 1.5rem; display: flex; flex-direction: column; }
+
+/* ── Sidebar: dataset info ── */
+.ds-info-label {
+  font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.4rem;
+}
+.ds-info-value { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+.ds-question {
+  font-size: 0.85rem; color: var(--amber-light); font-style: italic;
+  line-height: 1.55; padding: 0.65rem 0.8rem;
+  background: var(--amber-glow); border: 1px solid rgba(244,162,97,0.18);
+  border-radius: 8px;
+}
+
+/* ── Chart type selector ── */
+.chart-type-label {
+  font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 0.5rem;
+}
+.chart-type-btns { display: flex; flex-direction: column; gap: 0.4rem; }
+.chart-type-btn {
+  font-family: var(--sans); font-size: 0.82rem; color: var(--text-muted);
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  padding: 0.55rem 0.8rem; cursor: pointer; text-align: left;
+  transition: all 0.18s; display: flex; align-items: center; gap: 0.6rem;
+}
+.chart-type-btn:hover { border-color: var(--border-md); color: var(--text); }
+.chart-type-btn.active {
+  background: var(--amber-dim); border-color: rgba(244,162,97,0.4);
+  color: var(--amber-light);
+}
+.chart-type-btn .ct-icon { font-size: 0.9rem; width: 20px; text-align: center; flex-shrink: 0; }
+
+/* ── Data peek (small table) ── */
+.data-peek {
+  background: var(--surface-2); border-radius: 8px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.data-peek-header {
+  font-family: var(--mono); font-size: 0.6rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-faint); padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+.data-peek table { width: 100%; border-collapse: collapse; }
+.data-peek td {
+  font-family: var(--mono); font-size: 0.66rem; color: var(--text-muted);
+  padding: 0.3rem 0.7rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.data-peek tr:last-child td { border-bottom: none; }
+.data-peek td:first-child { color: var(--text-faint); }
+.data-peek td:last-child  { color: var(--amber-light); text-align: right; }
+
+/* ── Chart area ── */
+.chart-area { flex: 1; position: relative; min-height: 320px; margin-bottom: 1rem; }
+.chart-area canvas { width: 100% !important; }
+.chart-insight {
+  padding: 0.8rem 1rem;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  border-radius: 8px; display: flex; gap: 0.6rem; align-items: flex-start;
+}
+.insight-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 0.05rem; }
+.insight-text { font-size: 0.8rem; color: var(--text-muted); line-height: 1.55; }
+.insight-text strong { color: var(--text); }
+
+/* ── Why this chart? note ── */
+.why-chart {
+  margin-top: 0.75rem; padding: 0.65rem 0.9rem;
+  background: rgba(0,0,0,0.2); border-radius: 8px;
+  border: 1px solid var(--border); font-size: 0.78rem;
+  color: var(--text-faint); line-height: 1.5;
+}
+.why-chart strong { color: var(--text-muted); font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; }
+
+/* ─── FOOTER ─────────────────────────────────────────────────────── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 2rem; max-width: 1100px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 1rem; flex-wrap: wrap;
+}
+footer p { font-size: 0.75rem; color: var(--text-faint); font-family: var(--mono); }
+
+/* ─── ANIMATIONS ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.explorer { animation: fadeUp 0.4s ease both; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  .explorer-body { grid-template-columns: 1fr; }
+  .explorer-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  .chart-type-btns { flex-direction: row; flex-wrap: wrap; }
+  .chart-type-btn  { flex: 1; min-width: 120px; }
+  .coming-soon-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 540px) {
+  .coming-soon-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ─── NAV ──────────────────────────────────────────────────────── -->
+<nav>
+  <a class="nav-logo" href="../index.html"><span>[</span>CT<span>/]</span></a>
+  <div class="nav-crumb">
+    <a href="../index.html">CT5</a>
+    <span class="sep">›</span>
+    <span class="current">Tools</span>
+  </div>
+  <a class="nav-back" href="../index.html">← CT5 Home</a>
+</nav>
+
+<!-- ─── HERO ─────────────────────────────────────────────────────── -->
+<div class="wrap">
+  <div class="hero">
+    <p class="hero-eyebrow">CT5 Computing Technology</p>
+    <h1>Interactive <em>Tools</em></h1>
+    <p class="hero-sub">Hands-on tools to explore computing concepts — data, algorithms, game design and more. Use them alongside your lessons and project notebook.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOOL 1 — DATA VISUALISATION EXPLORER
+════════════════════════════════════════════════════════════════ -->
+<div class="wrap">
+  <div class="tool-section">
+    <div class="section-header">
+      <p class="section-label">Data visualisation</p>
+      <span class="section-status status-live">● Live</span>
+    </div>
+    <h2 class="tool-title">Dataset Explorer</h2>
+    <p class="section-intro">
+      Choose a game dataset and switch between chart types to see how the same data looks — and what each chart reveals or hides. Connect to <a href="../careers/games-data-analyst.html" style="color:var(--amber-light);text-decoration:none;border-bottom:1px solid rgba(244,162,97,0.3);">Games / Data Analyst</a> career page.
+    </p>
+
+    <div class="explorer" id="explorer">
+
+      <!-- Header -->
+      <div class="explorer-header">
+        <span style="font-size:1.1rem">📊</span>
+        <span class="explorer-title">Game Dataset Explorer</span>
+        <span class="explorer-subtitle">CT5-DAT-01 · CT5-DAT-02</span>
+      </div>
+
+      <!-- Dataset tabs -->
+      <div class="dataset-tabs" role="tablist">
+        <button class="ds-tab active" data-ds="board"   role="tab">🎲 Board game</button>
+        <button class="ds-tab"        data-ds="collect" role="tab">🃏 Collectibles</button>
+        <button class="ds-tab"        data-ds="driving" role="tab">🚗 Driving sim</button>
+        <button class="ds-tab"        data-ds="biz"     role="tab">🏢 Business sim</button>
+      </div>
+
+      <!-- Body -->
+      <div class="explorer-body">
+
+        <!-- Sidebar -->
+        <div class="explorer-sidebar">
+          <div>
+            <div class="ds-info-label">Dataset</div>
+            <div class="ds-info-value" id="dsName">—</div>
+          </div>
+          <div>
+            <div class="ds-info-label">Analyst question</div>
+            <div class="ds-question" id="dsQuestion">—</div>
+          </div>
+          <div>
+            <div class="chart-type-label">Chart type</div>
+            <div class="chart-type-btns" id="chartTypeBtns"></div>
+          </div>
+          <div class="data-peek">
+            <div class="data-peek-header">Sample data</div>
+            <table id="dataPeekTable"></table>
+          </div>
+        </div>
+
+        <!-- Main chart area -->
+        <div class="explorer-main">
+          <div class="chart-area">
+            <canvas id="explorerChart"></canvas>
+          </div>
+          <div class="chart-insight">
+            <span class="insight-icon">💡</span>
+            <div class="insight-text" id="insightText">Select a dataset and chart type to begin.</div>
+          </div>
+          <div class="why-chart" id="whyChart"></div>
+        </div>
+
+      </div><!-- /explorer-body -->
+    </div><!-- /explorer -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TOOL SECTIONS — COMING SOON
+════════════════════════════════════════════════════════════════ -->
+
+<!-- Algorithm Tools -->
+<div class="wrap">
+  <div class="tool-section">
+    <div class="section-header">
+      <p class="section-label">Algorithm tools</p>
+      <span class="section-status status-soon">Coming soon</span>
+    </div>
+    <h2 class="tool-title">Algorithm Explorer</h2>
+    <p class="section-intro">Step through sorting, searching and pathfinding algorithms with animated visualisations — using game-world examples like inventory sorting and NPC navigation.</p>
+    <div class="coming-soon-grid">
+      <div class="coming-soon-card">
+        <span class="cs-icon">🔃</span>
+        <div class="cs-title">Sorting Visualiser</div>
+        <div class="cs-desc">Watch bubble sort, insertion sort and merge sort step through a hand of cards or a leaderboard. Compare speed and efficiency.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">🔍</span>
+        <div class="cs-title">Search Algorithms</div>
+        <div class="cs-desc">Linear vs binary search on a game inventory — see the difference in comparisons needed as inventory size grows.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">🗺</span>
+        <div class="cs-title">Pathfinding</div>
+        <div class="cs-desc">A* and BFS pathfinding on a tile-based game grid. Draw walls, set a goal and watch the algorithm find a route.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Design Calculators -->
+<div class="wrap">
+  <div class="tool-section">
+    <div class="section-header">
+      <p class="section-label">Game design</p>
+      <span class="section-status status-soon">Coming soon</span>
+    </div>
+    <h2 class="tool-title">Game Design Calculators</h2>
+    <p class="section-intro">Practical calculators for game mechanics — probability, balance, economy and scoring systems. Connect your design decisions to the maths behind them.</p>
+    <div class="coming-soon-grid">
+      <div class="coming-soon-card">
+        <span class="cs-icon">🎲</span>
+        <div class="cs-title">Dice Probability Calculator</div>
+        <div class="cs-desc">Calculate the probability of rolling target values with any combination of dice. Essential for board game balance.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">⚖️</span>
+        <div class="cs-title">Game Economy Balancer</div>
+        <div class="cs-desc">Model income and spending rates in a game economy. Find the tipping point where players run out of resources — or become too powerful.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">📈</span>
+        <div class="cs-title">XP Curve Designer</div>
+        <div class="cs-desc">Design a level progression curve — linear, exponential or custom. See how your XP thresholds feel to a player over a full playthrough.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pseudocode & Logic Tools -->
+<div class="wrap">
+  <div class="tool-section">
+    <div class="section-header">
+      <p class="section-label">Programming concepts</p>
+      <span class="section-status status-soon">Coming soon</span>
+    </div>
+    <h2 class="tool-title">Pseudocode &amp; Logic Tools</h2>
+    <p class="section-intro">Tools to support algorithm design — trace tables, flowchart builders and NSW pseudocode reference. Bridge the gap between thinking and code.</p>
+    <div class="coming-soon-grid">
+      <div class="coming-soon-card">
+        <span class="cs-icon">📋</span>
+        <div class="cs-title">Trace Table Generator</div>
+        <div class="cs-desc">Enter pseudocode and step through a trace table manually. Track variable states at each line — without running real code.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">🔀</span>
+        <div class="cs-title">Flowchart Builder</div>
+        <div class="cs-desc">Drag-and-drop flowchart blocks for sequence, selection and repetition. Export as an image for your project notebook.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+      <div class="coming-soon-card">
+        <span class="cs-icon">📖</span>
+        <div class="cs-title">NSW Pseudocode Reference</div>
+        <div class="cs-desc">Interactive reference card for NSW pseudocode conventions — with side-by-side C# equivalents for each construct.</div>
+        <span class="cs-badge">Coming soon</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────── -->
+<footer>
+  <p>NSW Computing Technology 7–10 Syllabus (2022)</p>
+  <p>CT5 Tools · file://-compatible · no server required</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCRIPT — DATASET EXPLORER
+════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+
+  /* ── Chart.js global defaults ── */
+  Chart.defaults.color = 'rgba(148,144,184,0.8)';
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+  Chart.defaults.font.size   = 11;
+
+  /* ── Colour palette ── */
+  var C = {
+    amber:      '#f4a261',
+    amberDim:   'rgba(244,162,97,0.18)',
+    amberLine:  'rgba(244,162,97,0.8)',
+    violet:     '#7c6fea',
+    violetDim:  'rgba(124,111,234,0.2)',
+    teal:       '#2ec4b6',
+    tealDim:    'rgba(46,196,182,0.18)',
+    rose:       '#e76f8a',
+    roseDim:    'rgba(231,111,138,0.18)',
+    sage:       '#7ecba1',
+    sageDim:    'rgba(126,203,161,0.18)',
+    sky:        '#60b8e0',
+    skyDim:     'rgba(96,184,224,0.18)',
+    grid:       'rgba(255,255,255,0.05)',
+    border:     'rgba(255,255,255,0.07)',
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     DATASETS
+  ═══════════════════════════════════════════════════════ */
+  var DATASETS = {
+
+    /* ── BOARD GAME ── */
+    board: {
+      name: 'Board Game — Tile Landings',
+      question: 'Which properties are landed on most often across 500 turns?',
+      peek: [
+        ['Brown St',   '18'], ['Blue Ave',  '34'], ['Tax Square','12'],
+        ['Red Rd',     '41'], ['Jail',      '52'], ['Green Park','29'],
+      ],
+      peekHeaders: ['Property', 'Landings'],
+      charts: {
+        bar: {
+          label: 'Bar chart',
+          icon:  '▬',
+          why:   'A bar chart is ideal here — each tile is a named category, and the bar heights make it easy to spot the most and least visited properties at a glance.',
+          insight: '<strong>Finding:</strong> Jail and the red/orange properties are landed on far more often than the brown and purple sets — a common board game balance issue where early properties are undervalued.',
+          build: function () {
+            return {
+              type: 'bar',
+              data: {
+                labels: ['Brown St','Blue Ave','Tax Sq','Red Rd','Jail','Green Pk','Station','Yellow Ln','White St','Purple Pl','Orange Av','Pink St','Grey Rd','Teal Ter'],
+                datasets: [{
+                  label: 'Landings (500 turns)',
+                  data:  [18, 34, 12, 41, 52, 29, 38, 44, 22, 16, 47, 31, 25, 19],
+                  backgroundColor: [
+                    C.violetDim,C.violetDim,C.amberDim,C.roseDim,C.roseDim,
+                    C.tealDim,C.amberDim,C.amberDim,C.violetDim,C.violetDim,
+                    C.roseDim,C.roseDim,C.tealDim,C.tealDim
+                  ],
+                  borderColor: [
+                    C.violet,C.violet,C.amber,C.rose,C.rose,
+                    C.teal,C.amber,C.amber,C.violet,C.violet,
+                    C.rose,C.rose,C.teal,C.teal
+                  ],
+                  borderWidth: 1.5,
+                  borderRadius: 4,
+                }]
+              },
+              options: barOpts('Landings', 'Number of landings in 500 turns')
+            };
+          }
+        },
+        horizontal: {
+          label: 'Horizontal bar',
+          icon:  '≡',
+          why:   'When property names are long, flipping the chart horizontal prevents label overlap and makes the ranking easier to read top-to-bottom.',
+          insight: '<strong>Same data, different readability:</strong> The horizontal layout makes the ranking immediately clear — Jail leads, then Orange Ave, then Red Rd. Rankings with many categories often read better horizontally.',
+          build: function () {
+            return {
+              type: 'bar',
+              data: {
+                labels: ['Jail','Orange Ave','Red Rd','Station','Yellow Ln','Blue Ave','Green Pk','Pink St','Grey Rd','Brown St','Teal Ter','Purple Pl','White St','Tax Sq'],
+                datasets: [{
+                  label: 'Landings',
+                  data:  [52, 47, 41, 38, 44, 34, 29, 31, 25, 18, 19, 16, 22, 12],
+                  backgroundColor: C.amberDim,
+                  borderColor:     C.amber,
+                  borderWidth:     1.5,
+                  borderRadius:    4,
+                }]
+              },
+              options: hbarOpts('Landings')
+            };
+          }
+        },
+        pie: {
+          label: 'Donut chart',
+          icon:  '◎',
+          why:   'A donut chart shows each property as a share of all 500 landings. Useful for communicating proportion to a non-technical audience — though it loses the fine ranking detail.',
+          insight: '<strong>Proportion view:</strong> The "Jail cluster" (Jail + Just Visiting) accounts for roughly 1 in 8 landings. The donut makes this proportion vivid but hides individual differences between close values.',
+          build: function () {
+            var labels = ['Jail','Orange Ave','Yellow Ln','Red Rd','Station','Blue Ave','Pink St','Green Pk','Grey Rd','White St','Teal Ter','Brown St','Purple Pl','Tax Sq'];
+            var data   = [52,47,44,41,38,34,31,29,25,22,19,18,16,12];
+            var colors = [C.rose,C.amber,C.amber,C.rose,C.amber,C.violet,C.rose,C.teal,C.teal,C.violet,C.teal,C.violet,C.violet,C.amberLine];
+            return {
+              type: 'doughnut',
+              data: { labels: labels, datasets: [{ data: data, backgroundColor: colors.map(function(c){ return c.replace(')',',0.7)').replace('rgb','rgba'); }), borderColor: 'var(--surface)', borderWidth: 2 }] },
+              options: donutOpts()
+            };
+          }
+        }
+      }
+    },
+
+    /* ── COLLECTIBLES ── */
+    collect: {
+      name: 'Collectibles — Card Win Rate by Rarity',
+      question: 'Do higher rarity cards actually win more often?',
+      peek: [
+        ['Common',    '48%'], ['Uncommon', '51%'],
+        ['Rare',      '54%'], ['Epic',     '58%'],
+        ['Legendary', '63%'],
+      ],
+      peekHeaders: ['Rarity', 'Win rate'],
+      charts: {
+        bar: {
+          label: 'Bar chart',
+          icon: '▬',
+          why:  'Each rarity tier is a distinct category. A bar chart shows the win rate for each tier and makes the upward trend immediately obvious.',
+          insight: '<strong>Balance concern:</strong> Legendary cards win 63% of games — well above the 50% fair-play threshold. This suggests the card economy needs rebalancing before release.',
+          build: function () {
+            return {
+              type: 'bar',
+              data: {
+                labels: ['Common','Uncommon','Rare','Epic','Legendary'],
+                datasets: [{
+                  label: 'Win rate (%)',
+                  data:  [48, 51, 54, 58, 63],
+                  backgroundColor: [C.violetDim, C.tealDim, C.amberDim, C.roseDim, 'rgba(231,111,138,0.35)'],
+                  borderColor:     [C.violet,    C.teal,    C.amber,    C.rose,     C.rose],
+                  borderWidth: 1.5, borderRadius: 4,
+                }]
+              },
+              options: barOpts('Win rate (%)', 'Win rate % by card rarity')
+            };
+          }
+        },
+        line: {
+          label: 'Line chart',
+          icon: '╱',
+          why:  'Because rarity tiers have a natural order (Common → Legendary), a line chart emphasises the upward trend rather than treating each tier as isolated.',
+          insight: '<strong>Trend visible:</strong> The line makes the steady climb from Common to Legendary clear. The steeper jump between Epic and Legendary could signal that Legendary cards specifically need adjusting.',
+          build: function () {
+            return {
+              type: 'line',
+              data: {
+                labels: ['Common','Uncommon','Rare','Epic','Legendary'],
+                datasets: [{
+                  label: 'Win rate (%)',
+                  data:  [48, 51, 54, 58, 63],
+                  borderColor: C.amber, backgroundColor: C.amberDim,
+                  pointBackgroundColor: C.amber, pointRadius: 5,
+                  tension: 0.3, fill: true,
+                }]
+              },
+              options: lineOpts('Win rate (%)', 'Win rate % by card rarity', [44, 68])
+            };
+          }
+        },
+        scatter: {
+          label: 'Scatter plot',
+          icon: '⋮',
+          why:  'If each card were plotted individually (rarity score vs win rate), a scatter plot would reveal whether the relationship is consistent or driven by a few outlier cards.',
+          insight: '<strong>Individual cards visible:</strong> Most Common cards cluster near 48%, but a few outlier Commons punch above their weight — worth investigating. Two Legendary cards win over 70% of games, flagging them for review.',
+          build: function () {
+            var pts = [
+              // common
+              {x:1,y:45},{x:1,y:47},{x:1,y:48},{x:1,y:49},{x:1,y:46},{x:1,y:51},{x:1,y:44},{x:1,y:50},
+              // uncommon
+              {x:2,y:50},{x:2,y:52},{x:2,y:51},{x:2,y:49},{x:2,y:53},{x:2,y:50},
+              // rare
+              {x:3,y:53},{x:3,y:55},{x:3,y:54},{x:3,y:52},{x:3,y:56},{x:3,y:54},
+              // epic
+              {x:4,y:57},{x:4,y:59},{x:4,y:58},{x:4,y:60},{x:4,y:56},
+              // legendary
+              {x:5,y:61},{x:5,y:63},{x:5,y:65},{x:5,y:71},{x:5,y:74},
+            ];
+            return {
+              type: 'scatter',
+              data: { datasets: [{
+                label: 'Individual card win rate',
+                data: pts,
+                backgroundColor: C.amberDim, borderColor: C.amber,
+                pointRadius: 5, pointHoverRadius: 7,
+              }]},
+              options: scatterOpts(['','','Common','Uncommon','Rare','Epic','Legendary'], 'Win rate %', [42,77])
+            };
+          }
+        }
+      }
+    },
+
+    /* ── DRIVING SIM ── */
+    driving: {
+      name: 'Driving Sim — Lap Time Distribution',
+      question: 'How are lap times distributed across 40 players? Is there a difficulty spike?',
+      peek: [
+        ['Fastest',  '1m 12s'], ['Median',  '1m 34s'],
+        ['Slowest',  '2m 18s'], ['Std dev', '±14s'],
+        ['N players','40'],
+      ],
+      peekHeaders: ['Stat', 'Value'],
+      charts: {
+        histogram: {
+          label: 'Histogram',
+          icon: '∎',
+          why:  'Lap times are continuous quantitative data. A histogram groups them into time ranges (bins) to reveal the shape of the distribution — where most players land and whether there are outliers.',
+          insight: '<strong>Shape reveals difficulty:</strong> The distribution is slightly right-skewed — most players cluster around 1:30–1:40, but a long tail of slower times suggests some players are struggling significantly. The AI difficulty may need adjustment.',
+          build: function () {
+            return {
+              type: 'bar',
+              data: {
+                labels: ['1:10–1:20','1:20–1:30','1:30–1:40','1:40–1:50','1:50–2:00','2:00–2:10','2:10–2:20'],
+                datasets: [{
+                  label: 'Number of players',
+                  data:  [3, 7, 12, 9, 5, 3, 1],
+                  backgroundColor: C.tealDim, borderColor: C.teal,
+                  borderWidth: 1.5, borderRadius: 2, barPercentage: 1.0, categoryPercentage: 1.0,
+                }]
+              },
+              options: histOpts('Players', 'Lap time range', 'Players in each time range')
+            };
+          }
+        },
+        line: {
+          label: 'Line chart',
+          icon: '╱',
+          why:  'A line chart connects the bin midpoints to make the distribution shape easier to read as a smooth curve — useful for comparing against an expected normal distribution.',
+          insight: '<strong>Curve shape:</strong> The gentle right skew is clear — the peak is left of centre and the tail extends right. A perfectly balanced difficulty would show a symmetric bell curve centred on the intended completion time.',
+          build: function () {
+            return {
+              type: 'line',
+              data: {
+                labels: ['1:10–1:20','1:20–1:30','1:30–1:40','1:40–1:50','1:50–2:00','2:00–2:10','2:10–2:20'],
+                datasets: [{
+                  label: 'Number of players',
+                  data:  [3, 7, 12, 9, 5, 3, 1],
+                  borderColor: C.teal, backgroundColor: C.tealDim,
+                  pointBackgroundColor: C.teal, pointRadius: 5,
+                  tension: 0.4, fill: true,
+                }]
+              },
+              options: lineOpts('Players', 'Lap time distribution curve', [0, 15])
+            };
+          }
+        },
+        scatter: {
+          label: 'Scatter plot',
+          icon: '⋮',
+          why:  'Plotting each player individually shows the full spread of times including outliers — and allows a second variable (e.g. number of crashes) to be mapped to point size or colour.',
+          insight: '<strong>Outliers visible:</strong> Two players recorded times over 2:10 — well outside the main cluster. Checking their session data (crash count, controller type) might reveal why and help refine the difficulty curve.',
+          build: function () {
+            var times = [72,74,76,78,80,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,100,101,103,104,106,108,110,112,114,116,118,120,122,126,128,132,136,138];
+            var pts = times.map(function(t,i){ return {x: i+1, y: t}; });
+            return {
+              type: 'scatter',
+              data: { datasets: [{
+                label: 'Lap time (seconds)',
+                data: pts,
+                backgroundColor: C.tealDim, borderColor: C.teal,
+                pointRadius: 5, pointHoverRadius: 7,
+              }]},
+              options: scatterOpts(null, 'Lap time (seconds)', [65, 145], 'Player #')
+            };
+          }
+        }
+      }
+    },
+
+    /* ── BUSINESS SIM ── */
+    biz: {
+      name: 'Business Sim — Revenue vs Expenses',
+      question: 'Is the simulated business economy staying balanced over 8 quarters?',
+      peek: [
+        ['Q1 Revenue', '$42k'], ['Q1 Expenses','$38k'],
+        ['Q4 Revenue', '$68k'], ['Q4 Expenses','$61k'],
+        ['Q8 Revenue', '$95k'], ['Q8 Expenses','$89k'],
+      ],
+      peekHeaders: ['Period', 'Value'],
+      charts: {
+        line: {
+          label: 'Line chart',
+          icon: '╱',
+          why:  'Revenue and expenses are both measured over time with a natural order. A dual-line chart is the clearest way to show both trends together and reveal whether the gap between them is growing or shrinking.',
+          insight: '<strong>Economy check:</strong> Revenue and expenses are both growing steadily, and the gap (profit) is widening slightly each quarter. This suggests the simulation is economically viable but may become too easy in the late game.',
+          build: function () {
+            return {
+              type: 'line',
+              data: {
+                labels: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8'],
+                datasets: [
+                  { label: 'Revenue ($k)', data: [42,48,54,68,72,80,88,95], borderColor: C.sage, backgroundColor: C.sageDim, pointBackgroundColor: C.sage, pointRadius: 4, tension: 0.3, fill: false },
+                  { label: 'Expenses ($k)', data: [38,44,51,61,65,72,80,89], borderColor: C.rose, backgroundColor: C.roseDim, pointBackgroundColor: C.rose, pointRadius: 4, tension: 0.3, fill: false },
+                ]
+              },
+              options: lineOpts('$k', 'Revenue vs Expenses over 8 quarters', [30, 105])
+            };
+          }
+        },
+        bar: {
+          label: 'Grouped bar',
+          icon: '▬',
+          why:  'A grouped bar chart shows revenue and expenses side-by-side for each quarter — making it easy to compare the two values at any single point in time rather than focusing on the trend.',
+          insight: '<strong>Quarter-by-quarter comparison:</strong> Q3 shows the largest relative gap between revenue and expenses — a point where players might feel financially secure. Q8 shows them converging again, which could create late-game tension.',
+          build: function () {
+            return {
+              type: 'bar',
+              data: {
+                labels: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8'],
+                datasets: [
+                  { label: 'Revenue ($k)', data: [42,48,54,68,72,80,88,95], backgroundColor: C.sageDim, borderColor: C.sage, borderWidth: 1.5, borderRadius: 3 },
+                  { label: 'Expenses ($k)', data: [38,44,51,61,65,72,80,89], backgroundColor: C.roseDim, borderColor: C.rose, borderWidth: 1.5, borderRadius: 3 },
+                ]
+              },
+              options: barOpts('$k', 'Revenue vs Expenses ($k)')
+            };
+          }
+        },
+        area: {
+          label: 'Area chart',
+          icon: '◬',
+          why:  'An area (filled line) chart makes the profit gap between revenue and expenses visually obvious — the space between the two filled areas represents profit margin at a glance.',
+          insight: '<strong>Profit gap visible:</strong> The shaded area between the two lines represents gross profit each quarter. The widening gap from Q1 to Q5 then slight narrowing toward Q8 tells a clear story about the simulation\'s economic arc.',
+          build: function () {
+            return {
+              type: 'line',
+              data: {
+                labels: ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8'],
+                datasets: [
+                  { label: 'Revenue ($k)', data: [42,48,54,68,72,80,88,95], borderColor: C.sage, backgroundColor: 'rgba(126,203,161,0.25)', pointBackgroundColor: C.sage, pointRadius: 4, tension: 0.3, fill: true },
+                  { label: 'Expenses ($k)', data: [38,44,51,61,65,72,80,89], borderColor: C.rose, backgroundColor: 'rgba(11,13,24,0.6)', pointBackgroundColor: C.rose, pointRadius: 4, tension: 0.3, fill: true },
+                ]
+              },
+              options: lineOpts('$k', 'Revenue vs Expenses — area view', [30, 105])
+            };
+          }
+        }
+      }
+    }
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     CHART OPTION HELPERS
+  ═══════════════════════════════════════════════════════ */
+  function baseScales(xTitle, yTitle, yRange) {
+    var s = {
+      x: { grid: { color: C.grid }, ticks: { color: 'rgba(148,144,184,0.7)', font: { family: "'JetBrains Mono',monospace", size: 10 } } },
+      y: { grid: { color: C.grid }, ticks: { color: 'rgba(148,144,184,0.7)', font: { family: "'JetBrains Mono',monospace", size: 10 } },
+           border: { color: C.border } }
+    };
+    if (xTitle) s.x.title = { display: true, text: xTitle, color: 'rgba(148,144,184,0.6)', font: { size: 10, family: "'JetBrains Mono',monospace" } };
+    if (yTitle) s.y.title = { display: true, text: yTitle, color: 'rgba(148,144,184,0.6)', font: { size: 10, family: "'JetBrains Mono',monospace" } };
+    if (yRange) { s.y.min = yRange[0]; s.y.max = yRange[1]; }
+    return s;
+  }
+  function baseLegend() { return { labels: { color: 'rgba(148,144,184,0.8)', font: { family: "'JetBrains Mono',monospace", size: 10 }, boxWidth: 10, padding: 14 } }; }
+  function baseTooltip() { return { backgroundColor: '#1c2030', titleColor: '#e8e4f8', bodyColor: 'rgba(148,144,184,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10, cornerRadius: 8 }; }
+
+  function barOpts(yLabel, title) {
+    return { responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: baseLegend(), tooltip: baseTooltip(), title: { display: !!title, text: title, color: 'rgba(148,144,184,0.5)', font: { size: 10, family: "'JetBrains Mono',monospace" } } },
+      scales: baseScales(null, yLabel) };
+  }
+  function hbarOpts(xLabel) {
+    return { indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: baseLegend(), tooltip: baseTooltip() },
+      scales: baseScales(xLabel, null) };
+  }
+  function lineOpts(yLabel, title, yRange) {
+    return { responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: baseLegend(), tooltip: baseTooltip(), title: { display: !!title, text: title, color: 'rgba(148,144,184,0.5)', font: { size: 10, family: "'JetBrains Mono',monospace" } } },
+      scales: baseScales(null, yLabel, yRange) };
+  }
+  function histOpts(yLabel, xLabel, title) {
+    var o = barOpts(yLabel, title);
+    o.scales.x.title = { display: true, text: xLabel, color: 'rgba(148,144,184,0.6)', font: { size: 10, family: "'JetBrains Mono',monospace" } };
+    return o;
+  }
+  function donutOpts() {
+    return { responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: { position: 'right', labels: { color: 'rgba(148,144,184,0.8)', font: { family: "'JetBrains Mono',monospace", size: 9 }, boxWidth: 9, padding: 8 } }, tooltip: baseTooltip() } };
+  }
+  function scatterOpts(xLabels, yLabel, yRange, xTitle) {
+    var o = { responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+      plugins: { legend: baseLegend(), tooltip: baseTooltip() },
+      scales: baseScales(xTitle || null, yLabel, yRange) };
+    if (xLabels) { o.scales.x.ticks = { callback: function(v){ return xLabels[v] || ''; }, color: 'rgba(148,144,184,0.7)', font: { family: "'JetBrains Mono',monospace", size: 9 } }; }
+    return o;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     EXPLORER STATE & RENDER
+  ═══════════════════════════════════════════════════════ */
+  var state = { ds: 'board', chart: null, chartType: null };
+
+  function getDS()      { return DATASETS[state.ds]; }
+  function getCharts()  { return getDS().charts; }
+  function firstChart() { return Object.keys(getCharts())[0]; }
+
+  function renderSidebar() {
+    var ds = getDS();
+    document.getElementById('dsName').textContent     = ds.name;
+    document.getElementById('dsQuestion').textContent = ds.question;
+
+    /* chart type buttons */
+    var btns = document.getElementById('chartTypeBtns');
+    btns.innerHTML = '';
+    Object.keys(ds.charts).forEach(function (key) {
+      var c = ds.charts[key];
+      var b = document.createElement('button');
+      b.className = 'chart-type-btn' + (key === state.chartType ? ' active' : '');
+      b.setAttribute('data-type', key);
+      b.innerHTML = '<span class="ct-icon">' + c.icon + '</span>' + c.label;
+      b.addEventListener('click', function () { state.chartType = key; renderAll(); });
+      btns.appendChild(b);
+    });
+
+    /* data peek table */
+    var tbl = document.getElementById('dataPeekTable');
+    tbl.innerHTML = '';
+    ds.peek.forEach(function (row) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + row[0] + '</td><td>' + row[1] + '</td>';
+      tbl.appendChild(tr);
+    });
+  }
+
+  function renderChart() {
+    var ds    = getDS();
+    var cDef  = ds.charts[state.chartType];
+    var cfg   = cDef.build();
+    var ctx   = document.getElementById('explorerChart').getContext('2d');
+
+    if (state.chart) { state.chart.destroy(); state.chart = null; }
+    state.chart = new Chart(ctx, cfg);
+
+    document.getElementById('insightText').innerHTML  = cDef.insight;
+    document.getElementById('whyChart').innerHTML     = '<strong>Why this chart?</strong> ' + cDef.why;
+  }
+
+  function renderAll() {
+    renderSidebar();
+    renderChart();
+  }
+
+  /* ── Tab switching ── */
+  document.querySelectorAll('.ds-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.ds-tab').forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      state.ds        = tab.getAttribute('data-ds');
+      state.chartType = firstChart();
+      renderAll();
+    });
+  });
+
+  /* ── Init ── */
+  state.chartType = firstChart();
+  renderAll();
+
+})();
+</script>
+</body>
+</html>
