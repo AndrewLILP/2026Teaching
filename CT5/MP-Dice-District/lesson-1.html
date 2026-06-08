@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 1 · Dice District</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* ─── TOKENS ─── */
+  :root {
+    --board-green:  #1a3a2a;
+    --board-mid:    #22472f;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --green-prop:   #1e8449;
+    --rule-line:    rgba(201,168,76,0.35);
+    --phase-colour: #c0392b; /* red = Identifying & Defining */
+    --phase-bg:     rgba(192,57,43,0.12);
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--board-green);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.7;
+    min-height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 10px;
+    border: 3px solid var(--rule-line);
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--board-green);
+    border-bottom: 2px solid var(--rule-line);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 54px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.15rem;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+    margin-left: auto;
+  }
+
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cream-dark);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .nav-links a:hover { background: var(--rule-line); color: var(--gold); }
+  .nav-links a.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
+
+  /* ─── LESSON HEADER ─── */
+  .lesson-header {
+    border-bottom: 2px solid var(--rule-line);
+    padding: 3.5rem 5rem 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Phase colour bar across top */
+  .lesson-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: var(--phase-colour);
+  }
+
+  /* Diagonal pattern right side */
+  .lesson-header::after {
+    content: '';
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 200px;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 16px,
+      rgba(192,57,43,0.05) 16px,
+      rgba(192,57,43,0.05) 32px
+    );
+    pointer-events: none;
+  }
+
+  .lesson-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .phase-badge {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.65rem;
+    border-radius: 3px;
+    background: var(--phase-bg);
+    color: #e87070;
+    border: 1.5px solid rgba(192,57,43,0.4);
+  }
+
+  .lesson-num-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: rgba(240,220,170,0.45);
+  }
+
+  .lesson-header h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    line-height: 1;
+    color: var(--cream);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+
+  .lesson-header h1 em { font-style: italic; color: var(--gold); }
+
+  .lesson-tagline {
+    font-size: 1.05rem;
+    color: var(--cream-dark);
+    font-style: italic;
+    margin-bottom: 1.75rem;
+    max-width: 560px;
+  }
+
+  /* LI/SC table */
+  .lisc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    max-width: 860px;
+  }
+
+  .lisc-box {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+  }
+
+  .lisc-box-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.6rem;
+  }
+
+  .lisc-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .lisc-box li {
+    font-size: 0.9rem;
+    color: var(--cream-dark);
+    padding-left: 1rem;
+    position: relative;
+    line-height: 1.4;
+  }
+
+  .lisc-box li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 0.75rem;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 0;
+    align-items: start;
+  }
+
+  .content {
+    padding: 3rem 4rem 5rem 5rem;
+    border-right: 2px solid var(--rule-line);
+  }
+
+  .sidebar {
+    padding: 3rem 2rem 5rem 2rem;
+    position: sticky;
+    top: 54px;
+  }
+
+  /* ─── SECTION SHARED ─── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule-line);
+  }
+
+  .content-section {
+    margin-bottom: 3.25rem;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.7rem;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 0.9rem;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--gold-light);
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  p { margin-bottom: 0.85rem; color: var(--cream-dark); }
+  p:last-child { margin-bottom: 0; }
+  strong { color: var(--cream); font-weight: 600; }
+
+  /* ─── ANALYSIS TABLE ─── */
+  .analysis-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.92rem;
+  }
+
+  .analysis-table thead tr {
+    border-bottom: 2px solid var(--gold);
+  }
+
+  .analysis-table th {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+
+  .analysis-table td {
+    padding: 0.65rem 0.75rem;
+    color: var(--cream-dark);
+    border-bottom: 1px solid rgba(201,168,76,0.12);
+    vertical-align: top;
+    line-height: 1.45;
+  }
+
+  .analysis-table tr:last-child td { border-bottom: none; }
+
+  .analysis-table td:first-child {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--cream);
+    white-space: nowrap;
+  }
+
+  /* ─── GAME PRIMITIVE CARDS ─── */
+  .primitive-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .primitive-card {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1rem;
+    text-align: center;
+    transition: border-color 0.15s;
+  }
+
+  .primitive-card:hover { border-color: var(--gold); }
+
+  .primitive-icon {
+    font-size: 1.8rem;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .primitive-name {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.25rem;
+  }
+
+  .primitive-desc {
+    font-size: 0.8rem;
+    color: var(--cream-dark);
+    line-height: 1.4;
+  }
+
+  /* ─── REQUIREMENTS BUILDER ─── */
+  .req-builder {
+    background: rgba(0,0,0,0.25);
+    border: 2px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .req-builder-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rule-line);
+  }
+
+  .req-builder-title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .req-counter {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--cream-dark);
+  }
+
+  .req-counter span { color: var(--gold); font-weight: 600; }
+
+  .req-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .req-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .req-type-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.45rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .req-type-f  { background: rgba(39,174,96,0.2);  color: #58d68d; border: 1px solid rgba(39,174,96,0.4); }
+  .req-type-nf { background: rgba(36,113,163,0.2); color: #5dade2; border: 1px solid rgba(36,113,163,0.4); }
+
+  .req-input {
+    background: rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(201,168,76,0.2);
+    border-radius: 3px;
+    padding: 0.4rem 0.7rem;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: var(--cream);
+    width: 100%;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .req-input:focus { border-color: var(--gold); }
+  .req-input::placeholder { color: rgba(240,220,170,0.3); font-style: italic; }
+
+  .req-delete {
+    background: none;
+    border: none;
+    color: rgba(240,220,170,0.25);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.2rem 0.3rem;
+    border-radius: 3px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .req-delete:hover { color: #e87070; }
+
+  .req-add-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.45rem 1rem;
+    border-radius: 3px;
+    border: 1.5px solid;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn-functional {
+    background: rgba(39,174,96,0.1);
+    border-color: rgba(39,174,96,0.4);
+    color: #58d68d;
+  }
+
+  .btn-functional:hover { background: rgba(39,174,96,0.25); }
+
+  .btn-nonfunctional {
+    background: rgba(36,113,163,0.1);
+    border-color: rgba(36,113,163,0.4);
+    color: #5dade2;
+  }
+
+  .btn-nonfunctional:hover { background: rgba(36,113,163,0.25); }
+
+  .req-legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rule-line);
+  }
+
+  .req-legend-item {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--cream-dark);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* ─── TIERED TASKS ─── */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .tier-card {
+    border: 2px solid var(--rule-line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tier-head {
+    padding: 0.6rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tier-basic    .tier-head { background: rgba(39,174,96,0.2);  color: #58d68d;  border-bottom: 2px solid rgba(39,174,96,0.3); }
+  .tier-inter    .tier-head { background: rgba(36,113,163,0.2); color: #5dade2;  border-bottom: 2px solid rgba(36,113,163,0.3); }
+  .tier-advanced .tier-head { background: rgba(108,52,131,0.2); color: #bb8fce;  border-bottom: 2px solid rgba(108,52,131,0.3); }
+
+  .tier-body {
+    padding: 0.85rem 1rem;
+    background: rgba(0,0,0,0.15);
+  }
+
+  .tier-body ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .tier-body li {
+    font-size: 0.85rem;
+    color: var(--cream-dark);
+    padding-left: 0.9rem;
+    position: relative;
+    line-height: 1.4;
+  }
+
+  .tier-body li::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* ─── NOTEBOOK CHECKPOINT ─── */
+  .notebook-checkpoint {
+    background: rgba(201,168,76,0.07);
+    border: 2px solid rgba(201,168,76,0.4);
+    border-radius: 5px;
+    padding: 1.5rem 1.75rem;
+    margin-top: 1rem;
+    position: relative;
+  }
+
+  .notebook-checkpoint::before {
+    content: '📓  NOTEBOOK CHECKPOINT';
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 0.85rem;
+  }
+
+  .notebook-checkpoint ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .notebook-checkpoint li {
+    font-size: 0.92rem;
+    color: var(--cream-dark);
+    padding-left: 1.3rem;
+    position: relative;
+    line-height: 1.45;
+  }
+
+  .notebook-checkpoint li::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 0.85rem;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar-card {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sidebar-card-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.65rem;
+    display: block;
+  }
+
+  .sidebar-card p {
+    font-size: 0.88rem;
+    color: var(--cream-dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .outcome-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+  }
+
+  .outcome-chip {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.35);
+    border-radius: 2px;
+    padding: 0.15rem 0.4rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* Teacher note */
+  .teacher-note {
+    background: rgba(108,52,131,0.12);
+    border: 1.5px solid rgba(108,52,131,0.35);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .teacher-note-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #bb8fce;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .teacher-note p {
+    font-size: 0.83rem;
+    color: var(--cream-dark);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Lesson nav */
+  .lesson-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .lesson-nav a {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    padding: 0.55rem 0.5rem;
+    border-radius: 3px;
+    border: 1.5px solid var(--rule-line);
+    color: var(--cream-dark);
+    transition: border-color 0.15s, color 0.15s;
+    text-align: center;
+  }
+
+  .lesson-nav a:hover { border-color: var(--gold); color: var(--gold); }
+  .lesson-nav a.disabled { opacity: 0.3; pointer-events: none; }
+
+  /* Time badge */
+  .time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    border: 1.5px solid rgba(201,168,76,0.3);
+    border-radius: 3px;
+    padding: 0.25rem 0.65rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* CPD strip */
+  .cpd-strip {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  .cpd-strip-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--rule-line);
+    background: rgba(201,168,76,0.06);
+  }
+
+  .cpd-rows { padding: 0.6rem 0; }
+
+  .cpd-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .cpd-grade {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    width: 1.4rem;
+    flex-shrink: 0;
+    color: var(--gold);
+    padding-top: 0.05rem;
+  }
+
+  .cpd-desc { color: var(--cream-dark); line-height: 1.4; }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 2px solid var(--rule-line);
+    padding: 1.75rem 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .footer-left {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(240,220,170,0.4);
+    letter-spacing: 0.06em;
+  }
+
+  .footer-outcomes {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-outcome-chip {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: rgba(201,168,76,0.5);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 2px;
+    padding: 0.15rem 0.4rem;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo"><span>⚄</span> Dice District</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="lesson-1.html" class="active">L1</a></li>
+    <li><a href="lesson-2.html">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html">L9</a></li>
+    <li><a href="lesson-10.html">L10</a></li>
+  </ul>
+</nav>
+
+<!-- LESSON HEADER -->
+<header class="lesson-header">
+  <div class="lesson-eyebrow">
+    <span class="phase-badge">Identifying &amp; Defining</span>
+    <span class="lesson-num-label">Lesson 01 of 10</span>
+  </div>
+  <h1>What Makes a<br><em>Board Game</em> Work?</h1>
+  <p class="lesson-tagline">Analyse Monopoly as a system, deconstruct it into its parts, and define what your version needs to be.</p>
+
+  <div class="lisc-grid">
+    <div class="lisc-box">
+      <div class="lisc-box-label">Learning Intentions</div>
+      <ul>
+        <li>Understand how Monopoly works as an interacting system of rules and components</li>
+        <li>Identify the game primitives (board, token, dice, property, money, turn) and explain their purpose</li>
+        <li>Define a set of functional and non-functional requirements for your group's game</li>
+        <li>Produce a hand-drawn board layout that reflects your chosen theme</li>
+      </ul>
+    </div>
+    <div class="lisc-box">
+      <div class="lisc-box-label">Success Criteria — I can…</div>
+      <ul>
+        <li>Describe at least 4 game primitives and explain how they interact</li>
+        <li>Write at least 6 functional requirements and 2 non-functional requirements</li>
+        <li>Produce a labelled board sketch with named space types (Property, Tax, Go, Chance)</li>
+        <li>Justify my group's chosen theme with reference to at least one design decision</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<!-- BODY: main + sidebar -->
+<div style="display:grid; grid-template-columns: 1fr 300px; align-items: start;">
+
+<main class="content">
+
+  <!-- SECTION 1: The warm-up -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 1 · Whole Class (15 min)</p>
+    <h2>Play it. Then pull it apart.</h2>
+    <p>Your teacher will run a 10-minute hot-seat demo of Monopoly — either on screen or with a physical board. As you watch, your job is not to play: it is to <strong>observe</strong>. What is happening at each step? What information is being tracked? What decisions are players making?</p>
+    <p>Use the table below to annotate what you notice.</p>
+
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>Game Event</th>
+          <th>What information is involved?</th>
+          <th>What rule applies?</th>
+          <th>Who does something?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Roll dice</td>
+          <td>Two numbers → sum determines move distance</td>
+          <td>Player must move exactly that many spaces</td>
+          <td>Current player</td>
+        </tr>
+        <tr>
+          <td>Land on unowned property</td>
+          <td>Property name, price, rent value, owner = none</td>
+          <td>Player may choose to buy or leave it</td>
+          <td>Current player decides</td>
+        </tr>
+        <tr>
+          <td>Land on owned property</td>
+          <td>Rent amount, owner's name, buyer's money</td>
+          <td>Player must pay rent to owner</td>
+          <td>Both players — money transfers</td>
+        </tr>
+        <tr>
+          <td>Pass Go</td>
+          <td>Player's position, salary amount ($200)</td>
+          <td>Collect salary when passing or landing on Go</td>
+          <td>Current player receives money</td>
+        </tr>
+        <tr>
+          <td>Bankruptcy</td>
+          <td>Player's total money, debt owed</td>
+          <td>If money &lt; 0 after paying, player is eliminated</td>
+          <td>Eliminated player exits; others continue</td>
+        </tr>
+        <tr>
+          <td style="color:rgba(240,220,170,0.3); font-style:italic;">Your example…</td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.83rem; margin-top:0.75rem; color:rgba(240,220,170,0.45); font-style:italic;">Copy this table into your notebook and add at least two more rows from your own observations.</p>
+  </section>
+
+  <!-- SECTION 2: Primitives -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 2 · Concept (10 min)</p>
+    <h2>The Game Primitives</h2>
+    <p>Every board game is built from a small set of <strong>primitives</strong> — the fundamental building blocks that everything else is made of. Monopoly uses seven core primitives. In Unity, each primitive will become a C# class or component.</p>
+
+    <div class="primitive-grid">
+      <div class="primitive-card">
+        <span class="primitive-icon">🎲</span>
+        <div class="primitive-name">Dice</div>
+        <div class="primitive-desc">Generates a random number to drive movement. Provides unpredictability.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">🗺</span>
+        <div class="primitive-name">Board</div>
+        <div class="primitive-desc">A loop of spaces with a fixed order. Players navigate it repeatedly.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">⬡</span>
+        <div class="primitive-name">Space</div>
+        <div class="primitive-desc">Each position has a type and triggers a specific action when landed on.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">♟</span>
+        <div class="primitive-name">Token</div>
+        <div class="primitive-desc">Represents a player's position on the board. Visual identity.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">💰</span>
+        <div class="primitive-name">Money</div>
+        <div class="primitive-desc">A shared resource that flows between players. Tracks progress toward winning or losing.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">🏘</span>
+        <div class="primitive-name">Property</div>
+        <div class="primitive-desc">A space that can be owned. Generates income for the owner when others land on it.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">🔄</span>
+        <div class="primitive-name">Turn</div>
+        <div class="primitive-desc">Structures who acts when. Ensures fairness and progression.</div>
+      </div>
+    </div>
+
+    <h3>Discussion question</h3>
+    <p>Which primitive is most important — if you removed it, the game would completely fall apart? Discuss with your group and record your answer in your notebook with a justification.</p>
+  </section>
+
+  <!-- SECTION 3: Your version -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 3 · Group Work (15 min)</p>
+    <h2>Design Your Version</h2>
+    <p>Your group will build a <strong>Monopoly-inspired</strong> game, not a Monopoly clone. You need to choose a theme that gives your board its identity — the theme affects space names, property categories, and the visual design of your UI.</p>
+
+    <h3>Theme ideas to get you started</h3>
+    <p style="color:var(--cream-dark);">You are not limited to these — they are starting points.</p>
+
+    <table class="analysis-table" style="margin-top:0.5rem;">
+      <thead>
+        <tr>
+          <th>Theme</th>
+          <th>Property categories</th>
+          <th>Go space idea</th>
+          <th>Tax space idea</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>🏙 Metro City</td>
+          <td>Suburbs, CBD, Industrial, Waterfront</td>
+          <td>Collect your salary</td>
+          <td>Council rates due</td>
+        </tr>
+        <tr>
+          <td>🚀 Space Station</td>
+          <td>Docking bays, Habitats, Labs, Command</td>
+          <td>Refuel at base</td>
+          <td>Oxygen tax</td>
+        </tr>
+        <tr>
+          <td>🏰 Fantasy Kingdom</td>
+          <td>Villages, Towns, Castles, Dragon Lairs</td>
+          <td>Collect tribute</td>
+          <td>Kingdom tithe</td>
+        </tr>
+        <tr>
+          <td>🎓 School Campus</td>
+          <td>Classrooms, Labs, Canteen, Sports fields</td>
+          <td>Collect pocket money</td>
+          <td>Excursion fee due</td>
+        </tr>
+        <tr>
+          <td>🌊 Ocean World</td>
+          <td>Coral reefs, Shipwrecks, Trenches, Islands</td>
+          <td>Surface for air</td>
+          <td>Tide tax</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 4: Requirements -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 4 · Group Work (10 min)</p>
+    <h2>Define Your Requirements</h2>
+    <p>Before you write a single line of code, you need to know exactly what your game <em>must</em> do. Requirements come in two types:</p>
+    <p><strong>Functional</strong> — what the system does (actions, behaviours, logic). <strong>Non-functional</strong> — how the system behaves (performance, usability, aesthetics).</p>
+
+    <div class="req-builder">
+      <div class="req-builder-head">
+        <span class="req-builder-title">Requirements Builder</span>
+        <span class="req-counter">Functional: <span id="fCount">0</span> / 6 &nbsp;·&nbsp; Non-functional: <span id="nfCount">0</span> / 2</span>
+      </div>
+      <div class="req-rows" id="reqRows"></div>
+      <div class="req-add-row">
+        <button class="btn btn-functional" onclick="addReq('F')">+ Functional</button>
+        <button class="btn btn-nonfunctional" onclick="addReq('NF')">+ Non-functional</button>
+      </div>
+      <div class="req-legend">
+        <div class="req-legend-item"><span class="req-type-badge req-type-f">F</span> Functional — what it does</div>
+        <div class="req-legend-item"><span class="req-type-badge req-type-nf">NF</span> Non-functional — how it behaves</div>
+      </div>
+    </div>
+
+    <p style="font-size:0.85rem; margin-top:1rem; color:rgba(240,220,170,0.5); font-style:italic;">This tool helps you draft requirements on screen — copy your final list into your notebook. You need at least 6 functional and 2 non-functional to meet the success criteria.</p>
+
+    <h3>Worked examples</h3>
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Requirement</th>
+          <th>Why it matters</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="req-type-badge req-type-f">F</span></td>
+          <td>The game must allow 2–4 players to take turns rolling a dice and moving their token</td>
+          <td>Without this, no game loop exists</td>
+        </tr>
+        <tr>
+          <td><span class="req-type-badge req-type-f">F</span></td>
+          <td>When a player lands on an unowned property, they must be offered the option to buy it</td>
+          <td>Core Monopoly mechanic</td>
+        </tr>
+        <tr>
+          <td><span class="req-type-badge req-type-f">F</span></td>
+          <td>The game must detect when a player's money drops below zero and eliminate them</td>
+          <td>Defines how the game ends</td>
+        </tr>
+        <tr>
+          <td><span class="req-type-badge req-type-nf">NF</span></td>
+          <td>The current player's name and money must always be visible on screen</td>
+          <td>Usability — players need to see their status at all times</td>
+        </tr>
+        <tr>
+          <td><span class="req-type-badge req-type-nf">NF</span></td>
+          <td>The board theme must be visually consistent — all spaces share the same colour palette</td>
+          <td>Aesthetic coherence</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 5: Board sketch -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 5 · Group Work (10 min)</p>
+    <h2>Sketch Your Board</h2>
+    <p>Using the planning sheet your teacher provides (or a blank page), sketch your board layout. Your board must be a loop of spaces — just like Monopoly. You do not need to draw perfectly; this is a planning document, not artwork.</p>
+
+    <p><strong>Your board sketch must include:</strong></p>
+
+    <table class="analysis-table" style="margin-top:0.5rem;">
+      <thead>
+        <tr>
+          <th>Requirement</th>
+          <th>Minimum</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Total spaces</td>
+          <td>20 spaces</td>
+          <td>More is fine — 24–32 is typical for a good game loop</td>
+        </tr>
+        <tr>
+          <td>Space types represented</td>
+          <td>All 4 types</td>
+          <td>Property, Tax, Go, Chance — every type must appear at least once</td>
+        </tr>
+        <tr>
+          <td>Property groups</td>
+          <td>2 colour groups</td>
+          <td>Each group has 2–3 properties with similar rent values</td>
+        </tr>
+        <tr>
+          <td>Go space</td>
+          <td>Exactly 1</td>
+          <td>Starting position — all tokens begin here; players collect salary when passing</td>
+        </tr>
+        <tr>
+          <td>Space labels</td>
+          <td>Every space named</td>
+          <td>Even placeholder names like "Property 1" are fine at this stage</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Space type quick reference</h3>
+    <div class="primitive-grid" style="margin-top:0.75rem;">
+      <div class="primitive-card">
+        <span class="primitive-icon">🏘</span>
+        <div class="primitive-name">Property</div>
+        <div class="primitive-desc">Can be bought. Has a purchase price and a rent value. Belongs to a colour group.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">💸</span>
+        <div class="primitive-name">Tax</div>
+        <div class="primitive-desc">Landing here deducts a fixed amount from the player. No owner — money disappears.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">🃏</span>
+        <div class="primitive-name">Chance</div>
+        <div class="primitive-desc">Triggers a random event — could be good or bad. Adds surprise to the game.</div>
+      </div>
+      <div class="primitive-card">
+        <span class="primitive-icon">▶</span>
+        <div class="primitive-name">Go</div>
+        <div class="primitive-desc">Starting space. Players collect salary each time they pass or land on it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIERED TASKS -->
+  <section class="content-section reveal">
+    <p class="section-label">Tiered Tasks</p>
+    <h2>Extension Work</h2>
+    <p>If your group finishes the main tasks before the end of the lesson, choose from the tier that matches your confidence level.</p>
+
+    <div class="tier-grid">
+      <div class="tier-card tier-basic">
+        <div class="tier-head">Basic</div>
+        <div class="tier-body">
+          <ul>
+            <li>Write a plain-English description of what happens during one complete turn in your game</li>
+            <li>List three things that could go wrong in your game (edge cases) — e.g. what if two players land on the same space?</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-inter">
+        <div class="tier-head">Intermediate</div>
+        <div class="tier-body">
+          <ul>
+            <li>For each property group, decide a price and rent value — explain how you chose them (balance, fairness)</li>
+            <li>Write your turn sequence as numbered steps — this is the beginning of your algorithm</li>
+            <li>Sketch a rough UI layout showing where player info and the dice button will appear on screen</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-advanced">
+        <div class="tier-head">Advanced</div>
+        <div class="tier-body">
+          <ul>
+            <li>Research one published indie board game on itch.io — annotate how it handles turn structure, win condition, and player feedback</li>
+            <li>Write pseudocode for the full turn sequence using NSW pseudocode conventions</li>
+            <li>Propose a unique mechanic not in standard Monopoly — describe how it would be implemented in code</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTEBOOK CHECKPOINT -->
+  <section class="content-section reveal">
+    <p class="section-label">End of Lesson</p>
+    <h2>Notebook Checkpoint</h2>
+    <p>Before you pack up, make sure your notebook has evidence of today's thinking. This is your primary assessment artefact — rough is fine; empty is not.</p>
+
+    <div class="notebook-checkpoint">
+      <ul>
+        <li>Completed analysis table — at least 5 game events annotated, including your own additions</li>
+        <li>A short paragraph explaining which game primitive your group considers most important, and why</li>
+        <li>Your group's chosen theme — with one sentence justifying the design decision</li>
+        <li>Requirements list — at least 6 functional and 2 non-functional, in your own words</li>
+        <li>A labelled board sketch — minimum 20 spaces, all 4 space types represented, every space named</li>
+        <li><em>Reflection (2–3 sentences):</em> What surprised you about how Monopoly works as a system? What do you think will be the hardest part to build in Unity?</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+  <div class="time-badge">⏱ 1 hour · Lesson 1 of 10</div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Learning Outcomes</span>
+    <div class="outcome-chips">
+      <span class="outcome-chip">CT5-THI-01</span>
+      <span class="outcome-chip">CT5-DPM-01</span>
+      <span class="outcome-chip">CT5-EVL-01</span>
+    </div>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Lesson at a Glance</span>
+    <p style="margin:0; font-size:0.83rem;">
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:00</span> Demo &amp; analysis table (15 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:15</span> Game primitives concept (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:25</span> Choose your theme (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:30</span> Write requirements (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:40</span> Board sketch (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:0.7rem;">0:50</span> Notebook checkpoint (10 min)
+    </p>
+  </div>
+
+  <!-- CPD strip -->
+  <div class="cpd-strip">
+    <div class="cpd-strip-label">Grade indicators — this lesson</div>
+    <div class="cpd-rows">
+      <div class="cpd-row">
+        <span class="cpd-grade">A</span>
+        <span class="cpd-desc">Requirements are precise and testable; board sketch shows design reasoning; reflection demonstrates systems thinking</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,0.1);">
+        <span class="cpd-grade">B</span>
+        <span class="cpd-desc">8+ requirements covering a range of game mechanics; board is complete and labelled; reflection is honest</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">C</span>
+        <span class="cpd-desc">6 functional + 2 non-functional requirements present; board sketch has all required elements</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,0.1);">
+        <span class="cpd-grade">D</span>
+        <span class="cpd-desc">Some requirements listed; partial board sketch with most space types present</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">E</span>
+        <span class="cpd-desc">Identifies game events from the demo; makes an attempt at a requirements list</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <span class="teacher-note-label">🔒 Teacher Note</span>
+    <p>The requirements builder is interactive but does not save. Prompt groups to photograph or transcribe their list before the end of class. Circulate during the board sketch phase — watch for groups who place all properties together (clustering reduces strategic depth).</p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Resources needed</span>
+    <p>Physical or digital Monopoly game (demo only), blank paper or planning sheet for board sketch, project notebooks</p>
+  </div>
+
+  <!-- Lesson nav -->
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Navigate</span>
+    <div class="lesson-nav">
+      <a href="index.html" class="disabled">← Home</a>
+      <a href="lesson-2.html">L2 →</a>
+    </div>
+  </div>
+
+</aside>
+
+</div><!-- end grid -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · L1 — Identifying &amp; Defining</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-THI-01</span>
+    <span class="footer-outcome-chip">CT5-DPM-01</span>
+    <span class="footer-outcome-chip">CT5-EVL-01</span>
+  </div>
+</footer>
+
+<script>
+  // ─── Requirements Builder ───
+  const placeholders = {
+    F:  [
+      'e.g. The game must allow players to roll a dice and move their token',
+      'e.g. When a player lands on an unowned property, they can choose to buy it',
+      'e.g. The game must track how much money each player has',
+      'e.g. The game must end when only one player has money remaining',
+      'e.g. Players must collect a salary each time they pass the Go space',
+      'e.g. Landing on a Tax space must deduct a fixed amount from the player',
+    ],
+    NF: [
+      'e.g. The current player\'s name and money must always be visible on screen',
+      'e.g. The UI text must be large enough to read from 1 metre away',
+    ]
+  };
+
+  let fIdx = 0, nfIdx = 0;
+
+  function addReq(type) {
+    const rows = document.getElementById('reqRows');
+    const row = document.createElement('div');
+    row.className = 'req-row';
+    const ph = type === 'F'
+      ? (placeholders.F[fIdx++ % placeholders.F.length])
+      : (placeholders.NF[nfIdx++ % placeholders.NF.length]);
+    row.innerHTML = `
+      <span class="req-type-badge req-type-${type.toLowerCase()}">${type}</span>
+      <input class="req-input" type="text" placeholder="${ph}" data-type="${type}" oninput="updateCounts()">
+      <button class="req-delete" onclick="deleteReq(this)" title="Remove">✕</button>
+    `;
+    rows.appendChild(row);
+    updateCounts();
+    row.querySelector('input').focus();
+  }
+
+  function deleteReq(btn) {
+    btn.closest('.req-row').remove();
+    updateCounts();
+  }
+
+  function updateCounts() {
+    const inputs = document.querySelectorAll('#reqRows .req-input');
+    let f = 0, nf = 0;
+    inputs.forEach(i => { if (i.dataset.type === 'F') f++; else nf++; });
+    document.getElementById('fCount').textContent = f;
+    document.getElementById('nfCount').textContent = nf;
+  }
+
+  // Seed with 2 starter rows
+  addReq('F');
+  addReq('NF');
+
+  // ─── Scroll reveal ───
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  reveals.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

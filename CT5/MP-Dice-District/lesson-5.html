@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 5 · Dice District</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board-green:  #1a3a2a;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --green-prop:   #1e8449;
+    --rule-line:    rgba(201,168,76,0.35);
+    --phase-colour: #27ae60;
+    --phase-bg:     rgba(39,174,96,0.12);
+    --code-bg:      #0f1e16;
+    --code-kw:      #e8c96a;
+    --code-type:    #58d68d;
+    --code-str:     #f0a07a;
+    --code-cmt:     #5d8a6a;
+    --code-num:     #bb8fce;
+    --code-fn:      #5dade2;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+
+  body {
+    background-color:var(--board-green);
+    color:var(--cream);
+    font-family:var(--font-body);
+    font-size:17px;
+    line-height:1.7;
+    min-height:100vh;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+  body::before { content:''; position:fixed; inset:10px; border:3px solid var(--rule-line); pointer-events:none; z-index:100; }
+
+  /* ─── NAV ─── */
+  nav { position:sticky; top:0; z-index:50; background:var(--board-green); border-bottom:2px solid var(--rule-line); padding:0 2.5rem; display:flex; align-items:center; gap:2rem; height:54px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+  .nav-logo { font-family:var(--font-display); font-weight:900; font-size:1.15rem; color:var(--gold); letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+  .nav-links { display:flex; gap:.25rem; list-style:none; margin-left:auto; }
+  .nav-links a { font-family:var(--font-mono); font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dark); text-decoration:none; padding:.3rem .75rem; border-radius:3px; transition:background .15s,color .15s; }
+  .nav-links a:hover { background:var(--rule-line); color:var(--gold); }
+  .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); }
+
+  /* ─── HEADER ─── */
+  .lesson-header { border-bottom:2px solid var(--rule-line); padding:3.5rem 5rem 3rem; position:relative; overflow:hidden; }
+  .lesson-header::before { content:''; position:absolute; top:0;left:0;right:0; height:6px; background:var(--phase-colour); }
+  .lesson-header::after { content:''; position:absolute; right:0;top:0;bottom:0; width:200px; background:repeating-linear-gradient(45deg,transparent,transparent 16px,rgba(39,174,96,.05) 16px,rgba(39,174,96,.05) 32px); pointer-events:none; }
+  .lesson-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .phase-badge { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .65rem; border-radius:3px; background:var(--phase-bg); color:#58d68d; border:1.5px solid rgba(39,174,96,.4); }
+  .lesson-num-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; color:rgba(240,220,170,.45); }
+  .lesson-header h1 { font-family:var(--font-display); font-weight:900; font-size:clamp(2.4rem,5vw,3.8rem); line-height:1; color:var(--cream); letter-spacing:-.02em; margin-bottom:.6rem; }
+  .lesson-header h1 em { font-style:italic; color:var(--gold); }
+  .lesson-tagline { font-size:1.05rem; color:var(--cream-dark); font-style:italic; margin-bottom:1.75rem; max-width:580px; }
+  .lisc-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; }
+  .lisc-box { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; }
+  .lisc-box-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem; }
+  .lisc-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .lisc-box li { font-size:.9rem; color:var(--cream-dark); padding-left:1rem; position:relative; line-height:1.4; }
+  .lisc-box li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:.75rem; }
+
+  /* ─── LAYOUT ─── */
+  .page-body { display:grid; grid-template-columns:1fr 300px; align-items:start; }
+  .content { padding:3rem 4rem 5rem 5rem; border-right:2px solid var(--rule-line); }
+  .sidebar { padding:3rem 2rem 5rem; position:sticky; top:54px; }
+
+  /* ─── SHARED ─── */
+  .section-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--rule-line); }
+  .content-section { margin-bottom:3.25rem; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:1.7rem; color:var(--cream); line-height:1.2; margin-bottom:.9rem; }
+  h3 { font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:var(--gold-light); margin-bottom:.5rem; margin-top:1.5rem; }
+  p { margin-bottom:.85rem; color:var(--cream-dark); }
+  p:last-child { margin-bottom:0; }
+  strong { color:var(--cream); font-weight:600; }
+  .key-term { display:inline-block; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.3); border-radius:3px; font-family:var(--font-mono); font-size:.8rem; color:var(--gold-light); padding:.05rem .4rem; }
+  .info-box { background:rgba(39,174,96,.08); border:1.5px solid rgba(39,174,96,.3); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .info-box strong { color:#58d68d; }
+  .warn-box { background:rgba(192,57,43,.08); border:1.5px solid rgba(192,57,43,.3); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .warn-box strong { color:#e87070; }
+
+  /* ─── CODE PANEL ─── */
+  .code-panel { background:var(--code-bg); border:1.5px solid var(--rule-line); border-radius:5px; overflow:hidden; margin-top:1rem; font-family:var(--font-mono); font-size:.82rem; line-height:1.65; }
+  .code-panel-header { display:flex; align-items:center; justify-content:space-between; padding:.55rem 1rem; background:rgba(255,255,255,.04); border-bottom:1px solid rgba(201,168,76,.15); gap:.75rem; }
+  .code-panel-title { font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(201,168,76,.7); flex:1; }
+  .code-panel-file { font-size:.68rem; color:rgba(88,214,141,.6); font-family:var(--font-mono); }
+  .copy-btn { font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.3); border-radius:3px; color:var(--gold); padding:.2rem .6rem; cursor:pointer; transition:background .15s; flex-shrink:0; }
+  .copy-btn:hover { background:rgba(201,168,76,.25); }
+  .copy-btn.copied { color:#58d68d; border-color:rgba(39,174,96,.4); background:rgba(39,174,96,.12); }
+  .code-body { padding:1.1rem 1.25rem; overflow-x:auto; }
+  .code-body pre { margin:0; white-space:pre; }
+  .kw  { color:var(--code-kw); }
+  .ty  { color:var(--code-type); }
+  .str { color:var(--code-str); }
+  .cmt { color:var(--code-cmt); font-style:italic; }
+  .num { color:var(--code-num); }
+  .fn  { color:var(--code-fn); }
+
+  /* ─── DUAL PANEL ─── */
+  .dual-panel { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
+  .panel-label { font-size:.65rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; padding:.5rem 1rem; border-bottom:1px solid rgba(201,168,76,.15); background:rgba(255,255,255,.04); display:flex; align-items:center; gap:.5rem; }
+  .panel-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .panel-dot.pseudo { background:var(--gold); }
+  .panel-dot.csharp { background:#5dade2; }
+  .panel-label.pseudo { color:var(--gold); }
+  .panel-label.csharp { color:#5dade2; }
+
+  /* ─── DICE SIMULATOR ─── */
+  .dice-sim {
+    background: rgba(0,0,0,0.3);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 1.75rem 2rem;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .dice-sim-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.5);
+    align-self: flex-start;
+  }
+
+  .dice-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .die-face {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #22472f, #152e1f);
+    border: 2.5px solid var(--gold);
+    border-radius: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 10px;
+    gap: 4px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: transform 0.08s ease;
+  }
+
+  .die-face.rolling {
+    animation: diceRoll 0.5s ease;
+  }
+
+  @keyframes diceRoll {
+    0%   { transform: rotate(0deg) scale(1); }
+    15%  { transform: rotate(-12deg) scale(0.95); }
+    35%  { transform: rotate(10deg) scale(1.05); }
+    55%  { transform: rotate(-8deg) scale(0.97); }
+    75%  { transform: rotate(5deg) scale(1.02); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+
+  .pip {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    display: none;
+  }
+  .pip.on { display: block; }
+
+  .plus-sign {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2rem;
+    color: rgba(201,168,76,0.4);
+  }
+
+  .equals-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .roll-total {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 3.5rem;
+    color: var(--gold);
+    line-height: 1;
+    min-width: 3rem;
+    text-align: center;
+    transition: transform 0.15s;
+  }
+
+  .roll-total.pop { animation: popNum 0.25s ease; }
+  @keyframes popNum { 0%{transform:scale(0.7)} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
+
+  .roll-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(240,220,170,0.4);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .roll-btn {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(201,168,76,0.15);
+    border: 2px solid rgba(201,168,76,0.5);
+    border-radius: 4px;
+    color: var(--gold);
+    padding: 0.6rem 2rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .roll-btn:hover { background: rgba(201,168,76,0.28); }
+  .roll-btn:active { transform: scale(0.97); }
+  .roll-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .roll-history {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    min-height: 1.6rem;
+  }
+
+  .history-chip {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    border-radius: 2px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+    color: rgba(201,168,76,0.55);
+    animation: chipIn 0.2s ease;
+  }
+  .history-chip.seven { background:rgba(39,174,96,0.12); border-color:rgba(39,174,96,0.3); color:#58d68d; }
+  @keyframes chipIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+
+  .prob-note {
+    font-size: 0.78rem;
+    color: rgba(240,220,170,0.4);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* ─── MODULO EXPLAINER ─── */
+  .modulo-visual {
+    background: rgba(0,0,0,0.25);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .modulo-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.5);
+    margin-bottom: 1.25rem;
+  }
+
+  .modulo-board {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .mod-space {
+    width: 36px;
+    height: 36px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    border: 1.5px solid rgba(255,255,255,0.06);
+    color: rgba(240,220,170,0.4);
+    background: rgba(0,0,0,0.25);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .mod-space.current  { background: rgba(36,113,163,0.35); border-color: rgba(36,113,163,0.7); color: #5dade2; }
+  .mod-space.landing  { background: rgba(39,174,96,0.35);  border-color: rgba(39,174,96,0.7);  color: #58d68d; }
+  .mod-space.go-space { background: rgba(201,168,76,0.2);  border-color: rgba(201,168,76,0.5); color: var(--gold); }
+  .mod-space.passed-go { background: rgba(201,168,76,0.08); border-color: rgba(201,168,76,0.2); color: rgba(201,168,76,0.5); }
+
+  .mod-token {
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    font-size: 0.65rem;
+    line-height: 1;
+  }
+
+  .modulo-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .modulo-eq {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--cream-dark);
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--rule-line);
+    border-radius: 3px;
+    padding: 0.4rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .modulo-eq .val  { color: var(--gold); font-weight: 600; }
+  .modulo-eq .op   { color: rgba(240,220,170,0.4); }
+  .modulo-eq .res  { color: #58d68d; font-weight: 600; }
+
+  .modulo-input {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(201,168,76,0.3);
+    border-radius: 3px;
+    padding: 0.35rem 0.6rem;
+    color: var(--cream);
+    width: 65px;
+    text-align: center;
+    outline: none;
+  }
+  .modulo-input:focus { border-color: var(--gold); }
+
+  .modulo-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: rgba(39,174,96,0.12);
+    border: 1.5px solid rgba(39,174,96,0.4);
+    border-radius: 3px;
+    color: #58d68d;
+    padding: 0.38rem 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .modulo-btn:hover { background: rgba(39,174,96,0.22); }
+
+  .go-note {
+    font-size: 0.8rem;
+    color: rgba(240,220,170,0.45);
+    margin-top: 0.75rem;
+    font-style: italic;
+  }
+
+  /* ─── ANALYSIS TABLE ─── */
+  .analysis-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.92rem; }
+  .analysis-table thead tr { border-bottom:2px solid var(--gold); }
+  .analysis-table th { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); padding:.5rem .75rem; text-align:left; }
+  .analysis-table td { padding:.65rem .75rem; color:var(--cream-dark); border-bottom:1px solid rgba(201,168,76,.12); vertical-align:top; line-height:1.45; }
+  .analysis-table tr:last-child td { border-bottom:none; }
+  .analysis-table td:first-child { font-family:var(--font-mono); font-size:.8rem; font-weight:600; color:var(--cream); }
+
+  /* ─── TASK STEPS ─── */
+  .task-steps { display:flex; flex-direction:column; gap:0; margin-top:1rem; border:1.5px solid var(--rule-line); border-radius:5px; overflow:hidden; }
+  .task-step { display:grid; grid-template-columns:48px 1fr; border-bottom:1px solid var(--rule-line); }
+  .task-step:last-child { border-bottom:none; }
+  .task-step-num { background:rgba(0,0,0,.2); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:.85rem; font-weight:600; color:var(--gold); border-right:1px solid var(--rule-line); padding:1rem 0; }
+  .task-step-body { padding:.85rem 1.1rem; background:rgba(0,0,0,.12); }
+  .task-step-title { font-family:var(--font-display); font-weight:700; font-size:1rem; color:var(--cream); margin-bottom:.3rem; }
+  .task-step-desc { font-size:.88rem; color:var(--cream-dark); margin:0; line-height:1.5; }
+  .task-step-code { font-family:var(--font-mono); font-size:.78rem; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.06); border-radius:3px; padding:.3rem .6rem; color:var(--gold-light); margin-top:.4rem; display:inline-block; }
+
+  /* ─── TIER / NOTEBOOK / SIDEBAR ─── */
+  .tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1rem; }
+  .tier-card { border:2px solid var(--rule-line); border-radius:4px; overflow:hidden; }
+  .tier-head { padding:.6rem 1rem; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .tier-basic    .tier-head { background:rgba(39,174,96,.2);  color:#58d68d;  border-bottom:2px solid rgba(39,174,96,.3); }
+  .tier-inter    .tier-head { background:rgba(36,113,163,.2); color:#5dade2;  border-bottom:2px solid rgba(36,113,163,.3); }
+  .tier-advanced .tier-head { background:rgba(108,52,131,.2); color:#bb8fce;  border-bottom:2px solid rgba(108,52,131,.3); }
+  .tier-body { padding:.85rem 1rem; background:rgba(0,0,0,.15); }
+  .tier-body ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .tier-body li { font-size:.85rem; color:var(--cream-dark); padding-left:.9rem; position:relative; line-height:1.4; }
+  .tier-body li::before { content:'·'; position:absolute; left:0; color:var(--gold); font-weight:700; }
+
+  .notebook-checkpoint { background:rgba(201,168,76,.07); border:2px solid rgba(201,168,76,.4); border-radius:5px; padding:1.5rem 1.75rem; margin-top:1rem; }
+  .notebook-checkpoint::before { content:'📓  NOTEBOOK CHECKPOINT'; font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.14em; color:var(--gold); display:block; margin-bottom:.85rem; }
+  .notebook-checkpoint ul { list-style:none; display:flex; flex-direction:column; gap:.45rem; }
+  .notebook-checkpoint li { font-size:.92rem; color:var(--cream-dark); padding-left:1.3rem; position:relative; line-height:1.45; }
+  .notebook-checkpoint li::before { content:'☐'; position:absolute; left:0; color:var(--gold); font-size:.85rem; }
+
+  .sidebar-card { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; margin-bottom:1.25rem; }
+  .sidebar-card-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.65rem; display:block; }
+  .sidebar-card p { font-size:.88rem; color:var(--cream-dark); margin-bottom:.5rem; }
+  .outcome-chips { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.25rem; }
+  .outcome-chip { font-family:var(--font-mono); font-size:.62rem; font-weight:600; color:var(--gold); border:1px solid rgba(201,168,76,.35); border-radius:2px; padding:.15rem .4rem; letter-spacing:.05em; }
+  .teacher-note { background:rgba(108,52,131,.12); border:1.5px solid rgba(108,52,131,.35); border-radius:4px; padding:1rem 1.1rem; margin-bottom:1.25rem; }
+  .teacher-note-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#bb8fce; display:block; margin-bottom:.5rem; }
+  .teacher-note p { font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.5; }
+  .time-badge { display:inline-flex; align-items:center; gap:.4rem; font-family:var(--font-mono); font-size:.72rem; font-weight:600; color:var(--gold); background:rgba(201,168,76,.1); border:1.5px solid rgba(201,168,76,.3); border-radius:3px; padding:.25rem .65rem; margin-bottom:1.5rem; }
+  .lesson-nav { display:flex; gap:.5rem; margin-top:.5rem; }
+  .lesson-nav a { flex:1; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.06em; text-decoration:none; padding:.55rem .5rem; border-radius:3px; border:1.5px solid var(--rule-line); color:var(--cream-dark); transition:border-color .15s,color .15s; text-align:center; }
+  .lesson-nav a:hover { border-color:var(--gold); color:var(--gold); }
+  .cpd-strip { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; overflow:hidden; margin-bottom:1.25rem; }
+  .cpd-strip-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); padding:.5rem .85rem; border-bottom:1px solid var(--rule-line); background:rgba(201,168,76,.06); }
+  .cpd-rows { padding:.6rem 0; }
+  .cpd-row { display:flex; align-items:flex-start; gap:.5rem; padding:.35rem .85rem; font-size:.8rem; }
+  .cpd-grade { font-family:var(--font-mono); font-size:.65rem; font-weight:600; width:1.4rem; flex-shrink:0; color:var(--gold); padding-top:.05rem; }
+  .cpd-desc { color:var(--cream-dark); line-height:1.4; }
+
+  /* ─── REVEAL ─── */
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .45s ease,transform .45s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  footer { border-top:2px solid var(--rule-line); padding:1.75rem 5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .footer-left { font-family:var(--font-mono); font-size:.72rem; color:rgba(240,220,170,.4); letter-spacing:.06em; }
+  .footer-outcomes { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .footer-outcome-chip { font-family:var(--font-mono); font-size:.6rem; font-weight:600; color:rgba(201,168,76,.5); border:1px solid rgba(201,168,76,.2); border-radius:2px; padding:.15rem .4rem; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span>⚄</span> Dice District</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="lesson-1.html">L1</a></li>
+    <li><a href="lesson-2.html">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html" class="active">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html">L9</a></li>
+    <li><a href="lesson-10.html">L10</a></li>
+  </ul>
+</nav>
+
+<header class="lesson-header">
+  <div class="lesson-eyebrow">
+    <span class="phase-badge">Producing &amp; Implementing</span>
+    <span class="lesson-num-label">Lesson 05 of 10</span>
+  </div>
+  <h1>Dice &amp;<br><em>Movement</em></h1>
+  <p class="lesson-tagline">Implement the two algorithms that make the game move — rolling two dice and advancing a token around a looping board. By the end of this lesson, pressing a button moves a player.</p>
+  <div class="lisc-grid">
+    <div class="lisc-box">
+      <div class="lisc-box-label">Learning Intentions</div>
+      <ul>
+        <li>Understand how modulo arithmetic creates a seamless looping board</li>
+        <li>Implement <code>RollDice()</code> returning the sum of two 1–6 random values</li>
+        <li>Implement <code>MovePlayer()</code> using modulo to handle board wrap and Go salary</li>
+        <li>Implement <code>StartTurn()</code> and wire it to a UI Roll Dice button</li>
+      </ul>
+    </div>
+    <div class="lisc-box">
+      <div class="lisc-box-label">Success Criteria — I can…</div>
+      <ul>
+        <li>Explain why <code>(position + roll) % boardLength</code> prevents the index going out of range</li>
+        <li>Demonstrate the Roll Dice button moving a token in the Unity Game view</li>
+        <li>Show the Console logging the correct new position after each roll</li>
+        <li>Demonstrate that the Go salary is added when a player wraps past space 0</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<main class="content">
+
+  <!-- PART 1: The dice concept -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 1 · The Dice Algorithm (10 min)</p>
+    <h2>Two Dice, One Algorithm</h2>
+    <p>Rolling two dice in code is simpler than it sounds — two calls to <span class="key-term">Random.Range(1, 7)</span> added together. But why 7 and not 6? And why does rolling two dice matter instead of one die giving 2–12 directly?</p>
+
+    <div class="dual-panel">
+      <div class="code-panel" style="margin-top:0;">
+        <div class="code-panel-header">
+          <div class="panel-label pseudo"><span class="panel-dot pseudo"></span>NSW Pseudocode</div>
+        </div>
+        <div class="code-body">
+          <pre><span class="kw">BEGIN</span> RollDice
+  die1 ← <span class="fn">RANDOM</span>(<span class="num">1</span>, <span class="num">6</span>)
+  die2 ← <span class="fn">RANDOM</span>(<span class="num">1</span>, <span class="num">6</span>)
+  total ← die1 + die2
+  <span class="fn">OUTPUT</span> <span class="str">"Rolled: "</span> + die1
+       + <span class="str">" + "</span> + die2
+       + <span class="str">" = "</span> + total
+  <span class="kw">RETURN</span> total
+<span class="kw">END</span> RollDice</pre>
+        </div>
+      </div>
+      <div class="code-panel" style="margin-top:0;">
+        <div class="code-panel-header">
+          <div class="panel-label csharp"><span class="panel-dot csharp"></span>C# — GameManager.cs</div>
+        </div>
+        <div class="code-body">
+          <pre><span class="kw">public</span> <span class="ty">int</span> <span class="fn">RollDice</span>()
+{
+  <span class="ty">int</span> d1 = Random.<span class="fn">Range</span>(<span class="num">1</span>, <span class="num">7</span>);
+  <span class="ty">int</span> d2 = Random.<span class="fn">Range</span>(<span class="num">1</span>, <span class="num">7</span>);
+  <span class="ty">int</span> total = d1 + d2;
+  Debug.<span class="fn">Log</span>(<span class="fn">$"</span>Rolled: {d1} + {d2}
+            = {total}<span class="fn">"</span>);
+  <span class="kw">return</span> total;
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:1rem;">
+      <strong>Why Random.Range(1, 7) and not (1, 6)?</strong> Unity's <code>Random.Range</code> for integers is <em>inclusive</em> of the minimum and <em>exclusive</em> of the maximum. So <code>Range(1, 7)</code> gives 1, 2, 3, 4, 5, or 6 — exactly what a physical die produces. <code>Range(1, 6)</code> would give 1–5 only, which is wrong.
+    </div>
+
+    <h3>Why two dice instead of one 2–12 roll?</h3>
+    <p>A single <code>Random.Range(2, 13)</code> gives each value from 2–12 an equal probability. Two dice do not — rolling a 7 is six times more likely than rolling a 2. This unequal distribution is intentional in Monopoly; it affects which spaces get landed on most. Try the simulator below and watch what happens over many rolls.</p>
+
+    <div class="dice-sim">
+      <div class="dice-sim-title">🎲 Interactive Dice Simulator — matches your Unity code exactly</div>
+      <div class="dice-row">
+        <div class="die-face" id="die1">
+          <div class="pip" id="p1-1"></div><div class="pip" id="p1-2"></div><div class="pip" id="p1-3"></div>
+          <div class="pip" id="p1-4"></div><div class="pip" id="p1-5"></div><div class="pip" id="p1-6"></div>
+          <div class="pip" id="p1-7"></div><div class="pip" id="p1-8"></div><div class="pip" id="p1-9"></div>
+        </div>
+        <div class="plus-sign">+</div>
+        <div class="die-face" id="die2">
+          <div class="pip" id="p2-1"></div><div class="pip" id="p2-2"></div><div class="pip" id="p2-3"></div>
+          <div class="pip" id="p2-4"></div><div class="pip" id="p2-5"></div><div class="pip" id="p2-6"></div>
+          <div class="pip" id="p2-7"></div><div class="pip" id="p2-8"></div><div class="pip" id="p2-9"></div>
+        </div>
+      </div>
+      <div class="equals-row">
+        <div class="roll-label">=</div>
+        <div class="roll-total" id="rollTotal">—</div>
+        <div class="roll-label" id="rollSub" style="font-size:0.65rem;">Press Roll</div>
+      </div>
+      <button class="roll-btn" id="rollBtn" onclick="rollDice()">🎲 Roll Dice</button>
+      <div class="roll-history" id="rollHistory"></div>
+      <div class="prob-note" id="probNote">Roll 10+ times to see which totals appear most often.</div>
+    </div>
+  </section>
+
+  <!-- PART 2: Modulo / board wrap -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 2 · Board Wrap with Modulo (10 min)</p>
+    <h2>The Looping Board Problem</h2>
+    <p>After the last space, the next step should land on space 0 (Go) — not cause an <strong>IndexOutOfRangeException</strong>. The solution is one of the most elegant tools in programming: the <strong>modulo operator</strong> (<span class="key-term">%</span>).</p>
+    <p>Modulo gives you the <em>remainder</em> after division. When a player's position exceeds the board length, modulo automatically wraps it back to the correct index.</p>
+
+    <div class="dual-panel">
+      <div class="code-panel" style="margin-top:0;">
+        <div class="code-panel-header">
+          <div class="panel-label pseudo"><span class="panel-dot pseudo"></span>NSW Pseudocode</div>
+        </div>
+        <div class="code-body">
+          <pre><span class="cmt">// Board has 24 spaces (indices 0–23)</span>
+<span class="cmt">// Player is on space 21, rolls 6</span>
+
+rawPosition ← <span class="num">21</span> + <span class="num">6</span>  <span class="cmt">// = 27</span>
+newPosition ← <span class="num">27</span> <span class="kw">MOD</span> <span class="num">24</span> <span class="cmt">// = 3</span>
+
+<span class="cmt">// Player lands on space 3 ✓</span>
+<span class="cmt">// They crossed Go: collect salary</span>
+
+<span class="kw">IF</span> newPosition &lt; oldPosition <span class="kw">THEN</span>
+  player.money ← player.money + goSalary
+<span class="kw">END IF</span></pre>
+        </div>
+      </div>
+      <div class="code-panel" style="margin-top:0;">
+        <div class="code-panel-header">
+          <div class="panel-label csharp"><span class="panel-dot csharp"></span>C# — GameManager.cs</div>
+        </div>
+        <div class="code-body">
+          <pre><span class="cmt">// boardSpaces.Length = 24</span>
+<span class="cmt">// Player on space 21, rolls 6</span>
+
+<span class="ty">int</span> raw = p.position + roll; <span class="cmt">// 27</span>
+<span class="ty">int</span> newPos = raw
+    % boardSpaces.Length;   <span class="cmt">// 3</span>
+
+<span class="cmt">// Detect Go crossing</span>
+<span class="kw">if</span> (newPos &lt;= p.position
+    && raw != p.position)
+{
+    p.<span class="fn">AddMoney</span>(goSalary);
+    <span class="fn">ShowMessage</span>(p.playerName
+      + <span class="str">" passed Go! +$"</span>
+      + goSalary);
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <h3>Try it — interactive board wrap</h3>
+    <p>Use the controls below to see modulo in action on a 24-space board. The blue token is the current position; the green space is where the player lands.</p>
+
+    <div class="modulo-visual">
+      <div class="modulo-title">Board Wrap Visualiser — 24 spaces (indices 0–23)</div>
+      <div class="modulo-board" id="modBoard"></div>
+      <div class="modulo-controls">
+        <div>
+          <div style="font-family:var(--font-mono); font-size:.65rem; color:rgba(240,220,170,.4); margin-bottom:.3rem;">Current position</div>
+          <input class="modulo-input" type="number" id="modPos" value="21" min="0" max="23" onchange="updateModulo()">
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono); font-size:.65rem; color:rgba(240,220,170,.4); margin-bottom:.3rem;">Dice roll</div>
+          <input class="modulo-input" type="number" id="modRoll" value="6" min="2" max="12" onchange="updateModulo()">
+        </div>
+        <button class="modulo-btn" onclick="updateModulo()">Calculate →</button>
+        <div class="modulo-eq" id="modEq">
+          <span class="val" id="mPos">21</span>
+          <span class="op">+</span>
+          <span class="val" id="mRoll">6</span>
+          <span class="op">=</span>
+          <span class="val" id="mRaw">27</span>
+          <span class="op">%</span>
+          <span class="val">24</span>
+          <span class="op">=</span>
+          <span class="res" id="mResult">3</span>
+        </div>
+      </div>
+      <p class="go-note" id="goNote">⭐ Player crosses Go — collect $200 salary</p>
+    </div>
+  </section>
+
+  <!-- PART 3: MovePlayer + StartTurn code -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 3 · Writing the Code (25 min)</p>
+    <h2>MovePlayer() and StartTurn()</h2>
+    <p>Open <span class="key-term">GameManager.cs</span> in your code editor. The methods below replace the <code>// TODO (Lesson 5)</code> comment stubs. Copy each method carefully — the order of operations matters.</p>
+
+    <div class="warn-box">
+      <strong>⚠ Before you copy:</strong> Read the full method first, then copy it. Pasting code you haven't read is the leading cause of bugs that take 20 minutes to diagnose. Spend 2 minutes reading, save 20 minutes debugging.
+    </div>
+
+    <!-- StartTurn -->
+    <div class="code-panel">
+      <div class="code-panel-header">
+        <span class="code-panel-title">Method 1 of 2 — Entry point for each player's turn</span>
+        <span class="code-panel-file">GameManager.cs</span>
+        <button class="copy-btn" onclick="copyCode('start-turn')">Copy</button>
+      </div>
+      <div class="code-body">
+        <pre id="start-turn"><span class="cmt">// Called by the Roll Dice button in the UI.
+// Guards against rolling again mid-turn.</span>
+<span class="kw">public</span> <span class="kw">void</span> <span class="fn">StartTurn</span>()
+{
+    <span class="cmt">// Ignore button presses while we're waiting for player input (e.g. buy/skip)</span>
+    <span class="kw">if</span> (waitingForInput || gameOver) <span class="kw">return</span>;
+
+    <span class="ty">Player</span> current = activePlayers[currentIndex];
+    <span class="ty">int</span>    roll    = <span class="fn">RollDice</span>();
+
+    <span class="fn">ShowMessage</span>(<span class="fn">$"</span>{current.playerName} rolled {roll}!<span class="fn">"</span>);
+    <span class="fn">MovePlayer</span>(current, roll);
+}</pre>
+      </div>
+    </div>
+
+    <!-- MovePlayer -->
+    <div class="code-panel" style="margin-top:1.25rem;">
+      <div class="code-panel-header">
+        <span class="code-panel-title">Method 2 of 2 — Move token and detect Go crossing</span>
+        <span class="code-panel-file">GameManager.cs</span>
+        <button class="copy-btn" onclick="copyCode('move-player')">Copy</button>
+      </div>
+      <div class="code-body">
+        <pre id="move-player"><span class="kw">public</span> <span class="kw">void</span> <span class="fn">MovePlayer</span>(<span class="ty">Player</span> p, <span class="ty">int</span> roll)
+{
+    <span class="ty">int</span> oldPosition = p.position;
+
+    <span class="cmt">// Calculate new position; % wraps the index around the board</span>
+    <span class="ty">int</span> newPosition = (p.position + roll) % boardSpaces.Length;
+
+    <span class="cmt">// Detect Go crossing: new index is LESS than old (wrapped) or exactly 0
+    // Also guards against a roll of 0 (shouldn't happen, but defensive)</span>
+    <span class="ty">bool</span> passedGo = (newPosition &lt;= oldPosition) && (roll &gt; <span class="num">0</span>);
+
+    <span class="kw">if</span> (passedGo)
+    {
+        p.<span class="fn">AddMoney</span>(goSalary);
+        <span class="fn">ShowMessage</span>(<span class="fn">$"</span>{p.playerName} passed Go! Collected ${goSalary}.<span class="fn">"</span>);
+        Debug.<span class="fn">Log</span>(<span class="fn">$"</span>{p.playerName} passed Go. Money now: ${p.money}<span class="fn">"</span>);
+    }
+
+    <span class="cmt">// Update the data</span>
+    p.position = newPosition;
+
+    <span class="cmt">// Move the 3D token to the new space's world position
+    // We offset Y by +0.6 so the token sits on top of the flat board tile</span>
+    <span class="kw">if</span> (p.token != <span class="kw">null</span> && boardSpaces[newPosition] != <span class="kw">null</span>)
+    {
+        <span class="ty">Vector3</span> targetPos = boardSpaces[newPosition].transform.position;
+        targetPos.y += <span class="num">0.6f</span>;
+        p.token.transform.position = targetPos;
+    }
+
+    <span class="cmt">// Log the move for debugging</span>
+    Debug.<span class="fn">Log</span>(<span class="fn">$"</span>{p.playerName} moved from {oldPosition} to {newPosition} "
+           + <span class="fn">$"</span>({boardSpaces[newPosition].spaceName})<span class="fn">"</span>);
+
+    <span class="fn">UpdateHUD</span>();
+
+    <span class="cmt">// Hand off to ResolveSpace — implemented in Lesson 6
+    // For now, just advance the turn.</span>
+    <span class="fn">NextTurn</span>();  <span class="cmt">// temporary — will be replaced in Lesson 7</span>
+}
+
+<span class="cmt">// Temporary NextTurn stub — full implementation in Lesson 7</span>
+<span class="kw">public</span> <span class="kw">void</span> <span class="fn">NextTurn</span>()
+{
+    currentIndex = (currentIndex + <span class="num">1</span>) % activePlayers.Count;
+    <span class="fn">UpdateHUD</span>();
+    <span class="fn">ShowMessage</span>(<span class="fn">$"</span>{activePlayers[currentIndex].playerName}'s turn. Roll the dice!<span class="fn">"</span>);
+}</pre>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:1.25rem;">
+      <strong>Why call NextTurn() here for now?</strong> In the final game, <code>MovePlayer()</code> will call <code>ResolveSpace()</code> instead — which may pause the turn while waiting for the player to decide whether to buy a property. We'll swap this out in Lesson 6. For now, calling <code>NextTurn()</code> directly lets you test movement immediately without needing the full game loop.
+    </div>
+  </section>
+
+  <!-- PART 4: Wiring the button -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 4 · UI Button Wiring (10 min)</p>
+    <h2>Connecting the Roll Dice Button</h2>
+    <p>The code is written — now you need a button in the Unity UI that calls <code>StartTurn()</code> when clicked. This is done through the Unity Event System, not code.</p>
+
+    <div class="task-steps">
+      <div class="task-step">
+        <div class="task-step-num">1</div>
+        <div class="task-step-body">
+          <div class="task-step-title">Create a Canvas (if not already present)</div>
+          <p class="task-step-desc">In the Hierarchy: right-click → UI → Canvas. Unity automatically adds an EventSystem — leave it. Set the Canvas Render Mode to <strong>Screen Space — Overlay</strong>.</p>
+        </div>
+      </div>
+      <div class="task-step">
+        <div class="task-step-num">2</div>
+        <div class="task-step-body">
+          <div class="task-step-title">Add a Button</div>
+          <p class="task-step-desc">Right-click the Canvas in the Hierarchy → UI → Button - TextMeshPro. Rename it <code>RollDiceButton</code>. In the Inspector, set the button's child Text to <strong>"🎲 Roll Dice"</strong>. Position it in the bottom-centre of the screen using the Rect Transform anchors.</p>
+          <div class="task-step-code">Anchor: Bottom Centre &nbsp;|&nbsp; Pos X: 0 &nbsp;|&nbsp; Pos Y: 60 &nbsp;|&nbsp; Width: 160 &nbsp;|&nbsp; Height: 50</div>
+        </div>
+      </div>
+      <div class="task-step">
+        <div class="task-step-num">3</div>
+        <div class="task-step-body">
+          <div class="task-step-title">Wire the OnClick event</div>
+          <p class="task-step-desc">Select <code>RollDiceButton</code> → look for the <strong>On Click ()</strong> section in the Button component. Click the <strong>+</strong> icon to add an event. Drag the <strong>GameManager</strong> GameObject from the Hierarchy into the <em>None (Object)</em> slot. From the function dropdown: select <strong>GameManager → StartTurn()</strong>.</p>
+        </div>
+      </div>
+      <div class="task-step">
+        <div class="task-step-num">4</div>
+        <div class="task-step-body">
+          <div class="task-step-title">Add a Message TMP_Text</div>
+          <p class="task-step-desc">Right-click Canvas → UI → Text - TextMeshPro. Rename it <code>MessageText</code>. Position it above the button. Drag it into the <code>messageText</code> slot on the GameManager Inspector. This makes <code>ShowMessage()</code> display on screen.</p>
+          <div class="task-step-code">Anchor: Bottom Stretch &nbsp;|&nbsp; Pos Y: 120 &nbsp;|&nbsp; Height: 40 &nbsp;|&nbsp; Alignment: Centre</div>
+        </div>
+      </div>
+      <div class="task-step">
+        <div class="task-step-num">5</div>
+        <div class="task-step-body">
+          <div class="task-step-title">Press Play and test</div>
+          <p class="task-step-desc">Hit Play. Click the Roll Dice button. You should see: the token jump to a new space, the Console log the roll and new position, and the MessageText update. Click again — the next player's token should move. Try clicking until a player wraps past Go.</p>
+          <div class="task-step-code">Expected Console: "Rolled: 4 + 3 = 7" → "Nomad moved from 0 to 7 (City Rd)"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn-box" style="margin-top:1.25rem;">
+      <strong>⚠ Token not moving?</strong> The most common cause is that <code>p.token</code> is null — you forgot to drag the player's token GameObject into the <code>token</code> field in the Player Inspector (Lesson 4, Step 4). Check each Player's Inspector and confirm the token slot is filled.
+    </div>
+  </section>
+
+  <!-- PART 5: Test table -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 5 · Testing (5 min)</p>
+    <h2>Test Your Movement</h2>
+    <p>Before moving to Lesson 6, verify that your movement system handles all the cases below. Record your results in your notebook — this is your first test log.</p>
+
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>Test case</th>
+          <th>Starting position</th>
+          <th>Roll</th>
+          <th>Expected landing space</th>
+          <th>Go salary?</th>
+          <th>Your result ✓/✗</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Normal move</td>
+          <td>Space 0 (Go)</td>
+          <td>7</td>
+          <td>Space 7</td>
+          <td>No</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+        <tr>
+          <td>Mid-board move</td>
+          <td>Space 10</td>
+          <td>5</td>
+          <td>Space 15</td>
+          <td>No</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+        <tr>
+          <td>Land exactly on Go</td>
+          <td>Space 20</td>
+          <td>4</td>
+          <td>Space 0 (Go)</td>
+          <td>Yes (+$200)</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+        <tr>
+          <td>Wrap past Go</td>
+          <td>Space 21</td>
+          <td>6</td>
+          <td>Space 3</td>
+          <td>Yes (+$200)</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+        <tr>
+          <td>Large roll near end</td>
+          <td>Space 22</td>
+          <td>12</td>
+          <td>Space 10</td>
+          <td>Yes (+$200)</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+        <tr>
+          <td>Turn cycling</td>
+          <td>Any</td>
+          <td>Any</td>
+          <td>Second player moves next</td>
+          <td>—</td>
+          <td style="color:rgba(240,220,170,.3)">—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box" style="margin-top:1rem;">
+      <strong>How to force a specific roll for testing:</strong> Temporarily replace <code>RollDice()</code> with <code>return 6;</code> (or any value). Test, then restore the random version. This is called a <em>test stub</em> — a deliberate simplification that isolates one part of the system for testing. Record that you did this in your test log.
+    </div>
+  </section>
+
+  <!-- TIERED TASKS -->
+  <section class="content-section reveal">
+    <p class="section-label">Extension Work</p>
+    <h2>Tiered Tasks</h2>
+    <div class="tier-grid">
+      <div class="tier-card tier-basic">
+        <div class="tier-head">Basic</div>
+        <div class="tier-body">
+          <ul>
+            <li>Add a TextMeshPro label above the button showing the last dice result (e.g. "⚄ + ⚂ = 8") — update it inside <code>RollDice()</code></li>
+            <li>Disable the Roll Dice button after it is clicked and re-enable it at the start of each new turn — prevents double-rolling</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-inter">
+        <div class="tier-head">Intermediate</div>
+        <div class="tier-body">
+          <ul>
+            <li>Display the individual die values separately in the UI (two TMP labels side-by-side) so players can verify the roll</li>
+            <li>Move the token using <code>Vector3.Lerp</code> over 0.5 seconds instead of an instant snap — use a Coroutine so the rest of the code waits for the animation to finish before calling <code>NextTurn()</code></li>
+            <li>Add a small Y-axis bounce to the token when it arrives at its destination (scale up briefly then back to normal using a Coroutine)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-advanced">
+        <div class="tier-head">Advanced</div>
+        <div class="tier-body">
+          <ul>
+            <li>Implement step-by-step movement: instead of jumping directly to the final space, move the token one space at a time with a 0.15s pause between each step — this makes it visually clear exactly how many spaces were moved</li>
+            <li>Add a doubles mechanic: if both dice show the same value, the player rolls again immediately — implement this in <code>StartTurn()</code> using a loop, but limit to 3 consecutive doubles before passing the turn</li>
+            <li>Write a probability distribution function that runs 1000 simulated dice rolls and logs how often each total (2–12) appeared — compare to the theoretical probability table and write a reflection in your notebook</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTEBOOK CHECKPOINT -->
+  <section class="content-section reveal">
+    <p class="section-label">End of Lesson</p>
+    <h2>Notebook Checkpoint</h2>
+    <div class="notebook-checkpoint">
+      <ul>
+        <li>Pseudocode for <code>MovePlayer()</code> — annotated with one explanation per line in your own words</li>
+        <li>Explanation of why modulo is needed (in your own words, not copied from the screen)</li>
+        <li>Test log table — all 6 test cases completed with ✓ or ✗ and a note on any that failed</li>
+        <li>Screenshot of the Console showing a successful move log (e.g. "Nomad moved from 0 to 7 (City Rd)")</li>
+        <li>Screenshot of the Game view with a token in a non-starting position</li>
+        <li>If a test failed — a debugging note: what was wrong, what you changed, what happened next</li>
+        <li><em>Reflection (2–3 sentences):</em> What surprised you about how board wrapping works in code? What is one thing that could still go wrong that you haven't tested yet?</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="time-badge">⏱ 1 hour · Lesson 5 of 10</div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Learning Outcomes</span>
+    <div class="outcome-chips">
+      <span class="outcome-chip">CT5-OPL-01</span>
+      <span class="outcome-chip">CT5-THI-01</span>
+      <span class="outcome-chip">CT5-EVL-01</span>
+    </div>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Lesson at a Glance</span>
+    <p style="margin:0; font-size:.83rem; color:var(--cream-dark);">
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:00</span> Dice algorithm + simulator (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:10</span> Modulo / board wrap concept (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:20</span> Write MovePlayer() + StartTurn() (25 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:45</span> Wire Roll Dice button (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:55</span> Test log + notebook (5 min)
+    </p>
+  </div>
+
+  <div class="sidebar-card" style="border-color:rgba(192,57,43,.35); background:rgba(192,57,43,.06);">
+    <span class="sidebar-card-label" style="color:#e87070;">Common Errors</span>
+    <p style="font-size:.82rem; margin-bottom:.5rem;"><strong style="color:#e87070;">Token doesn't move</strong><br><code>p.token</code> is null — drag the token GameObject into the Player Inspector's token field.</p>
+    <p style="font-size:.82rem; margin-bottom:.5rem;"><strong style="color:#e87070;">IndexOutOfRangeException</strong><br>Your board has fewer spaces than expected — check <code>boardSpaces.Length</code> in the Console using <code>Debug.Log(boardSpaces.Length)</code> in Start().</p>
+    <p style="font-size:.82rem; margin-bottom:0;"><strong style="color:#e87070;">Go salary fires every turn</strong><br>The <code>passedGo</code> condition is wrong — double-check the <code>newPosition &lt;= oldPosition</code> logic and confirm you're using <code>&&</code> not <code>||</code>.</p>
+  </div>
+
+  <div class="cpd-strip">
+    <div class="cpd-strip-label">Grade indicators — this lesson</div>
+    <div class="cpd-rows">
+      <div class="cpd-row">
+        <span class="cpd-grade">A</span>
+        <span class="cpd-desc">All 6 test cases pass; Go salary triggers correctly; test log records a failed test with debugging process; reflection explains modulo with an original example</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">B</span>
+        <span class="cpd-desc">Movement works correctly; token snaps to correct space; test log shows 5+ cases; Go salary implemented</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">C</span>
+        <span class="cpd-desc">Roll Dice button works; token moves to a new space; test log attempted; Console shows move output</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">D</span>
+        <span class="cpd-desc">Button calls StartTurn(); some movement occurring; partial test log</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">E</span>
+        <span class="cpd-desc">RollDice() returns a value; StartTurn() partially implemented; token may not yet move</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <span class="teacher-note-label">🔒 Teacher Note</span>
+    <p>The dice simulator and modulo visualiser are the pedagogical centrepieces of this lesson — run the modulo visualiser on the projector during the concept explanation. The test stub tip (replacing RollDice with a fixed value) is worth demonstrating whole-class: students who don't know this trick spend 20+ minutes waiting for a specific roll to appear. The temporary <code>NextTurn()</code> stub is intentional — Lesson 7 replaces it. Make sure students know their game is not broken when it skips ResolveSpace.</p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Key Terms this lesson</span>
+    <p style="font-size:.83rem; margin:.2rem 0; color:var(--cream-dark);">
+      <span class="key-term">Random.Range</span><br><br>
+      <span class="key-term">modulo (%)</span><br><br>
+      <span class="key-term">IndexOutOfRange</span><br><br>
+      <span class="key-term">Coroutine</span><br><br>
+      <span class="key-term">test stub</span>
+    </p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Navigate</span>
+    <div class="lesson-nav">
+      <a href="lesson-4.html">← L4</a>
+      <a href="lesson-6.html">L6 →</a>
+    </div>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · L5 — Producing &amp; Implementing</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-OPL-01</span>
+    <span class="footer-outcome-chip">CT5-THI-01</span>
+    <span class="footer-outcome-chip">CT5-EVL-01</span>
+  </div>
+</footer>
+
+<script>
+/* ─── Dice pip layouts (which of 9 grid cells are active) ─── */
+const pipLayouts = {
+  1: [5],
+  2: [1,9],
+  3: [1,5,9],
+  4: [1,3,7,9],
+  5: [1,3,5,7,9],
+  6: [1,3,4,6,7,9]
+};
+
+function showDie(prefix, value) {
+  for (let i = 1; i <= 9; i++) {
+    const pip = document.getElementById(`${prefix}-${i}`);
+    if (pip) pip.classList.toggle('on', pipLayouts[value]?.includes(i) ?? false);
+  }
+}
+
+let rollCount = 0;
+const rollCounts = {};
+let rolling = false;
+
+function rollDice() {
+  if (rolling) return;
+  rolling = true;
+  const btn = document.getElementById('rollBtn');
+  btn.disabled = true;
+
+  const d1 = Math.ceil(Math.random()*6);
+  const d2 = Math.ceil(Math.random()*6);
+  const total = d1 + d2;
+
+  // Animate dice
+  ['die1','die2'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('rolling');
+    void el.offsetWidth;
+    el.classList.add('rolling');
+  });
+
+  // Scramble pips during animation
+  let frames = 0;
+  const scramble = setInterval(() => {
+    showDie('p1', Math.ceil(Math.random()*6));
+    showDie('p2', Math.ceil(Math.random()*6));
+    frames++;
+    if (frames >= 8) {
+      clearInterval(scramble);
+      showDie('p1', d1);
+      showDie('p2', d2);
+
+      // Show total
+      const totalEl = document.getElementById('rollTotal');
+      totalEl.classList.remove('pop');
+      void totalEl.offsetWidth;
+      totalEl.classList.add('pop');
+      totalEl.textContent = total;
+      document.getElementById('rollSub').textContent = `${d1} + ${d2}`;
+
+      // History chip
+      rollCount++;
+      rollCounts[total] = (rollCounts[total] || 0) + 1;
+      const hist = document.getElementById('rollHistory');
+      const chip = document.createElement('span');
+      chip.className = 'history-chip' + (total === 7 ? ' seven' : '');
+      chip.textContent = total;
+      hist.appendChild(chip);
+      if (hist.children.length > 20) hist.removeChild(hist.firstChild);
+
+      // Update probability note
+      if (rollCount >= 10) {
+        const sevenCount = rollCounts[7] || 0;
+        const pct = Math.round(sevenCount / rollCount * 100);
+        document.getElementById('probNote').textContent =
+          `After ${rollCount} rolls: 7 appeared ${sevenCount} times (${pct}%). Theory predicts ~17%. Greens = 7s.`;
+      }
+
+      rolling = false;
+      btn.disabled = false;
+    }
+  }, 60);
+}
+
+// Init dice at 1
+showDie('p1', 1);
+showDie('p2', 1);
+
+/* ─── Modulo visualiser ─── */
+const BOARD_SIZE = 24;
+
+function buildModBoard() {
+  const board = document.getElementById('modBoard');
+  board.innerHTML = '';
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'mod-space' + (i === 0 ? ' go-space' : '');
+    sp.id = `mod-sp-${i}`;
+    sp.textContent = i === 0 ? 'GO' : i;
+    board.appendChild(sp);
+  }
+}
+
+function updateModulo() {
+  const pos  = parseInt(document.getElementById('modPos').value)  || 0;
+  const roll = parseInt(document.getElementById('modRoll').value) || 0;
+  const raw  = pos + roll;
+  const result = raw % BOARD_SIZE;
+  const passedGo = result <= pos && roll > 0;
+
+  // Update equation display
+  document.getElementById('mPos').textContent    = pos;
+  document.getElementById('mRoll').textContent   = roll;
+  document.getElementById('mRaw').textContent    = raw;
+  document.getElementById('mResult').textContent = result;
+
+  // Reset all spaces
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const sp = document.getElementById(`mod-sp-${i}`);
+    if (!sp) continue;
+    sp.className = 'mod-space' + (i === 0 ? ' go-space' : '');
+    sp.innerHTML = i === 0 ? 'GO' : i;
+  }
+
+  // Highlight current
+  const curEl = document.getElementById(`mod-sp-${pos}`);
+  if (curEl) {
+    curEl.classList.add('current');
+    curEl.innerHTML = (pos === 0 ? 'GO' : pos) + '<span class="mod-token">♟</span>';
+  }
+
+  // Highlight landing
+  if (result !== pos) {
+    const landEl = document.getElementById(`mod-sp-${result}`);
+    if (landEl) {
+      landEl.classList.add('landing');
+      landEl.innerHTML = (result === 0 ? 'GO' : result) + '<span class="mod-token" style="color:#58d68d">♟</span>';
+    }
+  }
+
+  // Go note
+  const note = document.getElementById('goNote');
+  note.style.opacity = passedGo ? '1' : '0.25';
+  note.textContent = passedGo
+    ? '⭐ Player crosses Go — collect $200 salary'
+    : 'No Go crossing on this move.';
+}
+
+buildModBoard();
+updateModulo();
+
+/* ─── Copy code ─── */
+function copyCode(id) {
+  const pre = document.getElementById(id);
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    const btn = [...document.querySelectorAll('.copy-btn')]
+      .find(b => b.getAttribute('onclick')?.includes(id));
+    if (btn) {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+    }
+  });
+}
+
+/* ─── Scroll reveal ─── */
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

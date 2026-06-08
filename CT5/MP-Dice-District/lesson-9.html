@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 9 · Dice District</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board-green:  #1a3a2a;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --green-prop:   #1e8449;
+    --rule-line:    rgba(201,168,76,0.35);
+    --phase-colour: #6c3483; /* purple = Testing & Evaluating */
+    --phase-bg:     rgba(108,52,131,0.12);
+    --code-bg:      #0f1e16;
+    --code-kw:      #e8c96a;
+    --code-type:    #58d68d;
+    --code-str:     #f0a07a;
+    --code-cmt:     #5d8a6a;
+    --code-num:     #bb8fce;
+    --code-fn:      #5dade2;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { background-color:var(--board-green); color:var(--cream); font-family:var(--font-body); font-size:17px; line-height:1.7; min-height:100vh; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+  body::before { content:''; position:fixed; inset:10px; border:3px solid var(--rule-line); pointer-events:none; z-index:100; }
+
+  nav { position:sticky; top:0; z-index:50; background:var(--board-green); border-bottom:2px solid var(--rule-line); padding:0 2.5rem; display:flex; align-items:center; gap:2rem; height:54px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+  .nav-logo { font-family:var(--font-display); font-weight:900; font-size:1.15rem; color:var(--gold); letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+  .nav-links { display:flex; gap:.25rem; list-style:none; margin-left:auto; }
+  .nav-links a { font-family:var(--font-mono); font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dark); text-decoration:none; padding:.3rem .75rem; border-radius:3px; transition:background .15s,color .15s; }
+  .nav-links a:hover { background:var(--rule-line); color:var(--gold); }
+  .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); }
+
+  .lesson-header { border-bottom:2px solid var(--rule-line); padding:3.5rem 5rem 3rem; position:relative; overflow:hidden; }
+  .lesson-header::before { content:''; position:absolute; top:0;left:0;right:0; height:6px; background:var(--phase-colour); }
+  .lesson-header::after { content:''; position:absolute; right:0;top:0;bottom:0; width:200px; background:repeating-linear-gradient(45deg,transparent,transparent 16px,rgba(108,52,131,.05) 16px,rgba(108,52,131,.05) 32px); pointer-events:none; }
+  .lesson-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .phase-badge { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .65rem; border-radius:3px; background:var(--phase-bg); color:#bb8fce; border:1.5px solid rgba(108,52,131,.4); }
+  .lesson-num-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; color:rgba(240,220,170,.45); }
+  .lesson-header h1 { font-family:var(--font-display); font-weight:900; font-size:clamp(2.4rem,5vw,3.8rem); line-height:1; color:var(--cream); letter-spacing:-.02em; margin-bottom:.6rem; }
+  .lesson-header h1 em { font-style:italic; color:var(--gold); }
+  .lesson-tagline { font-size:1.05rem; color:var(--cream-dark); font-style:italic; margin-bottom:1.75rem; max-width:580px; }
+  .lisc-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; }
+  .lisc-box { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; }
+  .lisc-box-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem; }
+  .lisc-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .lisc-box li { font-size:.9rem; color:var(--cream-dark); padding-left:1rem; position:relative; line-height:1.4; }
+  .lisc-box li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:.75rem; }
+
+  .page-body { display:grid; grid-template-columns:1fr 300px; align-items:start; }
+  .content { padding:3rem 4rem 5rem 5rem; border-right:2px solid var(--rule-line); }
+  .sidebar { padding:3rem 2rem 5rem; position:sticky; top:54px; }
+
+  .section-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--rule-line); }
+  .content-section { margin-bottom:3.25rem; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:1.7rem; color:var(--cream); line-height:1.2; margin-bottom:.9rem; }
+  h3 { font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:var(--gold-light); margin-bottom:.5rem; margin-top:1.5rem; }
+  p { margin-bottom:.85rem; color:var(--cream-dark); }
+  p:last-child { margin-bottom:0; }
+  strong { color:var(--cream); font-weight:600; }
+  .key-term { display:inline-block; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.3); border-radius:3px; font-family:var(--font-mono); font-size:.8rem; color:var(--gold-light); padding:.05rem .4rem; }
+  .info-box { background:rgba(108,52,131,.08); border:1.5px solid rgba(108,52,131,.3); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .info-box strong { color:#bb8fce; }
+  .green-box { background:rgba(39,174,96,.08); border:1.5px solid rgba(39,174,96,.3); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .green-box strong { color:#58d68d; }
+
+  /* ─── PEER TEST CHECKLIST ─── */
+  .checklist-tool {
+    background: rgba(0,0,0,.28);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .checklist-head {
+    padding: .7rem 1.25rem;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid var(--rule-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .checklist-title {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(108,52,131,.8);
+  }
+
+  .checklist-game-input {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(201,168,76,.25);
+    border-radius: 3px;
+    padding: .22rem .55rem;
+    color: var(--cream);
+    outline: none;
+    width: 180px;
+  }
+  .checklist-game-input:focus { border-color: var(--gold); }
+  .checklist-game-input::placeholder { color:rgba(240,220,170,.3); font-style:italic; }
+
+  .checklist-sections { padding: .5rem 0; }
+
+  .checklist-section-head {
+    padding: .5rem 1.25rem .25rem;
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,.45);
+    border-top: 1px solid rgba(255,255,255,.04);
+    margin-top: .2rem;
+  }
+
+  .checklist-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem 1.25rem;
+    transition: background .1s;
+    cursor: pointer;
+  }
+
+  .checklist-item:hover { background: rgba(201,168,76,.03); }
+
+  .check-circle {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(201,168,76,.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem;
+    color: transparent;
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+
+  .checklist-item.pass .check-circle  { background:rgba(39,174,96,.25);  border-color:rgba(39,174,96,.6);  color:#58d68d; }
+  .checklist-item.fail .check-circle  { background:rgba(192,57,43,.2);   border-color:rgba(192,57,43,.6);  color:#e87070; }
+  .checklist-item.na   .check-circle  { background:rgba(201,168,76,.1);  border-color:rgba(201,168,76,.4); color:var(--gold); }
+
+  .check-label {
+    font-size: .9rem;
+    color: var(--cream-dark);
+    line-height: 1.4;
+  }
+
+  .checklist-item.fail .check-label { color: #e87070; }
+
+  .check-btns {
+    display: flex;
+    gap: .3rem;
+  }
+
+  .check-btn {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    padding: .18rem .45rem;
+    border-radius: 2px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: background .12s;
+  }
+
+  .check-btn-pass { background:rgba(39,174,96,.1);  border-color:rgba(39,174,96,.4);  color:#58d68d; }
+  .check-btn-pass:hover { background:rgba(39,174,96,.25); }
+  .check-btn-fail { background:rgba(192,57,43,.1);  border-color:rgba(192,57,43,.4);  color:#e87070; }
+  .check-btn-fail:hover { background:rgba(192,57,43,.25); }
+  .check-btn-na   { background:rgba(201,168,76,.08); border-color:rgba(201,168,76,.3); color:var(--gold); }
+  .check-btn-na:hover { background:rgba(201,168,76,.2); }
+
+  .check-note {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 2px;
+    padding: .18rem .45rem;
+    color: rgba(240,220,170,.5);
+    outline: none;
+    width: 140px;
+    transition: border-color .12s;
+  }
+  .check-note:focus { border-color: rgba(201,168,76,.4); color:var(--cream-dark); }
+
+  .checklist-footer {
+    padding: .75rem 1.25rem;
+    border-top: 1px solid var(--rule-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,.12);
+  }
+
+  .check-summary {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    color: var(--cream-dark);
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  .check-count { font-weight: 600; }
+  .check-count.pass-count { color: #58d68d; }
+  .check-count.fail-count { color: #e87070; }
+
+  .print-btn {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(108,52,131,.15);
+    border: 1.5px solid rgba(108,52,131,.4);
+    border-radius: 3px;
+    color: #bb8fce;
+    padding: .3rem .75rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .print-btn:hover { background: rgba(108,52,131,.28); }
+
+  /* ─── BUG LOG ─── */
+  .bug-log {
+    background: rgba(0,0,0,.25);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .bug-log-head {
+    padding: .65rem 1.25rem;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid var(--rule-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bug-log-title {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(192,57,43,.8);
+  }
+
+  .add-bug-btn {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(192,57,43,.12);
+    border: 1.5px solid rgba(192,57,43,.4);
+    border-radius: 3px;
+    color: #e87070;
+    padding: .25rem .65rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .add-bug-btn:hover { background: rgba(192,57,43,.25); }
+
+  .bug-entries { padding: .5rem .75rem; display: flex; flex-direction: column; gap: .5rem; min-height: 3rem; }
+
+  .bug-entry {
+    background: rgba(0,0,0,.2);
+    border: 1.5px solid rgba(192,57,43,.2);
+    border-radius: 4px;
+    overflow: hidden;
+    animation: bugIn .2s ease;
+  }
+  @keyframes bugIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+
+  .bug-entry-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .75rem;
+    background: rgba(192,57,43,.06);
+    border-bottom: 1px solid rgba(192,57,43,.12);
+  }
+
+  .bug-num {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    font-weight: 600;
+    color: rgba(232,112,112,.5);
+    white-space: nowrap;
+  }
+
+  .bug-desc {
+    font-family: var(--font-mono);
+    font-size: .78rem;
+    background: transparent;
+    border: none;
+    color: var(--cream);
+    outline: none;
+    width: 100%;
+  }
+  .bug-desc::placeholder { color:rgba(240,220,170,.3); font-style:italic; }
+
+  .severity-select {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    font-weight: 600;
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 2px;
+    padding: .18rem .35rem;
+    color: var(--cream);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .severity-select.sev-critical { color:#e87070; border-color:rgba(192,57,43,.4); }
+  .severity-select.sev-major    { color:#f0a07a; border-color:rgba(232,116,43,.4); }
+  .severity-select.sev-minor    { color:#5dade2; border-color:rgba(36,113,163,.4); }
+  .severity-select.sev-cosmetic { color:rgba(240,220,170,.4); }
+
+  .bug-status-select {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 2px;
+    padding: .18rem .35rem;
+    color: var(--cream);
+    outline: none;
+  }
+
+  .bug-status-select.status-open   { color:#e87070; }
+  .bug-status-select.status-wip    { color:#f0a07a; }
+  .bug-status-select.status-fixed  { color:#58d68d; }
+
+  .delete-bug-btn {
+    background: none;
+    border: none;
+    color: rgba(192,57,43,.3);
+    cursor: pointer;
+    font-size: .85rem;
+    padding: .1rem .25rem;
+    transition: color .12s;
+    line-height: 1;
+  }
+  .delete-bug-btn:hover { color: #e87070; }
+
+  .bug-entry-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .bug-field {
+    padding: .4rem .75rem;
+    border-right: 1px solid rgba(255,255,255,.04);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  .bug-field:nth-child(even) { border-right: none; }
+  .bug-field:nth-last-child(-n+2) { border-bottom: none; }
+
+  .bug-field-label {
+    font-family: var(--font-mono);
+    font-size: .58rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,.35);
+    margin-bottom: .15rem;
+  }
+
+  .bug-field-input {
+    font-family: var(--font-body);
+    font-size: .82rem;
+    background: transparent;
+    border: none;
+    color: var(--cream-dark);
+    outline: none;
+    width: 100%;
+    resize: none;
+    font-style: italic;
+    line-height: 1.4;
+    min-height: 1.5rem;
+  }
+  .bug-field-input::placeholder { color:rgba(240,220,170,.2); }
+
+  .bug-log-footer {
+    padding: .65rem 1.25rem;
+    border-top: 1px solid var(--rule-line);
+    background: rgba(0,0,0,.12);
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    color: rgba(240,220,170,.35);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bug-counts {
+    display: flex;
+    gap: 1rem;
+  }
+  .bug-count-item { display: flex; align-items: center; gap: .35rem; }
+
+  /* ─── PRIORITY FIX LIST ─── */
+  .priority-list {
+    background: rgba(0,0,0,.22);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .priority-list-head {
+    padding: .65rem 1.25rem;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid var(--rule-line);
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(232,116,43,.75);
+  }
+
+  .priority-items {
+    padding: .75rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  .priority-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    background: rgba(0,0,0,.15);
+    border: 1px solid var(--rule-line);
+    border-radius: 3px;
+    padding: .5rem .85rem;
+    cursor: grab;
+    user-select: none;
+    transition: background .12s, border-color .12s;
+  }
+
+  .priority-item:hover { border-color: rgba(232,116,43,.4); background: rgba(232,116,43,.05); }
+
+  .priority-handle {
+    color: rgba(201,168,76,.25);
+    font-size: .75rem;
+  }
+
+  .priority-text-input {
+    font-family: var(--font-body);
+    font-size: .88rem;
+    background: transparent;
+    border: none;
+    color: var(--cream-dark);
+    outline: none;
+    width: 100%;
+    cursor: text;
+  }
+  .priority-text-input::placeholder { color:rgba(240,220,170,.2); font-style:italic; }
+
+  .priority-eta {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    background: rgba(0,0,0,.25);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 2px;
+    padding: .15rem .45rem;
+    color: rgba(240,220,170,.45);
+    outline: none;
+    width: 70px;
+    text-align: center;
+  }
+  .priority-eta:focus { border-color: rgba(201,168,76,.3); color:var(--cream-dark); }
+
+  .priority-add-btn {
+    margin-top: .5rem;
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(232,116,43,.1);
+    border: 1.5px solid rgba(232,116,43,.35);
+    border-radius: 3px;
+    color: #f0a07a;
+    padding: .35rem .85rem;
+    cursor: pointer;
+    transition: background .15s;
+    display: block;
+    width: 100%;
+    text-align: center;
+  }
+  .priority-add-btn:hover { background: rgba(232,116,43,.22); }
+
+  /* ─── ANALYSIS TABLE ─── */
+  .analysis-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.92rem; }
+  .analysis-table thead tr { border-bottom:2px solid var(--gold); }
+  .analysis-table th { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); padding:.5rem .75rem; text-align:left; }
+  .analysis-table td { padding:.65rem .75rem; color:var(--cream-dark); border-bottom:1px solid rgba(201,168,76,.12); vertical-align:top; line-height:1.45; }
+  .analysis-table tr:last-child td { border-bottom:none; }
+  .analysis-table td:first-child { font-family:var(--font-mono); font-size:.8rem; font-weight:600; color:var(--cream); }
+
+  /* ─── NOTEBOOK / SIDEBAR ─── */
+  .notebook-checkpoint { background:rgba(201,168,76,.07); border:2px solid rgba(201,168,76,.4); border-radius:5px; padding:1.5rem 1.75rem; margin-top:1rem; }
+  .notebook-checkpoint::before { content:'📓  NOTEBOOK CHECKPOINT'; font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.14em; color:var(--gold); display:block; margin-bottom:.85rem; }
+  .notebook-checkpoint ul { list-style:none; display:flex; flex-direction:column; gap:.45rem; }
+  .notebook-checkpoint li { font-size:.92rem; color:var(--cream-dark); padding-left:1.3rem; position:relative; line-height:1.45; }
+  .notebook-checkpoint li::before { content:'☐'; position:absolute; left:0; color:var(--gold); font-size:.85rem; }
+
+  .sidebar-card { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; margin-bottom:1.25rem; }
+  .sidebar-card-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.65rem; display:block; }
+  .sidebar-card p { font-size:.88rem; color:var(--cream-dark); margin-bottom:.5rem; }
+  .outcome-chips { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.25rem; }
+  .outcome-chip { font-family:var(--font-mono); font-size:.62rem; font-weight:600; color:var(--gold); border:1px solid rgba(201,168,76,.35); border-radius:2px; padding:.15rem .4rem; letter-spacing:.05em; }
+  .teacher-note { background:rgba(108,52,131,.12); border:1.5px solid rgba(108,52,131,.35); border-radius:4px; padding:1rem 1.1rem; margin-bottom:1.25rem; }
+  .teacher-note-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#bb8fce; display:block; margin-bottom:.5rem; }
+  .teacher-note p { font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.5; }
+  .time-badge { display:inline-flex; align-items:center; gap:.4rem; font-family:var(--font-mono); font-size:.72rem; font-weight:600; color:var(--gold); background:rgba(201,168,76,.1); border:1.5px solid rgba(201,168,76,.3); border-radius:3px; padding:.25rem .65rem; margin-bottom:1.5rem; }
+  .lesson-nav { display:flex; gap:.5rem; margin-top:.5rem; }
+  .lesson-nav a { flex:1; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.06em; text-decoration:none; padding:.55rem .5rem; border-radius:3px; border:1.5px solid var(--rule-line); color:var(--cream-dark); transition:border-color .15s,color .15s; text-align:center; }
+  .lesson-nav a:hover { border-color:var(--gold); color:var(--gold); }
+  .cpd-strip { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; overflow:hidden; margin-bottom:1.25rem; }
+  .cpd-strip-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); padding:.5rem .85rem; border-bottom:1px solid var(--rule-line); background:rgba(201,168,76,.06); }
+  .cpd-rows { padding:.6rem 0; }
+  .cpd-row { display:flex; align-items:flex-start; gap:.5rem; padding:.35rem .85rem; font-size:.8rem; }
+  .cpd-grade { font-family:var(--font-mono); font-size:.65rem; font-weight:600; width:1.4rem; flex-shrink:0; color:var(--gold); padding-top:.05rem; }
+  .cpd-desc { color:var(--cream-dark); line-height:1.4; }
+
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .45s ease,transform .45s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  footer { border-top:2px solid var(--rule-line); padding:1.75rem 5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .footer-left { font-family:var(--font-mono); font-size:.72rem; color:rgba(240,220,170,.4); letter-spacing:.06em; }
+  .footer-outcomes { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .footer-outcome-chip { font-family:var(--font-mono); font-size:.6rem; font-weight:600; color:rgba(201,168,76,.5); border:1px solid rgba(201,168,76,.2); border-radius:2px; padding:.15rem .4rem; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span>⚄</span> Dice District</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="lesson-1.html">L1</a></li>
+    <li><a href="lesson-2.html">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html" class="active">L9</a></li>
+    <li><a href="lesson-10.html">L10</a></li>
+  </ul>
+</nav>
+
+<header class="lesson-header">
+  <div class="lesson-eyebrow">
+    <span class="phase-badge">Testing &amp; Evaluating</span>
+    <span class="lesson-num-label">Lesson 09 of 10</span>
+  </div>
+  <h1>Structured<br><em>Peer Testing</em></h1>
+  <p class="lesson-tagline">Play another group's game with fresh eyes, complete the observation checklist, log every bug you find — then receive their feedback on yours and start fixing the highest-priority issues.</p>
+  <div class="lisc-grid">
+    <div class="lisc-box">
+      <div class="lisc-box-label">Learning Intentions</div>
+      <ul>
+        <li>Understand the difference between a bug, a design flaw, and a missing feature</li>
+        <li>Apply a structured observation checklist as a tester for another group's game</li>
+        <li>Record findings in a bug log with severity ratings and reproduction steps</li>
+        <li>Prioritise received feedback and begin fixing the highest-severity issues</li>
+      </ul>
+    </div>
+    <div class="lisc-box">
+      <div class="lisc-box-label">Success Criteria — I can…</div>
+      <ul>
+        <li>Complete the observation checklist for the game I tested with ✓/✗ and notes</li>
+        <li>Write at least 3 bug log entries with severity, description, cause, and fix attempted</li>
+        <li>Produce a priority fix list from feedback received, ordered by severity</li>
+        <li>Demonstrate at least one fix applied in Unity before the end of the lesson</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<main class="content">
+
+  <!-- PART 1: What testers do -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 1 · Testing as a Discipline (5 min)</p>
+    <h2>The Tester's Mindset</h2>
+    <p>A tester's job is not to enjoy the game — it is to <strong>break it</strong>. Good testing means deliberately trying things the developer didn't expect: clicking the Roll button twice fast, buying the most expensive property immediately, trying to pay rent when you have $0. The more creative the tester, the more valuable the feedback.</p>
+
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>Finding type</th>
+          <th>Definition</th>
+          <th>Example</th>
+          <th>Severity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Bug — Critical</td>
+          <td>Crashes the game or makes it unplayable</td>
+          <td>Clicking Roll Dice causes a NullReferenceException and freezes</td>
+          <td style="color:#e87070; font-family:var(--font-mono); font-size:.8rem;">🔴 Critical</td>
+        </tr>
+        <tr>
+          <td>Bug — Major</td>
+          <td>Breaks a core mechanic without crashing</td>
+          <td>Go salary fires every turn, not just when passing</td>
+          <td style="color:#f0a07a; font-family:var(--font-mono); font-size:.8rem;">🟠 Major</td>
+        </tr>
+        <tr>
+          <td>Bug — Minor</td>
+          <td>Something works incorrectly but is playable</td>
+          <td>Message text sometimes doesn't update after a purchase</td>
+          <td style="color:#5dade2; font-family:var(--font-mono); font-size:.8rem;">🔵 Minor</td>
+        </tr>
+        <tr>
+          <td>Design flaw</td>
+          <td>Works as coded but feels wrong or unfair</td>
+          <td>Go salary of $1000 makes the game trivially easy</td>
+          <td style="color:rgba(240,220,170,.5); font-family:var(--font-mono); font-size:.8rem;">⚪ Design</td>
+        </tr>
+        <tr>
+          <td>Cosmetic issue</td>
+          <td>Visual or text problem that doesn't affect play</td>
+          <td>Player name is cut off in the HUD when it's longer than 8 characters</td>
+          <td style="color:rgba(240,220,170,.35); font-family:var(--font-mono); font-size:.8rem;">⬜ Cosmetic</td>
+        </tr>
+        <tr>
+          <td>Missing feature</td>
+          <td>Something expected isn't there</td>
+          <td>No indication of whose turn it is after a player is eliminated</td>
+          <td style="color:#bb8fce; font-family:var(--font-mono); font-size:.8rem;">🟣 Missing</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      <strong>Testing etiquette:</strong> Write findings as observations, not criticisms. "Money doesn't update after rent payment" is a useful bug report. "The UI is confusing" is not. Specific, reproducible descriptions are what developers need. If you can reproduce a bug consistently, note the exact steps — this is the most valuable thing you can give.
+    </div>
+  </section>
+
+  <!-- PART 2: Observation checklist -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 2 · Peer Testing (20 min)</p>
+    <h2>Observation Checklist</h2>
+    <p>Play the assigned group's game for at least <strong>two full rounds</strong> — including at least one property purchase and one rent payment if possible. Complete this checklist as you play. Use the notes field to record anything specific about failures.</p>
+
+    <div class="checklist-tool">
+      <div class="checklist-head">
+        <span class="checklist-title">📋 Tester Observation Checklist</span>
+        <input class="checklist-game-input" type="text" id="gameNameInput" placeholder="Game name / group tested…">
+      </div>
+      <div class="checklist-sections" id="checklistBody"></div>
+      <div class="checklist-footer">
+        <div class="check-summary">
+          <span>Pass: <span class="check-count pass-count" id="passCount">0</span></span>
+          <span>Fail: <span class="check-count fail-count" id="failCount">0</span></span>
+          <span>N/A: <span class="check-count" style="color:rgba(201,168,76,.6)" id="naCount">0</span></span>
+          <span style="color:rgba(240,220,170,.4);">Remaining: <span id="remainCount">—</span></span>
+        </div>
+        <button class="print-btn" onclick="exportChecklist()">Export Summary</button>
+      </div>
+    </div>
+
+    <p style="font-size:.85rem; margin-top:.85rem; color:rgba(240,220,170,.45); font-style:italic;">Copy this checklist into your notebook — tick each item, note any failures. The export button generates a plain-text summary you can copy into your notebook entry.</p>
+  </section>
+
+  <!-- PART 3: Bug Log -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 3 · Bug Log (5 min during testing)</p>
+    <h2>Recording What You Find</h2>
+    <p>As you test, add entries to the bug log below for every issue you find. Click <strong>+ Add Bug</strong> for each new finding. You need at least 3 entries as a tester — more if the game has issues. A good bug report has enough detail that the developer can reproduce it without asking you for clarification.</p>
+
+    <div class="bug-log">
+      <div class="bug-log-head">
+        <span class="bug-log-title">🐛 Bug Log — Tester's Record</span>
+        <button class="add-bug-btn" onclick="addBug()">+ Add Bug</button>
+      </div>
+      <div class="bug-entries" id="bugEntries">
+        <div style="padding:.75rem; font-family:var(--font-mono); font-size:.72rem; color:rgba(240,220,170,.25); text-align:center;">
+          Click "+ Add Bug" to log your first finding.
+        </div>
+      </div>
+      <div class="bug-log-footer">
+        <div class="bug-counts" id="bugCounts">
+          <span class="bug-count-item"><span style="color:#e87070;">●</span> Critical: <span id="critCount">0</span></span>
+          <span class="bug-count-item"><span style="color:#f0a07a;">●</span> Major: <span id="majCount">0</span></span>
+          <span class="bug-count-item"><span style="color:#5dade2;">●</span> Minor: <span id="minCount">0</span></span>
+          <span class="bug-count-item"><span style="color:rgba(240,220,170,.4);">●</span> Other: <span id="otherCount">0</span></span>
+        </div>
+        <span style="color:rgba(240,220,170,.3); font-size:.65rem;">Copy into your notebook before leaving this page</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 4: Priority fix list -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 4 · Receiving Feedback &amp; Fixing (25 min)</p>
+    <h2>From Feedback to Fixes</h2>
+    <p>When you receive the checklist and bug log from the group who tested your game, <strong>resist the urge to be defensive</strong>. Every bug found now is one less bug in your final submission. Read all feedback, then use the priority fix list below to decide what to tackle in the remaining time.</p>
+
+    <h3>How to prioritise</h3>
+    <table class="analysis-table">
+      <thead>
+        <tr>
+          <th>Fix first</th>
+          <th>Fix if time allows</th>
+          <th>Defer to after submission</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>🔴 Critical bugs — game crashes or is unplayable</td>
+          <td>🟠 Major bugs — core mechanic broken</td>
+          <td>⬜ Cosmetic issues — text cut off, colours wrong</td>
+        </tr>
+        <tr>
+          <td>Any bug that will prevent the peer test in L9 from running</td>
+          <td>🔵 Minor bugs — something works wrongly but game continues</td>
+          <td>🟣 Missing features not in original requirements</td>
+        </tr>
+        <tr>
+          <td>Anything the tester couldn't get past at all</td>
+          <td>⚪ Design flaws — balance issues, confusing UX</td>
+          <td>Ideas from feedback that would be "nice to have"</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="priority-list">
+      <div class="priority-list-head">🔧 Priority Fix List — drag to reorder</div>
+      <div class="priority-items" id="priorityItems"></div>
+      <button class="priority-add-btn" onclick="addPriorityItem()">+ Add Fix Item</button>
+    </div>
+
+    <div class="green-box" style="margin-top:1.25rem;">
+      <strong>Debugging process — what to write in your notebook:</strong> For each fix you attempt, record: (1) what the bug was, (2) what you thought was causing it, (3) what you changed in the code, (4) whether it worked. If it didn't work, record what you tried next. This chain of reasoning — hypothesis → test → result — is exactly what an A-range notebook demonstrates.
+    </div>
+  </section>
+
+  <!-- PART 5: What makes a good test log -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 5 · Test Log Quality</p>
+    <h2>Two Bug Reports — Spot the Difference</h2>
+    <p>Both of these describe the same bug. One is useful; one is not. The quality of your bug log is assessed — not just the quantity of entries.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+      <div style="background:rgba(192,57,43,.06); border:1.5px solid rgba(192,57,43,.3); border-radius:4px; overflow:hidden;">
+        <div style="padding:.5rem .85rem; background:rgba(192,57,43,.1); border-bottom:1px solid rgba(192,57,43,.2); font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#e87070;">✗ Weak bug report</div>
+        <div style="padding:.85rem 1rem; font-size:.88rem; color:var(--cream-dark); line-height:1.55;">
+          <p style="margin:0;"><strong style="color:var(--cream);">Bug:</strong> The money is wrong</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Severity:</strong> Major</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Steps:</strong> Play the game</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Notes:</strong> It just doesn't work</p>
+        </div>
+      </div>
+      <div style="background:rgba(39,174,96,.06); border:1.5px solid rgba(39,174,96,.3); border-radius:4px; overflow:hidden;">
+        <div style="padding:.5rem .85rem; background:rgba(39,174,96,.1); border-bottom:1px solid rgba(39,174,96,.2); font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#58d68d;">✓ Strong bug report</div>
+        <div style="padding:.85rem 1rem; font-size:.88rem; color:var(--cream-dark); line-height:1.55;">
+          <p style="margin:0;"><strong style="color:var(--cream);">Bug:</strong> Player 1 money doesn't decrease when paying rent</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Severity:</strong> Major</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Steps:</strong> 1. Player 2 owns City Rd ($30 rent). 2. Player 1 (start $1500) lands on City Rd. 3. Message says "paid $30 rent" but Player 1 still shows $1500.</p>
+          <p style="margin:.35rem 0 0;"><strong style="color:var(--cream);">Likely cause:</strong> <code>ChargeMoney()</code> may not be updating the HUD, or Player 2 is receiving the payment but Player 1 isn't being charged</p>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:1rem;">The strong report tells the developer exactly what to look at — <code>ChargeMoney()</code> and the HUD update in <code>ChargeRent()</code>. The weak report gives nothing to work from.</p>
+  </section>
+
+  <!-- NOTEBOOK CHECKPOINT -->
+  <section class="content-section reveal">
+    <p class="section-label">End of Lesson</p>
+    <h2>Notebook Checkpoint</h2>
+    <div class="notebook-checkpoint">
+      <ul>
+        <li>Completed observation checklist — copied into notebook with the game name of the group you tested, all items marked ✓ / ✗ / N/A with notes on each failure</li>
+        <li>Bug log — at least 3 entries as a tester, each with: description, severity, reproduction steps, likely cause</li>
+        <li>Priority fix list — received feedback ranked by severity, with an estimate of fix time for each item</li>
+        <li>At least one fix applied — describe what the bug was, what you changed in the code, and the result</li>
+        <li>If a fix didn't work — record your debugging process: what you tried, what happened, what you'll try next</li>
+        <li><em>Reflection (2–3 sentences):</em> What was the most surprising bug found in your game — something you hadn't noticed yourself? What does that tell you about the importance of testing by someone who wasn't involved in building it?</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="time-badge">⏱ 1 hour · Lesson 9 of 10</div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Learning Outcomes</span>
+    <div class="outcome-chips">
+      <span class="outcome-chip">CT5-EVL-01</span>
+      <span class="outcome-chip">CT5-DPM-01</span>
+      <span class="outcome-chip">CT5-OPL-01</span>
+    </div>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Lesson at a Glance</span>
+    <p style="margin:0; font-size:.83rem; color:var(--cream-dark);">
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:00</span> Tester mindset + severity table (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:05</span> Peer testing + checklist (20 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:25</span> Swap — receive feedback, read and rank (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:30</span> Build priority fix list (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:35</span> Apply fixes in Unity (20 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:55</span> Notebook checkpoint (5 min)
+    </p>
+  </div>
+
+  <div class="sidebar-card" style="border-color:rgba(108,52,131,.4); background:rgba(108,52,131,.07);">
+    <span class="sidebar-card-label" style="color:#bb8fce;">Peer test logistics</span>
+    <p style="font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.55;">
+      Swap computers with another group. Tester logs bugs <em>on this page</em> — the bug log and checklist live here. After 20 minutes, swap back. Each group then reads the feedback received and builds their priority list.<br><br>
+      Minimum: 2 complete turns as tester. Aim for: at least one property buy, one rent payment, one player elimination if time allows.
+    </p>
+  </div>
+
+  <div class="cpd-strip">
+    <div class="cpd-strip-label">Grade indicators — this lesson</div>
+    <div class="cpd-rows">
+      <div class="cpd-row">
+        <span class="cpd-grade">A</span>
+        <span class="cpd-desc">5+ strong bug reports with reproduction steps and likely causes; priority list ordered with reasoning; at least 2 fixes applied with debugging process documented</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">B</span>
+        <span class="cpd-desc">Checklist complete; 3–4 specific bug reports; priority fix list present; at least 1 fix applied and documented</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">C</span>
+        <span class="cpd-desc">Checklist mostly complete; 3 bug log entries; priority list attempted; fix attempted with some documentation</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">D</span>
+        <span class="cpd-desc">Checklist partially completed; some bug entries present; evidence of engaging with received feedback</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">E</span>
+        <span class="cpd-desc">Tested another group's game; at least 1 bug recorded; received feedback noted in notebook</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <span class="teacher-note-label">🔒 Teacher Note</span>
+    <p>Pre-assign testing pairs before class — avoid having best friends test each other's games (feedback tends to be too gentle) and avoid sworn rivals (feedback tends to be too harsh). The checklist export feature generates a plain-text summary students can photograph. During the fix phase (last 20 min), circulate: students who are stuck on Critical bugs need teacher support; students with only Cosmetic issues can use the time for notebook reflection. Save the scene before fixing anything.</p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Navigate</span>
+    <div class="lesson-nav">
+      <a href="lesson-8.html">← L8</a>
+      <a href="lesson-10.html">L10 →</a>
+    </div>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · L9 — Testing &amp; Evaluating</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-EVL-01</span>
+    <span class="footer-outcome-chip">CT5-DPM-01</span>
+    <span class="footer-outcome-chip">CT5-OPL-01</span>
+  </div>
+</footer>
+
+<script>
+/* ─── CHECKLIST DATA ─── */
+const checklistData = [
+  {
+    section: 'Game Start',
+    items: [
+      'The game loads without errors in the Unity Console',
+      'All player tokens are visible on the Go space at the start',
+      'Player money displays correctly for all players ($1500 starting)',
+      'The Roll Dice button is visible and clearly labelled',
+      'The message panel shows whose turn it is',
+    ]
+  },
+  {
+    section: 'Turn & Movement',
+    items: [
+      'Clicking Roll Dice generates a visible dice result',
+      'The active player\'s token moves the correct number of spaces',
+      'Token wraps correctly from the last space back to space 0',
+      'Go salary is awarded when a player passes or lands on Go',
+      'The turn passes to the next player after each action',
+      'Roll Dice button cannot be clicked again mid-turn',
+    ]
+  },
+  {
+    section: 'Space Actions',
+    items: [
+      'Landing on an unowned property shows Buy and Skip buttons',
+      'Buying a property deducts the correct amount from the player',
+      'Landing on a property you own shows a "no action" message',
+      'Landing on another player\'s property deducts rent correctly',
+      'Rent is added to the owner\'s money (not just removed from payer)',
+      'Landing on a Tax space deducts the correct tax amount',
+      'Landing on Go (directly) awards salary',
+    ]
+  },
+  {
+    section: 'UI & Information',
+    items: [
+      'The current player\'s name is clearly shown',
+      'Money updates correctly in the HUD after every transaction',
+      'The message panel clearly explains what just happened',
+      'Buttons appear and disappear at the right times (Buy/Skip hidden when not needed)',
+    ]
+  },
+  {
+    section: 'Win Condition',
+    items: [
+      'A player with negative money is eliminated',
+      'Eliminated player\'s token disappears from the board',
+      'Eliminated player\'s properties become available to buy again',
+      'Remaining players continue taking turns after an elimination',
+      'When one player remains, the Game Over screen appears',
+      'The Game Over screen shows the correct winner name and money',
+      'The Roll Dice button is disabled after Game Over',
+    ]
+  },
+  {
+    section: 'Theme & Design',
+    items: [
+      'The board has a clear visual theme that is consistent throughout',
+      'Space names fit the theme and are readable on the board',
+      'The overall experience is understandable to a new player',
+    ]
+  }
+];
+
+const checkState = {};
+let bugCount = 0;
+
+function buildChecklist() {
+  const container = document.getElementById('checklistBody');
+  checklistData.forEach(section => {
+    const sHead = document.createElement('div');
+    sHead.className = 'checklist-section-head';
+    sHead.textContent = section.section;
+    container.appendChild(sHead);
+
+    section.items.forEach((item, i) => {
+      const id = section.section.replace(/\s+/g,'') + i;
+      checkState[id] = 'none';
+
+      const row = document.createElement('div');
+      row.className = 'checklist-item';
+      row.id = `ci-${id}`;
+      row.innerHTML = `
+        <div class="check-circle" id="cc-${id}">✓</div>
+        <div class="check-label">${item}</div>
+        <div class="check-btns">
+          <button class="check-btn check-btn-pass" onclick="setCheck('${id}','pass')">✓ Pass</button>
+          <button class="check-btn check-btn-fail" onclick="setCheck('${id}','fail')">✗ Fail</button>
+          <button class="check-btn check-btn-na"   onclick="setCheck('${id}','na')">N/A</button>
+        </div>
+        <input class="check-note" type="text" placeholder="note…" id="cn-${id}">
+      `;
+      container.appendChild(row);
+    });
+  });
+
+  updateChecklistCounts();
+}
+
+function setCheck(id, status) {
+  checkState[id] = status;
+  const row = document.getElementById(`ci-${id}`);
+  const circle = document.getElementById(`cc-${id}`);
+  row.className = `checklist-item ${status}`;
+  circle.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : '—';
+  updateChecklistCounts();
+}
+
+function updateChecklistCounts() {
+  const vals = Object.values(checkState);
+  const pass = vals.filter(v => v === 'pass').length;
+  const fail = vals.filter(v => v === 'fail').length;
+  const na   = vals.filter(v => v === 'na').length;
+  const rem  = vals.filter(v => v === 'none').length;
+  document.getElementById('passCount').textContent = pass;
+  document.getElementById('failCount').textContent = fail;
+  document.getElementById('naCount').textContent   = na;
+  document.getElementById('remainCount').textContent = rem > 0 ? rem + ' unchecked' : 'All done ✓';
+}
+
+function exportChecklist() {
+  const gameName = document.getElementById('gameNameInput').value || 'Unknown game';
+  let output = `PEER TEST CHECKLIST — ${gameName}\n`;
+  output += `Date: ${new Date().toLocaleDateString('en-AU')}\n\n`;
+
+  checklistData.forEach(section => {
+    output += `\n== ${section.section.toUpperCase()} ==\n`;
+    section.items.forEach((item, i) => {
+      const id = section.section.replace(/\s+/g,'') + i;
+      const status = checkState[id];
+      const note = document.getElementById(`cn-${id}`)?.value || '';
+      const marker = status === 'pass' ? '✓' : status === 'fail' ? '✗' : status === 'na' ? 'N/A' : '?';
+      output += `[${marker}] ${item}${note ? ' — ' + note : ''}\n`;
+    });
+  });
+
+  // Bugs
+  const bugEls = document.querySelectorAll('.bug-entry');
+  if (bugEls.length > 0) {
+    output += '\n\n== BUG LOG ==\n';
+    bugEls.forEach((entry, i) => {
+      const desc = entry.querySelector('.bug-desc')?.value || '';
+      const sev  = entry.querySelector('.severity-select')?.value || '';
+      const status = entry.querySelector('.bug-status-select')?.value || '';
+      const repro  = entry.querySelectorAll('.bug-field-input')[0]?.value || '';
+      const cause  = entry.querySelectorAll('.bug-field-input')[1]?.value || '';
+      const fix    = entry.querySelectorAll('.bug-field-input')[2]?.value || '';
+      output += `\nBug #${i+1} [${sev}] ${status}\n${desc}\nRepro: ${repro}\nCause: ${cause}\nFix: ${fix}\n`;
+    });
+  }
+
+  navigator.clipboard.writeText(output).then(() => {
+    const btn = document.querySelector('.print-btn');
+    btn.textContent = 'Copied to clipboard!';
+    setTimeout(() => btn.textContent = 'Export Summary', 2000);
+  });
+}
+
+/* ─── BUG LOG ─── */
+function addBug() {
+  bugCount++;
+  const n = bugCount;
+  const container = document.getElementById('bugEntries');
+
+  // Clear placeholder
+  const placeholder = container.querySelector('div[style]');
+  if (placeholder) placeholder.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'bug-entry';
+  entry.id = `bug-${n}`;
+  entry.innerHTML = `
+    <div class="bug-entry-head">
+      <span class="bug-num">#${n}</span>
+      <input class="bug-desc" type="text" placeholder="Short description of the bug…">
+      <select class="severity-select sev-minor" onchange="updateSeverityStyle(this); updateBugCounts()">
+        <option value="Critical">🔴 Critical</option>
+        <option value="Major">🟠 Major</option>
+        <option value="Minor" selected>🔵 Minor</option>
+        <option value="Cosmetic">⬜ Cosmetic</option>
+        <option value="Design">⚪ Design</option>
+        <option value="Missing">🟣 Missing</option>
+      </select>
+      <select class="bug-status-select status-open" onchange="updateStatusStyle(this)">
+        <option value="Open">Open</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Fixed">Fixed ✓</option>
+      </select>
+      <button class="delete-bug-btn" onclick="deleteBug('bug-${n}')">✕</button>
+    </div>
+    <div class="bug-entry-body">
+      <div class="bug-field">
+        <div class="bug-field-label">Reproduction steps</div>
+        <textarea class="bug-field-input" rows="2" placeholder="1. Do X. 2. Do Y. 3. See Z happen…"></textarea>
+      </div>
+      <div class="bug-field">
+        <div class="bug-field-label">Likely cause</div>
+        <textarea class="bug-field-input" rows="2" placeholder="Which method or variable might be responsible?"></textarea>
+      </div>
+      <div class="bug-field" style="grid-column:1/-1; border-right:none;">
+        <div class="bug-field-label">Fix attempted / result</div>
+        <textarea class="bug-field-input" rows="2" placeholder="What did you change? Did it work? What happened?"></textarea>
+      </div>
+    </div>
+  `;
+
+  container.appendChild(entry);
+  updateBugCounts();
+  entry.querySelector('.bug-desc').focus();
+}
+
+function deleteBug(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transform = 'scaleY(0)';
+    el.style.transition = 'all .2s ease';
+    setTimeout(() => {
+      el.remove();
+      updateBugCounts();
+    }, 200);
+  }
+}
+
+function updateSeverityStyle(sel) {
+  sel.className = 'severity-select';
+  const map = { Critical:'sev-critical', Major:'sev-major', Minor:'sev-minor', Cosmetic:'sev-cosmetic', Design:'sev-cosmetic', Missing:'sev-cosmetic' };
+  sel.classList.add(map[sel.value] || 'sev-cosmetic');
+}
+
+function updateStatusStyle(sel) {
+  sel.className = 'bug-status-select';
+  const map = { Open:'status-open', 'In Progress':'status-wip', 'Fixed ✓':'status-fixed', Fixed:'status-fixed' };
+  sel.classList.add(map[sel.value] || 'status-open');
+}
+
+function updateBugCounts() {
+  const sels = [...document.querySelectorAll('.severity-select')];
+  const vals = sels.map(s => s.value);
+  document.getElementById('critCount').textContent  = vals.filter(v => v === 'Critical').length;
+  document.getElementById('majCount').textContent   = vals.filter(v => v === 'Major').length;
+  document.getElementById('minCount').textContent   = vals.filter(v => v === 'Minor').length;
+  document.getElementById('otherCount').textContent = vals.filter(v => !['Critical','Major','Minor'].includes(v)).length;
+}
+
+/* ─── PRIORITY LIST ─── */
+let priorityCount = 0;
+
+function addPriorityItem() {
+  priorityCount++;
+  const container = document.getElementById('priorityItems');
+  const item = document.createElement('div');
+  item.className = 'priority-item';
+  item.draggable = true;
+  item.innerHTML = `
+    <span class="priority-handle">⠿</span>
+    <input class="priority-text-input" type="text" placeholder="Describe the fix needed…">
+    <input class="priority-eta" type="text" placeholder="~5 min">
+  `;
+  container.appendChild(item);
+
+  // Simple drag-to-reorder
+  let dragSrc = null;
+  item.addEventListener('dragstart', () => { dragSrc = item; item.style.opacity = '.4'; });
+  item.addEventListener('dragend', () => { item.style.opacity = ''; dragSrc = null; });
+  item.addEventListener('dragover', e => { e.preventDefault(); });
+  item.addEventListener('drop', e => {
+    e.preventDefault();
+    if (dragSrc && dragSrc !== item) {
+      const parent = container;
+      const items = [...parent.querySelectorAll('.priority-item')];
+      const srcIdx = items.indexOf(dragSrc);
+      const tgtIdx = items.indexOf(item);
+      if (srcIdx < tgtIdx) item.after(dragSrc);
+      else item.before(dragSrc);
+    }
+  });
+
+  item.querySelector('.priority-text-input').focus();
+}
+
+// Seed with 3 items
+['Fix highest-severity bug found in peer test', 'Fix second priority bug', 'Polish: improve message clarity'].forEach(t => {
+  addPriorityItem();
+  document.querySelectorAll('.priority-text-input')[document.querySelectorAll('.priority-text-input').length - 1].value = t;
+});
+
+/* ─── Scroll reveal ─── */
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+
+buildChecklist();
+</script>
+</body>
+</html>

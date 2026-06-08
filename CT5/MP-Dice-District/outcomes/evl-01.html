@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CT5-EVL-01 · Dice District: Outcomes &amp; Thinking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #131e2b;
+    --cream:        #f0e8d8;
+    --cream-dark:   #d8ccb4;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --rule-line:    rgba(201,168,76,0.28);
+
+    /* EVL-01 accent — teal-cyan, thinking skills + PM crossover */
+    --accent:       #0e9e8a;
+    --accent-light: #1abc9c;
+    --accent-bg:    rgba(14,158,138,0.09);
+    --accent-border:rgba(14,158,138,0.28);
+
+    --pass:         #1abc9c;
+    --fail:         #e87070;
+    --warn:         #e8a030;
+
+    --code-bg:   #0c1820;
+    --code-kw:   #e8c96a;
+    --code-type: #1abc9c;
+    --code-str:  #f0a07a;
+    --code-cmt:  #4a7a60;
+    --code-fn:   #5dade2;
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { background-color:var(--bg); color:var(--cream); font-family:var(--font-body); font-size:17px; line-height:1.7; min-height:100vh; }
+  body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(14,158,138,0.025) 1px,transparent 1px), linear-gradient(90deg,rgba(14,158,138,0.025) 1px,transparent 1px); background-size:48px 48px; pointer-events:none; z-index:0; }
+
+  /* NAV */
+  nav { position:sticky; top:0; z-index:100; background:rgba(19,30,43,0.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule-line); padding:0 3rem; display:flex; align-items:center; height:56px; gap:1.5rem; }
+  .nav-wordmark { font-family:var(--font-display); font-weight:900; font-size:1rem; color:var(--gold); text-decoration:none; letter-spacing:.02em; display:flex; align-items:center; gap:.6rem; flex-shrink:0; }
+  .nav-divider  { width:1px; height:20px; background:var(--rule-line); }
+  .nav-subtitle { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(240,232,216,.4); }
+  .nav-links    { display:flex; gap:.25rem; list-style:none; margin-left:auto; }
+  .nav-links a  { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dark); text-decoration:none; padding:.28rem .65rem; border-radius:3px; transition:background .15s,color .15s; }
+  .nav-links a:hover  { background:var(--accent-bg); color:var(--accent-light); }
+  .nav-links a.active { color:var(--accent-light); border-bottom:2px solid var(--accent-light); }
+
+  /* LAYOUT */
+  .page-body { display:grid; grid-template-columns:1fr 280px; align-items:start; position:relative; z-index:1; }
+  .content   { padding:3rem 4rem 5rem 5rem; border-right:1px solid var(--rule-line); }
+  .toc       { padding:3rem 2rem 5rem; position:sticky; top:56px; max-height:calc(100vh - 56px); overflow-y:auto; }
+
+  /* HEADER */
+  .outcome-header { border-bottom:1px solid var(--rule-line); padding:4rem 5rem 3.5rem; position:relative; z-index:1; overflow:hidden; }
+  .outcome-header::before { content:''; position:absolute; top:0;left:0;right:0; height:5px; background:linear-gradient(90deg, var(--accent-light), rgba(14,158,138,0.2)); }
+  .outcome-header::after  { content:''; position:absolute; right:-20px;top:-20px; width:300px;height:300px; border-radius:50%; border:1.5px solid rgba(14,158,138,0.07); pointer-events:none; }
+  .outcome-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .outcome-code-badge { font-family:var(--font-mono); font-size:.82rem; font-weight:600; background:var(--accent-bg); border:1.5px solid var(--accent-border); border-radius:4px; color:var(--accent-light); padding:.3rem .75rem; letter-spacing:.06em; }
+  .domain-tag { font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(14,158,138,.65); border:1px solid rgba(14,158,138,.22); border-radius:3px; padding:.18rem .5rem; }
+  .outcome-header h1 { font-family:var(--font-display); font-weight:900; font-size:clamp(2.4rem,5vw,3.6rem); line-height:1; color:var(--cream); letter-spacing:-.02em; margin-bottom:.7rem; }
+  .outcome-header h1 em { font-style:italic; color:var(--accent-light); }
+  .outcome-wording { font-size:1.05rem; color:rgba(216,204,180,.7); font-style:italic; margin-bottom:1.75rem; max-width:640px; line-height:1.6; padding:.85rem 1.25rem; border-left:3px solid var(--accent-border); background:var(--accent-bg); border-radius:0 4px 4px 0; }
+
+  /* Three-verb row */
+  .three-verbs { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; max-width:660px; }
+  .verb-card { border-radius:4px; border:1.5px solid var(--accent-border); overflow:hidden; }
+  .verb-head { padding:.55rem .9rem; background:var(--accent-bg); }
+  .verb-word { font-family:var(--font-display); font-weight:900; font-size:1.2rem; color:var(--accent-light); }
+  .verb-what { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:rgba(14,158,138,.5); margin-top:.1rem; }
+  .verb-body { padding:.6rem .9rem; background:rgba(0,0,0,.18); font-size:.82rem; color:var(--cream-dark); line-height:1.45; }
+
+  /* SHARED */
+  .section-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--rule-line); }
+  .content-section { margin-bottom:3.5rem; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:1.75rem; color:var(--cream); line-height:1.2; margin-bottom:.9rem; }
+  h3 { font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:var(--gold-light); margin-bottom:.5rem; margin-top:1.5rem; }
+  p  { margin-bottom:.85rem; color:var(--cream-dark); }
+  p:last-child { margin-bottom:0; }
+  strong { color:var(--cream); }
+  .key-term { display:inline-block; background:var(--accent-bg); border:1px solid var(--accent-border); border-radius:3px; font-family:var(--font-mono); font-size:.8rem; color:var(--accent-light); padding:.05rem .4rem; }
+  .info-box { background:var(--accent-bg); border:1.5px solid var(--accent-border); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .info-box strong { color:var(--accent-light); }
+  .gold-box { background:rgba(201,168,76,.07); border:1.5px solid rgba(201,168,76,.28); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .gold-box strong { color:var(--gold); }
+
+  /* ── TEST vs EVALUATE split ── */
+  .te-split { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1rem; }
+  .te-card { border-radius:5px; overflow:hidden; border:1.5px solid; }
+  .te-card.test { border-color:rgba(14,158,138,.35); }
+  .te-card.eval { border-color:rgba(201,168,76,.35); }
+  .te-head { padding:.75rem 1.1rem; }
+  .te-card.test .te-head { background:rgba(14,158,138,.1); border-bottom:1px solid rgba(14,158,138,.15); }
+  .te-card.eval .te-head { background:rgba(201,168,76,.08); border-bottom:1px solid rgba(201,168,76,.12); }
+  .te-title { font-family:var(--font-display); font-weight:700; font-size:1rem; }
+  .te-card.test .te-title { color:var(--accent-light); }
+  .te-card.eval .te-title { color:var(--gold); }
+  .te-sub { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-top:.1rem; }
+  .te-card.test .te-sub { color:rgba(14,158,138,.5); }
+  .te-card.eval .te-sub { color:rgba(201,168,76,.45); }
+  .te-body { padding:.85rem 1.1rem; background:rgba(0,0,0,.15); }
+  .te-list { list-style:none; display:flex; flex-direction:column; gap:.4rem; }
+  .te-list li { font-size:.88rem; color:var(--cream-dark); padding-left:1rem; position:relative; line-height:1.45; }
+  .te-card.test .te-list li::before { content:'→'; position:absolute; left:0; color:var(--accent-light); font-size:.72rem; }
+  .te-card.eval .te-list li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:.72rem; }
+
+  /* ── TEST CASE ANATOMY ── */
+  .test-case-box {
+    background: var(--code-bg);
+    border: 1.5px solid var(--accent-border);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+    font-family: var(--font-mono);
+    font-size: .82rem;
+  }
+
+  .test-case-header {
+    padding: .55rem 1rem;
+    background: var(--accent-bg);
+    border-bottom: 1px solid var(--accent-border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .test-case-title { font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(14,158,138,.75); }
+
+  .test-case-status {
+    font-size: .65rem; font-weight: 600; letter-spacing:.06em; text-transform:uppercase;
+    padding: .15rem .5rem; border-radius: 3px;
+  }
+  .status-pass { background:rgba(26,188,156,.15); border:1px solid rgba(26,188,156,.4); color:var(--pass); }
+  .status-fail { background:rgba(232,112,112,.12); border:1px solid rgba(232,112,112,.4); color:var(--fail); }
+
+  .test-case-grid {
+    display: grid; grid-template-columns: 140px 1fr;
+  }
+
+  .tc-label {
+    padding: .5rem .85rem; border-right:1px solid rgba(255,255,255,.05);
+    border-bottom:1px solid rgba(255,255,255,.04);
+    font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+    color:rgba(14,158,138,.5); background:rgba(0,0,0,.15);
+    display:flex; align-items:center;
+  }
+
+  .tc-value {
+    padding: .5rem 1rem; border-bottom:1px solid rgba(255,255,255,.04);
+    font-size:.82rem; color:var(--cream-dark); line-height:1.45;
+  }
+
+  .tc-label:last-of-type, .tc-value:last-child { border-bottom:none; }
+
+  .tc-value.pass { color:rgba(26,188,156,.85); }
+  .tc-value.fail { color:rgba(232,112,112,.8); }
+  .tc-value.fix  { color:rgba(232,160,48,.8); }
+
+  /* Weak vs Strong test case side-by-side */
+  .test-quality-compare { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:1rem; }
+  .tq-card { border-radius:4px; overflow:hidden; border:1.5px solid; }
+  .tq-card.weak   { border-color:rgba(232,112,112,.3); }
+  .tq-card.strong { border-color:rgba(14,158,138,.35); }
+  .tq-head { padding:.5rem .85rem; display:flex; align-items:center; gap:.5rem; }
+  .tq-card.weak   .tq-head { background:rgba(232,112,112,.08); border-bottom:1px solid rgba(232,112,112,.12); }
+  .tq-card.strong .tq-head { background:rgba(14,158,138,.08); border-bottom:1px solid rgba(14,158,138,.12); }
+  .tq-head-title { font-family:var(--font-display); font-weight:700; font-size:.9rem; }
+  .tq-card.weak   .tq-head-title { color:rgba(232,112,112,.85); }
+  .tq-card.strong .tq-head-title { color:rgba(26,188,156,.85); }
+  .tq-body { padding:.75rem .85rem; background:rgba(0,0,0,.15); font-size:.82rem; color:var(--cream-dark); line-height:1.5; font-family:var(--font-mono); }
+  .tq-row { margin-bottom:.3rem; }
+  .tq-row:last-child { margin-bottom:0; }
+  .tq-field { color:rgba(201,168,76,.45); }
+  .tq-commentary { padding:.55rem .85rem; border-top:1px solid rgba(255,255,255,.05); background:rgba(0,0,0,.1); font-size:.78rem; color:rgba(216,204,180,.45); font-style:italic; line-height:1.45; font-family:var(--font-body); }
+
+  /* ── TYPES OF TESTING ── */
+  .testing-types { display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; margin-top:1rem; }
+  .testing-type-card { background:rgba(0,0,0,.18); border:1.5px solid rgba(255,255,255,.07); border-radius:5px; padding:1rem 1.1rem; transition:border-color .15s; }
+  .testing-type-card:hover { border-color:rgba(14,158,138,.3); }
+  .tt-name  { font-family:var(--font-display); font-weight:700; font-size:.95rem; color:var(--cream); margin-bottom:.3rem; }
+  .tt-when  { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.5); margin-bottom:.4rem; }
+  .tt-desc  { font-size:.85rem; color:var(--cream-dark); line-height:1.5; margin-bottom:.45rem; }
+  .tt-dd    { font-size:.78rem; color:rgba(14,158,138,.55); font-style:italic; padding-top:.4rem; border-top:1px solid rgba(255,255,255,.05); line-height:1.4; }
+
+  /* ── EVALUATION vs TESTING distinguish ── */
+  .eval-spectrum {
+    display: grid; grid-template-columns: repeat(3,1fr); gap:0;
+    border:1.5px solid var(--rule-line); border-radius:5px; overflow:hidden;
+    margin-top:1rem;
+  }
+  .eval-col { border-right:1px solid var(--rule-line); }
+  .eval-col:last-child { border-right:none; }
+  .eval-col-head { padding:.65rem .9rem; border-bottom:1px solid var(--rule-line); background:rgba(0,0,0,.12); }
+  .eval-col-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; }
+  .eval-col:nth-child(1) .eval-col-label { color:rgba(14,158,138,.7); }
+  .eval-col:nth-child(2) .eval-col-label { color:rgba(201,168,76,.7); }
+  .eval-col:nth-child(3) .eval-col-label { color:rgba(139,111,206,.7); }
+  .eval-col-title { font-family:var(--font-display); font-weight:700; font-size:.95rem; color:var(--cream); margin-top:.15rem; }
+  .eval-col-body { padding:.75rem .9rem; background:rgba(0,0,0,.1); font-size:.85rem; color:var(--cream-dark); line-height:1.55; }
+  .eval-col-q { font-style:italic; color:rgba(216,204,180,.6); margin-bottom:.5rem; padding-bottom:.5rem; border-bottom:1px solid rgba(255,255,255,.05); font-size:.88rem; }
+  .eval-col-eg { font-size:.8rem; color:rgba(14,158,138,.6); padding-top:.4rem; border-top:1px solid rgba(255,255,255,.05); font-style:italic; }
+  .eval-col:nth-child(2) .eval-col-eg { color:rgba(201,168,76,.6); }
+  .eval-col:nth-child(3) .eval-col-eg { color:rgba(139,111,206,.6); }
+
+  /* ── REQUIREMENTS RETURN ── */
+  .req-return-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.88rem; }
+  .req-return-table thead tr { border-bottom:2px solid var(--gold); }
+  .req-return-table th { font-family:var(--font-mono); font-size:.63rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); padding:.5rem .85rem; text-align:left; }
+  .req-return-table td { padding:.65rem .85rem; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:top; line-height:1.5; color:var(--cream-dark); }
+  .req-return-table tr:last-child td { border-bottom:none; }
+  .req-return-table tr:nth-child(even) { background:rgba(0,0,0,.07); }
+  .rating-met     { font-family:var(--font-mono); font-size:.7rem; font-weight:600; padding:.12rem .4rem; border-radius:2px; background:rgba(26,188,156,.12); border:1px solid rgba(26,188,156,.3); color:var(--pass); }
+  .rating-partial { font-family:var(--font-mono); font-size:.7rem; font-weight:600; padding:.12rem .4rem; border-radius:2px; background:rgba(232,160,48,.1); border:1px solid rgba(232,160,48,.3); color:var(--warn); }
+  .rating-notmet  { font-family:var(--font-mono); font-size:.7rem; font-weight:600; padding:.12rem .4rem; border-radius:2px; background:rgba(232,112,112,.1); border:1px solid rgba(232,112,112,.3); color:var(--fail); }
+
+  /* ── CPD TABLE ── */
+  .cpd-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.9rem; }
+  .cpd-table thead tr { border-bottom:2px solid var(--gold); }
+  .cpd-table th { font-family:var(--font-mono); font-size:.63rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); padding:.55rem .85rem; text-align:left; }
+  .cpd-table td { padding:.7rem .85rem; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:top; line-height:1.5; color:var(--cream-dark); }
+  .cpd-table tr:last-child td { border-bottom:none; }
+  .grade-cell { font-family:var(--font-display); font-weight:900; font-size:1.4rem; text-align:center; width:2.5rem; }
+  .grade-a { color:#1abc9c; } .grade-b { color:#5dade2; }
+  .grade-c { color:var(--gold); } .grade-d { color:#e87070; }
+  .grade-e { color:rgba(240,232,216,.4); }
+  .kw-pill { font-family:var(--font-mono); font-size:.62rem; font-weight:600; padding:.1rem .38rem; border-radius:2px; display:inline-block; margin-bottom:.15rem; letter-spacing:.04em; }
+  .row-a { background:rgba(26,188,156,.04); }
+  .row-a .kw-pill { background:rgba(26,188,156,.12); color:#1abc9c; border:1px solid rgba(26,188,156,.25); }
+  .row-b .kw-pill { background:rgba(93,173,226,.1);  color:#5dade2; border:1px solid rgba(93,173,226,.25); }
+  .row-c .kw-pill { background:rgba(201,168,76,.1);  color:var(--gold); border:1px solid rgba(201,168,76,.25); }
+  .row-d .kw-pill { background:rgba(232,112,112,.1); color:#e87070; border:1px solid rgba(232,112,112,.25); }
+  .row-e { background:rgba(0,0,0,.1); }
+  .row-e .kw-pill { background:rgba(240,232,216,.05); color:rgba(240,232,216,.4); border:1px solid rgba(240,232,216,.1); }
+
+  /* ── EXAM ── */
+  .exam-question { background:rgba(0,0,0,.2); border:1.5px solid rgba(255,255,255,.07); border-radius:5px; overflow:hidden; margin-bottom:1.25rem; }
+  .exam-q-head { padding:.55rem 1rem; background:var(--accent-bg); border-bottom:1px solid var(--accent-border); display:flex; align-items:center; gap:.75rem; }
+  .exam-type-badge { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:.15rem .45rem; border-radius:2px; background:rgba(14,158,138,.15); border:1px solid rgba(14,158,138,.35); color:var(--accent-light); }
+  .exam-marks { font-family:var(--font-mono); font-size:.65rem; color:rgba(201,168,76,.55); margin-left:auto; }
+  .exam-q-text { padding:.85rem 1rem; font-size:.95rem; color:var(--cream); line-height:1.55; font-style:italic; border-bottom:1px solid rgba(255,255,255,.04); }
+  .exam-answers { display:grid; grid-template-columns:1fr 1fr; }
+  .exam-answer { padding:.85rem 1rem; }
+  .exam-answer:first-child { border-right:1px solid rgba(255,255,255,.04); }
+  .exam-answer-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.5rem; }
+  .exam-answer.b-range .exam-answer-label { color:#5dade2; }
+  .exam-answer.a-range .exam-answer-label { color:#1abc9c; }
+  .exam-answer-text { font-size:.85rem; color:var(--cream-dark); line-height:1.55; }
+  .exam-answer-text code { font-family:var(--font-mono); font-size:.78rem; color:var(--accent-light); }
+  .exam-commentary { padding:.65rem 1rem; border-top:1px solid rgba(255,255,255,.04); background:rgba(0,0,0,.1); font-size:.8rem; color:rgba(216,204,180,.5); font-style:italic; }
+
+  /* TOC */
+  .toc-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:rgba(201,168,76,.45); margin-bottom:.75rem; padding-bottom:.5rem; border-bottom:1px solid var(--rule-line); }
+  .toc-items { list-style:none; display:flex; flex-direction:column; gap:0; }
+  .toc-item a { display:block; font-family:var(--font-mono); font-size:.72rem; color:rgba(240,232,216,.4); text-decoration:none; padding:.32rem .5rem; border-radius:3px; border-left:2px solid transparent; transition:color .12s,border-color .12s,background .12s; line-height:1.4; }
+  .toc-item a:hover { color:var(--accent-light); border-left-color:var(--accent-light); background:var(--accent-bg); }
+  .toc-item.active a { color:var(--accent-light); border-left-color:var(--accent-light); }
+  .toc-item.sub a { padding-left:1.1rem; font-size:.68rem; }
+  .toc-divider { height:1px; background:var(--rule-line); margin:.5rem 0; opacity:.5; }
+  .toc-outcome-nav { margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--rule-line); }
+  .toc-nav-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(201,168,76,.35); margin-bottom:.5rem; }
+  .toc-nav-link { display:flex; align-items:center; justify-content:space-between; font-family:var(--font-mono); font-size:.68rem; color:rgba(240,232,216,.45); text-decoration:none; padding:.3rem .5rem; border-radius:3px; transition:color .12s,background .12s; margin-bottom:.2rem; }
+  .toc-nav-link:hover { color:var(--gold); background:rgba(201,168,76,.06); }
+
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .45s ease,transform .45s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  footer { position:relative; z-index:1; border-top:1px solid var(--rule-line); padding:1.75rem 5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+  .footer-left { font-family:var(--font-mono); font-size:.68rem; color:rgba(240,232,216,.35); letter-spacing:.06em; }
+  .footer-chips { display:flex; gap:.35rem; flex-wrap:wrap; }
+  .footer-chip { font-family:var(--font-mono); font-size:.6rem; font-weight:600; padding:.12rem .4rem; border-radius:2px; background:var(--accent-bg); border:1px solid var(--accent-border); color:rgba(14,158,138,.6); }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-wordmark"><span>⚄</span> Dice District</a>
+  <div class="nav-divider"></div>
+  <span class="nav-subtitle">Outcomes &amp; Thinking</span>
+  <ul class="nav-links">
+    <li><a href="index.html">All Outcomes</a></li>
+    <li><a href="opl-01.html">OPL-01</a></li>
+    <li><a href="thi-01.html">THI-01</a></li>
+    <li><a href="des-01.html">DES-01</a></li>
+    <li><a href="dpm-01.html">DPM-01</a></li>
+    <li><a href="evl-01.html" class="active">EVL-01</a></li>
+    <li><a href="../dice-district/index.html">← Lesson Site</a></li>
+  </ul>
+</nav>
+
+<header class="outcome-header reveal">
+  <div class="outcome-eyebrow">
+    <span class="outcome-code-badge">CT5-EVL-01</span>
+    <span class="domain-tag">Project Management · Thinking Skills</span>
+  </div>
+  <h1>Testing,<br><em>Evaluation</em><br>&amp; Refinement</h1>
+  <div class="outcome-wording">
+    "Tests, evaluates and refines computing solutions against requirements"
+  </div>
+  <div class="three-verbs">
+    <div class="verb-card">
+      <div class="verb-head">
+        <div class="verb-word">Tests</div>
+        <div class="verb-what">Verifying behaviour</div>
+      </div>
+      <div class="verb-body">Structured test cases with defined inputs, expected outputs, and recorded actual outcomes — not just "I ran it and it worked"</div>
+    </div>
+    <div class="verb-card">
+      <div class="verb-head">
+        <div class="verb-word">Evaluates</div>
+        <div class="verb-what">Judging quality</div>
+      </div>
+      <div class="verb-body">Measuring the solution against requirements, design principles, and user needs — forming a reasoned judgement about what works and what doesn't</div>
+    </div>
+    <div class="verb-card">
+      <div class="verb-head">
+        <div class="verb-word">Refines</div>
+        <div class="verb-what">Improving it</div>
+      </div>
+      <div class="verb-body">Changing the solution based on test findings and evaluation — and documenting what was changed, why, and what the result was</div>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<main class="content">
+
+  <!-- SECTION 1 -->
+  <section class="content-section reveal" id="s-meaning">
+    <p class="section-label">What this outcome means</p>
+    <h2>Testing and evaluating are not the same activity</h2>
+    <p>CT5-EVL-01 bundles three activities — testing, evaluating, and refining — that are commonly conflated or under-evidenced. <strong>Testing</strong> is an empirical activity: run a specific scenario, record what happened. <strong>Evaluating</strong> is an analytical activity: judge whether what happened is good enough, and why. <strong>Refining</strong> is a responsive activity: change something based on what testing and evaluation revealed.</p>
+    <p>All three must be evidenced — and the relationship between them matters. A test log with no evaluation says "here is what I found." An evaluation with no test evidence says "here is my opinion." Refinement without both is random change. The outcome requires all three working as a cycle.</p>
+
+    <div class="te-split">
+      <div class="te-card test">
+        <div class="te-head">
+          <div class="te-title">Testing</div>
+          <div class="te-sub">Empirical — what actually happens</div>
+        </div>
+        <div class="te-body">
+          <ul class="te-list">
+            <li>A specific input is applied and the output is recorded</li>
+            <li>Expected output is defined <em>before</em> the test is run</li>
+            <li>Results are Pass or Fail — not opinion</li>
+            <li>Failures are recorded without omission — even embarrassing ones</li>
+            <li>Edge cases are tested deliberately, not just typical paths</li>
+            <li>The test stub technique isolates individual components</li>
+          </ul>
+        </div>
+      </div>
+      <div class="te-card eval">
+        <div class="te-head">
+          <div class="te-title">Evaluation</div>
+          <div class="te-sub">Analytical — what it means</div>
+        </div>
+        <div class="te-body">
+          <ul class="te-list">
+            <li>Returns to the original requirements and measures the solution against each one</li>
+            <li>References test evidence to support judgements — not just assertion</li>
+            <li>Addresses both functional (does it work?) and non-functional (does it work <em>well</em>?) requirements</li>
+            <li>Acknowledges what was not met honestly — "Not Met" with a reason is better than silence</li>
+            <li>Proposes specific, technically reasoned improvements — not vague "add more features"</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box" style="margin-top:1.25rem;">
+      <strong>The most common EVL-01 gap:</strong> Students run the program and confirm it works, then write "the game meets all requirements" in the evaluation. This is not evaluation — it is a claim without evidence. Evaluation requires citing specific test case results, naming requirements by their original text, acknowledging failures honestly, and proposing technically specific improvements. A single honest "Not Met" entry with a cause and a proposed fix is worth more than ten uncritical "Met" ticks.
+    </div>
+  </section>
+
+  <!-- SECTION 2: Test case anatomy -->
+  <section class="content-section reveal" id="s-testcases">
+    <p class="section-label">Test case anatomy</p>
+    <h2>What a test case contains</h2>
+    <p>A test case is a structured record of one specific scenario. It has five components — all five must be present for a test case to be useful as evidence. Without the expected output defined in advance, there is no basis for judging whether the actual output is correct.</p>
+
+    <!-- Annotated test case example -->
+    <div class="test-case-box">
+      <div class="test-case-header">
+        <span class="test-case-title">Example test case — Board wrap detection (Lesson 5)</span>
+        <span class="test-case-status status-pass">✓ Pass</span>
+      </div>
+      <div class="test-case-grid">
+        <div class="tc-label">Test ID</div>
+        <div class="tc-value">TC-05-03 — Board wrap + Go salary</div>
+        <div class="tc-label">Input / setup</div>
+        <div class="tc-value">Player position = 21 (space 21, "Corner"). Dice result forced to 6 using test stub: <code>return 6;</code> in RollDice(). Player money = $1200. boardSpaces.Length = 24.</div>
+        <div class="tc-label">Expected output</div>
+        <div class="tc-value">newPosition = (21 + 6) % 24 = 3. passedGo = true. Player money = $1200 + $200 = $1400. Token moves to boardSpaces[3]. Message panel shows "passed Go! Collected $200".</div>
+        <div class="tc-label">Actual output</div>
+        <div class="tc-value pass">newPosition = 3 ✓. Money = $1400 ✓. Token at space 3 ✓. Message: "Nomad passed Go! Collected $200." ✓</div>
+        <div class="tc-label">Result</div>
+        <div class="tc-value pass">PASS — all expected outputs matched.</div>
+        <div class="tc-label">Notes</div>
+        <div class="tc-value">Test stub restored to <code>Random.Range(1,7) + Random.Range(1,7)</code> after test. Test also verified that passing Go does NOT trigger when newPosition > oldPosition (normal mid-board move).</div>
+      </div>
+    </div>
+
+    <h3>Weak vs strong test cases</h3>
+    <p>The quality gap between a C and an A test log is almost entirely about specificity. Compare the two versions of the same test below.</p>
+
+    <div class="test-quality-compare">
+      <div class="tq-card weak">
+        <div class="tq-head"><span style="font-size:1rem;">✗</span><span class="tq-head-title">Weak — C-range</span></div>
+        <div class="tq-body">
+          <div class="tq-row"><span class="tq-field">Test: </span>Board wrap</div>
+          <div class="tq-row"><span class="tq-field">What I did: </span>Moved near end of board</div>
+          <div class="tq-row"><span class="tq-field">Result: </span>Player wrapped around ✓</div>
+          <div class="tq-row"><span class="tq-field">Notes: </span>Go salary worked too</div>
+        </div>
+        <div class="tq-commentary">No starting position. No dice value. No expected output defined before running. "Worked" is subjective — what should have happened? The Go salary note is vague — did $200 arrive?</div>
+      </div>
+      <div class="tq-card strong">
+        <div class="tq-head"><span style="font-size:1rem;">✓</span><span class="tq-head-title">Strong — A-range</span></div>
+        <div class="tq-body">
+          <div class="tq-row"><span class="tq-field">Test: </span>Board wrap + Go salary</div>
+          <div class="tq-row"><span class="tq-field">Setup: </span>Pos=21, roll=6 (stub), money=$1200</div>
+          <div class="tq-row"><span class="tq-field">Expected: </span>newPos=3, money=$1400, message contains "passed Go"</div>
+          <div class="tq-row"><span class="tq-field">Actual: </span>newPos=3 ✓, money=$1400 ✓, message correct ✓</div>
+          <div class="tq-row"><span class="tq-field">Result: </span>PASS. Stub restored after test.</div>
+        </div>
+        <div class="tq-commentary">Specific starting state. Exact dice value via stub. All expected outputs defined before running. Each actual output verified independently. Test restoration noted. Reproducible by anyone.</div>
+      </div>
+    </div>
+
+    <h3>The test stub technique</h3>
+    <p>A <span class="key-term">test stub</span> is a temporary replacement for a non-deterministic method that returns a fixed, known value for testing purposes. In Dice District, replacing <code>RollDice()</code> with <code>return 6;</code> means any board-wrap test can be run reliably — the developer doesn't wait for a random 6 to appear. The stub must be documented in the test log and restored afterward.</p>
+
+    <div class="gold-box">
+      <strong>Why the expected output must be defined before testing:</strong> If you run the program first and then write down what happened as the "expected" output, you are not testing — you are documenting. The expected output is derived from the algorithm (by tracing the pseudocode manually), not from the running program. A test log where expected = actual for every single case, with no failures, is a sign that expected outputs were written retrospectively.
+    </div>
+  </section>
+
+  <!-- SECTION 3: Types of testing -->
+  <section class="content-section reveal" id="s-types">
+    <p class="section-label">Types of testing</p>
+    <h2>Four testing approaches across the project</h2>
+    <p>Different testing approaches are appropriate at different stages. EVL-01 is best evidenced by using multiple approaches across the project — not just one type applied at the end.</p>
+
+    <div class="testing-types">
+      <div class="testing-type-card">
+        <div class="tt-name">Unit Testing</div>
+        <div class="tt-when">During P&amp;I — each lesson</div>
+        <div class="tt-desc">Testing one method or component in isolation. Uses test stubs to control inputs. Verifies that a single piece of logic does exactly what its pseudocode specifies.</div>
+        <div class="tt-dd">Dice District: the 6-case test tables at the end of L5 (movement), L6 (space resolution), and L7 (elimination). Each tests one method with defined inputs and expected outputs.</div>
+      </div>
+
+      <div class="testing-type-card">
+        <div class="tt-name">Integration Testing</div>
+        <div class="tt-when">During P&amp;I — after connecting components</div>
+        <div class="tt-desc">Testing that multiple components work together correctly. Reveals problems that don't appear when components are tested in isolation — particularly data flow issues across class boundaries.</div>
+        <div class="tt-dd">Dice District: testing that <code>Player.AddProperty()</code> correctly sets <code>BoardSpace.owner</code>, and that <code>GameManager.ResolveSpace()</code> then reads that field correctly — a three-script data flow.</div>
+      </div>
+
+      <div class="testing-type-card">
+        <div class="tt-name">System Testing</div>
+        <div class="tt-when">Late P&amp;I — full game playthrough</div>
+        <div class="tt-desc">Running the complete system end-to-end to verify the whole game works as a unit. Tests the game loop from start to finish, including win condition, elimination, and all space types.</div>
+        <div class="tt-dd">Dice District: L7 final test — "Play a complete game to its natural end (may take 5–15 min)." The full game playthrough is the system test; it passes only when all components integrate correctly.</div>
+      </div>
+
+      <div class="testing-type-card">
+        <div class="tt-name">User/Peer Testing</div>
+        <div class="tt-when">T&amp;E phase — Lesson 9</div>
+        <div class="tt-desc">Testing by someone who didn't build the solution. Reveals usability issues, edge cases the developer didn't think of, and UI clarity problems invisible to someone who knows how the game works.</div>
+        <div class="tt-dd">Dice District: L9 structured peer test using the 28-item observation checklist. External testers find bugs the developer cannot — particularly in UX clarity and unexpected interaction sequences.</div>
+      </div>
+
+      <div class="testing-type-card">
+        <div class="tt-name">Edge Case Testing</div>
+        <div class="tt-when">During and after P&amp;I</div>
+        <div class="tt-desc">Deliberately testing the boundaries and extremes of the system — the cases that are unlikely but possible. Distinguishes B-range from A-range test logs.</div>
+        <div class="tt-dd">Dice District edge cases: player money exactly $0 (not bankrupt — bankrupt is &lt;0); landing exactly on Go (not just passing); eliminating the player at index 0; eliminating the last player in the list; rolling during a purchase prompt (should be blocked).</div>
+      </div>
+
+      <div class="testing-type-card">
+        <div class="tt-name">Regression Testing</div>
+        <div class="tt-when">After any change</div>
+        <div class="tt-desc">Re-running previous test cases after making a change, to verify that the fix didn't break something that was working before. Particularly important after bug fixes.</div>
+        <div class="tt-dd">Dice District: after fixing the "Roll Dice active during purchase" bug in L9, re-running L6 test cases TC-06-01 through TC-06-05 to verify that the Buy/Skip flow still works correctly after the <code>waitingForInput</code> change.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: Testing vs evaluating vs refining -->
+  <section class="content-section reveal" id="s-spectrum">
+    <p class="section-label">Three distinct activities</p>
+    <h2>The difference between tests, evaluation, and refinement</h2>
+    <p>The three verbs target three different questions. Understanding the distinction helps students produce evidence that clearly demonstrates each activity — rather than conflating them into a single undifferentiated "testing" section.</p>
+
+    <div class="eval-spectrum">
+      <div class="eval-col">
+        <div class="eval-col-head">
+          <div class="eval-col-label">Testing</div>
+          <div class="eval-col-title">What did it do?</div>
+        </div>
+        <div class="eval-col-body">
+          <div class="eval-col-q">"Did the program behave as specified for this specific input?"</div>
+          <p>An objective, empirical activity. The result is binary — Pass or Fail. The tester's opinion is not relevant; what matters is whether actual output matched expected output.</p>
+          <p>Produces: test logs, bug logs, Console output screenshots.</p>
+          <div class="eval-col-eg">Dice District example: "Roll=6 from position 21 → newPosition=3, money=$1400. PASS."</div>
+        </div>
+      </div>
+
+      <div class="eval-col">
+        <div class="eval-col-head">
+          <div class="eval-col-label">Evaluation</div>
+          <div class="eval-col-title">Is it good enough?</div>
+        </div>
+        <div class="eval-col-body">
+          <div class="eval-col-q">"Does the solution meet the requirements it was designed to meet, and to what extent?"</div>
+          <p>An analytical activity. Uses test evidence to support judgements — not just assertion. Evaluates against the original requirements list (from L1), design principles (Shneiderman), and user feedback (L9 checklist).</p>
+          <p>Produces: requirements evaluation table, written evaluation (4 questions), D&P retrospective.</p>
+          <div class="eval-col-eg">Dice District example: "Requirement F4 (detect bankruptcy) was met. Test TC-07-01 confirmed that money &lt;0 triggers elimination. Requirement F6 (Chance cards) was partially met — draw and apply works, but only 5 of 8 events were implemented."</div>
+        </div>
+      </div>
+
+      <div class="eval-col">
+        <div class="eval-col-head">
+          <div class="eval-col-label">Refinement</div>
+          <div class="eval-col-title">What was changed?</div>
+        </div>
+        <div class="eval-col-body">
+          <div class="eval-col-q">"What was changed in response to testing and evaluation — and what was the result of the change?"</div>
+          <p>A responsive activity. Every refinement should be traceable to a test finding or evaluation judgement. The change, the reason, and the outcome of the change must all be documented.</p>
+          <p>Produces: priority fix list, updated code, debugging entries in notebook.</p>
+          <div class="eval-col-eg">Dice District example: "Bug from L9 peer test: Roll button remained active during purchase prompt. Fix: confirmed <code>waitingForInput = true</code> set in <code>OfferPurchase()</code> and <code>StartTurn()</code> guard checks it. Re-tested TC-06-07: PASS."</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: Evaluating against requirements -->
+  <section class="content-section reveal" id="s-requirements">
+    <p class="section-label">Evaluating against requirements</p>
+    <h2>Closing the loop — L1 to L10</h2>
+    <p>The most important evaluation activity is also the simplest to describe and the hardest to do honestly: return to the requirements list written in Lesson 1 and measure the completed game against each one. This loop closure is the definitive evidence of EVL-01 — it shows the project had a defined target and was assessed against it.</p>
+    <p>The table below shows a worked example of the requirements evaluation format used in Lesson 10, with three example requirements at different fulfilment levels. The key is specificity — each rating must be supported by evidence.</p>
+
+    <table class="req-return-table">
+      <thead>
+        <tr>
+          <th>Req.</th>
+          <th>Type</th>
+          <th>Original requirement</th>
+          <th>Rating</th>
+          <th>Evidence and justification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-family:var(--font-mono); font-size:.78rem; font-weight:600; color:var(--cream);">F1</td>
+          <td><span style="font-family:var(--font-mono); font-size:.68rem; font-weight:600; padding:.1rem .35rem; border-radius:2px; background:rgba(26,188,156,.12); border:1px solid rgba(26,188,156,.25); color:rgba(26,188,156,.8);">F</span></td>
+          <td>The game must allow 2–4 players to take turns rolling a dice and moving their token</td>
+          <td><span class="rating-met">✓ Met</span></td>
+          <td>Test TC-05-06 (turn cycling) confirmed all players take turns in order. TC-05-01 to TC-05-05 confirmed movement across normal, wrap, and Go cases. Three-player configuration tested in L7 full playthrough.</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--font-mono); font-size:.78rem; font-weight:600; color:var(--cream);">F6</td>
+          <td><span style="font-family:var(--font-mono); font-size:.68rem; font-weight:600; padding:.1rem .35rem; border-radius:2px; background:rgba(26,188,156,.12); border:1px solid rgba(26,188,156,.25); color:rgba(26,188,156,.8);">F</span></td>
+          <td>Chance spaces must trigger a random event from a shuffled deck of at least 8 events</td>
+          <td><span class="rating-partial">◑ Partial</span></td>
+          <td>The shuffle and draw mechanism works correctly (tested in L8). However, only 5 of the 8 planned events were implemented before the L9 peer test. The remaining 3 events were in scope but cut due to time. The mechanism is correct; the content is incomplete.</td>
+        </tr>
+        <tr>
+          <td style="font-family:var(--font-mono); font-size:.78rem; font-weight:600; color:var(--cream);">NF2</td>
+          <td><span style="font-family:var(--font-mono); font-size:.68rem; font-weight:600; padding:.1rem .35rem; border-radius:2px; background:rgba(93,173,226,.1); border:1px solid rgba(93,173,226,.25); color:rgba(93,173,226,.8);">NF</span></td>
+          <td>The UI text must be readable from 1 metre away</td>
+          <td><span class="rating-notmet">✗ Not met</span></td>
+          <td>L9 peer tester (Group 3) noted that the space info panel text was too small to read during play. The panel uses TextMeshPro at 14pt — below the minimum 18pt established in the L3 wireframe non-functional requirements. This requirement was not enforced during implementation. Fix: increase font size to 20pt and widen the panel to prevent text truncation.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box" style="margin-top:1.25rem;">
+      <strong>What the "Not Met" entry demonstrates:</strong> Acknowledging a requirement was not met — honestly, with a specific cause and a technically precise fix — is stronger EVL-01 evidence than claiming everything was met. The Not Met entry above names the specific font size, cites the original wireframe specification, references the peer tester who found it, and proposes a concrete fix. That chain of evidence-to-judgement-to-recommendation is the structure of high-quality evaluation.
+    </div>
+  </section>
+
+  <!-- SECTION 6: Debugging as refinement evidence -->
+  <section class="content-section reveal" id="s-debugging">
+    <p class="section-label">Debugging as refinement evidence</p>
+    <h2>The debugging chain</h2>
+    <p>Debugging is the refinement activity most visible in project notebooks. A debugging entry that shows a chain of reasoning — symptom observed → hypothesis formed → change made → result recorded → next step if unsuccessful — is A-range refinement evidence. A debugging entry that says "it was broken and I fixed it" is not.</p>
+
+    <div style="background:rgba(0,0,0,.22); border:1.5px solid var(--rule-line); border-radius:5px; overflow:hidden; margin-top:1rem;">
+      <div style="padding:.6rem 1rem; background:rgba(14,158,138,.07); border-bottom:1px solid rgba(14,158,138,.12); font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:rgba(14,158,138,.65);">Debugging entry — A-range example (Lesson 7)</div>
+
+      <div style="display:grid; grid-template-columns:120px 1fr; font-family:var(--font-mono); font-size:.82rem;">
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Bug symptom</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem; line-height:1.45;">After Player 2 (index 1) is eliminated, Player 3 (originally index 2) is skipped and it immediately becomes Player 1's turn again.</div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Error type</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem;">Logic error — no compile error, game runs but behaviour is wrong.</div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Hypothesis 1</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem; line-height:1.45;"><code style="color:rgba(14,158,138,.8);">EliminatePlayer()</code> might be calling <code style="color:rgba(14,158,138,.8);">NextTurn()</code> before removing the player from <code style="color:rgba(14,158,138,.8);">activePlayers</code>, so the count is still 3 when the modulo runs.</div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Test 1</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem; line-height:1.45;">Added <code style="color:rgba(14,158,138,.8);">Debug.Log("Count before remove: " + activePlayers.Count)</code> and <code style="color:rgba(14,158,138,.8);">"Count after: " + activePlayers.Count</code> in EliminatePlayer(). Console showed count went from 3→2 correctly before NextTurn() was called. Hypothesis 1 incorrect.</div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Hypothesis 2</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem; line-height:1.45;">When Player 2 (index 1) is removed, Player 3 shifts from index 2 to index 1. <code style="color:rgba(14,158,138,.8);">currentIndex</code> was 1 (Player 2's turn). After removal, index 1 now points to Player 3. NextTurn() does (1+1)%2 = 0 — back to Player 1. Player 3 never gets called as index 0.</div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.04); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Fix</div>
+        <div style="padding:.55rem 1rem; border-bottom:1px solid rgba(255,255,255,.04); color:var(--cream-dark); font-size:.82rem; line-height:1.45;">Saved the eliminated player's index before removing: <code style="color:rgba(14,158,138,.8);">int idx = activePlayers.IndexOf(p);</code> then after <code style="color:rgba(14,158,138,.8);">Remove(p)</code>: <code style="color:rgba(14,158,138,.8);">if (idx &lt;= currentIndex &amp;&amp; currentIndex &gt; 0) currentIndex--;</code></div>
+
+        <div style="padding:.55rem .85rem; border-right:1px solid rgba(255,255,255,.05); font-size:.65rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:rgba(14,158,138,.45); background:rgba(0,0,0,.12); display:flex; align-items:center;">Result</div>
+        <div style="padding:.55rem 1rem; color:rgba(26,188,156,.8); font-size:.82rem;">FIXED. Retested with 3 players, eliminated P2, confirmed P3 takes next turn. Re-ran all L7 test cases — all pass.</div>
+      </div>
+    </div>
+
+    <p style="font-size:.85rem; margin-top:.85rem; color:rgba(216,204,180,.45); font-style:italic;">Note what makes this A-range: two hypotheses formed and tested in sequence, each with evidence from <code>Debug.Log</code> rather than guesswork; a root cause explanation that names the specific mechanism (index shift); and regression testing confirming no regressions. The entry is reproducible — someone else could follow this reasoning without asking for clarification.</p>
+  </section>
+
+  <!-- SECTION 7: Grade indicators -->
+  <section class="content-section reveal" id="s-grades">
+    <p class="section-label">Grade indicators for CT5-EVL-01</p>
+    <h2>What evidence looks like at each grade</h2>
+
+    <table class="cpd-table">
+      <thead>
+        <tr>
+          <th>Grade</th>
+          <th>Testing</th>
+          <th>Evaluation</th>
+          <th>Refinement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-a">
+          <td class="grade-cell grade-a">A</td>
+          <td><span class="kw-pill">Technically concise</span> — multiple test types used (unit, integration, peer). Edge cases tested deliberately. Test stubs documented and restored. Expected outputs defined before running via pseudocode trace.</td>
+          <td>Requirements evaluated by name; "Not Met" entries present with honest causes. References specific test cases as evidence. Evaluation addresses both functional and non-functional requirements. Proposed improvements are technically specific.</td>
+          <td>Debugging entries show hypothesis-test-result chains. Regression tests run after fixes. At least one design change traceable directly to peer test feedback, with the original and changed version both documented.</td>
+        </tr>
+        <tr class="row-b">
+          <td class="grade-cell grade-b">B</td>
+          <td><span class="kw-pill">Develops and tests</span> — structured test tables with expected and actual outputs across all major functions. At least one edge case tested. Peer test checklist complete.</td>
+          <td>Requirements evaluation table complete with justifications. Written evaluation references test outcomes. At least one requirement rated less than "Met" with a reason.</td>
+          <td>Priority fix list used to drive L9 changes. At least one fix with cause and result documented. Some regression testing present.</td>
+        </tr>
+        <tr>
+          <td class="grade-cell grade-c">C</td>
+          <td><span class="kw-pill">Develops</span> common test cases — test tables present for most functions. Expected and actual outputs recorded, though expected may not always be defined first.</td>
+          <td>Requirements evaluation attempted. Some requirements rated; evaluation may not always cite test evidence. Written evaluation present.</td>
+          <td>Some fixes applied after testing. Debugging notes may describe what was changed without full cause reasoning.</td>
+        </tr>
+        <tr class="row-d">
+          <td class="grade-cell grade-d">D</td>
+          <td><span class="kw-pill">Basic</span> test cases — some structured testing present. Results may be descriptive ("it worked") rather than structured.</td>
+          <td>Some evaluation present. May claim requirements are met without evidence. Limited analysis of what doesn't work.</td>
+          <td>Some fixes applied. Changes not consistently documented with cause or result.</td>
+        </tr>
+        <tr class="row-e">
+          <td class="grade-cell grade-e">E</td>
+          <td><span class="kw-pill">Follows/identifies</span> — testing attempted. May describe running the program without structured test cases.</td>
+          <td>Limited evaluation. May identify features rather than evaluate them against requirements.</td>
+          <td>Some changes made in response to problems. Not documented in a way that demonstrates the test-evaluate-refine cycle.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 8: Exam prep -->
+  <section class="content-section reveal" id="s-exam">
+    <p class="section-label">Exam preparation</p>
+    <h2>Question types and model answers</h2>
+
+    <div class="exam-question">
+      <div class="exam-q-head">
+        <span class="exam-type-badge">Design a test case</span>
+        <span class="exam-marks">4 marks</span>
+      </div>
+      <div class="exam-q-text">"Design a test case to verify that a player is correctly eliminated when their money drops below zero. Include all five components of a structured test case."</div>
+      <div class="exam-answers">
+        <div class="exam-answer b-range">
+          <div class="exam-answer-label">B-range response</div>
+          <div class="exam-answer-text">
+            <strong>Test:</strong> Player bankruptcy<br>
+            <strong>Setup:</strong> Player 1 money = $10. Player 2 owns a property with $30 rent.<br>
+            <strong>Expected:</strong> Player 1 is removed from activePlayers. Token disappears. Their properties become unowned.<br>
+            <strong>Actual:</strong> Player 1 eliminated. Token hidden. Properties released.<br>
+            <strong>Result:</strong> PASS
+          </div>
+        </div>
+        <div class="exam-answer a-range">
+          <div class="exam-answer-label">A-range response</div>
+          <div class="exam-answer-text">
+            <strong>Test ID:</strong> TC-07-01 — Bankruptcy detection and elimination<br>
+            <strong>Setup:</strong> 3 active players. Player 2 (index 1) money = $10, position = 0. Player 1 (index 0) owns Space_05 with rentAmount = $30. Force Player 2 to land on Space_05 by setting position = 4 and using roll stub <code>return 1;</code>.<br>
+            <strong>Expected:</strong> <code>ChargeMoney(30)</code> returns false (money = $10−$30 = −$20 &lt; 0). <code>CheckBankruptcy()</code> called. Player 2 removed from <code>activePlayers</code> (count: 3→2). Player 2 token <code>SetActive(false)</code>. All Player 2 properties: owner = null. <code>GameOver()</code> not called (2 players remain). Next turn = Player 3.<br>
+            <strong>Actual:</strong> Record after running.<br>
+            <strong>Notes:</strong> Restore roll stub. Re-test with player at index 2 eliminated to verify index correction in <code>EliminatePlayer()</code>.
+          </div>
+        </div>
+      </div>
+      <div class="exam-commentary">A-range defines all expected outputs precisely before running (including the count change, SetActive call, and owner reset), names the methods involved, specifies the stub needed, and flags a follow-up edge case (eliminating the last-index player). B-range has the right structure but expected outputs are vague — "properties become unowned" doesn't specify how this is verified or what field is checked.</div>
+    </div>
+
+    <div class="exam-question">
+      <div class="exam-q-head">
+        <span class="exam-type-badge">Distinguish testing from evaluation</span>
+        <span class="exam-marks">4 marks</span>
+      </div>
+      <div class="exam-q-text">"A student says: 'I tested my game by playing through it and it worked, so I evaluated it and it meets all requirements.' Identify two problems with this statement and explain what genuine testing and evaluation would look like instead."</div>
+      <div class="exam-answers">
+        <div class="exam-answer b-range">
+          <div class="exam-answer-label">B-range response</div>
+          <div class="exam-answer-text">Problem 1: Playing through the game is not structured testing. Structured testing requires specific inputs, expected outputs defined before running, and results recorded. "It worked" is not a result — it doesn't say what was checked or how.<br><br>Problem 2: Claiming all requirements are met without evidence is not evaluation. Evaluation requires comparing the game to each requirement individually, with evidence from test cases to support each rating. Genuine evaluation would include a requirements table with pass/fail for each requirement, supported by specific test cases.</div>
+        </div>
+        <div class="exam-answer a-range">
+          <div class="exam-answer-label">A-range response</div>
+          <div class="exam-answer-text">Problem 1: <strong>No structured testing occurred.</strong> "Playing through it" is exploratory interaction, not testing. Structured testing requires: a defined test case ID, specific inputs (e.g. Player position=21, roll stub=6), expected outputs derived from the algorithm by tracing pseudocode (e.g. newPos=3, money+=$200), actual outputs recorded after running, and a Pass/Fail determination. Without expected outputs defined before running, there is no basis for judging correctness — the tester is just observing, not testing.<br><br>Problem 2: <strong>Evaluation requires evidence and honesty, not assertion.</strong> "It meets all requirements" requires returning to each requirement from the original list, citing specific test evidence for each, and acknowledging partial or unmet requirements. A project that claims to meet every requirement with no failures has either not tested edge cases, has not been honestly evaluated, or has not evidenced its claims. Genuine evaluation includes a requirements table with Met / Partial / Not Met ratings, where "Not Met" entries name the cause and propose a technically specific fix — demonstrating that the student understands what would need to change and why.</div>
+        </div>
+      </div>
+      <div class="exam-commentary">A-range names both problems precisely, explains what structured testing actually requires (the five components), and specifically identifies that "expected outputs before running" is the missing element — not just "more testing." The evaluation problem is framed in terms of what the outcome requires (evidence, honesty, technically specific proposals), not just "do it more carefully."</div>
+    </div>
+
+    <div class="exam-question">
+      <div class="exam-q-head">
+        <span class="exam-type-badge">Explain refinement</span>
+        <span class="exam-marks">3 marks</span>
+      </div>
+      <div class="exam-q-text">"Explain why refinement is considered part of the testing and evaluating outcome rather than the producing outcome. Use an example from a software project to support your answer."</div>
+      <div class="exam-answers">
+        <div class="exam-answer b-range">
+          <div class="exam-answer-label">B-range response</div>
+          <div class="exam-answer-text">Refinement is part of testing and evaluating because it is a response to what testing and evaluation found — not something done independently. If you change code without testing it first, you're not refining, you're just building. In a board game project, if a peer tester finds that the Roll Dice button stays active during a purchase, fixing that bug is refinement because it directly responds to the test finding.</div>
+        </div>
+        <div class="exam-answer a-range">
+          <div class="exam-answer-label">A-range response</div>
+          <div class="exam-answer-text">Refinement belongs to the T&E phase because it is a <em>response to evaluation evidence</em>, not independent development. In the producing phase, code is written to implement a planned design. Refinement changes existing code because testing revealed that the implementation doesn't match the specification or doesn't meet requirements — the motivation is evaluative, not additive. Without the test-evaluate sequence, there is no basis for knowing what to refine or why. In Dice District, fixing the index correction bug in <code>EliminatePlayer()</code> is refinement — it was driven by a specific test failure (Player 3 was skipped after Player 2's elimination), a reasoned hypothesis about the cause (list index shift after Remove()), and a verification that the fix resolved the specific symptom without breaking other tests (regression testing). That full chain — find, diagnose, fix, verify — is what makes it refinement rather than just coding.</div>
+        </div>
+      </div>
+      <div class="exam-commentary">A-range makes the conceptual point that refinement is evidence-driven (not additive development), then applies it to a specific Dice District example that includes all three refinement elements: the test finding, the diagnostic process, and the regression test. The distinction between "implementing a design" (producing) and "correcting an implementation" (refining) is the key insight.</div>
+    </div>
+
+  </section>
+
+</main>
+
+<aside class="toc">
+  <div class="toc-label">On this page</div>
+  <ul class="toc-items">
+    <li class="toc-item" data-section="s-meaning"><a href="#s-meaning">What this outcome means</a></li>
+    <li class="toc-item sub"><a href="#s-meaning">— Testing vs Evaluation</a></li>
+    <li class="toc-item sub"><a href="#s-meaning">— All three verbs required</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-testcases"><a href="#s-testcases">Test case anatomy</a></li>
+    <li class="toc-item sub"><a href="#s-testcases">— Five components</a></li>
+    <li class="toc-item sub"><a href="#s-testcases">— Weak vs strong compare</a></li>
+    <li class="toc-item sub"><a href="#s-testcases">— Test stub technique</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-types"><a href="#s-types">Types of testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— Unit testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— Integration testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— System testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— Peer testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— Edge case testing</a></li>
+    <li class="toc-item sub"><a href="#s-types">— Regression testing</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-spectrum"><a href="#s-spectrum">Tests vs Evaluation vs Refinement</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-requirements"><a href="#s-requirements">Evaluating against requirements</a></li>
+    <li class="toc-item sub"><a href="#s-requirements">— L1→L10 loop closure</a></li>
+    <li class="toc-item sub"><a href="#s-requirements">— Worked example table</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-debugging"><a href="#s-debugging">Debugging as refinement</a></li>
+    <li class="toc-item sub"><a href="#s-debugging">— A-range debugging chain</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-grades"><a href="#s-grades">Grade indicators (A–E)</a></li>
+    <div class="toc-divider"></div>
+    <li class="toc-item" data-section="s-exam"><a href="#s-exam">Exam preparation</a></li>
+    <li class="toc-item sub"><a href="#s-exam">— Design a test case</a></li>
+    <li class="toc-item sub"><a href="#s-exam">— Testing vs evaluation</a></li>
+    <li class="toc-item sub"><a href="#s-exam">— Explain refinement</a></li>
+  </ul>
+  <div class="toc-outcome-nav">
+    <div class="toc-nav-label">Other outcomes</div>
+    <a href="index.html"  class="toc-nav-link">← All outcomes</a>
+    <a href="opl-01.html" class="toc-nav-link">CT5-OPL-01 <span style="color:rgba(26,188,156,.5); font-size:.6rem;">Ready</span></a>
+    <a href="thi-01.html" class="toc-nav-link">CT5-THI-01 <span style="color:rgba(26,188,156,.5); font-size:.6rem;">Ready</span></a>
+    <a href="des-01.html" class="toc-nav-link">CT5-DES-01 <span style="color:rgba(26,188,156,.5); font-size:.6rem;">Ready</span></a>
+    <a href="dpm-01.html" class="toc-nav-link">CT5-DPM-01 <span style="color:rgba(26,188,156,.5); font-size:.6rem;">Ready</span></a>
+    <a href="saf-01.html" class="toc-nav-link">CT5-SAF-01 <span style="opacity:.35; font-size:.6rem;">soon</span></a>
+    <a href="col-01.html" class="toc-nav-link">CT5-COL-01 <span style="opacity:.35; font-size:.6rem;">soon</span></a>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · CT5-EVL-01 — Testing, Evaluation &amp; Refinement</div>
+  <div class="footer-chips">
+    <span class="footer-chip">Test cases</span>
+    <span class="footer-chip">Requirements evaluation</span>
+    <span class="footer-chip">Debugging</span>
+    <span class="footer-chip">Regression testing</span>
+    <span class="footer-chip">Refinement</span>
+  </div>
+</footer>
+
+<script>
+const sections = document.querySelectorAll('[id^="s-"]');
+const tocItems  = document.querySelectorAll('.toc-item[data-section]');
+const sio = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting)
+      tocItems.forEach(i => i.classList.toggle('active', i.dataset.section === e.target.id));
+  });
+}, { threshold:0.2, rootMargin:'-56px 0px -60% 0px' });
+sections.forEach(s => sio.observe(s));
+
+const reveals = document.querySelectorAll('.reveal');
+const rio = new IntersectionObserver(entries => {
+  entries.forEach((e,i) => {
+    if (e.isIntersecting) { setTimeout(()=>e.target.classList.add('visible'),i*60); rio.unobserve(e.target); }
+  });
+},{ threshold:.06 });
+reveals.forEach(el => rio.observe(el));
+</script>
+</body>
+</html>

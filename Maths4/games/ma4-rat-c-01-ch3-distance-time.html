@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch 3 · Distance–Time Graphs | MA4-RAT-C-01</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4EFE9;
+    --white: #fff;
+    --slate: #3D5A80;
+    --slate-dark: #2c4160;
+    --amber: #E89C2F;
+    --forest: #4A7C59;
+    --terracotta: #C1614F;
+    --accent: #2E7D32;
+    --accent-dark: #1b5e20;
+    --accent-light: #e8f5e9;
+    --card-shadow: 0 4px 16px rgba(61,90,128,0.10);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: #2d2d2d; }
+
+  nav { background: var(--accent); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  nav a { color: white; text-decoration: none; font-size: 0.85rem; font-weight: 700; opacity: 0.85; }
+  nav a:hover { opacity: 1; }
+  nav .sep { color: rgba(255,255,255,0.4); }
+  nav .current { opacity: 1; font-weight: 800; }
+
+  header {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: white; padding: 40px 32px 36px; position: relative; overflow: hidden;
+  }
+  header::before {
+    content: '🗡️🗺️⚔️🏰🌿🍃';
+    position: absolute; right: -20px; top: 10px; font-size: 4rem;
+    opacity: 0.08; letter-spacing: 8px; transform: rotate(-15deg); white-space: nowrap;
+  }
+  .header-inner { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+  .ch-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 14px; border-radius: 20px; margin-bottom: 14px; }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: clamp(1.8rem,4vw,2.6rem); font-weight: 900; margin-bottom: 10px; line-height: 1.15; }
+  header h1 span { color: #FFD54F; }
+  header .subtitle { font-size: 0.95rem; opacity: 0.85; line-height: 1.55; max-width: 560px; }
+
+  .tab-bar { background: var(--white); border-bottom: 3px solid var(--accent-light); display: flex; overflow-x: auto; max-width: 860px; margin: 0 auto; }
+  .tab-btn { padding: 16px 22px; border: none; background: none; font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 800; color: #888; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -3px; transition: all 0.2s; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: #555; background: #fafafa; }
+
+  main { max-width: 860px; margin: 0 auto; padding: 36px 24px 64px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--card-shadow); padding: 28px 32px; margin-bottom: 24px; }
+  .card-title { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 900; color: var(--slate); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+  .lens-box { background: linear-gradient(135deg, var(--slate), var(--slate-dark)); color: white; border-radius: var(--radius); padding: 22px 28px; margin-bottom: 24px; }
+  .lens-box .lens-label { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+  .lens-box p { font-size: 0.9rem; opacity: 0.92; line-height: 1.6; }
+
+  /* ANIMATED GRAPH */
+  .graph-wrap {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 18px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .graph-wrap canvas {
+    width: 100%;
+    max-width: 700px;
+    display: block;
+    margin: 0 auto;
+  }
+  .graph-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .graph-btn {
+    padding: 9px 20px;
+    border-radius: 20px;
+    border: 2px solid var(--accent);
+    background: white;
+    color: var(--accent);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .graph-btn:hover, .graph-btn.active { background: var(--accent); color: white; }
+
+  /* SEGMENT LEGEND */
+  .segment-legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .seg-item {
+    border-radius: 10px;
+    padding: 12px 16px;
+    border-left: 5px solid;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .seg-item:hover { transform: translateX(3px); }
+  .seg-item.seg-a { border-color: #c0392b; }
+  .seg-item.seg-b { border-color: #7f8c8d; }
+  .seg-item.seg-c { border-color: #2980b9; }
+  .seg-item.seg-d { border-color: #8e44ad; }
+  .seg-item.seg-e { border-color: #e67e22; }
+  .seg-label { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.82rem; margin-bottom: 4px; }
+  .seg-desc { font-size: 0.8rem; color: #555; line-height: 1.4; }
+
+  /* SLOPE LABELS */
+  .slope-tags { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+  .slope-tag {
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+  .slope-pos { background: #e8f5e9; color: var(--accent); }
+  .slope-zero { background: #e3f0ff; color: var(--slate); }
+  .slope-neg { background: #fdecea; color: var(--terracotta); }
+
+  /* MCQ */
+  .mcq-block { margin: 20px 0; }
+  .mcq-block .mcq-q { font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 700; color: #333; margin-bottom: 12px; line-height: 1.5; }
+  .mcq-options { display: flex; flex-direction: column; gap: 8px; }
+  .mcq-opt { text-align: left; padding: 12px 18px; border: 2px solid #ddd; border-radius: 10px; background: white; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Nunito Sans', sans-serif; }
+  .mcq-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .mcq-opt.correct { border-color: var(--forest); background: #e8f5e9; color: var(--forest); }
+  .mcq-opt.incorrect { border-color: var(--terracotta); background: #fdecea; color: var(--terracotta); }
+  .mcq-feedback { margin-top: 10px; padding: 10px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; display: none; }
+  .mcq-feedback.correct { background: #e8f5e9; color: var(--forest); display: block; }
+  .mcq-feedback.incorrect { background: #fdecea; color: var(--terracotta); display: block; }
+
+  /* TIER */
+  .tier-selector { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tier-btn { padding: 8px 20px; border-radius: 20px; border: 2px solid; font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer; background: white; transition: all 0.2s; }
+  .tier-btn.foundation { border-color: var(--forest); color: var(--forest); }
+  .tier-btn.foundation.active { background: var(--forest); color: white; }
+  .tier-btn.core { border-color: var(--slate); color: var(--slate); }
+  .tier-btn.core.active { background: var(--slate); color: white; }
+  .tier-btn.extension { border-color: var(--accent); color: var(--accent); }
+  .tier-btn.extension.active { background: var(--accent); color: white; }
+  .tier-content { display: none; }
+  .tier-content.active { display: block; animation: fadeIn 0.3s; }
+
+  /* WORKED EXAMPLE */
+  .worked-example { background: #f8f5f1; border-radius: 10px; padding: 20px 24px; margin: 18px 0; }
+  .worked-example .problem { font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--slate); margin-bottom: 14px; padding-bottom: 12px; border-bottom: 2px dashed #ddd; }
+  .step-reveal-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 800; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+  .step-reveal-btn:hover { background: var(--accent-dark); }
+  .step-reveal-btn:disabled { background: var(--forest); cursor: default; }
+  .solution-step { display: none; background: white; border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 10px; font-size: 0.88rem; line-height: 1.6; color: #333; animation: fadeIn 0.3s ease; }
+  .solution-step.visible { display: block; }
+  .solution-step .step-num-badge { display: inline-block; background: var(--accent); color: white; font-family: 'Nunito', sans-serif; font-size: 0.7rem; font-weight: 800; padding: 2px 10px; border-radius: 10px; margin-bottom: 6px; }
+  .math-line { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; color: var(--slate); margin: 6px 0; }
+
+  /* ERROR DETECTIVE */
+  .error-detective { background: #fff8e1; border: 2px dashed var(--amber); border-radius: 12px; padding: 20px 24px; margin: 18px 0; }
+  .error-detective .det-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--amber); margin-bottom: 10px; }
+  .error-detective .worked-wrong { background: white; border-radius: 8px; padding: 14px 18px; font-family: 'Nunito', sans-serif; font-size: 0.88rem; color: #333; line-height: 1.8; margin-bottom: 14px; }
+  .reveal-error-btn { margin-top: 10px; padding: 8px 20px; background: var(--amber); color: white; border: none; border-radius: 20px; font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer; }
+  .error-reveal { display: none; margin-top: 12px; background: #fffde7; border-left: 4px solid var(--amber); border-radius: 0 8px 8px 0; padding: 12px 16px; font-size: 0.85rem; line-height: 1.6; }
+  .error-reveal.visible { display: block; }
+
+  /* JOURNAL */
+  .journal-area { width: 100%; border: 2px solid #ddd; border-radius: 10px; padding: 14px; font-family: 'Nunito Sans', sans-serif; font-size: 0.88rem; min-height: 90px; resize: vertical; background: #fffef9; }
+  .journal-area:focus { outline: none; border-color: var(--slate); }
+
+  .self-check { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+  .star-btn { padding: 10px 16px; border-radius: 10px; border: 2px solid #ddd; background: white; cursor: pointer; font-size: 0.85rem; font-weight: 700; font-family: 'Nunito', sans-serif; transition: all 0.2s; }
+  .star-btn:hover { border-color: var(--amber); }
+  .star-btn.selected { background: var(--amber); border-color: var(--amber); color: white; }
+
+  .complete-btn { display: block; width: 100%; padding: 16px; background: var(--forest); color: white; border: none; border-radius: 12px; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 900; cursor: pointer; margin-top: 24px; transition: background 0.2s; }
+  .complete-btn:hover { background: #3a6347; }
+
+  .highlight-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 14px 0; font-size: 0.88rem; line-height: 1.6; color: #333; }
+  .highlight-box strong { color: var(--accent-dark); }
+
+  hr { border: none; border-top: 2px dashed #e8e0d5; margin: 24px 0; }
+
+  /* CONSTRUCT GRAPH AREA */
+  .construct-graph { background: #fafaf8; border: 2px solid #ddd; border-radius: 12px; padding: 20px; margin: 18px 0; }
+  .construct-graph h4 { font-family: 'Nunito', sans-serif; font-weight: 800; color: var(--slate); margin-bottom: 12px; font-size: 0.95rem; }
+  .construct-graph canvas { width: 100%; max-width: 600px; display: block; margin: 0 auto 14px; cursor: crosshair; border: 1px solid #ddd; border-radius: 8px; }
+  .construct-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .construct-btn { padding: 8px 18px; border-radius: 20px; border: 2px solid var(--accent); background: white; color: var(--accent); font-family: 'Nunito', sans-serif; font-size: 0.82rem; font-weight: 800; cursor: pointer; }
+  .construct-btn:hover { background: var(--accent); color: white; }
+
+  @media (max-width: 600px) { .card { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="ma4-rat-c-01-index.html">← Unit Home</a>
+  <span class="sep">/</span>
+  <a href="ma4-rat-c-01-ch1-ratios.html">Ch 1</a>
+  <span class="sep">/</span>
+  <a href="ma4-rat-c-01-ch2-rates.html">Ch 2</a>
+  <span class="sep">/</span>
+  <span class="current">Chapter 3 · Distance–Time</span>
+</nav>
+
+<header>
+  <div class="header-inner">
+    <div class="ch-badge">Chapter 3 · MA4-RAT-C-01</div>
+    <h1>Distance–Time Graphs <span>🗺️</span></h1>
+    <p class="subtitle">Follow Link's journey across Hyrule. Every movement — fast, slow, stopped, returning — can be drawn as a graph. Learn to read and create these stories in data.</p>
+  </div>
+</header>
+
+<div style="background:white;border-bottom:3px solid var(--accent-light);">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('hook',this)">🎣 Hook</button>
+    <button class="tab-btn" onclick="switchTab('explore',this)">🔍 Explore</button>
+    <button class="tab-btn" onclick="switchTab('learn',this)">📖 Learn</button>
+    <button class="tab-btn" onclick="switchTab('practise',this)">✏️ Practise</button>
+    <button class="tab-btn" onclick="switchTab('reflect',this)">💬 Reflect</button>
+  </div>
+</div>
+
+<main>
+
+<!-- ═══ HOOK ═══ -->
+<div class="tab-panel active" id="tab-hook">
+
+  <div class="lens-box">
+    <div class="lens-label">🎮 Game Designer's Lens</div>
+    <p>In open-world games like The Legend of Zelda: Breath of the Wild, every NPC (non-player character) follows a movement script. Game designers use position-over-time data to program these paths. A village merchant might walk to the market, wait, return home — each action is a segment on a distance–time graph. Understanding these graphs lets you read — and eventually design — movement in any game world.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗡️ Link's Journey Begins</div>
+    <p style="font-size:0.88rem;color:#555;line-height:1.6;margin-bottom:14px;">Link leaves Hateno Village and travels toward a dungeon. Here is a record of his journey over 10 hours. Watch it animate, then describe what you see.</p>
+
+    <div class="graph-wrap">
+      <canvas id="hookGraph" width="680" height="340"></canvas>
+    </div>
+    <div class="graph-controls">
+      <button class="graph-btn active" id="animBtn" onclick="toggleAnim()">▶ Animate Journey</button>
+      <button class="graph-btn" onclick="resetGraph()">↩ Reset</button>
+    </div>
+    <div style="background:var(--accent-light);border-radius:10px;padding:16px 20px;margin-top:16px;font-size:0.9rem;line-height:1.65;color:#333;">
+      <strong>Think about it:</strong> What was Link doing in each part of the journey? When was he moving fast? When did he stop? Did he ever come back closer to home? Write your ideas before clicking Explore.
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ EXPLORE ═══ -->
+<div class="tab-panel" id="tab-explore">
+
+  <div class="card">
+    <div class="card-title">🔍 Reading the Segments</div>
+    <p style="font-size:0.88rem;color:#555;margin-bottom:16px;line-height:1.6;">The graph below shows Link's full journey. Each coloured segment tells a different story. Click a segment label to highlight it, then answer the questions.</p>
+
+    <div class="graph-wrap">
+      <canvas id="exploreGraph" width="680" height="340"></canvas>
+    </div>
+
+    <div class="segment-legend">
+      <div class="seg-item seg-a" onclick="highlightSegment(0)">
+        <div class="seg-label" style="color:#c0392b;">Segment A — 0 to 2h</div>
+        <div class="seg-desc">Moves from 0 km to 20 km</div>
+      </div>
+      <div class="seg-item seg-b" onclick="highlightSegment(1)">
+        <div class="seg-label" style="color:#7f8c8d;">Segment B — 2 to 4h</div>
+        <div class="seg-desc">Stays at 20 km</div>
+      </div>
+      <div class="seg-item seg-c" onclick="highlightSegment(2)">
+        <div class="seg-label" style="color:#2980b9;">Segment C — 4 to 6h</div>
+        <div class="seg-desc">Moves from 20 km to 40 km</div>
+      </div>
+      <div class="seg-item seg-d" onclick="highlightSegment(3)">
+        <div class="seg-label" style="color:#8e44ad;">Segment D — 6 to 7h</div>
+        <div class="seg-desc">Moves from 40 km to 50 km</div>
+      </div>
+      <div class="seg-item seg-e" onclick="highlightSegment(4)">
+        <div class="seg-label" style="color:#e67e22;">Segment E — 7 to 10h</div>
+        <div class="seg-desc">Moves from 50 km back to 20 km</div>
+      </div>
+    </div>
+
+    <div class="mcq-block">
+      <div class="mcq-q">1. What does Segment B (flat, horizontal line) tell us about Link's movement?</div>
+      <div class="mcq-options">
+        <button class="mcq-opt" data-result="incorrect" data-msg="If he were moving at a constant speed, the line would still slope upward — not be flat." onclick="mcqAns(this)">He is moving at a constant speed</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! A flat (zero slope) segment means distance is not changing — Link has stopped." onclick="mcqAns(this)">He has stopped — distance is not changing</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="A negative slope (going downward) would mean returning. This segment is flat." onclick="mcqAns(this)">He is returning toward the start</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="Acceleration would show a curve, not a straight line." onclick="mcqAns(this)">He is accelerating</button>
+      </div>
+      <div class="mcq-feedback" id="fb-ex1"></div>
+    </div>
+
+    <hr>
+
+    <div class="mcq-block">
+      <div class="mcq-q">2. Segment E slopes downward (negative slope). What does this tell us?</div>
+      <div class="mcq-options">
+        <button class="mcq-opt" data-result="incorrect" data-msg="Distance on the y-axis represents how far Link is from home — decreasing means getting CLOSER." onclick="mcqAns(this)">Link is moving further from home faster</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! Distance from home is decreasing — Link is heading back toward the start." onclick="mcqAns(this)">Link is returning — getting closer to home</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="A flat segment means stopped. A downward slope means moving — just in the return direction." onclick="mcqAns(this)">Link has stopped moving</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="Speed doesn't show directly from slope direction — but a steeper segment does mean faster." onclick="mcqAns(this)">Link is slowing down</button>
+      </div>
+      <div class="mcq-feedback" id="fb-ex2"></div>
+    </div>
+
+    <hr>
+
+    <div class="mcq-block">
+      <div class="mcq-q">3. Compare Segment A (0–2h, goes 0 to 20 km) and Segment D (6–7h, goes 40 to 50 km). Which segment shows Link moving faster?</div>
+      <div class="mcq-options">
+        <button class="mcq-opt" data-result="incorrect" data-msg="A covers more distance but takes longer. Calculate the speed for each: distance ÷ time." onclick="mcqAns(this)">Segment A — it covers more distance</button>
+        <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! Segment A: 20÷2 = 10 km/h. Segment D: 10÷1 = 10 km/h. They are EQUAL!" onclick="mcqAns(this)">They are the same speed — both are 10 km/h</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="Calculate: Segment D covers 10 km in 1 hour = 10 km/h. Segment A is 20 km in 2 hours = 10 km/h." onclick="mcqAns(this)">Segment D — it has a steeper slope</button>
+        <button class="mcq-opt" data-result="incorrect" data-msg="Both segments have constant speed (straight lines). Calculate each speed to compare." onclick="mcqAns(this)">Cannot tell from the graph</button>
+      </div>
+      <div class="mcq-feedback" id="fb-ex3"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ LEARN ═══ -->
+<div class="tab-panel" id="tab-learn">
+
+  <div class="card">
+    <div class="card-title">📚 Reading Distance–Time Graphs</div>
+
+    <div class="slope-tags">
+      <span class="slope-tag slope-pos">↗ Positive slope = moving away from start</span>
+      <span class="slope-tag slope-zero">→ Zero slope = stopped</span>
+      <span class="slope-tag slope-neg">↘ Negative slope = returning toward start</span>
+    </div>
+
+    <div class="highlight-box">
+      <strong>Key formula:</strong> Speed = Distance ÷ Time<br>
+      On a distance–time graph, speed = the gradient (steepness) of the line segment.<br>
+      <strong>Steeper slope = faster speed.</strong>
+    </div>
+
+    <p style="font-size:0.85rem;color:#555;margin-top:14px;line-height:1.6;">Each straight-line segment on a distance–time graph represents constant speed. Curved segments would mean changing speed — we focus on straight-line segments in Stage 4.</p>
+  </div>
+
+  <!-- Worked Example 1: Reading and calculating speed -->
+  <div class="card">
+    <div class="card-title">✏️ Worked Example 1 — Calculating Speed from a Graph</div>
+    <div class="worked-example">
+      <div class="problem">🗡️ Link travels from 20 km to 40 km between hours 4 and 6 (Segment C). Calculate his speed for this segment.</div>
+      <div class="solution-step visible">
+        <span class="step-num-badge">Step 1</span>
+        <p>Find the distance travelled in this segment.</p>
+        <div class="math-line">Distance = 40 km − 20 km = 20 km</div>
+      </div>
+      <div class="solution-step" id="we1-step2">
+        <span class="step-num-badge">Step 2</span>
+        <p>Find the time taken for this segment.</p>
+        <div class="math-line">Time = 6 h − 4 h = 2 hours</div>
+      </div>
+      <div class="solution-step" id="we1-step3">
+        <span class="step-num-badge">Step 3</span>
+        <p>Apply the formula: Speed = Distance ÷ Time.</p>
+        <div class="math-line">Speed = 20 ÷ 2 = 10 km/h ✓</div>
+      </div>
+      <button class="step-reveal-btn" id="we1-btn" onclick="revealStep('we1')">Show next step ▶</button>
+    </div>
+  </div>
+
+  <!-- Worked Example 2: Calculating speed for return segment -->
+  <div class="card">
+    <div class="card-title">✏️ Worked Example 2 — Speed on the Return Journey</div>
+    <div class="worked-example">
+      <div class="problem">🗺️ In Segment E, Link travels from 50 km back to 20 km between hours 7 and 10. What is his speed on the return journey?</div>
+      <div class="solution-step visible">
+        <span class="step-num-badge">Step 1</span>
+        <p>Find the distance travelled — use the actual distance covered, not the change in position.</p>
+        <div class="math-line">Distance = 50 km − 20 km = 30 km</div>
+        <p style="margin-top:6px;font-size:0.84rem;color:#555;">Note: even though he's returning, the distance COVERED is still 30 km (positive).</p>
+      </div>
+      <div class="solution-step" id="we2-step2">
+        <span class="step-num-badge">Step 2</span>
+        <p>Find the time for this segment.</p>
+        <div class="math-line">Time = 10 − 7 = 3 hours</div>
+      </div>
+      <div class="solution-step" id="we2-step3">
+        <span class="step-num-badge">Step 3</span>
+        <p>Calculate speed.</p>
+        <div class="math-line">Speed = 30 ÷ 3 = 10 km/h ✓</div>
+        <p style="margin-top:6px;font-size:0.84rem;color:#555;">The return journey happens to be the same speed as the outward journey in Segment A.</p>
+      </div>
+      <button class="step-reveal-btn" id="we2-btn" onclick="revealStep('we2')">Show next step ▶</button>
+    </div>
+  </div>
+
+  <!-- Worked Example 3: Constructing a graph from description -->
+  <div class="card">
+    <div class="card-title">✏️ Worked Example 3 — Reading a Description and Drawing Segments</div>
+    <div class="worked-example">
+      <div class="problem">🏰 A Zelda NPC guard starts at the village gate (0 km). He walks 6 km in 1 hour, waits for 2 hours, then returns home in 1.5 hours. Describe each segment of his distance–time graph.</div>
+      <div class="solution-step visible">
+        <span class="step-num-badge">Segment 1</span>
+        <p>Walks 6 km in 1 hour → positive slope.</p>
+        <div class="math-line">From (0, 0) to (1, 6)</div>
+        <div class="math-line">Speed = 6 ÷ 1 = 6 km/h</div>
+      </div>
+      <div class="solution-step" id="we3-step2">
+        <span class="step-num-badge">Segment 2</span>
+        <p>Waits for 2 hours → flat, horizontal line.</p>
+        <div class="math-line">From (1, 6) to (3, 6)</div>
+        <div class="math-line">Speed = 0 km/h</div>
+      </div>
+      <div class="solution-step" id="we3-step3">
+        <span class="step-num-badge">Segment 3</span>
+        <p>Returns 6 km home in 1.5 hours → negative slope.</p>
+        <div class="math-line">From (3, 6) to (4.5, 0)</div>
+        <div class="math-line">Speed = 6 ÷ 1.5 = 4 km/h</div>
+      </div>
+      <button class="step-reveal-btn" id="we3-btn" onclick="revealStep('we3')">Show next step ▶</button>
+    </div>
+
+    <!-- Construct graph for the guard -->
+    <div class="construct-graph">
+      <h4>📐 Plot the guard's journey</h4>
+      <p style="font-size:0.82rem;color:#666;margin-bottom:12px;">Use the segment descriptions above. Click "Show Answer" to see the correct graph.</p>
+      <canvas id="constructCanvas" width="560" height="280"></canvas>
+      <div class="construct-controls">
+        <button class="construct-btn" onclick="drawGuardAnswer()">Show Answer Graph</button>
+        <button class="construct-btn" onclick="clearConstructGraph()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Detective -->
+  <div class="error-detective">
+    <div class="det-label">🔍 Error Detective</div>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:12px;line-height:1.6;">A student interpreted this segment: "From hour 3 to hour 7, the character moved from 40 km to 10 km." Find the error in their working.</p>
+    <div class="worked-wrong">
+      <strong>Student's working:</strong><br>
+      Distance = 40 − 10 = 30 km<br>
+      Time = 7 − 3 = 4 hours<br>
+      Speed = 30 ÷ 4 = 7.5 km/h<br>
+      Direction: moving away from start<br>
+      <strong>Conclusion: The character moved away at 7.5 km/h.</strong>
+    </div>
+    <textarea class="journal-area" placeholder="What did the student get wrong? What should their conclusion say?"></textarea>
+    <br>
+    <button class="reveal-error-btn" onclick="document.getElementById('err-rev-1').classList.add('visible')">Reveal explanation</button>
+    <div class="error-reveal" id="err-rev-1">
+      <strong>The error:</strong> The speed calculation is correct (7.5 km/h), but the student said the character moved "away from start" when the distance decreased from 40 km to 10 km. Decreasing distance from home means the character is RETURNING toward the start — a negative slope.<br><br>
+      <strong>Correct conclusion:</strong> The character is returning toward the start at 7.5 km/h (negative slope, getting closer to home).
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ PRACTISE ═══ -->
+<div class="tab-panel" id="tab-practise">
+
+  <div class="tier-selector">
+    <button class="tier-btn foundation active" onclick="selectTier('foundation',this)">🟢 Foundation</button>
+    <button class="tier-btn core" onclick="selectTier('core',this)">🔵 Core</button>
+    <button class="tier-btn extension" onclick="selectTier('extension',this)">🔴 Extension</button>
+  </div>
+
+  <!-- FOUNDATION -->
+  <div class="tier-content active" id="tier-foundation">
+    <div class="card">
+      <div class="card-title">🟢 Foundation Questions</div>
+
+      <div class="mcq-block">
+        <div class="mcq-q">1. A distance–time graph has a flat horizontal line for 3 hours. What does this tell you?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="Constant speed would show a diagonal line, not flat." onclick="mcqAns(this)">The person is moving at a constant speed</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! A flat line means zero change in distance — the person has stopped." onclick="mcqAns(this)">The person has stopped moving</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Returning would show a DOWNWARD slope, not flat." onclick="mcqAns(this)">The person is returning home</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Speeding up would show a curve or steeper line, not flat." onclick="mcqAns(this)">The person is speeding up</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f1"></div>
+      </div>
+
+      <hr>
+
+      <div class="mcq-block">
+        <div class="mcq-q">2. Link walks from 5 km to 15 km in 2 hours. What is his speed?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="Check: distance = 15 − 5 = 10 km. Time = 2 hours. Speed = 10 ÷ 2 = ?" onclick="mcqAns(this)">15 km/h</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! 10 km ÷ 2 h = 5 km/h." onclick="mcqAns(this)">5 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Don't add — Speed = Distance ÷ Time." onclick="mcqAns(this)">7.5 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="This is the distance divided by the starting point, not the time." onclick="mcqAns(this)">3 km/h</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f2"></div>
+      </div>
+
+      <hr>
+
+      <div class="mcq-block">
+        <div class="mcq-q">3. Which type of slope on a distance–time graph means the person is returning toward the starting point?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="Positive slope means moving AWAY from the start." onclick="mcqAns(this)">Positive slope (going upward)</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Zero slope means stopped — no movement at all." onclick="mcqAns(this)">Zero slope (flat line)</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! A negative (downward) slope shows distance from home is decreasing — returning." onclick="mcqAns(this)">Negative slope (going downward)</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Any slope (steep or gentle) can show positive, zero or negative direction." onclick="mcqAns(this)">A very steep slope</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CORE -->
+  <div class="tier-content" id="tier-core">
+    <div class="card">
+      <div class="card-title">🔵 Core Questions</div>
+      <p style="font-size:0.85rem;color:#666;margin-bottom:18px;">Use Link's journey graph from the Hook tab to answer these questions. The segments are:<br>A: 0–2h, 0–20 km | B: 2–4h, stopped at 20 km | C: 4–6h, 20–40 km | D: 6–7h, 40–50 km | E: 7–10h, 50–20 km</p>
+
+      <div class="mcq-block">
+        <div class="mcq-q">1. What is Link's speed during Segment E (returns from 50 km to 20 km in 3 hours)?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="This would use the final position as distance — use (50 − 20) for the distance covered." onclick="mcqAns(this)">6.7 km/h</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! Distance = 50 − 20 = 30 km. Time = 3 h. Speed = 30 ÷ 3 = 10 km/h." onclick="mcqAns(this)">10 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="15 would be 50 ÷ 3 — but we need to use the distance COVERED (30 km), not the start position." onclick="mcqAns(this)">15 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Speed is never zero unless stopped. Segment E is a moving segment." onclick="mcqAns(this)">0 km/h</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c1"></div>
+      </div>
+
+      <hr>
+
+      <div class="mcq-block">
+        <div class="mcq-q">2. How long did Link's entire journey take, and what was his total distance COVERED (not displacement)?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="50 km is only the furthest point — total distance covered includes the return journey." onclick="mcqAns(this)">10 hours, 50 km total</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! Time = 10 hours. Distance: A(20)+C(20)+D(10)+E(30) = 80 km total covered." onclick="mcqAns(this)">10 hours, 80 km total</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Add up the distance covered in each moving segment: 20+20+10+30." onclick="mcqAns(this)">10 hours, 70 km total</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="He ends at 20 km, not 0 km — check where the graph ends." onclick="mcqAns(this)">10 hours, 50 km out then back to 0</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div class="tier-content" id="tier-extension">
+    <div class="card">
+      <div class="card-title">🔴 Extension Questions</div>
+
+      <div class="mcq-block">
+        <div class="mcq-q">1. A game NPC travels as follows: starts at 0 km, reaches 12 km at t = 3h, stays for 1h, returns to 0 km at t = 7h. What is the speed of the return trip?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="The return goes from t=4h to t=7h (after the stop). Distance = 12 km, time = 7 − 4 = 3h." onclick="mcqAns(this)">4 km/h</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! Return starts at t=4h (after 1h stop), ends at t=7h. Time = 3h. Distance = 12 km. Speed = 12÷3 = 4 km/h." onclick="mcqAns(this)">4 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="This uses 7h as the total time — but the stop of 1h should not be included in the return trip." onclick="mcqAns(this)">1.7 km/h</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="2 km/h would use 6h for the return — be careful about which hours count as the return segment." onclick="mcqAns(this)">2 km/h</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e1"></div>
+      </div>
+
+      <hr>
+
+      <div class="mcq-block">
+        <div class="mcq-q">2. Two characters start from the same point at t=0. Character A travels at 15 km/h constantly. Character B travels at 20 km/h for 2 hours, then stops for 1 hour, then continues at 10 km/h. At t = 4 hours, who is further from the start, and by how much?</div>
+        <div class="mcq-options">
+          <button class="mcq-opt" data-result="incorrect" data-msg="Calculate A: 15 × 4 = 60 km. B: 20×2 + 0×1 + 10×1 = 50 km. Compare." onclick="mcqAns(this)">Character B, by 10 km</button>
+          <button class="mcq-opt" data-result="correct" data-msg="✓ Correct! A = 15 × 4 = 60 km. B = 20×2 + 10×1 = 50 km. A is 10 km ahead." onclick="mcqAns(this)">Character A, by 10 km</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="They start equal, but different speeds and a stop mean they diverge. Calculate each position at t=4." onclick="mcqAns(this)">They are at the same position</button>
+          <button class="mcq-opt" data-result="incorrect" data-msg="Calculate B: 20×2 hours (at 20 km/h) + stop + 10×1 hour. Don't add speeds." onclick="mcqAns(this)">Character B, by 30 km</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e2"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ REFLECT ═══ -->
+<div class="tab-panel" id="tab-reflect">
+
+  <div class="card">
+    <div class="card-title">💬 Metacognitive Journal</div>
+
+    <p style="font-weight:700;font-size:0.88rem;color:var(--slate);margin-bottom:8px;">Explain in your own words what the slope of a distance–time graph tells you. What does steeper mean? What does downward mean?</p>
+    <textarea class="journal-area" id="j1" placeholder="A steeper slope means... A downward slope means..." oninput="autoSave('j1','ch3-j1')"></textarea>
+
+    <p style="font-weight:700;font-size:0.88rem;color:var(--slate);margin:18px 0 8px;">What is the formula for speed and how do you read it from a graph? Draw a mini sketch (describe it in words) to explain.</p>
+    <textarea class="journal-area" id="j2" placeholder="Speed = ... On the graph I would look at..." oninput="autoSave('j2','ch3-j2')"></textarea>
+
+    <p style="font-weight:700;font-size:0.88rem;color:var(--slate);margin:18px 0 8px;">Game Designer Question: Describe a movement pattern for an NPC in your own game. Write it as a list of segments (like the guard example) and explain what slope each segment would have on a distance–time graph.</p>
+    <textarea class="journal-area" id="j3" placeholder="My NPC starts at... Segment 1:... Segment 2:..." oninput="autoSave('j3','ch3-j3')"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ How confident are you with distance–time graphs?</div>
+    <div class="self-check">
+      <button class="star-btn" onclick="selectStar(this,'ch3-confidence')">⭐ I need more practice</button>
+      <button class="star-btn" onclick="selectStar(this,'ch3-confidence')">⭐⭐ I understand the basics</button>
+      <button class="star-btn" onclick="selectStar(this,'ch3-confidence')">⭐⭐⭐ I can do it independently</button>
+      <button class="star-btn" onclick="selectStar(this,'ch3-confidence')">⭐⭐⭐⭐ I can explain it to others</button>
+    </div>
+  </div>
+
+  <button class="complete-btn" onclick="markComplete()">✓ Mark Chapter 3 Complete</button>
+  <div style="text-align:center;margin-top:20px;">
+    <a href="ma4-rat-c-01-index.html" style="color:var(--slate);font-weight:800;font-size:0.9rem;">← Return to Unit Home</a>
+  </div>
+
+</div>
+</main>
+
+<script>
+  localStorage.setItem('ma4-rat-ch3-visited','true');
+
+  ['ch3-j1','ch3-j2','ch3-j3'].forEach((key,i)=>{
+    const el=document.getElementById('j'+(i+1));
+    if(el) el.value=localStorage.getItem(key)||'';
+  });
+  function autoSave(elId,key){localStorage.setItem(key,document.getElementById(elId).value);}
+
+  function switchTab(id,btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    btn.classList.add('active');
+    if(id==='hook') drawHookGraph(1);
+    if(id==='explore') drawExploreGraph(-1);
+  }
+
+  function mcqAns(btn){
+    const block=btn.closest('.mcq-block');
+    if(block.querySelector('.correct,.incorrect')) return;
+    const result=btn.dataset.result;
+    btn.classList.add(result);
+    const fb=block.querySelector('.mcq-feedback');
+    fb.textContent=btn.dataset.msg;
+    fb.className='mcq-feedback '+result;
+    block.querySelectorAll('.mcq-opt').forEach(b=>b.disabled=true);
+  }
+
+  function selectTier(tier,btn){
+    document.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tier-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tier-'+tier).classList.add('active');
+  }
+
+  const stepState={};
+  function revealStep(id){
+    if(!stepState[id]) stepState[id]=1;
+    stepState[id]++;
+    const el=document.getElementById(`${id}-step${stepState[id]}`);
+    if(el) el.classList.add('visible');
+    const nextStep=document.getElementById(`${id}-step${stepState[id]+1}`);
+    const btn=document.getElementById(`${id}-btn`);
+    if(!nextStep){btn.textContent='✓ All steps shown';btn.disabled=true;}
+  }
+
+  function selectStar(btn,key){
+    btn.closest('.self-check').querySelectorAll('.star-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    localStorage.setItem(key,btn.textContent);
+  }
+
+  function markComplete(){
+    localStorage.setItem('ma4-rat-ch3-complete','true');
+    const cb=document.querySelector('.complete-btn');
+    cb.textContent='✓ Chapter 3 Complete!';
+    cb.style.background='#2E7D32';
+    cb.disabled=true;
+  }
+
+  if(localStorage.getItem('ma4-rat-ch3-complete')==='true'){
+    const cb=document.querySelector('.complete-btn');
+    if(cb){cb.textContent='✓ Chapter 3 Complete!';cb.style.background='#2E7D32';cb.disabled=true;}
+  }
+
+  /* ── GRAPH DRAWING ── */
+  // Journey points: (time, distance in km)
+  const journey = [[0,0],[2,20],[4,20],[6,40],[7,50],[10,20]];
+  const segColors = ['#c0392b','#7f8c8d','#2980b9','#8e44ad','#e67e22'];
+
+  function setupCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr || canvas.width;
+    canvas.height = canvas.height;
+    const ctx = canvas.getContext('2d');
+    return ctx;
+  }
+
+  function drawGrid(ctx, w, h, pad, maxT, maxD) {
+    ctx.clearRect(0, 0, w, h);
+    // Background
+    ctx.fillStyle = '#fafaf8';
+    ctx.fillRect(0, 0, w, h);
+    // Grid
+    ctx.strokeStyle = '#e0dbd4';
+    ctx.lineWidth = 1;
+    for(let t=0; t<=maxT; t+=2){
+      const x = pad.l + (t/maxT)*(w-pad.l-pad.r);
+      ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,h-pad.b);ctx.stroke();
+    }
+    for(let d=0; d<=maxD; d+=10){
+      const y = (h-pad.b) - (d/maxD)*(h-pad.t-pad.b);
+      ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+    }
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,h-pad.b);ctx.lineTo(w-pad.r,h-pad.b);ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#555';
+    ctx.font = '12px Nunito Sans, sans-serif';
+    ctx.textAlign = 'center';
+    for(let t=0; t<=maxT; t+=2){
+      const x = pad.l + (t/maxT)*(w-pad.l-pad.r);
+      ctx.fillText(t, x, h-pad.b+16);
+    }
+    ctx.textAlign = 'right';
+    for(let d=0; d<=maxD; d+=10){
+      const y = (h-pad.b) - (d/maxD)*(h-pad.t-pad.b);
+      ctx.fillText(d, pad.l-6, y+4);
+    }
+    // Axis titles
+    ctx.save();ctx.translate(14,h/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#333';ctx.font='bold 13px Nunito, sans-serif';ctx.textAlign='center';
+    ctx.fillText('Distance from start (km)',0,0);
+    ctx.restore();
+    ctx.textAlign='center';ctx.fillStyle='#333';ctx.font='bold 13px Nunito, sans-serif';
+    ctx.fillText('Time (hours)',pad.l+(w-pad.l-pad.r)/2, h-2);
+  }
+
+  function toCanvasXY(t,d,w,h,pad,maxT,maxD){
+    return {
+      x: pad.l + (t/maxT)*(w-pad.l-pad.r),
+      y: (h-pad.b) - (d/maxD)*(h-pad.t-pad.b)
+    };
+  }
+
+  // Hook graph animation
+  let animProgress = 0;
+  let animId = null;
+  let animRunning = false;
+
+  function drawHookGraph(progress) {
+    const canvas = document.getElementById('hookGraph');
+    if(!canvas) return;
+    const w = canvas.width, h = canvas.height;
+    const pad = {l:60,r:20,t:20,b:40};
+    const maxT=10, maxD=60;
+    const ctx = canvas.getContext('2d');
+    drawGrid(ctx,w,h,pad,maxT,maxD);
+
+    // Draw journey up to progress (0-1 = full journey)
+    const totalSegs = journey.length - 1;
+    const segProgress = progress * totalSegs;
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+
+    for(let i=0;i<totalSegs;i++){
+      const p1=journey[i], p2=journey[i+1];
+      const segFrac = Math.min(1, Math.max(0, segProgress - i));
+      if(segFrac <= 0) break;
+
+      const start = toCanvasXY(p1[0],p1[1],w,h,pad,maxT,maxD);
+      const endT = p1[0] + (p2[0]-p1[0])*segFrac;
+      const endD = p1[1] + (p2[1]-p1[1])*segFrac;
+      const end = toCanvasXY(endT,endD,w,h,pad,maxT,maxD);
+
+      ctx.strokeStyle = segColors[i];
+      ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.stroke();
+
+      // Dot at current point
+      if(i === Math.floor(segProgress) || progress === 1){
+        ctx.fillStyle = segColors[i];
+        ctx.beginPath();ctx.arc(end.x,end.y,5,0,Math.PI*2);ctx.fill();
+      }
+    }
+
+    // Link emoji at current pos
+    if(progress > 0 && progress < 1){
+      const i = Math.min(Math.floor(segProgress), totalSegs-1);
+      const p1=journey[i], p2=journey[i+1];
+      const segFrac = Math.min(1, Math.max(0, segProgress - i));
+      const cT = p1[0] + (p2[0]-p1[0])*segFrac;
+      const cD = p1[1] + (p2[1]-p1[1])*segFrac;
+      const pos = toCanvasXY(cT,cD,w,h,pad,maxT,maxD);
+      ctx.font='18px serif';ctx.textAlign='center';
+      ctx.fillText('🗡️',pos.x,pos.y-10);
+    }
+  }
+
+  function toggleAnim(){
+    if(animRunning){
+      cancelAnimationFrame(animId);
+      animRunning=false;
+      document.getElementById('animBtn').textContent='▶ Animate Journey';
+    } else {
+      if(animProgress>=1) animProgress=0;
+      animRunning=true;
+      document.getElementById('animBtn').textContent='⏸ Pause';
+      animateGraph();
+    }
+  }
+
+  function animateGraph(){
+    animProgress += 0.004;
+    drawHookGraph(Math.min(animProgress,1));
+    if(animProgress<1 && animRunning){
+      animId=requestAnimationFrame(animateGraph);
+    } else {
+      animRunning=false;
+      document.getElementById('animBtn').textContent='▶ Animate Journey';
+    }
+  }
+
+  function resetGraph(){
+    animProgress=0;
+    cancelAnimationFrame(animId);
+    animRunning=false;
+    document.getElementById('animBtn').textContent='▶ Animate Journey';
+    drawHookGraph(0.001);
+  }
+
+  // Explore graph with highlight
+  let highlightedSeg = -1;
+  function drawExploreGraph(highlight){
+    highlightedSeg=highlight;
+    const canvas = document.getElementById('exploreGraph');
+    if(!canvas) return;
+    const w=canvas.width, h=canvas.height;
+    const pad={l:60,r:20,t:20,b:40};
+    const maxT=10, maxD=60;
+    const ctx=canvas.getContext('2d');
+    drawGrid(ctx,w,h,pad,maxT,maxD);
+
+    for(let i=0;i<journey.length-1;i++){
+      const p1=journey[i],p2=journey[i+1];
+      const start=toCanvasXY(p1[0],p1[1],w,h,pad,maxT,maxD);
+      const end=toCanvasXY(p2[0],p2[1],w,h,pad,maxT,maxD);
+      ctx.lineWidth = highlight===i ? 5 : 2.5;
+      ctx.globalAlpha = highlight===-1||highlight===i ? 1 : 0.3;
+      ctx.strokeStyle=segColors[i];
+      ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.lineTo(end.x,end.y);ctx.stroke();
+      ctx.globalAlpha=1;
+
+      // Label
+      const midX=(start.x+end.x)/2;
+      const midY=(start.y+end.y)/2-10;
+      ctx.fillStyle=segColors[i];
+      ctx.font='bold 13px Nunito, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(String.fromCharCode(65+i), midX, midY);
+    }
+  }
+
+  function highlightSegment(i){
+    drawExploreGraph(i);
+  }
+
+  // Construct graph
+  function drawConstructBase(){
+    const canvas=document.getElementById('constructCanvas');
+    if(!canvas) return;
+    const w=canvas.width, h=canvas.height;
+    const pad={l:60,r:20,t:20,b:40};
+    const ctx=canvas.getContext('2d');
+    drawGrid(ctx,w,h,pad,5,10); // max 5h, 10km
+  }
+
+  function drawGuardAnswer(){
+    const canvas=document.getElementById('constructCanvas');
+    if(!canvas) return;
+    const w=canvas.width, h=canvas.height;
+    const pad={l:60,r:20,t:20,b:40};
+    const maxT=5, maxD=10;
+    const ctx=canvas.getContext('2d');
+    drawGrid(ctx,w,h,pad,maxT,maxD);
+
+    // Guard: (0,0) → (1,6) → (3,6) → (4.5,0)
+    const pts=[[0,0],[1,6],[3,6],[4.5,0]];
+    const colors=['#c0392b','#7f8c8d','#2980b9'];
+    for(let i=0;i<pts.length-1;i++){
+      const s=toCanvasXY(pts[i][0],pts[i][1],w,h,pad,maxT,maxD);
+      const e=toCanvasXY(pts[i+1][0],pts[i+1][1],w,h,pad,maxT,maxD);
+      ctx.strokeStyle=colors[i];ctx.lineWidth=3;
+      ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(e.x,e.y);ctx.stroke();
+      ctx.fillStyle=colors[i];ctx.beginPath();ctx.arc(s.x,s.y,4,0,Math.PI*2);ctx.fill();
+    }
+    const last=toCanvasXY(4.5,0,w,h,pad,maxT,maxD);
+    ctx.fillStyle='#2980b9';ctx.beginPath();ctx.arc(last.x,last.y,4,0,Math.PI*2);ctx.fill();
+
+    // Labels
+    ctx.font='bold 12px Nunito, sans-serif';ctx.textAlign='left';
+    ctx.fillStyle='#c0392b';
+    const lp1=toCanvasXY(0.5,3,w,h,pad,maxT,maxD);
+    ctx.fillText('6 km/h',lp1.x+5,lp1.y);
+    ctx.fillStyle='#7f8c8d';
+    const lp2=toCanvasXY(2,6.5,w,h,pad,maxT,maxD);
+    ctx.fillText('Stopped',lp2.x-20,lp2.y);
+    ctx.fillStyle='#2980b9';
+    const lp3=toCanvasXY(3.5,3,w,h,pad,maxT,maxD);
+    ctx.fillText('4 km/h',lp3.x+5,lp3.y);
+  }
+
+  function clearConstructGraph(){
+    drawConstructBase();
+  }
+
+  // Init
+  window.addEventListener('load', ()=>{
+    drawHookGraph(0.001);
+    const ec=document.getElementById('exploreGraph');
+    if(ec) drawExploreGraph(-1);
+    drawConstructBase();
+  });
+</script>
+</body>
+</html>

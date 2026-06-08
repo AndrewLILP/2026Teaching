@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dice District · Year 10 Game Development Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* ─── TOKENS ─── */
+  :root {
+    --board-green:  #1a3a2a;
+    --board-mid:    #22472f;
+    --board-felt:   #1e3d2a;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --orange-prop:  #d35400;
+    --ink:          #1a1208;
+    --ink-soft:     #3d2e10;
+    --rule-line:    rgba(201,168,76,0.35);
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', 'Georgia', serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--board-green);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    min-height: 100vh;
+    /* Subtle felt texture via SVG noise */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  /* ─── BOARD BORDER FRAME ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 10px;
+    border: 3px solid var(--rule-line);
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--board-green);
+    border-bottom: 2px solid var(--rule-line);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 54px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.15rem;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .nav-logo .dice-icon { font-size: 1.3rem; }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+    margin-left: auto;
+  }
+
+  .nav-links a {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cream-dark);
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .nav-links a:hover { background: var(--rule-line); color: var(--gold); }
+  .nav-links a.active { color: var(--gold); border-bottom: 2px solid var(--gold); }
+
+  /* ─── HERO ─── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: center;
+    padding: 5rem 5rem 4rem;
+    border-bottom: 2px solid var(--rule-line);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Corner board squares decoration */
+  .hero::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 18px,
+      rgba(201,168,76,0.04) 18px,
+      rgba(201,168,76,0.04) 36px
+    );
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 2px;
+    background: var(--gold);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(3.2rem, 7vw, 5.5rem);
+    line-height: 0.95;
+    color: var(--cream);
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--cream-dark);
+    max-width: 520px;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.7rem;
+    border-radius: 3px;
+    border: 1.5px solid;
+  }
+
+  .tag-green  { border-color: #4caf74; color: #4caf74; }
+  .tag-gold   { border-color: var(--gold); color: var(--gold); }
+  .tag-blue   { border-color: #5dade2; color: #5dade2; }
+  .tag-red    { border-color: #e87070; color: #e87070; }
+
+  /* Big dice graphic */
+  .hero-dice {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .dice-svg {
+    width: 200px;
+    height: 200px;
+    filter: drop-shadow(0 12px 40px rgba(0,0,0,0.5));
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-6deg); }
+    50%       { transform: translateY(-14px) rotate(-6deg); }
+  }
+
+  /* ─── SECTION LABELS ─── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule-line);
+    max-width: 120px;
+  }
+
+  /* ─── OVERVIEW STRIP ─── */
+  .overview {
+    padding: 4rem 5rem;
+    border-bottom: 2px solid var(--rule-line);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--cream);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  p { margin-bottom: 0.9rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .brief-box {
+    background: rgba(0,0,0,0.25);
+    border: 2px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1.5rem 1.75rem;
+    position: relative;
+  }
+
+  .brief-box::before {
+    content: 'PROJECT BRIEF';
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    position: absolute;
+    top: -0.6rem;
+    left: 1rem;
+    background: var(--board-green);
+    padding: 0 0.4rem;
+  }
+
+  .brief-box p {
+    font-size: 1rem;
+    color: var(--cream-dark);
+    font-style: italic;
+  }
+
+  /* stat pills */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .stat {
+    background: rgba(201,168,76,0.08);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+  }
+
+  .stat-num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2.4rem;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.2rem;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cream-dark);
+  }
+
+  /* ─── ASSESSMENT CONNECTION ─── */
+  .assessment {
+    padding: 3.5rem 5rem;
+    border-bottom: 2px solid var(--rule-line);
+    background: rgba(0,0,0,0.15);
+  }
+
+  .assessment-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .assess-card {
+    border: 2px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .assess-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+  }
+
+  .assess-card.a2::before { background: var(--blue-prop); }
+  .assess-card.a3::before { background: var(--purple-prop); }
+
+  .assess-card-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .assess-card.a2 .assess-card-label { color: #5dade2; }
+  .assess-card.a3 .assess-card-label { color: #bb8fce; }
+
+  .assess-card h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--cream);
+    margin-bottom: 0.5rem;
+  }
+
+  .assess-card p {
+    font-size: 0.92rem;
+    color: var(--cream-dark);
+    margin: 0;
+  }
+
+  /* ─── OUTCOMES ─── */
+  .outcomes {
+    padding: 3.5rem 5rem;
+    border-bottom: 2px solid var(--rule-line);
+  }
+
+  .outcomes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .outcome-pill {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .outcome-pill:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+
+  .outcome-code {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gold);
+    white-space: nowrap;
+    padding-top: 0.05rem;
+  }
+
+  .outcome-desc {
+    font-size: 0.88rem;
+    color: var(--cream-dark);
+    line-height: 1.45;
+  }
+
+  /* ─── LESSON CARDS ─── */
+  .lessons {
+    padding: 3.5rem 5rem 5rem;
+  }
+
+  /* Phase track */
+  .phase-track {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 2.5rem;
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .phase-block {
+    padding: 0.8rem 1rem;
+    text-align: center;
+    border-right: 1.5px solid var(--rule-line);
+    position: relative;
+  }
+
+  .phase-block:last-child { border-right: none; }
+
+  .phase-block.id   { background: rgba(196,78,44,0.15); }
+  .phase-block.rp   { background: rgba(36,113,163,0.15); }
+  .phase-block.pi   { background: rgba(39,174,96,0.12); }
+  .phase-block.te   { background: rgba(142,68,173,0.15); }
+
+  .phase-name {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+
+  .phase-block.id .phase-name { color: #e87070; }
+  .phase-block.rp .phase-name { color: #5dade2; }
+  .phase-block.pi .phase-name { color: #58d68d; }
+  .phase-block.te .phase-name { color: #bb8fce; }
+
+  .phase-hrs {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  .phase-lessons {
+    font-size: 0.75rem;
+    color: var(--cream-dark);
+    margin-top: 0.1rem;
+  }
+
+  /* Lesson card grid */
+  .lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .lesson-card {
+    background: rgba(0,0,0,0.2);
+    border: 2px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 0;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .lesson-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  /* Property colour strip like Monopoly */
+  .lesson-card-header {
+    height: 8px;
+    width: 100%;
+  }
+
+  .lesson-card.phase-id   .lesson-card-header { background: var(--red-prop); }
+  .lesson-card.phase-rp   .lesson-card-header { background: var(--blue-prop); }
+  .lesson-card.phase-pi   .lesson-card-header { background: #27ae60; }
+  .lesson-card.phase-te   .lesson-card-header { background: var(--purple-prop); }
+
+  .lesson-card-body {
+    padding: 1.25rem 1.5rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .lesson-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .lesson-num {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+  }
+
+  .lesson-phase-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+  }
+
+  .phase-id   .lesson-phase-badge { background: rgba(192,57,43,0.3); color: #e87070; }
+  .phase-rp   .lesson-phase-badge { background: rgba(36,113,163,0.3); color: #5dade2; }
+  .phase-pi   .lesson-phase-badge { background: rgba(39,174,96,0.25); color: #58d68d; }
+  .phase-te   .lesson-phase-badge { background: rgba(108,52,131,0.3); color: #bb8fce; }
+
+  .lesson-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--cream);
+    line-height: 1.25;
+  }
+
+  .lesson-subtitle {
+    font-size: 0.88rem;
+    color: var(--cream-dark);
+    font-style: italic;
+  }
+
+  .lesson-focus {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rule-line);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: rgba(240,220,170,0.55);
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 2px solid var(--rule-line);
+    padding: 2rem 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .footer-left {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: rgba(240,220,170,0.4);
+    letter-spacing: 0.06em;
+  }
+
+  .footer-outcomes {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .footer-outcome-chip {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: rgba(201,168,76,0.5);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 2px;
+    padding: 0.15rem 0.4rem;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── SCROLL REVEAL ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="dice-icon">⚄</span> Dice District Game Development Project
+  </a>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="lesson-1.html">L1</a></li>
+    <li><a href="lesson-2.html">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html">L9</a></li>
+    <li><a href="lesson-10.html">L10</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-text">
+    <p class="hero-eyebrow">Year 10 · Software Development · Creating Games &amp; Simulations</p>
+    <h1><em>Dice</em><br>District</h1>
+    <p class="hero-sub">Build a 3D Monopoly-inspired board game in Unity 6. In groups of 2–3, you will design, code, test, and evaluate a working digital board game — earning your place on the leaderboard one sprint at a time.</p>
+    <div class="hero-tags">
+      <span class="tag tag-green">Unity 6</span>
+      <span class="tag tag-gold">C# · OOP</span>
+      <span class="tag tag-blue">10 Hours</span>
+      <span class="tag tag-red">Groups of 2–3</span>
+    </div>
+  </div>
+
+  <!-- Dice SVG -->
+  <div class="hero-dice">
+    <svg class="dice-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Dice body -->
+      <rect x="20" y="30" width="140" height="140" rx="22" fill="#1a3a2a" stroke="#c9a84c" stroke-width="3"/>
+      <!-- Top face highlight -->
+      <rect x="24" y="34" width="132" height="132" rx="19" fill="url(#diceGrad)"/>
+      <!-- Dot pattern for 5 -->
+      <circle cx="65"  cy="75"  r="11" fill="#c9a84c"/>
+      <circle cx="115" cy="75"  r="11" fill="#c9a84c"/>
+      <circle cx="90"  cy="100" r="11" fill="#c9a84c"/>
+      <circle cx="65"  cy="125" r="11" fill="#c9a84c"/>
+      <circle cx="115" cy="125" r="11" fill="#c9a84c"/>
+      <defs>
+        <linearGradient id="diceGrad" x1="20" y1="30" x2="160" y2="170" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stop-color="#2a5c40"/>
+          <stop offset="100%" stop-color="#152e1f"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section class="overview reveal">
+  <div>
+    <p class="section-label">Project Overview</p>
+    <h2>Your city. Your rules. Your code.</h2>
+    <p>Dice District is a 10-hour collaborative project where you design and build a 3D board game using Unity 6 and C#. Inspired by Monopoly, your game must include a 3D board, working token movement, a property ownership system, and a win condition.</p>
+    <p>The project runs through all four phases of the Design &amp; Production Framework — from identifying what your game needs to be, through to evaluating it against real player feedback. Your <strong>project notebook</strong> is your primary evidence of thinking.</p>
+
+    <div class="brief-box" style="margin-top:1.75rem;">
+      <p>"Design and build a 3D Monopoly-inspired board game in Unity 6 for 2–4 local hot-seat players. Your game must include a functioning game loop, property ownership mechanics, and a win condition. Document every decision."</p>
+    </div>
+  </div>
+
+  <div>
+    <p class="section-label">At a Glance</p>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">10</div>
+        <div class="stat-label">Hours total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">2–3</div>
+        <div class="stat-label">Students per group</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">4</div>
+        <div class="stat-label">D&amp;P phases</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Outcomes addressed</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem; padding: 1.25rem 1.5rem; background: rgba(201,168,76,0.07); border: 1.5px solid var(--rule-line); border-radius:4px;">
+      <p class="section-label" style="margin-bottom:0.6rem;">What you will build</p>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.4rem;">
+        <li style="font-size:0.92rem; color:var(--cream-dark);">🎲 &nbsp;A 3D board with named, typed spaces</li>
+        <li style="font-size:0.92rem; color:var(--cream-dark);">🎮 &nbsp;Turn-based movement for 2–4 players</li>
+        <li style="font-size:0.92rem; color:var(--cream-dark);">🏘 &nbsp;Property buying, rent, and tax logic</li>
+        <li style="font-size:0.92rem; color:var(--cream-dark);">💰 &nbsp;Money tracking and bankruptcy detection</li>
+        <li style="font-size:0.92rem; color:var(--cream-dark);">🖥 &nbsp;A TextMeshPro UI with player info</li>
+        <li style="font-size:0.92rem; color:var(--cream-dark);">📓 &nbsp;A project notebook documenting every step</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ASSESSMENT CONNECTION -->
+<section class="assessment reveal">
+  <p class="section-label">Assessment Connection</p>
+  <h2>Why this project matters</h2>
+  <p style="color:var(--cream-dark); max-width:680px;">Dice District is a <em>rich learning task</em> — it builds directly toward two upcoming assessments. Every decision you make, every bug you fix, and every reflection you write is exam and portfolio preparation.</p>
+
+  <div class="assessment-grid">
+    <div class="assess-card a2">
+      <div class="assess-card-label">Assessment 2 · Exam Preparation</div>
+      <h3>Short-Answer Exam</h3>
+      <p>Working through all four D&amp;P phases under time pressure sharpens your ability to describe design decisions, explain algorithms, and evaluate solutions — exactly what exam questions ask. Your notebook is a revision document.</p>
+    </div>
+    <div class="assess-card a3">
+      <div class="assess-card-label">Assessment 3 · Project Proposal</div>
+      <h3>Major Project Proposal</h3>
+      <p>Dice District is a complete project cycle in miniature. The skills you practise here — defining requirements, planning classes, testing systematically, evaluating honestly — are the skills your proposal must demonstrate you can apply independently.</p>
+    </div>
+  </div>
+</section>
+
+<!-- OUTCOMES -->
+<section class="outcomes reveal">
+  <p class="section-label">Learning Outcomes</p>
+  <h2>What you are developing</h2>
+  <div class="outcomes-grid">
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-OPL-01</span>
+      <span class="outcome-desc">Develops, tests and implements algorithms using a general-purpose programming language (C#)</span>
+    </div>
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-DES-01</span>
+      <span class="outcome-desc">Designs and implements user interfaces to create engaging user experiences</span>
+    </div>
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-THI-01</span>
+      <span class="outcome-desc">Applies computational, design and systems thinking skills to computing solutions</span>
+    </div>
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-DPM-01</span>
+      <span class="outcome-desc">Applies appropriate iterative processes to produce computing solutions</span>
+    </div>
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-EVL-01</span>
+      <span class="outcome-desc">Tests, evaluates and refines computing solutions against requirements</span>
+    </div>
+    <div class="outcome-pill">
+      <span class="outcome-code">CT5-SAF-01</span>
+      <span class="outcome-desc">Selects and applies safe, secure and ethical practices in the use of data and technology</span>
+    </div>
+  </div>
+</section>
+
+<!-- LESSONS -->
+<section class="lessons reveal">
+  <p class="section-label">Lessons</p>
+  <h2>Ten lessons. One game.</h2>
+
+  <!-- Phase tracker -->
+  <div class="phase-track">
+    <div class="phase-block id">
+      <div class="phase-name">Identifying &amp; Defining</div>
+      <div class="phase-hrs">1 hr</div>
+      <div class="phase-lessons">Lesson 1</div>
+    </div>
+    <div class="phase-block rp">
+      <div class="phase-name">Researching &amp; Planning</div>
+      <div class="phase-hrs">2 hrs</div>
+      <div class="phase-lessons">Lessons 2–3</div>
+    </div>
+    <div class="phase-block pi">
+      <div class="phase-name">Producing &amp; Implementing</div>
+      <div class="phase-hrs">5 hrs</div>
+      <div class="phase-lessons">Lessons 4–8</div>
+    </div>
+    <div class="phase-block te">
+      <div class="phase-name">Testing &amp; Evaluating</div>
+      <div class="phase-hrs">2 hrs</div>
+      <div class="phase-lessons">Lessons 9–10</div>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="lesson-grid">
+
+    <a href="lesson-1.html" class="lesson-card phase-id">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 01</span>
+          <span class="lesson-phase-badge">Identifying &amp; Defining</span>
+        </div>
+        <div class="lesson-title">What Makes a Board Game Work?</div>
+        <div class="lesson-subtitle">Analysing Monopoly · Requirements · Board sketch</div>
+        <div class="lesson-focus">CT5-THI-01 · CT5-DPM-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-2.html" class="lesson-card phase-rp">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 02</span>
+          <span class="lesson-phase-badge">Researching &amp; Planning</span>
+        </div>
+        <div class="lesson-title">Game Systems &amp; Data Design</div>
+        <div class="lesson-subtitle">Starter code analysis · Game loop pseudocode · Class planning</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-THI-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-3.html" class="lesson-card phase-rp">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 03</span>
+          <span class="lesson-phase-badge">Researching &amp; Planning</span>
+        </div>
+        <div class="lesson-title">Scene Design &amp; Class Blueprint</div>
+        <div class="lesson-subtitle">Block-out board · Class diagram · UI wireframe · Scope tiers</div>
+        <div class="lesson-focus">CT5-DES-01 · CT5-DPM-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-4.html" class="lesson-card phase-pi">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 04</span>
+          <span class="lesson-phase-badge">Producing &amp; Implementing</span>
+        </div>
+        <div class="lesson-title">Scene &amp; Player Setup</div>
+        <div class="lesson-subtitle">BoardSpace · Player scripts · Camera · Token placement</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-THI-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-5.html" class="lesson-card phase-pi">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 05</span>
+          <span class="lesson-phase-badge">Producing &amp; Implementing</span>
+        </div>
+        <div class="lesson-title">Dice &amp; Movement</div>
+        <div class="lesson-subtitle">DiceRoller · MovePlayer() · Board wrapping · UI wiring</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-DES-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-6.html" class="lesson-card phase-pi">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 06</span>
+          <span class="lesson-phase-badge">Producing &amp; Implementing</span>
+        </div>
+        <div class="lesson-title">Space Actions &amp; Properties</div>
+        <div class="lesson-subtitle">ResolveSpace() · Buy · Rent · Tax · Go salary · Message panel</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-THI-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-7.html" class="lesson-card phase-pi">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 07</span>
+          <span class="lesson-phase-badge">Producing &amp; Implementing</span>
+        </div>
+        <div class="lesson-title">Turn Management &amp; Win Condition</div>
+        <div class="lesson-subtitle">NextTurn() · Bankruptcy · Elimination · Game-over screen</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-EVL-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-8.html" class="lesson-card phase-pi">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 08</span>
+          <span class="lesson-phase-badge">Producing &amp; Implementing</span>
+        </div>
+        <div class="lesson-title">Polish &amp; Extension Build</div>
+        <div class="lesson-subtitle">Chance cards · Sound · Token animation · Tiered challenges</div>
+        <div class="lesson-focus">CT5-OPL-01 · CT5-DES-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-9.html" class="lesson-card phase-te">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 09</span>
+          <span class="lesson-phase-badge">Testing &amp; Evaluating</span>
+        </div>
+        <div class="lesson-title">Structured Peer Testing</div>
+        <div class="lesson-subtitle">Playtest checklist · Bug log · Priority fixes</div>
+        <div class="lesson-focus">CT5-EVL-01 · CT5-DPM-01</div>
+      </div>
+    </a>
+
+    <a href="lesson-10.html" class="lesson-card phase-te">
+      <div class="lesson-card-header"></div>
+      <div class="lesson-card-body">
+        <div class="lesson-meta">
+          <span class="lesson-num">Lesson 10</span>
+          <span class="lesson-phase-badge">Testing &amp; Evaluating</span>
+        </div>
+        <div class="lesson-title">Evaluation &amp; Reflection</div>
+        <div class="lesson-subtitle">Requirements review · Design critique · Career connection</div>
+        <div class="lesson-focus">CT5-EVL-01 · CT5-SAF-01</div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · Creating Games &amp; Simulations · Created with Gen AI collaborator</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-OPL-01</span>
+    <span class="footer-outcome-chip">CT5-DES-01</span>
+    <span class="footer-outcome-chip">CT5-THI-01</span>
+    <span class="footer-outcome-chip">CT5-DPM-01</span>
+    <span class="footer-outcome-chip">CT5-EVL-01</span>
+    <span class="footer-outcome-chip">CT5-SAF-01</span>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

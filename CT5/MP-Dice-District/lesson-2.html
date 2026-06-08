@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 2 · Dice District</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board-green:  #1a3a2a;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --green-prop:   #1e8449;
+    --rule-line:    rgba(201,168,76,0.35);
+    --phase-colour: #2471a3; /* blue = Researching & Planning */
+    --phase-bg:     rgba(36,113,163,0.12);
+
+    /* Code colours */
+    --code-bg:      #0f1e16;
+    --code-kw:      #e8c96a;   /* keyword  */
+    --code-type:    #58d68d;   /* type     */
+    --code-str:     #f0a07a;   /* string   */
+    --code-cmt:     #5d8a6a;   /* comment  */
+    --code-num:     #bb8fce;   /* number   */
+    --code-fn:      #5dade2;   /* function */
+    --code-plain:   #d4c9b0;   /* plain    */
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--board-green);
+    color: var(--cream);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.7;
+    min-height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 10px;
+    border: 3px solid var(--rule-line);
+    pointer-events: none; z-index: 100;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--board-green);
+    border-bottom: 2px solid var(--rule-line);
+    padding: 0 2.5rem;
+    display: flex; align-items: center; gap: 2rem;
+    height: 54px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
+  }
+  .nav-logo { font-family:var(--font-display); font-weight:900; font-size:1.15rem; color:var(--gold); letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+  .nav-links { display:flex; gap:.25rem; list-style:none; margin-left:auto; }
+  .nav-links a { font-family:var(--font-mono); font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dark); text-decoration:none; padding:.3rem .75rem; border-radius:3px; transition:background .15s,color .15s; }
+  .nav-links a:hover { background:var(--rule-line); color:var(--gold); }
+  .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); }
+
+  /* ─── LESSON HEADER ─── */
+  .lesson-header {
+    border-bottom: 2px solid var(--rule-line);
+    padding: 3.5rem 5rem 3rem;
+    position: relative; overflow: hidden;
+  }
+  .lesson-header::before { content:''; position:absolute; top:0;left:0;right:0; height:6px; background:var(--phase-colour); }
+  .lesson-header::after { content:''; position:absolute; right:0;top:0;bottom:0; width:200px; background:repeating-linear-gradient(45deg,transparent,transparent 16px,rgba(36,113,163,.05) 16px,rgba(36,113,163,.05) 32px); pointer-events:none; }
+
+  .lesson-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .phase-badge { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .65rem; border-radius:3px; background:var(--phase-bg); color:#5dade2; border:1.5px solid rgba(36,113,163,.4); }
+  .lesson-num-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; color:rgba(240,220,170,.45); }
+
+  .lesson-header h1 { font-family:var(--font-display); font-weight:900; font-size:clamp(2.4rem,5vw,3.8rem); line-height:1; color:var(--cream); letter-spacing:-.02em; margin-bottom:.6rem; }
+  .lesson-header h1 em { font-style:italic; color:var(--gold); }
+  .lesson-tagline { font-size:1.05rem; color:var(--cream-dark); font-style:italic; margin-bottom:1.75rem; max-width:580px; }
+
+  .lisc-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; }
+  .lisc-box { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; }
+  .lisc-box-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem; }
+  .lisc-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .lisc-box li { font-size:.9rem; color:var(--cream-dark); padding-left:1rem; position:relative; line-height:1.4; }
+  .lisc-box li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:.75rem; }
+
+  /* ─── LAYOUT ─── */
+  .page-body { display:grid; grid-template-columns:1fr 300px; align-items:start; }
+  .content { padding:3rem 4rem 5rem 5rem; border-right:2px solid var(--rule-line); }
+  .sidebar { padding:3rem 2rem 5rem; position:sticky; top:54px; }
+
+  /* ─── SHARED ─── */
+  .section-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--rule-line); }
+  .content-section { margin-bottom:3.25rem; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:1.7rem; color:var(--cream); line-height:1.2; margin-bottom:.9rem; }
+  h3 { font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:var(--gold-light); margin-bottom:.5rem; margin-top:1.5rem; }
+  p { margin-bottom:.85rem; color:var(--cream-dark); }
+  p:last-child { margin-bottom:0; }
+  strong { color:var(--cream); font-weight:600; }
+
+  /* ─── CODE PANEL ─── */
+  .code-panel {
+    background: var(--code-bg);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .code-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 1rem;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .code-panel-title {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.7);
+  }
+
+  .copy-btn {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 3px;
+    color: var(--gold);
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .copy-btn:hover { background: rgba(201,168,76,0.25); }
+  .copy-btn.copied { color: #58d68d; border-color: rgba(39,174,96,0.4); background: rgba(39,174,96,0.12); }
+
+  .code-body { padding: 1.1rem 1.25rem; overflow-x: auto; }
+  .code-body pre { margin: 0; white-space: pre; }
+
+  /* Syntax colours */
+  .kw   { color: var(--code-kw); }
+  .ty   { color: var(--code-type); }
+  .str  { color: var(--code-str); }
+  .cmt  { color: var(--code-cmt); font-style: italic; }
+  .num  { color: var(--code-num); }
+  .fn   { color: var(--code-fn); }
+  .pl   { color: var(--code-plain); }
+
+  /* ─── DUAL PANEL ─── */
+  .dual-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .dual-panel .panel-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .panel-label.pseudo { color: var(--gold); }
+  .panel-label.csharp { color: #5dade2; }
+
+  .panel-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .panel-dot.pseudo { background: var(--gold); }
+  .panel-dot.csharp { background: #5dade2; }
+
+  /* ─── ANNOTATED CODE ─── */
+  .annotated-block {
+    background: var(--code-bg);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    margin-top: 1rem;
+    overflow: hidden;
+  }
+
+  .annotated-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 1rem;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .annotated-title {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(88,214,141,0.7);
+  }
+
+  .annotation-toggle {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(88,214,141,0.1);
+    border: 1px solid rgba(88,214,141,0.3);
+    border-radius: 3px;
+    color: #58d68d;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .annotation-toggle:hover { background: rgba(88,214,141,0.2); }
+
+  .annotated-body {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .code-line {
+    display: flex;
+    align-items: stretch;
+    transition: background 0.15s;
+    cursor: default;
+  }
+
+  .code-line:hover { background: rgba(201,168,76,0.04); }
+  .code-line.has-note:hover { background: rgba(88,214,141,0.06); cursor: pointer; }
+  .code-line.active { background: rgba(88,214,141,0.08); }
+
+  .line-num {
+    width: 2.8rem;
+    flex-shrink: 0;
+    color: rgba(201,168,76,0.2);
+    text-align: right;
+    padding: 0 0.6rem 0 0.75rem;
+    user-select: none;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    border-right: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .line-indicator {
+    width: 4px;
+    flex-shrink: 0;
+    background: transparent;
+    transition: background 0.15s;
+  }
+  .has-note .line-indicator { background: rgba(88,214,141,0.3); }
+  .active .line-indicator { background: #58d68d; }
+
+  .line-code {
+    flex: 1;
+    padding: 0.06rem 1rem;
+    white-space: pre;
+  }
+
+  .annotation-panel {
+    background: rgba(39,174,96,0.1);
+    border-top: 1px solid rgba(39,174,96,0.2);
+    padding: 0.7rem 1.1rem 0.7rem 4rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: #a8e6bf;
+    display: none;
+    line-height: 1.5;
+  }
+  .annotation-panel.visible { display: block; }
+
+  /* ─── GAME LOOP DIAGRAM ─── */
+  .loop-diagram {
+    background: rgba(0,0,0,0.25);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .loop-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  .loop-box {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 4px;
+    padding: 0.7rem 1rem;
+    text-align: center;
+  }
+
+  .loop-box-num {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 0.2rem;
+  }
+
+  .loop-box-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--cream);
+  }
+
+  .loop-box-sub {
+    font-size: 0.78rem;
+    color: var(--cream-dark);
+    margin-top: 0.15rem;
+    line-height: 1.3;
+  }
+
+  .loop-box.highlight {
+    border-color: rgba(36,113,163,0.6);
+    background: rgba(36,113,163,0.12);
+  }
+
+  .loop-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 540px;
+    padding: 0.2rem 2rem;
+    position: relative;
+  }
+
+  .loop-arrow {
+    width: 1.5px;
+    height: 24px;
+    background: var(--rule-line);
+    position: relative;
+  }
+
+  .loop-arrow::after {
+    content: '▼';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--gold);
+    font-size: 0.6rem;
+    line-height: 1;
+  }
+
+  .loop-condition {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: rgba(201,168,76,0.5);
+    letter-spacing: 0.06em;
+    margin-top: 0.1rem;
+  }
+
+  /* ─── CLASS CARDS ─── */
+  .class-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .class-card {
+    background: rgba(0,0,0,0.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+
+  .class-card:hover { border-color: var(--gold); }
+
+  .class-card-head {
+    background: rgba(36,113,163,0.15);
+    border-bottom: 1px solid rgba(36,113,163,0.3);
+    padding: 0.65rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #5dade2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .class-icon { font-size: 0.9rem; }
+
+  .class-section {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+
+  .class-section:last-child { border-bottom: none; }
+
+  .class-section-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,0.4);
+    margin-bottom: 0.4rem;
+  }
+
+  .class-item {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--cream-dark);
+    padding: 0.18rem 0;
+    line-height: 1.4;
+  }
+
+  .class-item .type { color: #58d68d; }
+  .class-item .method { color: #5dade2; }
+
+  /* ─── ANALYSIS TABLE ─── */
+  .analysis-table { width:100%; border-collapse:collapse; margin-top:1rem; font-size:.92rem; }
+  .analysis-table thead tr { border-bottom:2px solid var(--gold); }
+  .analysis-table th { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); padding:.5rem .75rem; text-align:left; }
+  .analysis-table td { padding:.65rem .75rem; color:var(--cream-dark); border-bottom:1px solid rgba(201,168,76,.12); vertical-align:top; line-height:1.45; }
+  .analysis-table tr:last-child td { border-bottom:none; }
+  .analysis-table td:first-child { font-family:var(--font-mono); font-size:.8rem; font-weight:600; color:var(--cream); }
+
+  /* ─── TIERED TASKS ─── */
+  .tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1rem; }
+  .tier-card { border:2px solid var(--rule-line); border-radius:4px; overflow:hidden; }
+  .tier-head { padding:.6rem 1rem; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; }
+  .tier-basic    .tier-head { background:rgba(39,174,96,.2);  color:#58d68d;  border-bottom:2px solid rgba(39,174,96,.3); }
+  .tier-inter    .tier-head { background:rgba(36,113,163,.2); color:#5dade2;  border-bottom:2px solid rgba(36,113,163,.3); }
+  .tier-advanced .tier-head { background:rgba(108,52,131,.2); color:#bb8fce;  border-bottom:2px solid rgba(108,52,131,.3); }
+  .tier-body { padding:.85rem 1rem; background:rgba(0,0,0,.15); }
+  .tier-body ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .tier-body li { font-size:.85rem; color:var(--cream-dark); padding-left:.9rem; position:relative; line-height:1.4; }
+  .tier-body li::before { content:'·'; position:absolute; left:0; color:var(--gold); font-weight:700; }
+
+  /* ─── NOTEBOOK ─── */
+  .notebook-checkpoint { background:rgba(201,168,76,.07); border:2px solid rgba(201,168,76,.4); border-radius:5px; padding:1.5rem 1.75rem; margin-top:1rem; position:relative; }
+  .notebook-checkpoint::before { content:'📓  NOTEBOOK CHECKPOINT'; font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.14em; color:var(--gold); display:block; margin-bottom:.85rem; }
+  .notebook-checkpoint ul { list-style:none; display:flex; flex-direction:column; gap:.45rem; }
+  .notebook-checkpoint li { font-size:.92rem; color:var(--cream-dark); padding-left:1.3rem; position:relative; line-height:1.45; }
+  .notebook-checkpoint li::before { content:'☐'; position:absolute; left:0; color:var(--gold); font-size:.85rem; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar-card { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; margin-bottom:1.25rem; }
+  .sidebar-card-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.65rem; display:block; }
+  .sidebar-card p { font-size:.88rem; color:var(--cream-dark); margin-bottom:.5rem; }
+  .outcome-chips { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.25rem; }
+  .outcome-chip { font-family:var(--font-mono); font-size:.62rem; font-weight:600; color:var(--gold); border:1px solid rgba(201,168,76,.35); border-radius:2px; padding:.15rem .4rem; letter-spacing:.05em; }
+  .teacher-note { background:rgba(108,52,131,.12); border:1.5px solid rgba(108,52,131,.35); border-radius:4px; padding:1rem 1.1rem; margin-bottom:1.25rem; }
+  .teacher-note-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#bb8fce; display:block; margin-bottom:.5rem; }
+  .teacher-note p { font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.5; }
+  .time-badge { display:inline-flex; align-items:center; gap:.4rem; font-family:var(--font-mono); font-size:.72rem; font-weight:600; color:var(--gold); background:rgba(201,168,76,.1); border:1.5px solid rgba(201,168,76,.3); border-radius:3px; padding:.25rem .65rem; margin-bottom:1.5rem; }
+  .lesson-nav { display:flex; gap:.5rem; margin-top:.5rem; }
+  .lesson-nav a { flex:1; display:flex; align-items:center; justify-content:center; gap:.35rem; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.06em; text-decoration:none; padding:.55rem .5rem; border-radius:3px; border:1.5px solid var(--rule-line); color:var(--cream-dark); transition:border-color .15s,color .15s; text-align:center; }
+  .lesson-nav a:hover { border-color:var(--gold); color:var(--gold); }
+
+  .cpd-strip { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; overflow:hidden; margin-bottom:1.25rem; }
+  .cpd-strip-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); padding:.5rem .85rem; border-bottom:1px solid var(--rule-line); background:rgba(201,168,76,.06); }
+  .cpd-rows { padding:.6rem 0; }
+  .cpd-row { display:flex; align-items:flex-start; gap:.5rem; padding:.35rem .85rem; font-size:.8rem; }
+  .cpd-grade { font-family:var(--font-mono); font-size:.65rem; font-weight:600; width:1.4rem; flex-shrink:0; color:var(--gold); padding-top:.05rem; }
+  .cpd-desc { color:var(--cream-dark); line-height:1.4; }
+
+  /* ─── REVEAL ─── */
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .45s ease,transform .45s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  /* ─── FOOTER ─── */
+  footer { border-top:2px solid var(--rule-line); padding:1.75rem 5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .footer-left { font-family:var(--font-mono); font-size:.72rem; color:rgba(240,220,170,.4); letter-spacing:.06em; }
+  .footer-outcomes { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .footer-outcome-chip { font-family:var(--font-mono); font-size:.6rem; font-weight:600; color:rgba(201,168,76,.5); border:1px solid rgba(201,168,76,.2); border-radius:2px; padding:.15rem .4rem; letter-spacing:.06em; }
+
+  /* ─── KEY TERM ─── */
+  .key-term {
+    display: inline-block;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--gold-light);
+    padding: 0.05rem 0.4rem;
+    vertical-align: baseline;
+  }
+
+  /* ─── INFO BOX ─── */
+  .info-box {
+    background: rgba(36,113,163,0.1);
+    border: 1.5px solid rgba(36,113,163,0.35);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+    color: var(--cream-dark);
+  }
+  .info-box strong { color: #5dade2; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo"><span>⚄</span> Dice District</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="lesson-1.html">L1</a></li>
+    <li><a href="lesson-2.html" class="active">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html">L9</a></li>
+    <li><a href="lesson-10.html">L10</a></li>
+  </ul>
+</nav>
+
+<!-- HEADER -->
+<header class="lesson-header">
+  <div class="lesson-eyebrow">
+    <span class="phase-badge">Researching &amp; Planning</span>
+    <span class="lesson-num-label">Lesson 02 of 10</span>
+  </div>
+  <h1>Game Systems &amp;<br><em>Data Design</em></h1>
+  <p class="lesson-tagline">Examine the starter code, decode how a board game thinks in data, and pseudocode the game loop before you write a line of C#.</p>
+  <div class="lisc-grid">
+    <div class="lisc-box">
+      <div class="lisc-box-label">Learning Intentions</div>
+      <ul>
+        <li>Understand how a board game's logic maps to data structures and classes in C#</li>
+        <li>Read and annotate provided starter scripts to identify purpose, attributes, and methods</li>
+        <li>Write a pseudocode game loop using NSW conventions</li>
+        <li>Identify the three core classes needed and list their attributes and methods</li>
+      </ul>
+    </div>
+    <div class="lisc-box">
+      <div class="lisc-box-label">Success Criteria — I can…</div>
+      <ul>
+        <li>Explain what each starter script does in plain English</li>
+        <li>Annotate at least 8 lines of code with explanations in my notebook</li>
+        <li>Write a pseudocode game loop with at least 5 steps using NSW conventions</li>
+        <li>List the attributes and at least one method for each of the three core classes</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<main class="content">
+
+  <!-- PART 1: The game loop concept -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 1 · Concept (10 min)</p>
+    <h2>How a Game Thinks</h2>
+    <p>Every video game — no matter how complex — runs the same fundamental structure: a <strong>game loop</strong>. The loop keeps running until a win or loss condition is met. In a board game, the loop maps very cleanly to turns.</p>
+    <p>Study the diagram below, then read the pseudocode that expresses the same logic.</p>
+
+    <!-- Loop diagram -->
+    <div class="loop-diagram">
+      <div class="loop-step">
+        <div class="loop-box highlight">
+          <div class="loop-box-num">START</div>
+          <div class="loop-box-label">Game Begins</div>
+          <div class="loop-box-sub">Initialise players, board, money</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box">
+          <div class="loop-box-num">STEP 1</div>
+          <div class="loop-box-label">Roll Dice</div>
+          <div class="loop-box-sub">Generate random 2–12</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box">
+          <div class="loop-box-num">STEP 2</div>
+          <div class="loop-box-label">Move Token</div>
+          <div class="loop-box-sub">Advance position; wrap at board end</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box">
+          <div class="loop-box-num">STEP 3</div>
+          <div class="loop-box-label">Resolve Space</div>
+          <div class="loop-box-sub">Buy / pay rent / pay tax / collect Go</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box">
+          <div class="loop-box-num">STEP 4</div>
+          <div class="loop-box-label">Check Win Condition</div>
+          <div class="loop-box-sub">Is any player bankrupt?</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+        <div class="loop-condition">if no winner → next player's turn</div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box">
+          <div class="loop-box-num">STEP 5</div>
+          <div class="loop-box-label">Next Turn</div>
+          <div class="loop-box-sub">Advance to next active player; repeat</div>
+        </div>
+      </div>
+
+      <div class="loop-connector">
+        <div class="loop-arrow"></div>
+        <div class="loop-condition">if winner found ↓</div>
+      </div>
+
+      <div class="loop-step">
+        <div class="loop-box highlight">
+          <div class="loop-box-num">END</div>
+          <div class="loop-box-label">Game Over</div>
+          <div class="loop-box-sub">Display winner</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 2: Pseudocode -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 2 · NSW Pseudocode (15 min)</p>
+    <h2>Writing the Game Loop in Pseudocode</h2>
+
+    <p>Before writing C#, we express the algorithm in <strong>NSW pseudocode</strong> — plain structured English that any programmer can read, regardless of language. Pseudocode focuses on <em>what</em> happens, not <em>how</em> the language syntax works.</p>
+
+    <div class="info-box">
+      <strong>NSW Pseudocode conventions used here:</strong> Keywords in UPPERCASE (<span class="key-term">BEGIN</span>, <span class="key-term">END</span>, <span class="key-term">WHILE</span>, <span class="key-term">IF</span>, <span class="key-term">THEN</span>, <span class="key-term">ELSE</span>, <span class="key-term">FOR EACH</span>). Assignment uses <span class="key-term">←</span>. Output uses <span class="key-term">OUTPUT</span>. Conditions use plain English inside the keyword structure.
+    </div>
+
+    <!-- Dual panel: pseudocode LEFT, C# RIGHT -->
+    <div class="dual-panel">
+      <!-- PSEUDOCODE -->
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <div class="panel-label pseudo"><span class="panel-dot pseudo"></span>NSW Pseudocode</div>
+          <button class="copy-btn" onclick="copyCode('pseudo-code')">Copy</button>
+        </div>
+        <div class="code-body">
+          <pre id="pseudo-code"><span class="kw">BEGIN</span> GameLoop
+  <span class="cmt">// Run until the game ends</span>
+  <span class="kw">WHILE</span> winner = <span class="kw">FALSE</span>
+
+    <span class="cmt">// Step 1: Roll the dice</span>
+    roll ← <span class="fn">RollDice</span>()
+
+    <span class="cmt">// Step 2: Move the current player</span>
+    currentPlayer.position ←
+      (currentPlayer.position + roll)
+      <span class="kw">MOD</span> boardLength
+
+    <span class="cmt">// Step 3: Resolve the space</span>
+    space ← board[currentPlayer.position]
+    <span class="kw">IF</span> space.type = <span class="str">"Property"</span> <span class="kw">THEN</span>
+      <span class="kw">IF</span> space.owner = <span class="kw">NULL</span> <span class="kw">THEN</span>
+        <span class="fn">OfferPurchase</span>(currentPlayer, space)
+      <span class="kw">ELSE IF</span> space.owner ≠ currentPlayer <span class="kw">THEN</span>
+        <span class="fn">ChargeRent</span>(currentPlayer, space)
+      <span class="kw">END IF</span>
+    <span class="kw">ELSE IF</span> space.type = <span class="str">"Tax"</span> <span class="kw">THEN</span>
+      currentPlayer.money ←
+        currentPlayer.money - space.taxAmount
+    <span class="kw">ELSE IF</span> space.type = <span class="str">"Go"</span> <span class="kw">THEN</span>
+      currentPlayer.money ←
+        currentPlayer.money + goSalary
+    <span class="kw">END IF</span>
+
+    <span class="cmt">// Step 4: Check win condition</span>
+    <span class="kw">IF</span> currentPlayer.money &lt; <span class="num">0</span> <span class="kw">THEN</span>
+      <span class="fn">EliminatePlayer</span>(currentPlayer)
+    <span class="kw">END IF</span>
+    <span class="kw">IF</span> activePlayers.count = <span class="num">1</span> <span class="kw">THEN</span>
+      winner ← <span class="kw">TRUE</span>
+      <span class="fn">DisplayWinner</span>(activePlayers[<span class="num">0</span>])
+    <span class="kw">END IF</span>
+
+    <span class="cmt">// Step 5: Advance to next player</span>
+    currentPlayerIndex ←
+      (currentPlayerIndex + <span class="num">1</span>)
+      <span class="kw">MOD</span> activePlayers.count
+
+  <span class="kw">END WHILE</span>
+<span class="kw">END</span> GameLoop</pre>
+        </div>
+      </div>
+
+      <!-- C# -->
+      <div class="code-panel">
+        <div class="code-panel-header">
+          <div class="panel-label csharp"><span class="panel-dot csharp"></span>C# (Unity 6)</div>
+          <button class="copy-btn" onclick="copyCode('csharp-code')">Copy</button>
+        </div>
+        <div class="code-body">
+          <pre id="csharp-code"><span class="cmt">// GameManager.cs — game loop entry</span>
+<span class="kw">void</span> <span class="fn">StartTurn</span>()
+{
+    <span class="cmt">// Step 1: Roll the dice</span>
+    <span class="ty">int</span> roll = <span class="fn">RollDice</span>();
+
+    <span class="cmt">// Step 2: Move the current player</span>
+    Player p = activePlayers[currentIndex];
+    p.position = (p.position + roll)
+                 % boardSpaces.Length;
+
+    <span class="cmt">// Step 3: Resolve the space</span>
+    BoardSpace space = boardSpaces[p.position];
+    <span class="kw">if</span> (space.spaceType ==
+        SpaceType.Property)
+    {
+        <span class="kw">if</span> (space.owner == <span class="kw">null</span>)
+            <span class="fn">OfferPurchase</span>(p, space);
+        <span class="kw">else if</span> (space.owner != p)
+            <span class="fn">ChargeRent</span>(p, space);
+    }
+    <span class="kw">else if</span> (space.spaceType ==
+             SpaceType.Tax)
+    {
+        p.money -= space.taxAmount;
+    }
+    <span class="kw">else if</span> (space.spaceType ==
+             SpaceType.Go)
+    {
+        p.money += goSalary;
+    }
+
+    <span class="cmt">// Step 4: Check win condition</span>
+    <span class="kw">if</span> (p.money &lt; 0)
+        <span class="fn">EliminatePlayer</span>(p);
+
+    <span class="kw">if</span> (activePlayers.Count == 1)
+    {
+        <span class="fn">DisplayWinner</span>(activePlayers[0]);
+        <span class="kw">return</span>;
+    }
+
+    <span class="cmt">// Step 5: Next player</span>
+    currentIndex =
+        (currentIndex + 1)
+        % activePlayers.Count;
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <p style="font-size:.85rem; margin-top:.85rem; color:rgba(240,220,170,.5); font-style:italic;">Notice how each line of pseudocode maps directly to one or two lines of C#. The logic is identical — only the syntax changes.</p>
+
+    <h3>Your task</h3>
+    <p>Copy the pseudocode into your notebook (you may paraphrase — it does not need to be word-for-word). Then annotate it: next to each step, write in your own words what it is doing and <em>why</em> it is necessary.</p>
+  </section>
+
+  <!-- PART 3: Annotate the starter code -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 3 · Code Analysis (20 min)</p>
+    <h2>Reading the Starter Code</h2>
+    <p>Your teacher will distribute (or you will open from the project folder) three starter scripts. <strong>Do not modify them yet.</strong> Your job right now is to read and understand them. Click any highlighted line below to reveal an annotation.</p>
+
+    <!-- Annotated: BoardSpace.cs -->
+    <div class="annotated-block">
+      <div class="annotated-header">
+        <span class="annotated-title">BoardSpace.cs — Starter Script</span>
+        <button class="annotation-toggle" onclick="toggleAll(this, 'bs')">Show All Annotations</button>
+      </div>
+      <div class="annotated-body" id="bs">
+
+        <div class="code-line"><div class="line-num">1</div><div class="line-indicator"></div><div class="line-code"><span class="kw">using</span> UnityEngine;</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">2</div><div class="line-indicator"></div>
+          <div class="line-code"><span class="kw">public</span> <span class="kw">enum</span> <span class="ty">SpaceType</span> { Property, Tax, Go, Chance }</div>
+        </div>
+        <div class="annotation-panel">An <strong>enum</strong> (enumeration) is a named list of fixed options. Using <code>SpaceType</code> instead of a plain string ("Property") means Unity will catch typos at compile time — you can't accidentally write "Proprety".</div>
+
+        <div class="code-line"><div class="line-num">3</div><div class="line-indicator"></div><div class="line-code"></div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">4</div><div class="line-indicator"></div>
+          <div class="line-code"><span class="kw">public</span> <span class="kw">class</span> <span class="ty">BoardSpace</span> : MonoBehaviour</div>
+        </div>
+        <div class="annotation-panel">This class extends <strong>MonoBehaviour</strong>, which means each BoardSpace is a Unity component — it can be attached to a GameObject in the scene. Every square on your 3D board will have this script attached to it.</div>
+
+        <div class="code-line"><div class="line-num">5</div><div class="line-indicator"></div><div class="line-code">{</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">6</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">string</span> spaceName;</div>
+        </div>
+        <div class="annotation-panel"><strong>public</strong> means this field is visible in the Unity Inspector — you can type the space's name (e.g. "Harbour St") directly in the editor without touching code. This is how you customise each square.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">7</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">SpaceType</span> spaceType;</div>
+        </div>
+        <div class="annotation-panel">Each space knows its own type. The <code>GameManager</code> will read this field when a player lands here to decide what action to trigger (buy, pay rent, pay tax, or collect salary).</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">8</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> purchasePrice;</div>
+        </div>
+        <div class="annotation-panel">Only used when <code>spaceType == Property</code>. For Tax or Go spaces, leave this as 0. Keeping it here in all spaces means we don't need a separate Property class — a design choice that keeps the code simple at this stage.</div>
+
+        <div class="code-line"><div class="line-num">9</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> rentAmount;</div></div>
+        <div class="code-line"><div class="line-num">10</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> taxAmount;</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">11</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">Player</span> owner;</div>
+        </div>
+        <div class="annotation-panel"><strong>null by default</strong> — a null owner means the property is unowned and available to buy. When a player buys it, this field is set to that player's <code>Player</code> reference. Checking <code>owner == null</code> is how the game knows whether to offer a purchase.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">12</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">Color</span> groupColour;</div>
+        </div>
+        <div class="annotation-panel">Stores the property group colour (e.g. red, blue). This can be used to visually tint the space's material in the scene — connecting the visual design to the game data. Extension students can use this for the Chance card system too.</div>
+
+        <div class="code-line"><div class="line-num">13</div><div class="line-indicator"></div><div class="line-code">}</div></div>
+      </div>
+    </div>
+
+    <!-- Annotated: Player.cs -->
+    <div class="annotated-block" style="margin-top:1.25rem;">
+      <div class="annotated-header">
+        <span class="annotated-title">Player.cs — Starter Script</span>
+        <button class="annotation-toggle" onclick="toggleAll(this, 'pl')">Show All Annotations</button>
+      </div>
+      <div class="annotated-body" id="pl">
+
+        <div class="code-line"><div class="line-num">1</div><div class="line-indicator"></div><div class="line-code"><span class="kw">using</span> UnityEngine;</div></div>
+        <div class="code-line"><div class="line-num">2</div><div class="line-indicator"></div><div class="line-code"><span class="kw">using</span> System.Collections.Generic;</div></div>
+        <div class="code-line"><div class="line-num">3</div><div class="line-indicator"></div><div class="line-code"></div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">4</div><div class="line-indicator"></div>
+          <div class="line-code"><span class="kw">public</span> <span class="kw">class</span> <span class="ty">Player</span> : MonoBehaviour</div>
+        </div>
+        <div class="annotation-panel">The Player class stores everything the game needs to know about one player — their name, money, position on the board, and which properties they own. Think of it as a digital player card.</div>
+
+        <div class="code-line"><div class="line-num">5</div><div class="line-indicator"></div><div class="line-code">{</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">6</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">string</span> playerName;</div>
+        </div>
+        <div class="annotation-panel">Displayed in the UI to tell players whose turn it is. Set this in the Inspector for each player token GameObject in your scene.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">7</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> money = <span class="num">1500</span>;</div>
+        </div>
+        <div class="annotation-panel">Starting money — set to 1500 to match classic Monopoly. You can change this to suit your theme. The <code>= 1500</code> is a <strong>default value</strong>, so every new player starts with the right amount automatically.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">8</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> position = <span class="num">0</span>;</div>
+        </div>
+        <div class="annotation-panel">An index into the <code>boardSpaces</code> array in GameManager. Position 0 is the Go space. When a player moves, we add the dice roll to this number and wrap it using modulo (%) so it loops around the board correctly.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">9</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> List&lt;<span class="ty">BoardSpace</span>&gt; ownedProperties;</div>
+        </div>
+        <div class="annotation-panel">A <strong>List</strong> grows and shrinks dynamically — perfect for tracking properties because we don't know in advance how many a player will buy. When a player buys a space, we add it here. When they go bankrupt, we clear this list.</div>
+
+        <div class="code-line"><div class="line-num">10</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">public</span> <span class="ty">bool</span> isActive = <span class="kw">true</span>;</div></div>
+        <div class="code-line"><div class="line-num">11</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">public</span> <span class="ty">GameObject</span> token;</div></div>
+        <div class="code-line"><div class="line-num">12</div><div class="line-indicator"></div><div class="line-code">}</div></div>
+      </div>
+    </div>
+
+    <!-- Annotated: GameManager.cs -->
+    <div class="annotated-block" style="margin-top:1.25rem;">
+      <div class="annotated-header">
+        <span class="annotated-title">GameManager.cs — Starter Script (partial)</span>
+        <button class="annotation-toggle" onclick="toggleAll(this, 'gm')">Show All Annotations</button>
+      </div>
+      <div class="annotated-body" id="gm">
+
+        <div class="code-line"><div class="line-num">1</div><div class="line-indicator"></div><div class="line-code"><span class="kw">using</span> UnityEngine;</div></div>
+        <div class="code-line"><div class="line-num">2</div><div class="line-indicator"></div><div class="line-code"><span class="kw">using</span> System.Collections.Generic;</div></div>
+        <div class="code-line"><div class="line-num">3</div><div class="line-indicator"></div><div class="line-code"></div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">4</div><div class="line-indicator"></div>
+          <div class="line-code"><span class="kw">public</span> <span class="kw">class</span> <span class="ty">GameManager</span> : MonoBehaviour</div>
+        </div>
+        <div class="annotation-panel">The <strong>GameManager</strong> is the conductor — it coordinates all the other scripts. It holds the list of players, the board array, and runs the game loop. There should only ever be one GameManager in your scene.</div>
+
+        <div class="code-line"><div class="line-num">5</div><div class="line-indicator"></div><div class="line-code">{</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">6</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">BoardSpace</span>[] boardSpaces;</div>
+        </div>
+        <div class="annotation-panel">An <strong>array</strong> of all spaces in order. Unlike a List, arrays have a fixed size — which is fine here because your board layout doesn't change during the game. You'll populate this in the Inspector by dragging your space GameObjects in.</div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">7</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> List&lt;<span class="ty">Player</span>&gt; activePlayers;</div>
+        </div>
+        <div class="annotation-panel">A List (not an array) because players get removed when they go bankrupt. When we eliminate a player, we call <code>activePlayers.Remove(player)</code> — the list shrinks automatically.</div>
+
+        <div class="code-line"><div class="line-num">8</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">private</span> <span class="ty">int</span> currentIndex = <span class="num">0</span>;</div></div>
+        <div class="code-line"><div class="line-num">9</div><div class="line-indicator"></div><div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> goSalary = <span class="num">200</span>;</div></div>
+        <div class="code-line"><div class="line-num">10</div><div class="line-indicator"></div><div class="line-code"></div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">11</div><div class="line-indicator"></div>
+          <div class="line-code">    <span class="kw">public</span> <span class="ty">int</span> <span class="fn">RollDice</span>()</div>
+        </div>
+        <div class="annotation-panel">This method returns an <code>int</code> — the sum of two dice. <code>Random.Range(1, 7)</code> gives a number from 1 to 6 inclusive (Unity's Range is exclusive of the upper bound, so we use 7 not 6).</div>
+
+        <div class="code-line"><div class="line-num">12</div><div class="line-indicator"></div><div class="line-code">    {</div></div>
+
+        <div class="code-line has-note" onclick="toggleNote(this)">
+          <div class="line-num">13</div><div class="line-indicator"></div>
+          <div class="line-code">        <span class="kw">return</span> Random.<span class="fn">Range</span>(<span class="num">1</span>,<span class="num">7</span>) + Random.<span class="fn">Range</span>(<span class="num">1</span>,<span class="num">7</span>);</div>
+        </div>
+        <div class="annotation-panel">Two separate calls to <code>Random.Range</code> simulate two physical dice. The result is 2–12, with 7 being the most common (just like real Monopoly). This probability distribution isn't accidental — it affects game balance.</div>
+
+        <div class="code-line"><div class="line-num">14</div><div class="line-indicator"></div><div class="line-code">    }</div></div>
+        <div class="code-line"><div class="line-num">15</div><div class="line-indicator"></div><div class="line-code"></div></div>
+        <div class="code-line"><div class="line-num">16</div><div class="line-indicator"></div><div class="line-code">    <span class="cmt">// TODO: StartTurn(), MovePlayer(),</span></div></div>
+        <div class="code-line"><div class="line-num">17</div><div class="line-indicator"></div><div class="line-code">    <span class="cmt">// ResolveSpace(), NextTurn() — added in L5–L7</span></div></div>
+        <div class="code-line"><div class="line-num">18</div><div class="line-indicator"></div><div class="line-code">}</div></div>
+      </div>
+    </div>
+
+    <p style="font-size:.85rem; margin-top:1rem; color:rgba(240,220,170,.5); font-style:italic;">Copy this table into your notebook and complete at least 8 rows — choose the lines that surprised you the most or that you had to think about.</p>
+
+    <table class="analysis-table" style="margin-top:.75rem;">
+      <thead>
+        <tr>
+          <th>Script</th>
+          <th>Line(s)</th>
+          <th>What it does (your words)</th>
+          <th>Why it is needed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>BoardSpace</td>
+          <td>2</td>
+          <td>Defines the four possible space types using an enum</td>
+          <td>Prevents typos and makes the code readable</td>
+        </tr>
+        <tr>
+          <td>BoardSpace</td>
+          <td>11</td>
+          <td>Stores which player owns this property (null if unowned)</td>
+          <td>Needed to decide whether to offer purchase or charge rent</td>
+        </tr>
+        <tr>
+          <td>Player</td>
+          <td>8</td>
+          <td>Tracks the player's position as an index into the board array</td>
+          <td>The game needs to know which space to resolve each turn</td>
+        </tr>
+        <tr>
+          <td>GameManager</td>
+          <td>13</td>
+          <td>Rolls two dice by calling Random.Range twice and adding the results</td>
+          <td>Simulates two physical dice; gives the correct 2–12 distribution</td>
+        </tr>
+        <tr style="color:rgba(240,220,170,.3)">
+          <td colspan="4" style="font-style:italic; text-align:center;">Add your own annotations — at least 4 more rows in your notebook</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- PART 4: Class planning -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 4 · Class Design (15 min)</p>
+    <h2>Your Three Core Classes</h2>
+    <p>Based on what you have read, your game needs three core classes. Each class is responsible for one thing. Study the class cards below — they show the starter attributes. Your group's job is to decide on any <strong>additions</strong> needed for your specific theme.</p>
+
+    <div class="class-grid">
+      <div class="class-card">
+        <div class="class-card-head"><span class="class-icon">🗺</span> BoardSpace</div>
+        <div class="class-section">
+          <div class="class-section-label">Attributes (starter)</div>
+          <div class="class-item"><span class="type">string</span> spaceName</div>
+          <div class="class-item"><span class="type">SpaceType</span> spaceType</div>
+          <div class="class-item"><span class="type">int</span> purchasePrice</div>
+          <div class="class-item"><span class="type">int</span> rentAmount</div>
+          <div class="class-item"><span class="type">int</span> taxAmount</div>
+          <div class="class-item"><span class="type">Player</span> owner</div>
+          <div class="class-item"><span class="type">Color</span> groupColour</div>
+        </div>
+        <div class="class-section">
+          <div class="class-section-label">Methods (starter)</div>
+          <div class="class-item"><span class="method">— (none yet)</span></div>
+        </div>
+      </div>
+
+      <div class="class-card">
+        <div class="class-card-head"><span class="class-icon">♟</span> Player</div>
+        <div class="class-section">
+          <div class="class-section-label">Attributes (starter)</div>
+          <div class="class-item"><span class="type">string</span> playerName</div>
+          <div class="class-item"><span class="type">int</span> money = 1500</div>
+          <div class="class-item"><span class="type">int</span> position = 0</div>
+          <div class="class-item"><span class="type">List&lt;BoardSpace&gt;</span> ownedProperties</div>
+          <div class="class-item"><span class="type">bool</span> isActive = true</div>
+          <div class="class-item"><span class="type">GameObject</span> token</div>
+        </div>
+        <div class="class-section">
+          <div class="class-section-label">Methods (starter)</div>
+          <div class="class-item"><span class="method">— (none yet)</span></div>
+        </div>
+      </div>
+
+      <div class="class-card">
+        <div class="class-card-head"><span class="class-icon">⚙</span> GameManager</div>
+        <div class="class-section">
+          <div class="class-section-label">Attributes (starter)</div>
+          <div class="class-item"><span class="type">BoardSpace[]</span> boardSpaces</div>
+          <div class="class-item"><span class="type">List&lt;Player&gt;</span> activePlayers</div>
+          <div class="class-item"><span class="type">int</span> currentIndex = 0</div>
+          <div class="class-item"><span class="type">int</span> goSalary = 200</div>
+        </div>
+        <div class="class-section">
+          <div class="class-section-label">Methods (starter)</div>
+          <div class="class-item"><span class="method">RollDice()</span> → int</div>
+          <div class="class-item" style="color:rgba(240,220,170,.3)"><span class="method">StartTurn()</span> <em>— L5</em></div>
+          <div class="class-item" style="color:rgba(240,220,170,.3)"><span class="method">ResolveSpace()</span> <em>— L6</em></div>
+          <div class="class-item" style="color:rgba(240,220,170,.3)"><span class="method">NextTurn()</span> <em>— L7</em></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Group task: customise for your theme</h3>
+    <p>In your notebook, draw your own version of these three class cards and add any attributes your theme needs. Use the questions below to guide you.</p>
+
+    <table class="analysis-table">
+      <thead>
+        <tr><th>Question</th><th>If yes → add this</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Does your theme have property groups with special rules?</td>
+          <td><code>string groupName</code> on BoardSpace</td>
+        </tr>
+        <tr>
+          <td>Do you want players to have a visible colour (e.g. red token, blue token)?</td>
+          <td><code>Color playerColour</code> on Player</td>
+        </tr>
+        <tr>
+          <td>Will your Chance spaces have different events?</td>
+          <td><code>string[] chanceCards</code> on GameManager</td>
+        </tr>
+        <tr>
+          <td>Do you want to track how many times a player has passed Go?</td>
+          <td><code>int goPassCount</code> on Player</td>
+        </tr>
+        <tr>
+          <td>Do you want to show the number of properties a player owns in the UI?</td>
+          <td>Add <code>ownedProperties.Count</code> to your UI update method</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- TIERED TASKS -->
+  <section class="content-section reveal">
+    <p class="section-label">Extension Work</p>
+    <h2>Tiered Tasks</h2>
+    <div class="tier-grid">
+      <div class="tier-card tier-basic">
+        <div class="tier-head">Basic</div>
+        <div class="tier-body">
+          <ul>
+            <li>Highlight every line in the starter scripts that contains the word <code>public</code> — write one sentence explaining why that word matters</li>
+            <li>Draw a simple diagram showing which script talks to which other script, and draw an arrow for each connection</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-inter">
+        <div class="tier-head">Intermediate</div>
+        <div class="tier-body">
+          <ul>
+            <li>Write your own pseudocode for the <code>OfferPurchase()</code> method — what decisions does it need to make?</li>
+            <li>Explain in writing why <code>boardSpaces</code> is an array but <code>activePlayers</code> is a List — what would break if you swapped them?</li>
+            <li>Design a <code>UIManager</code> class — what attributes would it need? What method would update the money display?</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tier-card tier-advanced">
+        <div class="tier-head">Advanced</div>
+        <div class="tier-body">
+          <ul>
+            <li>Write a complete pseudocode for <code>ChargeRent(Player p, BoardSpace s)</code> including the edge case where the player cannot afford the rent</li>
+            <li>Research the <strong>Singleton pattern</strong> — write a brief explanation of why GameManager is a good candidate for it, and how you would implement it in C#</li>
+            <li>Propose a <code>ChanceCard</code> class — define its attributes, write pseudocode for how it would be drawn and resolved</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOTEBOOK CHECKPOINT -->
+  <section class="content-section reveal">
+    <p class="section-label">End of Lesson</p>
+    <h2>Notebook Checkpoint</h2>
+    <div class="notebook-checkpoint">
+      <ul>
+        <li>Game loop diagram — either copied from this page or redrawn in your own style, with each step labelled</li>
+        <li>Pseudocode game loop — annotated with at least one explanation per step in your own words</li>
+        <li>Code annotation table — at least 8 rows completed (script, line, explanation, reason)</li>
+        <li>Three class cards — drawn in your notebook with all starter attributes plus any additions for your theme</li>
+        <li><em>Reflection (2–3 sentences):</em> Which part of the code surprised you most? What is one question you still have about how the scripts work together?</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+  <div class="time-badge">⏱ 1 hour · Lesson 2 of 10</div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Learning Outcomes</span>
+    <div class="outcome-chips">
+      <span class="outcome-chip">CT5-OPL-01</span>
+      <span class="outcome-chip">CT5-THI-01</span>
+      <span class="outcome-chip">CT5-DPM-01</span>
+    </div>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Lesson at a Glance</span>
+    <p style="margin:0; font-size:.83rem; color:var(--cream-dark);">
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:00</span> Game loop concept + diagram (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:10</span> Dual-panel pseudocode → C# (15 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:25</span> Starter code annotation (20 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:45</span> Class diagram design (10 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:55</span> Notebook checkpoint (5 min)
+    </p>
+  </div>
+
+  <!-- Starter scripts download note -->
+  <div class="sidebar-card" style="border-color:rgba(88,214,141,0.35); background:rgba(39,174,96,0.08);">
+    <span class="sidebar-card-label" style="color:#58d68d;">Starter Scripts</span>
+    <p style="font-size:.83rem;">Open these three files from the project folder your teacher distributes:</p>
+    <p style="font-family:var(--font-mono); font-size:.75rem; color:var(--gold-light); margin:0;">BoardSpace.cs<br>Player.cs<br>GameManager.cs</p>
+    <p style="font-size:.8rem; margin-top:.5rem; font-style:italic;">Do not edit yet — read only.</p>
+  </div>
+
+  <div class="cpd-strip">
+    <div class="cpd-strip-label">Grade indicators — this lesson</div>
+    <div class="cpd-rows">
+      <div class="cpd-row">
+        <span class="cpd-grade">A</span>
+        <span class="cpd-desc">Pseudocode is precise with correct NSW conventions; code annotations explain purpose not just syntax; class diagram shows thoughtful additions for the theme</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">B</span>
+        <span class="cpd-desc">Pseudocode captures all 5 steps; 8+ annotations completed; class cards include at least one addition per class</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">C</span>
+        <span class="cpd-desc">Pseudocode present with most steps; 8 annotation rows complete; three class cards drawn with starter attributes</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">D</span>
+        <span class="cpd-desc">Partial pseudocode; some annotations completed; class cards attempt to list attributes</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">E</span>
+        <span class="cpd-desc">Game loop steps identified from diagram; at least one annotation per script attempted</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <span class="teacher-note-label">🔒 Teacher Note</span>
+    <p>Distribute the three starter scripts before Part 3. The annotated code explorer is interactive (click lines to reveal notes) — useful on a projector for whole-class discussion. Watch for students who annotate <em>what</em> code does without explaining <em>why</em> — push them toward reasoning, not description.</p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Key Terms this lesson</span>
+    <p style="font-size:.83rem; margin:.2rem 0;">
+      <span class="key-term">enum</span> &nbsp;
+      <span class="key-term">class</span> &nbsp;
+      <span class="key-term">attribute</span><br><br>
+      <span class="key-term">MonoBehaviour</span><br><br>
+      <span class="key-term">null</span> &nbsp;
+      <span class="key-term">List&lt;T&gt;</span> &nbsp;
+      <span class="key-term">array</span><br><br>
+      <span class="key-term">modulo (%)</span>
+    </p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Navigate</span>
+    <div class="lesson-nav">
+      <a href="lesson-1.html">← L1</a>
+      <a href="lesson-3.html">L3 →</a>
+    </div>
+  </div>
+
+</aside>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · L2 — Researching &amp; Planning</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-OPL-01</span>
+    <span class="footer-outcome-chip">CT5-THI-01</span>
+    <span class="footer-outcome-chip">CT5-DPM-01</span>
+  </div>
+</footer>
+
+<script>
+  // ─── Annotated code: toggle individual lines ───
+  function toggleNote(line) {
+    const panel = line.nextElementSibling;
+    if (!panel || !panel.classList.contains('annotation-panel')) return;
+    const isOpen = panel.classList.contains('visible');
+    line.classList.toggle('active', !isOpen);
+    panel.classList.toggle('visible', !isOpen);
+  }
+
+  // ─── Toggle all annotations in a block ───
+  function toggleAll(btn, blockId) {
+    const block = document.getElementById(blockId);
+    const panels = block.querySelectorAll('.annotation-panel');
+    const lines  = block.querySelectorAll('.code-line.has-note');
+    const anyOpen = [...panels].some(p => p.classList.contains('visible'));
+    panels.forEach(p => p.classList.toggle('visible', !anyOpen));
+    lines.forEach(l  => l.classList.toggle('active',  !anyOpen));
+    btn.textContent = anyOpen ? 'Show All Annotations' : 'Hide All Annotations';
+  }
+
+  // ─── Copy code ───
+  function copyCode(id) {
+    const pre = document.getElementById(id);
+    const text = pre ? pre.innerText : '';
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = [...document.querySelectorAll('.copy-btn')]
+        .find(b => b.getAttribute('onclick')?.includes(id));
+      if (btn) {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+      }
+    });
+  }
+
+  // ─── Scroll reveal ───
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  reveals.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

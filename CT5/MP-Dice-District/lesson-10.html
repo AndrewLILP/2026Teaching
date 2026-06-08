@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 10 · Dice District</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Zilla+Slab:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --board-green:  #1a3a2a;
+    --cream:        #f2e8d0;
+    --cream-dark:   #e0d0b0;
+    --gold:         #c9a84c;
+    --gold-light:   #e8c96a;
+    --red-prop:     #c0392b;
+    --blue-prop:    #2471a3;
+    --purple-prop:  #6c3483;
+    --green-prop:   #1e8449;
+    --rule-line:    rgba(201,168,76,0.35);
+    --phase-colour: #6c3483;
+    --phase-bg:     rgba(108,52,131,0.12);
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'Zilla Slab', Georgia, serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { background-color:var(--board-green); color:var(--cream); font-family:var(--font-body); font-size:17px; line-height:1.7; min-height:100vh; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+  body::before { content:''; position:fixed; inset:10px; border:3px solid var(--rule-line); pointer-events:none; z-index:100; }
+
+  nav { position:sticky; top:0; z-index:50; background:var(--board-green); border-bottom:2px solid var(--rule-line); padding:0 2.5rem; display:flex; align-items:center; gap:2rem; height:54px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+  .nav-logo { font-family:var(--font-display); font-weight:900; font-size:1.15rem; color:var(--gold); letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.5rem; flex-shrink:0; }
+  .nav-links { display:flex; gap:.25rem; list-style:none; margin-left:auto; }
+  .nav-links a { font-family:var(--font-mono); font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dark); text-decoration:none; padding:.3rem .75rem; border-radius:3px; transition:background .15s,color .15s; }
+  .nav-links a:hover { background:var(--rule-line); color:var(--gold); }
+  .nav-links a.active { color:var(--gold); border-bottom:2px solid var(--gold); }
+
+  .lesson-header { border-bottom:2px solid var(--rule-line); padding:3.5rem 5rem 3rem; position:relative; overflow:hidden; }
+  .lesson-header::before { content:''; position:absolute; top:0;left:0;right:0; height:6px; background:var(--phase-colour); }
+  .lesson-header::after { content:''; position:absolute; right:0;top:0;bottom:0; width:200px; background:repeating-linear-gradient(45deg,transparent,transparent 16px,rgba(108,52,131,.05) 16px,rgba(108,52,131,.05) 32px); pointer-events:none; }
+  .lesson-eyebrow { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+  .phase-badge { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .65rem; border-radius:3px; background:var(--phase-bg); color:#bb8fce; border:1.5px solid rgba(108,52,131,.4); }
+  .lesson-num-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.1em; color:rgba(240,220,170,.45); }
+  .lesson-header h1 { font-family:var(--font-display); font-weight:900; font-size:clamp(2.4rem,5vw,3.8rem); line-height:1; color:var(--cream); letter-spacing:-.02em; margin-bottom:.6rem; }
+  .lesson-header h1 em { font-style:italic; color:var(--gold); }
+  .lesson-tagline { font-size:1.05rem; color:var(--cream-dark); font-style:italic; margin-bottom:1.75rem; max-width:580px; }
+  .lisc-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; max-width:860px; }
+  .lisc-box { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; }
+  .lisc-box-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.6rem; }
+  .lisc-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+  .lisc-box li { font-size:.9rem; color:var(--cream-dark); padding-left:1rem; position:relative; line-height:1.4; }
+  .lisc-box li::before { content:'→'; position:absolute; left:0; color:var(--gold); font-size:.75rem; }
+
+  .page-body { display:grid; grid-template-columns:1fr 300px; align-items:start; }
+  .content { padding:3rem 4rem 5rem 5rem; border-right:2px solid var(--rule-line); }
+  .sidebar { padding:3rem 2rem 5rem; position:sticky; top:54px; }
+
+  .section-label { font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin-bottom:.75rem; display:flex; align-items:center; gap:.6rem; }
+  .section-label::after { content:''; flex:1; height:1px; background:var(--rule-line); }
+  .content-section { margin-bottom:3.25rem; }
+  h2 { font-family:var(--font-display); font-weight:700; font-size:1.7rem; color:var(--cream); line-height:1.2; margin-bottom:.9rem; }
+  h3 { font-family:var(--font-display); font-weight:700; font-size:1.1rem; color:var(--gold-light); margin-bottom:.5rem; margin-top:1.5rem; }
+  p { margin-bottom:.85rem; color:var(--cream-dark); }
+  p:last-child { margin-bottom:0; }
+  strong { color:var(--cream); font-weight:600; }
+  .key-term { display:inline-block; background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.3); border-radius:3px; font-family:var(--font-mono); font-size:.8rem; color:var(--gold-light); padding:.05rem .4rem; }
+  .info-box { background:rgba(108,52,131,.08); border:1.5px solid rgba(108,52,131,.3); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .info-box strong { color:#bb8fce; }
+  .gold-box { background:rgba(201,168,76,.07); border:1.5px solid rgba(201,168,76,.35); border-radius:4px; padding:1rem 1.25rem; margin:1rem 0; font-size:.92rem; color:var(--cream-dark); }
+  .gold-box strong { color:var(--gold); }
+
+  /* ─── REQUIREMENTS EVALUATOR ─── */
+  .req-evaluator {
+    background: rgba(0,0,0,.25);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .req-eval-head {
+    padding: .7rem 1.25rem;
+    background: rgba(255,255,255,.03);
+    border-bottom: 1px solid var(--rule-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .req-eval-title {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: rgba(108,52,131,.8);
+  }
+
+  .req-eval-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    color: rgba(240,220,170,.4);
+  }
+
+  .req-eval-score {
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .req-rows { padding: .5rem 0; }
+
+  .req-eval-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: start;
+    gap: .75rem;
+    padding: .65rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: background .1s;
+  }
+  .req-eval-row:last-child { border-bottom: none; }
+  .req-eval-row:hover { background: rgba(201,168,76,.03); }
+
+  .req-type-pill {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    padding: .15rem .4rem;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: .15rem;
+    white-space: nowrap;
+  }
+
+  .pill-f  { background:rgba(39,174,96,.15);  border:1px solid rgba(39,174,96,.4);  color:#58d68d; }
+  .pill-nf { background:rgba(36,113,163,.15); border:1px solid rgba(36,113,163,.4); color:#5dade2; }
+
+  .req-eval-text {
+    font-size: .9rem;
+    color: var(--cream-dark);
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+
+  .req-eval-label { color: var(--cream); }
+
+  .req-justification {
+    font-family: var(--font-body);
+    font-size: .82rem;
+    font-style: italic;
+    background: rgba(0,0,0,.2);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 3px;
+    padding: .28rem .6rem;
+    color: var(--cream-dark);
+    outline: none;
+    width: 100%;
+    resize: none;
+    transition: border-color .12s;
+    margin-top: .15rem;
+    line-height: 1.4;
+  }
+  .req-justification:focus { border-color: rgba(201,168,76,.35); }
+  .req-justification::placeholder { color: rgba(240,220,170,.2); }
+
+  .fulfilment-select {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    font-weight: 600;
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 3px;
+    padding: .25rem .45rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .12s;
+    flex-shrink: 0;
+    min-width: 110px;
+  }
+
+  .fulfilment-select.met       { color:#58d68d;  border-color:rgba(39,174,96,.4);  background:rgba(39,174,96,.1); }
+  .fulfilment-select.partial   { color:#f0a07a;  border-color:rgba(232,116,43,.4); background:rgba(232,116,43,.1); }
+  .fulfilment-select.not-met   { color:#e87070;  border-color:rgba(192,57,43,.4);  background:rgba(192,57,43,.1); }
+  .fulfilment-select.na        { color:rgba(240,220,170,.4); }
+
+  .req-eval-footer {
+    padding: .85rem 1.25rem;
+    border-top: 1px solid var(--rule-line);
+    background: rgba(0,0,0,.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+  }
+
+  .req-summary-chips { display: flex; gap: .75rem; flex-wrap: wrap; }
+
+  .req-chip {
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    font-weight: 600;
+    padding: .22rem .6rem;
+    border-radius: 3px;
+    border: 1.5px solid;
+  }
+
+  .chip-met     { background:rgba(39,174,96,.12); border-color:rgba(39,174,96,.4);  color:#58d68d; }
+  .chip-partial { background:rgba(232,116,43,.1); border-color:rgba(232,116,43,.4); color:#f0a07a; }
+  .chip-notmet  { background:rgba(192,57,43,.1);  border-color:rgba(192,57,43,.4);  color:#e87070; }
+
+  .add-req-btn {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(108,52,131,.12);
+    border: 1.5px solid rgba(108,52,131,.4);
+    border-radius: 3px;
+    color: #bb8fce;
+    padding: .28rem .7rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .add-req-btn:hover { background: rgba(108,52,131,.25); }
+
+  /* ─── WRITTEN EVALUATION SCAFFOLD ─── */
+  .eval-scaffold {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  .eval-prompt {
+    background: rgba(0,0,0,.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .eval-prompt-head {
+    padding: .6rem 1rem;
+    background: rgba(108,52,131,.1);
+    border-bottom: 1px solid rgba(108,52,131,.2);
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+  }
+
+  .eval-prompt-num {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    font-weight: 600;
+    color: #bb8fce;
+    flex-shrink: 0;
+  }
+
+  .eval-prompt-q {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--cream);
+    line-height: 1.3;
+  }
+
+  .eval-prompt-hint {
+    font-size: .8rem;
+    color: rgba(240,220,170,.45);
+    padding: .5rem 1rem;
+    background: rgba(0,0,0,.1);
+    border-bottom: 1px solid rgba(255,255,255,.04);
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .eval-textarea {
+    font-family: var(--font-body);
+    font-size: .92rem;
+    background: transparent;
+    border: none;
+    color: var(--cream-dark);
+    outline: none;
+    width: 100%;
+    resize: vertical;
+    padding: .85rem 1rem;
+    line-height: 1.65;
+    min-height: 4rem;
+  }
+  .eval-textarea::placeholder { color: rgba(240,220,170,.2); font-style: italic; }
+
+  .eval-word-count {
+    padding: .3rem 1rem;
+    border-top: 1px solid rgba(255,255,255,.04);
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    color: rgba(240,220,170,.25);
+    text-align: right;
+    background: rgba(0,0,0,.08);
+  }
+
+  /* ─── CAREER CONNECTIONS ─── */
+  .career-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .career-card {
+    background: rgba(0,0,0,.2);
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    padding: 1.1rem 1.15rem;
+    transition: border-color .15s;
+  }
+
+  .career-card:hover { border-color: rgba(201,168,76,.45); }
+
+  .career-icon { font-size: 1.75rem; display: block; margin-bottom: .5rem; }
+
+  .career-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .95rem;
+    color: var(--cream);
+    margin-bottom: .35rem;
+  }
+
+  .career-skills {
+    font-size: .8rem;
+    color: var(--cream-dark);
+    line-height: 1.5;
+    margin-bottom: .6rem;
+  }
+
+  .career-link-label {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,.5);
+    margin-bottom: .25rem;
+    display: block;
+  }
+
+  .career-skill-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+  }
+
+  .career-chip {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    font-weight: 600;
+    padding: .12rem .38rem;
+    border-radius: 2px;
+    background: rgba(201,168,76,.1);
+    border: 1px solid rgba(201,168,76,.25);
+    color: var(--gold-light);
+  }
+
+  /* ─── D&P RETROSPECTIVE ─── */
+  .dp-retro {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1.5px solid var(--rule-line);
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 1rem;
+  }
+
+  .dp-phase {
+    padding: 0;
+    border-right: 1px solid var(--rule-line);
+  }
+  .dp-phase:last-child { border-right: none; }
+
+  .dp-phase-head {
+    padding: .6rem .85rem;
+    border-bottom: 1px solid var(--rule-line);
+    text-align: center;
+  }
+
+  .dp-phase-name {
+    font-family: var(--font-mono);
+    font-size: .62rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: .15rem;
+  }
+
+  .dp-phase.id   .dp-phase-name { color: #e87070; }
+  .dp-phase.rp   .dp-phase-name { color: #5dade2; }
+  .dp-phase.pi   .dp-phase-name { color: #58d68d; }
+  .dp-phase.te   .dp-phase-name { color: #bb8fce; }
+
+  .dp-lessons {
+    font-family: var(--font-mono);
+    font-size: .6rem;
+    color: rgba(240,220,170,.35);
+  }
+
+  .dp-phase-body {
+    padding: .75rem .85rem;
+    background: rgba(0,0,0,.12);
+  }
+
+  .dp-retro-label {
+    font-family: var(--font-mono);
+    font-size: .58rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(201,168,76,.35);
+    margin-bottom: .35rem;
+  }
+
+  .dp-retro-input {
+    font-family: var(--font-body);
+    font-size: .82rem;
+    font-style: italic;
+    background: rgba(0,0,0,.2);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 3px;
+    padding: .3rem .55rem;
+    color: var(--cream-dark);
+    outline: none;
+    width: 100%;
+    resize: none;
+    line-height: 1.4;
+    min-height: 2.5rem;
+    margin-bottom: .5rem;
+    transition: border-color .12s;
+  }
+  .dp-retro-input:focus { border-color: rgba(201,168,76,.3); }
+  .dp-retro-input::placeholder { color: rgba(240,220,170,.18); }
+
+  /* ─── COMPLETION BANNER ─── */
+  .completion-banner {
+    background: linear-gradient(135deg, rgba(108,52,131,.25) 0%, rgba(201,168,76,.15) 100%);
+    border: 2px solid rgba(201,168,76,.45);
+    border-radius: 6px;
+    padding: 2.5rem 2.5rem;
+    text-align: center;
+    margin-top: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .completion-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg,transparent,transparent 24px,rgba(201,168,76,.03) 24px,rgba(201,168,76,.03) 48px);
+  }
+
+  .completion-emoji {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: .75rem;
+    position: relative;
+    animation: celebFloat 3s ease-in-out infinite;
+  }
+
+  @keyframes celebFloat {
+    0%,100% { transform:translateY(0) rotate(-2deg); }
+    50%      { transform:translateY(-10px) rotate(2deg); }
+  }
+
+  .completion-title {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2.2rem;
+    color: var(--gold);
+    letter-spacing: -.02em;
+    margin-bottom: .4rem;
+    position: relative;
+  }
+
+  .completion-sub {
+    font-size: 1.05rem;
+    color: var(--cream-dark);
+    font-style: italic;
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .completion-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2.5rem;
+    margin-top: 1.75rem;
+    position: relative;
+  }
+
+  .completion-stat-num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2.2rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .completion-stat-label {
+    font-family: var(--font-mono);
+    font-size: .65rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(240,220,170,.45);
+    margin-top: .25rem;
+  }
+
+  /* ─── NOTEBOOK / SIDEBAR ─── */
+  .notebook-checkpoint { background:rgba(201,168,76,.07); border:2px solid rgba(201,168,76,.4); border-radius:5px; padding:1.5rem 1.75rem; margin-top:1rem; }
+  .notebook-checkpoint::before { content:'📓  FINAL NOTEBOOK CHECKPOINT'; font-family:var(--font-mono); font-size:.65rem; font-weight:600; letter-spacing:.14em; color:var(--gold); display:block; margin-bottom:.85rem; }
+  .notebook-checkpoint ul { list-style:none; display:flex; flex-direction:column; gap:.45rem; }
+  .notebook-checkpoint li { font-size:.92rem; color:var(--cream-dark); padding-left:1.3rem; position:relative; line-height:1.45; }
+  .notebook-checkpoint li::before { content:'☐'; position:absolute; left:0; color:var(--gold); font-size:.85rem; }
+
+  .sidebar-card { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; padding:1.1rem 1.25rem; margin-bottom:1.25rem; }
+  .sidebar-card-label { font-family:var(--font-mono); font-size:.62rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:.65rem; display:block; }
+  .sidebar-card p { font-size:.88rem; color:var(--cream-dark); margin-bottom:.5rem; }
+  .outcome-chips { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.25rem; }
+  .outcome-chip { font-family:var(--font-mono); font-size:.62rem; font-weight:600; color:var(--gold); border:1px solid rgba(201,168,76,.35); border-radius:2px; padding:.15rem .4rem; letter-spacing:.05em; }
+  .teacher-note { background:rgba(108,52,131,.12); border:1.5px solid rgba(108,52,131,.35); border-radius:4px; padding:1rem 1.1rem; margin-bottom:1.25rem; }
+  .teacher-note-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:#bb8fce; display:block; margin-bottom:.5rem; }
+  .teacher-note p { font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.5; }
+  .time-badge { display:inline-flex; align-items:center; gap:.4rem; font-family:var(--font-mono); font-size:.72rem; font-weight:600; color:var(--gold); background:rgba(201,168,76,.1); border:1.5px solid rgba(201,168,76,.3); border-radius:3px; padding:.25rem .65rem; margin-bottom:1.5rem; }
+  .lesson-nav { display:flex; gap:.5rem; margin-top:.5rem; }
+  .lesson-nav a { flex:1; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:.68rem; font-weight:600; letter-spacing:.06em; text-decoration:none; padding:.55rem .5rem; border-radius:3px; border:1.5px solid var(--rule-line); color:var(--cream-dark); transition:border-color .15s,color .15s; text-align:center; }
+  .lesson-nav a:hover { border-color:var(--gold); color:var(--gold); }
+  .lesson-nav a.disabled { opacity:.35; pointer-events:none; }
+  .cpd-strip { background:rgba(0,0,0,.2); border:1.5px solid var(--rule-line); border-radius:4px; overflow:hidden; margin-bottom:1.25rem; }
+  .cpd-strip-label { font-family:var(--font-mono); font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); padding:.5rem .85rem; border-bottom:1px solid var(--rule-line); background:rgba(201,168,76,.06); }
+  .cpd-rows { padding:.6rem 0; }
+  .cpd-row { display:flex; align-items:flex-start; gap:.5rem; padding:.35rem .85rem; font-size:.8rem; }
+  .cpd-grade { font-family:var(--font-mono); font-size:.65rem; font-weight:600; width:1.4rem; flex-shrink:0; color:var(--gold); padding-top:.05rem; }
+  .cpd-desc { color:var(--cream-dark); line-height:1.4; }
+
+  .reveal { opacity:0; transform:translateY(16px); transition:opacity .45s ease,transform .45s ease; }
+  .reveal.visible { opacity:1; transform:none; }
+
+  footer { border-top:2px solid var(--rule-line); padding:1.75rem 5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .footer-left { font-family:var(--font-mono); font-size:.72rem; color:rgba(240,220,170,.4); letter-spacing:.06em; }
+  .footer-outcomes { display:flex; gap:.4rem; flex-wrap:wrap; }
+  .footer-outcome-chip { font-family:var(--font-mono); font-size:.6rem; font-weight:600; color:rgba(201,168,76,.5); border:1px solid rgba(201,168,76,.2); border-radius:2px; padding:.15rem .4rem; letter-spacing:.06em; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo"><span>⚄</span> Dice District</a>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="lesson-1.html">L1</a></li>
+    <li><a href="lesson-2.html">L2</a></li>
+    <li><a href="lesson-3.html">L3</a></li>
+    <li><a href="lesson-4.html">L4</a></li>
+    <li><a href="lesson-5.html">L5</a></li>
+    <li><a href="lesson-6.html">L6</a></li>
+    <li><a href="lesson-7.html">L7</a></li>
+    <li><a href="lesson-8.html">L8</a></li>
+    <li><a href="lesson-9.html">L9</a></li>
+    <li><a href="lesson-10.html" class="active">L10</a></li>
+  </ul>
+</nav>
+
+<header class="lesson-header">
+  <div class="lesson-eyebrow">
+    <span class="phase-badge">Testing &amp; Evaluating</span>
+    <span class="lesson-num-label">Lesson 10 of 10</span>
+  </div>
+  <h1>Evaluation<br>&amp; <em>Reflection</em></h1>
+  <p class="lesson-tagline">Return to where you started — your requirements list from Lesson 1 — and measure what you actually built against what you planned to build. Then look forward: what would you do next?</p>
+  <div class="lisc-grid">
+    <div class="lisc-box">
+      <div class="lisc-box-label">Learning Intentions</div>
+      <ul>
+        <li>Evaluate the completed game against the original requirements using evidence</li>
+        <li>Identify and justify specific design decisions made across the project</li>
+        <li>Reflect on the design and production process as a whole using the D&amp;P framework</li>
+        <li>Connect computing skills developed in this project to real-world careers</li>
+      </ul>
+    </div>
+    <div class="lisc-box">
+      <div class="lisc-box-label">Success Criteria — I can…</div>
+      <ul>
+        <li>Rate each original requirement as Met / Partially met / Not met with a written justification</li>
+        <li>Write a structured evaluation addressing design, implementation, testing, and future improvements</li>
+        <li>Identify at least one real-world career that uses skills from this project, with specific connections</li>
+        <li>Reflect honestly on one thing that went well and one thing I would change about our process</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+<main class="content">
+
+  <!-- PART 1: Requirements evaluation -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 1 · Requirements Evaluation (20 min)</p>
+    <h2>Did We Build What We Said We Would?</h2>
+    <p>In Lesson 1, your group wrote a requirements list — at least 6 functional and 2 non-functional requirements. Now it's time to return to that list and honestly assess whether each one was met. <strong>This is not about being harsh — it is about being precise.</strong> "Partially met" with a clear explanation is more valuable than "Met" with no evidence.</p>
+
+    <div class="info-box">
+      <strong>What counts as evidence?</strong> A requirement is Met when you can point to something in the game and say "here is where this works." A requirement is Partially Met when it works in some cases but not others, or when it works differently from what was originally specified. A requirement is Not Met when it was planned but not implemented — and that is fine to acknowledge honestly.
+    </div>
+
+    <div class="req-evaluator">
+      <div class="req-eval-head">
+        <span class="req-eval-title">📋 Requirements Evaluation Table</span>
+        <div class="req-eval-meta">
+          <span>Met: <span class="req-eval-score" id="metCount">0</span></span>
+          <span>Partial: <span class="req-eval-score" id="partialCount">0</span></span>
+          <span>Not met: <span class="req-eval-score" id="notmetCount">0</span></span>
+        </div>
+      </div>
+      <div class="req-rows" id="reqEvalRows"></div>
+      <div class="req-eval-footer">
+        <div class="req-summary-chips" id="reqSummaryChips"></div>
+        <button class="add-req-btn" onclick="addRequirement()">+ Add requirement</button>
+      </div>
+    </div>
+
+    <p style="font-size:.85rem; margin-top:.85rem; color:rgba(240,220,170,.45); font-style:italic;">Add your group's actual requirements from your Lesson 1 notebook by clicking "+ Add requirement". The six pre-loaded rows are examples — replace them with your own. Copy the completed table into your notebook.</p>
+  </section>
+
+  <!-- PART 2: Written evaluation -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 2 · Written Evaluation (20 min)</p>
+    <h2>Four Questions, Four Paragraphs</h2>
+    <p>A strong evaluation is structured. Work through these four prompts in order — each targets a different aspect of the project. Write directly into the text areas below, then copy into your notebook.</p>
+
+    <div class="eval-scaffold">
+
+      <div class="eval-prompt">
+        <div class="eval-prompt-head">
+          <span class="eval-prompt-num">Q1</span>
+          <span class="eval-prompt-q">How effectively does your game meet its requirements?</span>
+        </div>
+        <div class="eval-prompt-hint">Reference specific requirements by name. Use evidence from your requirements evaluation table above. Avoid vague phrases like "mostly works" — be specific about what works, what doesn't, and why.</div>
+        <textarea class="eval-textarea" id="q1" rows="4" placeholder="e.g. 'Our game meets 7 of the 8 functional requirements. The core game loop — rolling dice, moving tokens, buying and paying rent — all function correctly and were tested across six full playthroughs. The Chance card system (requirement F6) was partially met: we implemented the deck shuffle and draw mechanic, but only 5 of the planned 8 events were completed before the deadline…'" oninput="updateWordCount('q1','wc1')"></textarea>
+        <div class="eval-word-count" id="wc1">0 words</div>
+      </div>
+
+      <div class="eval-prompt">
+        <div class="eval-prompt-head">
+          <span class="eval-prompt-num">Q2</span>
+          <span class="eval-prompt-q">Describe one design decision that worked well and justify it.</span>
+        </div>
+        <div class="eval-prompt-hint">A design decision is a choice you made during planning or building — not just a feature that works. Explain what you chose, why you chose it, and what evidence shows it was a good decision. Think about: UI layout, board size, Go salary amount, property pricing, turn structure.</div>
+        <textarea class="eval-textarea" id="q2" rows="4" placeholder="e.g. 'One design decision that worked well was setting the Go salary at $300 rather than the standard $200. During playtesting we noticed that with a starting balance of $1500 and property prices between $100–$500, players were going bankrupt after only 4–5 turns. Increasing the salary to $300 extended average game length to 15–20 turns, which gave all players more meaningful decisions to make…'" oninput="updateWordCount('q2','wc2')"></textarea>
+        <div class="eval-word-count" id="wc2">0 words</div>
+      </div>
+
+      <div class="eval-prompt">
+        <div class="eval-prompt-head">
+          <span class="eval-prompt-num">Q3</span>
+          <span class="eval-prompt-q">Describe one thing you would change if you had more time, and explain technically how you would implement it.</span>
+        </div>
+        <div class="eval-prompt-hint">This question has two parts — the "what" and the "how". The "how" is what makes an A-range answer. Don't just say you'd add houses; explain which class would need a new field, what method would calculate rent differently, and how the UI would communicate the change to players.</div>
+        <textarea class="eval-textarea" id="q3" rows="5" placeholder="e.g. 'If we had more time, I would implement a property improvement system (houses and hotels). To do this, I would add a houseCount field (int, 0–4) and a hotelCount field (bool) to the BoardSpace class. The rentAmount would be replaced by a method called CalculateRent() that returns a value from a tiered lookup table based on houseCount. The Inspector would need a public int[] rentTiers array with 5 values (base rent, 1 house, 2 houses, 3 houses, hotel)…'" oninput="updateWordCount('q3','wc3')"></textarea>
+        <div class="eval-word-count" id="wc3">0 words</div>
+      </div>
+
+      <div class="eval-prompt">
+        <div class="eval-prompt-head">
+          <span class="eval-prompt-num">Q4</span>
+          <span class="eval-prompt-q">How did the peer testing in Lesson 9 improve your game?</span>
+        </div>
+        <div class="eval-prompt-hint">Be specific — name the bugs found, explain what caused them, and describe what you changed. If a tester found something you hadn't noticed, reflect on why you missed it and what that tells you about the value of external testing.</div>
+        <textarea class="eval-textarea" id="q4" rows="4" placeholder="e.g. 'The peer testers from Group 2 identified three bugs we had not noticed ourselves. The most significant was that the Roll Dice button remained active during a purchase prompt — they discovered this by quickly clicking it while the Buy/Skip buttons were showing, which caused the token to move again before the purchase was resolved. This happened because we had set waitingForInput to true in OfferPurchase() but the StartTurn() guard was checking a local variable rather than the field…'" oninput="updateWordCount('q4','wc4')"></textarea>
+        <div class="eval-word-count" id="wc4">0 words</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PART 3: D&P framework retrospective -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 3 · D&amp;P Process Retrospective (5 min)</p>
+    <h2>Looking Back at the Framework</h2>
+    <p>The Design &amp; Production framework structured this entire project. Reflecting on each phase honestly — not just what was done, but what could have been done better — is one of the hallmarks of a sophisticated project notebook.</p>
+
+    <div class="dp-retro">
+      <div class="dp-phase id">
+        <div class="dp-phase-head">
+          <div class="dp-phase-name">Identifying &amp; Defining</div>
+          <div class="dp-lessons">Lesson 1</div>
+        </div>
+        <div class="dp-phase-body">
+          <div class="dp-retro-label">What went well</div>
+          <textarea class="dp-retro-input" placeholder="e.g. Our requirements list was detailed and gave us a clear target…"></textarea>
+          <div class="dp-retro-label">What I'd do differently</div>
+          <textarea class="dp-retro-input" placeholder="e.g. We should have scoped more conservatively — our original plan had 10 features but we only built 6…"></textarea>
+        </div>
+      </div>
+      <div class="dp-phase rp">
+        <div class="dp-phase-head">
+          <div class="dp-phase-name">Researching &amp; Planning</div>
+          <div class="dp-lessons">Lessons 2–3</div>
+        </div>
+        <div class="dp-phase-body">
+          <div class="dp-retro-label">What went well</div>
+          <textarea class="dp-retro-input" placeholder="e.g. The class diagram helped us divide coding tasks between group members…"></textarea>
+          <div class="dp-retro-label">What I'd do differently</div>
+          <textarea class="dp-retro-input" placeholder="e.g. We spent too long on the board sketch and not enough on pseudocode — we had to redesign MovePlayer() twice…"></textarea>
+        </div>
+      </div>
+      <div class="dp-phase pi">
+        <div class="dp-phase-head">
+          <div class="dp-phase-name">Producing &amp; Implementing</div>
+          <div class="dp-lessons">Lessons 4–8</div>
+        </div>
+        <div class="dp-phase-body">
+          <div class="dp-retro-label">What went well</div>
+          <textarea class="dp-retro-input" placeholder="e.g. The starter scripts saved a lot of setup time and meant we could focus on the game logic…"></textarea>
+          <div class="dp-retro-label">What I'd do differently</div>
+          <textarea class="dp-retro-input" placeholder="e.g. We should have tested more regularly instead of building for 3 lessons before testing — we had multiple bugs stack up…"></textarea>
+        </div>
+      </div>
+      <div class="dp-phase te">
+        <div class="dp-phase-head">
+          <div class="dp-phase-name">Testing &amp; Evaluating</div>
+          <div class="dp-lessons">Lessons 9–10</div>
+        </div>
+        <div class="dp-phase-body">
+          <div class="dp-retro-label">What went well</div>
+          <textarea class="dp-retro-input" placeholder="e.g. The structured checklist meant the testers gave us specific, actionable feedback rather than just 'it's good'…"></textarea>
+          <div class="dp-retro-label">What I'd do differently</div>
+          <textarea class="dp-retro-input" placeholder="e.g. We needed more time for fixes — 20 minutes wasn't enough for the bugs found. Earlier testing would have helped…"></textarea>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 4: Career connections -->
+  <section class="content-section reveal">
+    <p class="section-label">Part 4 · Career Connections (5 min)</p>
+    <h2>Where Does This Lead?</h2>
+    <p>The skills you've practised in Dice District are directly used in real computing careers. For each role below, identify which skills from this project apply — then choose one career and write 2–3 sentences in your notebook explaining how specific things you did in this project connect to what that role does daily.</p>
+
+    <div class="career-grid">
+
+      <div class="career-card">
+        <span class="career-icon">🎮</span>
+        <div class="career-title">Game Developer</div>
+        <p class="career-skills">Designs and codes game systems, mechanics, and player experiences — from indie studios to AAA publishers.</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">OOP in C#</span>
+          <span class="career-chip">Game loop design</span>
+          <span class="career-chip">Unity 6</span>
+          <span class="career-chip">Algorithm design</span>
+          <span class="career-chip">UI/UX</span>
+          <span class="career-chip">Debugging</span>
+        </div>
+      </div>
+
+      <div class="career-card">
+        <span class="career-icon">🧪</span>
+        <div class="career-title">QA / Test Engineer</div>
+        <p class="career-skills">Finds bugs before users do — writes test plans, executes structured tests, and logs defects with enough detail to fix them.</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">Structured test plans</span>
+          <span class="career-chip">Bug severity rating</span>
+          <span class="career-chip">Reproduction steps</span>
+          <span class="career-chip">Edge case thinking</span>
+          <span class="career-chip">Peer review</span>
+        </div>
+      </div>
+
+      <div class="career-card">
+        <span class="career-icon">🏗</span>
+        <div class="career-title">Software Engineer</div>
+        <p class="career-skills">Designs and builds software systems — applying OOP, algorithms, and iterative development across any domain (not just games).</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">Class design</span>
+          <span class="career-chip">Encapsulation</span>
+          <span class="career-chip">Iterative sprints</span>
+          <span class="career-chip">Version management</span>
+          <span class="career-chip">Requirements analysis</span>
+        </div>
+      </div>
+
+      <div class="career-card">
+        <span class="career-icon">🎨</span>
+        <div class="career-title">UX Designer</div>
+        <p class="career-skills">Designs interfaces that are intuitive and satisfying to use — balancing aesthetics, information display, and player/user needs.</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">Wireframing</span>
+          <span class="career-chip">UI layout</span>
+          <span class="career-chip">User feedback analysis</span>
+          <span class="career-chip">Iterative improvement</span>
+          <span class="career-chip">Design decisions</span>
+        </div>
+      </div>
+
+      <div class="career-card">
+        <span class="career-icon">📊</span>
+        <div class="career-title">Systems Analyst</div>
+        <p class="career-skills">Models complex systems — identifying components, relationships, and data flows to design solutions to real-world problems.</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">Requirements definition</span>
+          <span class="career-chip">Class diagrams</span>
+          <span class="career-chip">Data flow analysis</span>
+          <span class="career-chip">Systems thinking</span>
+          <span class="career-chip">D&amp;P framework</span>
+        </div>
+      </div>
+
+      <div class="career-card">
+        <span class="career-icon">🎓</span>
+        <div class="career-title">Computing Educator</div>
+        <p class="career-skills">Teaches computational thinking, programming, and digital design — creating resources, explaining complex ideas, and supporting learners.</p>
+        <span class="career-link-label">Skills from this project</span>
+        <div class="career-skill-chips">
+          <span class="career-chip">Pseudocode</span>
+          <span class="career-chip">Documentation</span>
+          <span class="career-chip">Explaining decisions</span>
+          <span class="career-chip">Peer feedback</span>
+          <span class="career-chip">Project management</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="gold-box" style="margin-top:1.25rem;">
+      <strong>Your notebook task:</strong> Choose one career from above. Write 2–3 sentences connecting specific things you did in Dice District to what someone in that role does. Be concrete — name the method, the decision, or the tool. For example: <em>"The ResolveSpace() method I wrote uses the same branching decision logic a software engineer would apply when designing a business rules engine — the structure is identical even though the domain is different."</em>
+    </div>
+  </section>
+
+  <!-- COMPLETION BANNER -->
+  <section class="content-section reveal">
+    <div class="completion-banner">
+      <span class="completion-emoji">🏆</span>
+      <div class="completion-title">Project Complete</div>
+      <p class="completion-sub">You have taken a game from a blank Unity scene to a working, tested, evaluated 3D board game — designed, coded, debugged, and reflected on every step of the way.</p>
+      <div class="completion-stats">
+        <div>
+          <div class="completion-stat-num">10</div>
+          <div class="completion-stat-label">Lessons completed</div>
+        </div>
+        <div>
+          <div class="completion-stat-num">4</div>
+          <div class="completion-stat-label">D&amp;P phases</div>
+        </div>
+        <div>
+          <div class="completion-stat-num">7+</div>
+          <div class="completion-stat-label">C# methods written</div>
+        </div>
+        <div>
+          <div class="completion-stat-num">3</div>
+          <div class="completion-stat-label">Scripts mastered</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL NOTEBOOK CHECKPOINT -->
+  <section class="content-section reveal">
+    <p class="section-label">Final Submission</p>
+    <h2>Project Notebook — Final Checklist</h2>
+    <p>Before submitting your project notebook, confirm all of the following are present. The notebook is your primary evidence of learning — it should tell the story of the entire project, not just the final product.</p>
+    <div class="notebook-checkpoint">
+      <ul>
+        <li><strong>Lesson 1:</strong> Requirements list (6F + 2NF minimum), board sketch, game primitive analysis, reflection</li>
+        <li><strong>Lesson 2:</strong> Game loop diagram, pseudocode annotated, code annotation table (8+ rows), class cards</li>
+        <li><strong>Lesson 3:</strong> Unity hierarchy sketch, UI wireframe (5+ elements), scope priority list, MovePlayer() pseudocode</li>
+        <li><strong>Lesson 4:</strong> 5 Unity screenshots (scene, Inspector, Console, Game view), encapsulation reflection</li>
+        <li><strong>Lesson 5:</strong> MovePlayer() pseudocode annotated, modulo explanation, test log (6 cases), Console screenshot</li>
+        <li><strong>Lesson 6:</strong> Branch analysis table (6 scenarios), ResolveSpace() flowchart, test log (7 cases), Buy/Skip screenshot</li>
+        <li><strong>Lesson 7:</strong> Updated class diagram with delta annotations, EliminatePlayer() pseudocode, test log (7 cases), Game Over screenshot</li>
+        <li><strong>Lesson 8:</strong> Feature checklist screenshot, per-feature build notes, bug log (2+ entries), self-assessment table with reflection</li>
+        <li><strong>Lesson 9:</strong> Completed peer test checklist, bug log (3+ entries as tester), priority fix list, fix documentation with debugging process</li>
+        <li><strong>Lesson 10:</strong> Requirements evaluation table (all requirements rated with justification), four-question written evaluation, D&amp;P retrospective, career connection paragraph</li>
+        <li><em>Throughout:</em> Honest reflections at the end of each lesson — including what went wrong, what was confusing, and what you would do differently</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="time-badge">⏱ 1 hour · Lesson 10 of 10</div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Learning Outcomes</span>
+    <div class="outcome-chips">
+      <span class="outcome-chip">CT5-EVL-01</span>
+      <span class="outcome-chip">CT5-THI-01</span>
+      <span class="outcome-chip">CT5-DPM-01</span>
+      <span class="outcome-chip">CT5-SAF-01</span>
+    </div>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Lesson at a Glance</span>
+    <p style="margin:0; font-size:.83rem; color:var(--cream-dark);">
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:00</span> Requirements evaluation table (20 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:20</span> Four-question written evaluation (20 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:40</span> D&amp;P retrospective (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:45</span> Career connections (5 min)<br>
+      <span style="color:var(--gold); font-family:var(--font-mono); font-size:.7rem;">0:50</span> Final notebook checklist (10 min)
+    </p>
+  </div>
+
+  <div class="sidebar-card" style="border-color:rgba(201,168,76,.45); background:rgba(201,168,76,.06);">
+    <span class="sidebar-card-label">What distinguishes A-range evaluation</span>
+    <p style="font-size:.83rem; color:var(--cream-dark); margin:0; line-height:1.6;">
+      <strong style="color:var(--gold);">Specificity:</strong> Names requirements, methods, and evidence — not "the game works well".<br><br>
+      <strong style="color:var(--gold);">Technical depth:</strong> The "what would you add" answer explains HOW, not just WHAT.<br><br>
+      <strong style="color:var(--gold);">Honesty:</strong> Acknowledges requirements not met without making excuses.<br><br>
+      <strong style="color:var(--gold);">Process thinking:</strong> Retrospective notes show understanding of why decisions were made, not just what was done.
+    </p>
+  </div>
+
+  <div class="cpd-strip">
+    <div class="cpd-strip-label">Grade indicators — this lesson</div>
+    <div class="cpd-rows">
+      <div class="cpd-row">
+        <span class="cpd-grade">A</span>
+        <span class="cpd-desc">All requirements evaluated with specific evidence; Q3 answer includes technical implementation detail; career connection names specific methods; retrospective shows process insight</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">B</span>
+        <span class="cpd-desc">Requirements table complete with justifications; four questions answered with specific references to game features; career connection present</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">C</span>
+        <span class="cpd-desc">Requirements table mostly complete; four questions answered; evaluation is somewhat general; career connection attempted</span>
+      </div>
+      <div class="cpd-row" style="background:rgba(0,0,0,.1)">
+        <span class="cpd-grade">D</span>
+        <span class="cpd-desc">Some requirements evaluated; partial responses to evaluation questions; D&amp;P retrospective partially complete</span>
+      </div>
+      <div class="cpd-row">
+        <span class="cpd-grade">E</span>
+        <span class="cpd-desc">Attempts requirements evaluation; some reflection present; evidence of engagement with evaluation process</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="teacher-note">
+    <span class="teacher-note-label">🔒 Teacher Note</span>
+    <p>The requirements evaluator is pre-seeded with six example requirements — prompt students to delete these and add their own from their Lesson 1 notebook before beginning. The four evaluation questions are deliberately ordered from most objective (requirements) to most analytical (peer testing value) — students who struggle to get started should work through Q1 first and build momentum. Circulate during Q3 ("what would you add") — push students past "I would add more properties" toward technical specificity. Collect notebooks at the end of this lesson.</p>
+  </div>
+
+  <div class="sidebar-card">
+    <span class="sidebar-card-label">Navigate</span>
+    <div class="lesson-nav">
+      <a href="lesson-9.html">← L9</a>
+      <a href="index.html">Home</a>
+    </div>
+  </div>
+</aside>
+</div>
+
+<footer>
+  <div class="footer-left">NSW Computing Technology 7–10 (2022) · Stage 5 · L10 — Testing &amp; Evaluating</div>
+  <div class="footer-outcomes">
+    <span class="footer-outcome-chip">CT5-EVL-01</span>
+    <span class="footer-outcome-chip">CT5-THI-01</span>
+    <span class="footer-outcome-chip">CT5-DPM-01</span>
+    <span class="footer-outcome-chip">CT5-SAF-01</span>
+  </div>
+</footer>
+
+<script>
+/* ─── REQUIREMENTS EVALUATOR ─── */
+const exampleReqs = [
+  { type:'F',  text:'The game must allow 2–4 players to take turns rolling a dice and moving their token' },
+  { type:'F',  text:'When a player lands on an unowned property, they can choose to buy it' },
+  { type:'F',  text:'The game must track how much money each player has at all times' },
+  { type:'F',  text:'The game must detect when a player\'s money drops below zero and eliminate them' },
+  { type:'F',  text:'Players must collect a salary each time they pass the Go space' },
+  { type:'NF', text:'The current player\'s name and money must always be visible on screen' },
+  { type:'NF', text:'The UI text must be readable from 1 metre away' },
+];
+
+let reqCount = 0;
+
+function buildRequirementsTable() {
+  exampleReqs.forEach(r => addRequirement(r.type, r.text));
+}
+
+function addRequirement(type = 'F', text = '') {
+  reqCount++;
+  const n = reqCount;
+  const container = document.getElementById('reqEvalRows');
+  const row = document.createElement('div');
+  row.className = 'req-eval-row';
+  row.id = `req-${n}`;
+  row.innerHTML = `
+    <span class="req-type-pill ${type === 'F' ? 'pill-f' : 'pill-nf'}" title="${type === 'F' ? 'Functional' : 'Non-functional'}">${type}</span>
+    <div class="req-eval-text">
+      <input
+        style="font-family:var(--font-body); font-size:.9rem; background:transparent; border:none; color:var(--cream); outline:none; width:100%;"
+        type="text"
+        value="${text}"
+        placeholder="Enter your requirement from Lesson 1…"
+      >
+      <textarea
+        class="req-justification"
+        rows="2"
+        placeholder="Justify your rating — what evidence shows this was/wasn't met?"
+        oninput="this.style.height='auto'; this.style.height=this.scrollHeight+'px';"
+      ></textarea>
+    </div>
+    <select class="fulfilment-select" onchange="updateFulfilmentStyle(this); updateReqCounts()" style="align-self:start; margin-top:.15rem;">
+      <option value="">— Rate —</option>
+      <option value="met">✓ Met</option>
+      <option value="partial">◑ Partial</option>
+      <option value="not-met">✗ Not met</option>
+      <option value="na">— N/A</option>
+    </select>
+    <button onclick="document.getElementById('req-${n}').remove(); updateReqCounts();" style="background:none; border:none; color:rgba(192,57,43,.3); cursor:pointer; font-size:.9rem; padding:.15rem .3rem; transition:color .12s; align-self:start; margin-top:.1rem;" title="Remove" onmouseover="this.style.color='#e87070'" onmouseout="this.style.color='rgba(192,57,43,.3)'">✕</button>
+  `;
+  container.appendChild(row);
+  updateReqCounts();
+}
+
+function updateFulfilmentStyle(sel) {
+  sel.className = 'fulfilment-select';
+  const map = { met:'met', partial:'partial', 'not-met':'not-met', na:'na' };
+  if (map[sel.value]) sel.classList.add(map[sel.value]);
+  updateReqCounts();
+}
+
+function updateReqCounts() {
+  const sels = [...document.querySelectorAll('.fulfilment-select')];
+  const vals = sels.map(s => s.value);
+  const met     = vals.filter(v => v === 'met').length;
+  const partial = vals.filter(v => v === 'partial').length;
+  const notmet  = vals.filter(v => v === 'not-met').length;
+
+  document.getElementById('metCount').textContent    = met;
+  document.getElementById('partialCount').textContent = partial;
+  document.getElementById('notmetCount').textContent  = notmet;
+
+  const chips = document.getElementById('reqSummaryChips');
+  chips.innerHTML = '';
+  if (met)     chips.innerHTML += `<span class="req-chip chip-met">✓ ${met} Met</span>`;
+  if (partial) chips.innerHTML += `<span class="req-chip chip-partial">◑ ${partial} Partial</span>`;
+  if (notmet)  chips.innerHTML += `<span class="req-chip chip-notmet">✗ ${notmet} Not met</span>`;
+}
+
+/* ─── WORD COUNTER ─── */
+function updateWordCount(textareaId, counterId) {
+  const text = document.getElementById(textareaId).value.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const el = document.getElementById(counterId);
+  el.textContent = `${words} word${words !== 1 ? 's' : ''}`;
+  el.style.color = words >= 80 ? 'rgba(88,214,141,.5)' : words >= 40 ? 'rgba(201,168,76,.4)' : 'rgba(240,220,170,.25)';
+}
+
+/* ─── Scroll reveal ─── */
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(el => io.observe(el));
+
+buildRequirementsTable();
+</script>
+</body>
+</html>
