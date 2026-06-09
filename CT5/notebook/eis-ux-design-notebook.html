@@ -1,0 +1,1513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notebook — EIS: Designing for User Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #13161e;
+    --surface2:  #1a1e2a;
+    --border:    #252836;
+    --border2:   #2e3347;
+
+    /* EIS strand — teal */
+    --accent:    #0d9488;
+    --accent2:   #2dd4bf;
+    --accent3:   #99f6e4;
+
+    /* D&P phase colours */
+    --id-col:    #06b6d4;
+    --rp-col:    #0d9488;
+    --pi-col:    #10b981;
+    --te-col:    #f59e0b;
+
+    /* The four design quality pillars — used throughout */
+    --func-col:  #06b6d4;   /* cyan    — functionality */
+    --acc-col:   #8b5cf6;   /* violet  — accessibility */
+    --usa-col:   #10b981;   /* emerald — usability */
+    --aes-col:   #f59e0b;   /* amber   — aesthetics */
+
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --faint:     #475569;
+    --y9:        #06b6d4;
+    --y10:       #0d9488;
+
+    --font-body: 'Nunito', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius:    10px;
+    --sidebar-w: 230px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .ct-mark { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+  .sidebar-logo .unit-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .sidebar-logo .unit-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; margin-top: 3px; }
+
+  .year-toggle { display: flex; margin: 14px 14px 0; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; }
+  .year-btn { flex: 1; padding: 6px 0; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.18s; background: transparent; color: var(--muted); letter-spacing: 0.04em; }
+  .year-btn.active-y9  { background: var(--y9);  color: #0b0d12; }
+  .year-btn.active-y10 { background: var(--y10); color: #fff; }
+
+  /* Design quality mini-meter in sidebar */
+  .sidebar-qualities {
+    margin: 16px 14px 0;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+  .sidebar-qualities .sq-label {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--muted); margin-bottom: 10px;
+  }
+  .sq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sq-item {
+    display: flex; flex-direction: column; gap: 4px;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 8px 10px; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .sq-item:hover { border-color: var(--sq-col); }
+  .sq-item .sq-name { font-size: 10px; font-weight: 800; color: var(--sq-col); text-transform: uppercase; letter-spacing: 0.08em; }
+  .sq-item .sq-desc { font-size: 10px; color: var(--faint); line-height: 1.3; }
+
+  .nav-section { margin-top: 16px; }
+  .nav-phase-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 0 16px 6px; display: flex; align-items: center; gap: 7px; }
+  .nav-phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; font-size: 13px; font-weight: 600; color: var(--muted); border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); border-left-color: var(--phase-col, var(--accent)); background: rgba(13,148,136,0.08); }
+  .nav-item .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--phase-col, var(--faint)); flex-shrink: 0; transition: opacity 0.2s; }
+  .nav-item:not(.active) .nav-dot { opacity: 0.35; }
+  .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.05em; margin-left: auto; }
+  .badge-y9   { background: rgba(6,182,212,0.18);  color: var(--y9); }
+  .badge-y10  { background: rgba(13,148,136,0.18); color: var(--accent2); }
+  .badge-both { background: rgba(13,148,136,0.1);  color: var(--accent3); }
+
+  .sidebar-cpd { margin: auto 14px 14px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); }
+  .sidebar-cpd .cpd-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .cpd-bar-track { display: flex; gap: 3px; margin-bottom: 8px; }
+  .cpd-bar-seg { flex: 1; height: 6px; border-radius: 3px; background: var(--border2); cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .cpd-bar-seg:hover { transform: scaleY(1.4); }
+  .cpd-bar-seg[data-grade="E"].lit { background: #64748b; }
+  .cpd-bar-seg[data-grade="D"].lit { background: #f59e0b; }
+  .cpd-bar-seg[data-grade="C"].lit { background: #10b981; }
+  .cpd-bar-seg[data-grade="B"].lit { background: #06b6d4; }
+  .cpd-bar-seg[data-grade="A"].lit { background: #0d9488; }
+  .cpd-grade-display { text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--muted); transition: color 0.2s; }
+  .cpd-desc { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; min-height: 42px; }
+
+  /* ── MAIN ── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .topbar-phase-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.06em; }
+  .topbar-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .outcome-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.3); color: var(--accent3); }
+
+  .content { padding: 32px 36px 60px; max-width: 860px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-header { margin-bottom: 28px; }
+  .section-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px; }
+  .section-title { font-size: 26px; font-weight: 900; line-height: 1.15; color: var(--text); margin-bottom: 8px; }
+  .section-subtitle { font-size: 14px; color: var(--muted); max-width: 640px; line-height: 1.6; }
+
+  .year-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 24px; border-left: 4px solid; }
+  .year-banner.y9  { background: rgba(6,182,212,0.08);  border-color: var(--y9);  color: var(--y9); }
+  .year-banner.y10 { background: rgba(13,148,136,0.08); border-color: var(--y10); color: var(--accent2); }
+  .year-banner .banner-note { color: var(--muted); font-weight: 600; margin-left: 4px; }
+
+  .prompt-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); margin-bottom: 18px; overflow: hidden; }
+  .prompt-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; gap: 12px; }
+  .prompt-card-header:hover { background: rgba(255,255,255,0.02); }
+  .prompt-card-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .prompt-card-title .card-icon { font-size: 16px; width: 28px; text-align: center; }
+  .prompt-card-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chevron { width: 18px; height: 18px; color: var(--faint); transition: transform 0.2s; flex-shrink: 0; }
+  .prompt-card.open .chevron { transform: rotate(180deg); }
+  .prompt-card-body { display: none; padding: 18px 18px 20px; }
+  .prompt-card.open .prompt-card-body { display: block; }
+
+  .prompts-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .prompts-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .prompt-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--faint); min-width: 22px; padding-top: 1px; }
+  .prompt-text { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .prompt-text strong { color: var(--text); font-weight: 700; }
+  .prompt-text code { font-family: var(--font-mono); font-size: 12px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--accent3); }
+
+  .cpd-lift { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.22); border-radius: 7px; margin-top: 14px; font-size: 12.5px; color: var(--accent3); line-height: 1.5; }
+  .cpd-lift-icon { flex-shrink: 0; font-size: 14px; padding-top: 1px; }
+
+  .response-hint { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 14px; font-family: var(--font-mono); }
+  .response-hint::before, .response-hint::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .seqta-note { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent); border-radius: 7px; font-size: 13px; color: var(--muted); margin-top: 18px; }
+  .seqta-note strong { color: var(--text); }
+
+  /* Pathway card */
+  .pathway-card { background: rgba(13,148,136,0.06); border: 1px solid rgba(13,148,136,0.3); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 22px; }
+  .pathway-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pathway-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 3px 9px; border-radius: 20px; background: rgba(13,148,136,0.2); color: var(--accent2); }
+  .pathway-card-title { font-size: 14px; font-weight: 800; color: var(--accent2); }
+  .pathway-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .pathway-card p + p { margin-top: 8px; }
+
+  /* The four design quality pillars — the signature element */
+  .quality-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 20px 0;
+  }
+  .quality-card {
+    border-radius: var(--radius); padding: 16px 16px 14px;
+    border: 1px solid;
+    position: relative; overflow: hidden;
+  }
+  .quality-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    background: var(--q-col);
+  }
+  .quality-card.func { --q-col: var(--func-col); background: rgba(6,182,212,0.05); border-color: rgba(6,182,212,0.2); }
+  .quality-card.acc  { --q-col: var(--acc-col);  background: rgba(139,92,246,0.05); border-color: rgba(139,92,246,0.2); }
+  .quality-card.usa  { --q-col: var(--usa-col);  background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2); }
+  .quality-card.aes  { --q-col: var(--aes-col);  background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.2); }
+  .quality-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--q-col); margin-bottom: 5px; }
+  .quality-question { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 5px; }
+  .quality-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+  /* Pillar tag chips */
+  .pillar-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; margin: 2px; }
+  .chip-func { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.3);  color: #06b6d4; }
+  .chip-acc  { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: #a78bfa; }
+  .chip-usa  { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
+  .chip-aes  { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+
+  .info-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .info-box-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .info-box p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  .sprint-log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .sprint-log-grid .full-width { grid-column: 1 / -1; }
+  .log-field { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; }
+  .log-field-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faint); margin-bottom: 6px; }
+  .log-field-prompt { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* Test table */
+  .test-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  .test-table th { text-align: left; padding: 10px 12px; background: var(--surface2); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); border-bottom: 1px solid var(--border2); }
+  .test-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .test-table tr:last-child td { border-bottom: none; }
+  .test-table .pass { color: #10b981; font-weight: 700; }
+  .test-table .fail { color: #f87171; font-weight: 700; }
+  .test-table .partial { color: #f59e0b; font-weight: 700; }
+
+  /* Intro */
+  .intro-hero { padding: 40px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .intro-hero .hero-eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .intro-hero h1 { font-size: 32px; font-weight: 900; line-height: 1.1; color: var(--text); margin-bottom: 14px; }
+  .intro-hero h1 span { color: var(--accent2); }
+  .intro-hero p { font-size: 15px; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+  .phase-overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .phase-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: transform 0.15s, border-color 0.15s; border-top: 3px solid var(--phase-col); }
+  .phase-card:hover { transform: translateY(-2px); border-color: var(--phase-col); }
+  .phase-card .phase-name { font-size: 12px; font-weight: 800; color: var(--phase-col); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .phase-card .phase-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+  .year-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+  .year-info-card { padding: 16px 18px; border-radius: var(--radius); border: 1px solid; }
+  .year-info-card.y9  { background: rgba(6,182,212,0.06);  border-color: rgba(6,182,212,0.3); }
+  .year-info-card.y10 { background: rgba(13,148,136,0.06); border-color: rgba(13,148,136,0.3); }
+  .year-info-card .yic-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .y9 .yic-label  { color: var(--y9); }
+  .y10 .yic-label { color: var(--accent2); }
+  .year-info-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* CPD full */
+  .cpd-full-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+  .cpd-full-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; border-top: 3px solid var(--border2); }
+  .cpd-full-card:hover { transform: translateY(-2px); }
+  .cpd-full-card[data-grade="E"] { border-top-color: #64748b; }
+  .cpd-full-card[data-grade="D"] { border-top-color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] { border-top-color: #10b981; }
+  .cpd-full-card[data-grade="B"] { border-top-color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] { border-top-color: #0d9488; }
+  .cpd-full-card.selected { border-color: var(--accent2); background: rgba(13,148,136,0.1); }
+  .cpd-grade-letter { font-family: var(--font-mono); font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .cpd-full-card[data-grade="E"] .cpd-grade-letter { color: #64748b; }
+  .cpd-full-card[data-grade="D"] .cpd-grade-letter { color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] .cpd-grade-letter { color: #10b981; }
+  .cpd-full-card[data-grade="B"] .cpd-grade-letter { color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] .cpd-grade-letter { color: #0d9488; }
+  .cpd-descriptor-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .cpd-descriptor-list li { font-size: 11.5px; color: var(--muted); line-height: 1.4; padding-left: 10px; position: relative; }
+  .cpd-descriptor-list li::before { content: '›'; position: absolute; left: 0; color: var(--faint); }
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 200px; } .main { margin-left: 200px; }
+    .content { padding: 20px 18px 40px; }
+    .cpd-full-grid { grid-template-columns: repeat(3,1fr); }
+    .phase-overview-grid { grid-template-columns: 1fr 1fr; }
+    .sprint-log-grid { grid-template-columns: 1fr; }
+    .quality-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <span class="ct-mark">&lt;CT/&gt;</span>
+      <div class="unit-label">Year 9 / 10 · Stage 5</div>
+      <div class="unit-name">EIS: Designing for<br>User Experience<br>Project Notebook</div>
+    </div>
+
+    <div class="year-toggle">
+      <button class="year-btn active-y9" id="btn-y9" onclick="setYear(9)">Year 9</button>
+      <button class="year-btn" id="btn-y10" onclick="setYear(10)">Year 10</button>
+    </div>
+
+    <!-- Four pillars quick reference -->
+    <div class="sidebar-qualities">
+      <div class="sq-label">The four design qualities</div>
+      <div class="sq-grid">
+        <div class="sq-item" style="--sq-col:var(--func-col)" onclick="showPanel('rp-design')">
+          <span class="sq-name">Functionality</span>
+          <span class="sq-desc">Does it do what it needs to?</span>
+        </div>
+        <div class="sq-item" style="--sq-col:var(--acc-col)" onclick="showPanel('rp-design')">
+          <span class="sq-name">Accessibility</span>
+          <span class="sq-desc">Can everyone use it?</span>
+        </div>
+        <div class="sq-item" style="--sq-col:var(--usa-col)" onclick="showPanel('rp-design')">
+          <span class="sq-name">Usability</span>
+          <span class="sq-desc">Is it easy to use well?</span>
+        </div>
+        <div class="sq-item" style="--sq-col:var(--aes-col)" onclick="showPanel('rp-design')">
+          <span class="sq-name">Aesthetics</span>
+          <span class="sq-desc">Does it look and feel right?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item active" data-panel="intro" style="--phase-col:var(--accent)" onclick="showPanel('intro')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Overview
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--id-col)">Identifying &amp; Defining</div>
+      <div class="nav-item" data-panel="id-problem" style="--phase-col:var(--id-col)" onclick="showPanel('id-problem')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Problem &amp; Audience
+      </div>
+      <div class="nav-item" data-panel="id-requirements" style="--phase-col:var(--id-col)" onclick="showPanel('id-requirements')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Requirements &amp; Success Criteria
+      </div>
+      <div class="nav-item" data-panel="id-ethics" style="--phase-col:var(--id-col)" onclick="showPanel('id-ethics')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Legal, Ethical &amp; Social
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--rp-col)">Researching &amp; Planning</div>
+      <div class="nav-item" data-panel="rp-existing" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Existing Product Analysis
+      </div>
+      <div class="nav-item" data-panel="rp-user-research" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-user-research')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> User Research
+      </div>
+      <div class="nav-item" data-panel="rp-design" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-design')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Design &amp; Prototyping
+      </div>
+      <div class="nav-item" data-panel="rp-plan" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-plan')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Project Plan
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+      <div class="nav-item nav-y9-only" data-panel="pi-tutorials" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-tutorials')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Tutorials &amp; Prototyping
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y9-only" data-panel="pi-pm" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-pm')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Project Management
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-build" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-build')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Build Logs
+        <span class="badge badge-y10">Y10</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-product" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-product')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Product Documentation
+        <span class="badge badge-y10">Y10</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+      <div class="nav-item" data-panel="te-testing" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> User Testing
+      </div>
+      <div class="nav-item" data-panel="te-eval" style="--phase-col:var(--te-col)" onclick="showPanel('te-eval')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Evaluation
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" data-panel="cpd" style="--phase-col:var(--accent)" onclick="showPanel('cpd')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Grade Self-Assessment
+      </div>
+    </div>
+
+    <div class="sidebar-cpd" style="margin-top:16px">
+      <div class="cpd-label">Current target grade</div>
+      <div class="cpd-bar-track">
+        <div class="cpd-bar-seg" data-grade="E" onclick="setCPD('E')"></div>
+        <div class="cpd-bar-seg" data-grade="D" onclick="setCPD('D')"></div>
+        <div class="cpd-bar-seg" data-grade="C" onclick="setCPD('C')"></div>
+        <div class="cpd-bar-seg" data-grade="B" onclick="setCPD('B')"></div>
+        <div class="cpd-bar-seg" data-grade="A" onclick="setCPD('A')"></div>
+      </div>
+      <div class="cpd-grade-display" id="cpd-display">—</div>
+      <div class="cpd-desc" id="cpd-sidebar-desc">Click a segment above to set your target grade.</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <span id="topbar-phase-pill" class="topbar-phase-pill" style="background:rgba(13,148,136,0.15);color:var(--accent2)">Overview</span>
+        <span id="topbar-section-name" style="color:var(--muted);font-weight:600;font-size:13px">Project Notebook</span>
+      </div>
+      <div class="topbar-outcomes">
+        <span class="outcome-tag">CT5-DES-01</span>
+        <span class="outcome-tag">CT5-EVL-01</span>
+        <span class="outcome-tag">CT5-COM-01</span>
+        <span class="outcome-tag">CT5-SAF-01</span>
+        <span class="outcome-tag">CT5-THI-01</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div class="panel active" id="panel-intro">
+        <div class="intro-hero">
+          <div class="hero-eyebrow">// EIS: Designing for User Experience · Stage 5</div>
+          <h1>Your Project<br><span>Notebook</span></h1>
+          <p>This notebook documents how you designed a UI, interactive media product, or UX improvement for a real audience. Every decision you make — about layout, colour, wording, interactions, and accessibility — should be justified against the four design qualities that run through this entire project.</p>
+        </div>
+
+        <div class="quality-grid">
+          <div class="quality-card func">
+            <div class="quality-label">Functionality</div>
+            <div class="quality-question">Does it do what it needs to do?</div>
+            <div class="quality-desc">The product performs all required tasks reliably. Features work as expected, inputs produce correct outputs, and nothing breaks during normal use.</div>
+          </div>
+          <div class="quality-card acc">
+            <div class="quality-label">Accessibility</div>
+            <div class="quality-question">Can everyone use it?</div>
+            <div class="quality-desc">The product can be used by people with a range of abilities, devices, and contexts. It meets accessibility standards and doesn't exclude users by design.</div>
+          </div>
+          <div class="quality-card usa">
+            <div class="quality-label">Usability</div>
+            <div class="quality-question">Is it easy to use well?</div>
+            <div class="quality-desc">Users can achieve their goals efficiently and without frustration. Navigation is intuitive, feedback is clear, and errors are recoverable.</div>
+          </div>
+          <div class="quality-card aes">
+            <div class="quality-label">Aesthetics</div>
+            <div class="quality-question">Does it look and feel right?</div>
+            <div class="quality-desc">The visual design is appropriate for the audience and purpose. Colour, typography, spacing, and motion work together to create a coherent, engaging experience.</div>
+          </div>
+        </div>
+
+        <div class="pathway-card">
+          <div class="pathway-card-header">
+            <span class="pathway-tag">Two pathways</span>
+            <span class="pathway-card-title">Design something new OR redesign something existing — your choice</span>
+          </div>
+          <p><strong style="color:var(--accent2)">Pathway A — New product:</strong> Design and build a UI or interactive media product from scratch for a real audience. This could be a web interface, a mobile app screen set, an interactive video, an information dashboard, or any other interactive product.</p>
+          <p><strong style="color:var(--accent2)">Pathway B — UX redesign:</strong> Research and document the UX failures of an existing product, then design, prototype, and test improvements. You are not building a full working version — you are producing a researched design proposal with prototypes and usability evidence.</p>
+          <p style="margin-top:8px">Both pathways require the same notebook evidence: user research, design decisions justified against all four qualities, prototype iterations, and usability testing. The prompts work for both. Where they differ, they are labelled.</p>
+        </div>
+
+        <div class="year-info-row">
+          <div class="year-info-card y9">
+            <div class="yic-label">Year 9 — Proposal</div>
+            <p>You are proposing a UI or UX project you <em>could</em> build. Your notebook covers all four D&amp;P phases. In Producing &amp; Implementing, you complete design and tool tutorials on SEQTA, create low-fidelity prototypes, and develop a full project management plan.</p>
+          </div>
+          <div class="year-info-card y10">
+            <div class="yic-label">Year 10 — Major Project</div>
+            <p>You are building your UI or UX product. Use build logs every session to document your design decisions as your product develops. The Product Documentation section captures your design rationale — this is the analytical core of the assessment.</p>
+          </div>
+        </div>
+
+        <div class="phase-overview-grid">
+          <div class="phase-card" style="--phase-col:var(--id-col)" onclick="showPanel('id-problem')">
+            <div class="phase-name">Identifying &amp; Defining</div>
+            <div class="phase-desc">Define the problem, the audience, and the legal and ethical responsibilities of your product.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+            <div class="phase-name">Researching &amp; Planning</div>
+            <div class="phase-desc">Analyse existing products, conduct user research, and design iterative prototypes against all four qualities.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--pi-col)" onclick="showPanel(currentYear === 9 ? 'pi-tutorials' : 'pi-build')">
+            <div class="phase-name">Producing &amp; Implementing</div>
+            <div class="phase-desc">Build your product iteratively, documenting every design decision and the reasoning behind it.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+            <div class="phase-name">Testing &amp; Evaluating</div>
+            <div class="phase-desc">Conduct real usability tests, analyse results, and evaluate your product against all four design qualities.</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this notebook</div>
+          <p>Navigate using the sidebar. Toggle between <strong>Year 9</strong> and <strong>Year 10</strong> for your relevant sections. The four design quality tiles in the sidebar are a persistent reference — every design decision in this notebook should connect to at least one of them. Check SEQTA for tutorials, design tool guides, and resources.</p>
+        </div>
+
+        <div class="seqta-note">
+          <span>🎨</span>
+          <span><strong>Tutorials, design tool guides, and prototype resources</strong> are on <strong>SEQTA</strong>. Check your class page regularly.</span>
+        </div>
+      </div>
+
+      <!-- ══ I&D: PROBLEM ══ -->
+      <div class="panel" id="panel-id-problem">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Problem &amp; Audience</div>
+          <div class="section-subtitle">Good UX design starts with a clear problem and a specific person to solve it for. Vague problems produce vague designs. The more precisely you define your audience and their need, the more every design decision has somewhere to anchor.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-prob1">
+          <div class="prompt-card-header" onclick="toggleCard('card-prob1')">
+            <div class="prompt-card-title"><span class="card-icon">🎯</span> The problem or need</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>State your pathway.</strong> Are you designing something new or redesigning an existing product? Name the product or the problem space precisely.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Describe the problem or need your product addresses.</strong> Not "I want to make an app" — but "people who [do X] currently experience [frustration Y] because existing products [fail at Z]."</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Why is a UX or UI solution the right response?</strong> What does good design make possible here that couldn't be achieved another way?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>How has this type of interface or interactive media evolved over time?</strong> Identify at least two key shifts — from command-line to graphical interfaces, from desktop to mobile, from static to interactive media. How do these shifts inform your own design context?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your problem statement should be specific enough that someone could test whether your design solves it. "Better UX" is not a problem. "New users cannot find the save function without help in under 2 minutes" is.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-prob2">
+          <div class="prompt-card-header" onclick="toggleCard('card-prob2')">
+            <div class="prompt-card-title"><span class="card-icon">👤</span> Audience &amp; diverse users</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Describe your primary user.</strong> Age, context of use, technical experience, goals, and frustrations. The more specific, the more useful — a design for "everyone" serves no one well.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Describe at least one secondary user</strong> — someone who will use the product but with different needs, abilities, or context. (e.g. an older user, someone using a screen reader, someone with low bandwidth, someone using a keyboard instead of a mouse.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What assumptions have you made about your users that you still need to verify?</strong> List them — these become your user research priorities.</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What would make your product genuinely inaccessible</strong> to some users in your audience if you don't design for it? (Colour contrast, font size, keyboard navigation, screen reader support, language complexity.)</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: Grade A design considers users beyond the default. Designing for a keyboard-only user, a colourblind user, or a first-language speaker of another language requires explicit design decisions — and those decisions often make the product better for everyone.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: REQUIREMENTS ══ -->
+      <div class="panel" id="panel-id-requirements">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Requirements &amp; Success Criteria</div>
+          <div class="section-subtitle">Requirements translate your audience's needs into testable specifications. Every requirement connects to one or more of the four design qualities — and your success criteria are how you'll know whether you've met them.</div>
+        </div>
+
+        <div class="quality-grid" style="margin-bottom:24px">
+          <div class="quality-card func"><div class="quality-label">Functionality requirements</div><div class="quality-desc">What must the product <em>do</em>? List specific features, interactions, and behaviours.</div></div>
+          <div class="quality-card acc"><div class="quality-label">Accessibility requirements</div><div class="quality-desc">What standards must it meet? Who must be able to use it, and how?</div></div>
+          <div class="quality-card usa"><div class="quality-label">Usability requirements</div><div class="quality-desc">How easy must it be to use? Define task completion targets and error tolerance.</div></div>
+          <div class="quality-card aes"><div class="quality-label">Aesthetic requirements</div><div class="quality-desc">What should it look and feel like? Describe the visual register, tone, and emotional response it should evoke.</div></div>
+        </div>
+
+        <div class="prompt-card open" id="card-req1">
+          <div class="prompt-card-header" onclick="toggleCard('card-req1')">
+            <div class="prompt-card-title"><span class="card-icon">📋</span> Requirements across all four qualities</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write at least two requirements for each of the four design qualities.</strong> Use the framework above as your structure. For accessibility, reference WCAG 2.1 AA as a standard where relevant.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Write 4–6 success criteria</strong> — specific, testable statements a user could verify. (e.g. "A new user can complete the main task in under 3 steps without instructions." "All text has a contrast ratio of at least 4.5:1 against its background.")</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which requirements are must-haves for your MVP,</strong> and which are stretch goals? Mark them clearly.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade C and above</strong>: every requirement must be testable. "The design looks good" is not a requirement. "The colour palette uses a minimum 3:1 contrast ratio for all UI elements" is. Vague requirements produce untestable evaluations.</span>
+            </div>
+            <div class="response-hint">write your requirements table in your notebook document — organised by the four design qualities</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-req2">
+          <div class="prompt-card-header" onclick="toggleCard('card-req2')">
+            <div class="prompt-card-title"><span class="card-icon">📐</span> Scope &amp; constraints</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What is in scope?</strong> Name every screen, interaction, or media element your product will include. (Anything not listed here is out of scope and won't be assessed.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What platform or format will your product run on?</strong> (Web browser, mobile device, video platform, interactive presentation?) How does this shape your design constraints?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What tools will you use to build or prototype your product?</strong> Justify your choice — are they appropriate for the platform and your skill level?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: ETHICS ══ -->
+      <div class="panel" id="panel-id-ethics">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Legal, Ethical &amp; Social Considerations</div>
+          <div class="section-subtitle">UI and interactive media products have significant legal and ethical responsibilities — especially around copyright, privacy, and the influence designs can have on people's behaviour and wellbeing.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eth1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth1')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Copyright &amp; intellectual property</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What assets will your product use</strong> — images, fonts, icons, audio, video, code libraries? For each, note the source and the licence that allows you to use it.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What is the difference between fair use, Creative Commons, and commercial licences</strong> in the context of your product? Which applies to the assets you've chosen?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>If you are redesigning an existing product</strong> (Pathway B), what are the intellectual property implications of reproducing or adapting elements of its interface?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eth2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth2')">
+            <div class="prompt-card-title"><span class="card-icon">🔐</span> Privacy &amp; data responsibilities</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Does your product collect any data from users?</strong> (Form inputs, interaction tracking, stored preferences, location, analytics.) For each type, explain what it's used for and how it's protected.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would users expect to happen to their data?</strong> Is that expectation clearly communicated in your UI? Where?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What privacy laws or guidelines apply</strong> to your product in an Australian context? (Australian Privacy Act, Children's Online Privacy, school data governance.)</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eth3">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth3')">
+            <div class="prompt-card-title"><span class="card-icon">🌍</span> Social impact &amp; diverse representation</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Who is represented in your product's imagery, language, and examples?</strong> Consider gender, cultural background, age, ability, and socioeconomic context. Does the design include or exclude any group by default?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Could your design nudge users towards harmful behaviour?</strong> (Dark patterns, addictive scroll mechanics, misleading calls to action, hidden unsubscribe options.) How have you designed against this?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How does your product affect users' digital wellbeing?</strong> Does the experience leave them feeling empowered or anxious? Does it respect their time and attention?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: ethical design is not just compliance — it's a set of positive choices. "We chose not to use autoplay because it removes user agency" and "we use plain language throughout because our users include EAL/D students" are the kind of deliberate choices that constitute Grade A design thinking.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: EXISTING ══ -->
+      <div class="panel" id="panel-rp-existing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Existing Product Analysis</div>
+          <div class="section-subtitle">Every design decision has been made before. Analysing existing products reveals what works, what fails, and what your users already know how to do — all of which shapes what you should build.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-ex1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex1')">
+            <div class="prompt-card-title"><span class="card-icon">🔍</span> Evaluate an existing product against all four qualities</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Choose an existing product</strong> — for Pathway A, find something in your space. For Pathway B, this is the product you're redesigning. Include screenshots.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Evaluate it against each of the four design qualities:</strong>
+                <br>• <strong style="color:#06b6d4">Functionality:</strong> Does every feature work as expected?
+                <br>• <strong style="color:#a78bfa">Accessibility:</strong> Who is excluded? What standard does it fail?
+                <br>• <strong style="color:#10b981">Usability:</strong> How many steps to complete the core task? Where do users get stuck?
+                <br>• <strong style="color:#f59e0b">Aesthetics:</strong> Is the visual language consistent, appropriate, and clear?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What will you borrow, improve, or avoid?</strong> For each decision, name the quality it connects to.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your evaluation should connect to your own design. "This product fails WCAG AA contrast on its primary button — my design will use a 5:1 ratio minimum to ensure visibility for low-vision users" is analysis. "The colours are hard to see" is observation.</span>
+            </div>
+            <div class="response-hint">write your evaluation with annotated screenshots in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ex2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex2')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Design pattern library</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">UI design patterns are reusable solutions to common interaction problems — navigation menus, form validation, modal dialogs, progress indicators, card layouts. Collecting them before you design prevents you from reinventing what already works.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Identify 4–6 design patterns</strong> your product will use. For each: name it, show an example from an existing product, and explain why it suits your context.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Note any patterns you considered but rejected.</strong> What made them unsuitable for your audience or platform?</span></li>
+            </ul>
+            <div class="response-hint">include screenshots and annotations in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: USER RESEARCH ══ -->
+      <div class="panel" id="panel-rp-user-research">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">User Research</div>
+          <div class="section-subtitle">You are not the user. User research replaces your assumptions with evidence. Even a small amount of real user data — three people thinking aloud while using a product — is more valuable than a designer's best guess.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-ur1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ur1')">
+            <div class="prompt-card-title"><span class="card-icon">🗣️</span> User interviews or observations</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Talk to or observe at least two potential users.</strong> Ask them about their current experience with the product or problem space — not about your proposed solution. Summarise what you heard.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What did your users say that surprised you?</strong> What assumptions did you have that turned out to be wrong?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What are the top 3 user needs your research revealed?</strong> State each one as a need, not a feature. (e.g. "Users need to find their most recent entry without scrolling" — not "add a search bar.")</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: user research that changes your design is stronger evidence than research that confirms what you already planned. If your research didn't change anything, it either wasn't deep enough or you're not being honest about what it found.</span>
+            </div>
+            <div class="response-hint">write your research findings in your notebook document — include quotes or observation notes</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ur2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ur2')">
+            <div class="prompt-card-title"><span class="card-icon">🗺️</span> User journey map</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Map the user journey</strong> for your product's core task — from first arrival to task completion. Show every step, decision point, and what the user feels at each stage.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Mark the pain points</strong> — moments where users are most likely to feel confused, frustrated, or lost. These are your highest-priority design problems.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include error paths.</strong> What happens when the user does something unexpected? Does the journey still recover gracefully?</span></li>
+            </ul>
+            <div class="response-hint">include your user journey map as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ur3">
+          <div class="prompt-card-header" onclick="toggleCard('card-ur3')">
+            <div class="prompt-card-title"><span class="card-icon">👤</span> Persona</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a user persona</strong> based on your research — not a fictional character, but a composite of real patterns you observed. Include: role/context, goals, frustrations, technical confidence, and accessibility needs.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>When you face a design decision,</strong> ask: "What would this persona do here?" Use this persona as a design test throughout your project — reference it in your design rationale.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: a persona is a tool, not a decoration. If it never appears again after you create it, it wasn't useful. Show that your persona shaped specific design decisions — "I chose a large tap target here because my persona uses a phone one-handed on the bus" is how a persona earns its place.</span>
+            </div>
+            <div class="response-hint">include your persona as a styled document or image in your notebook</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: DESIGN ══ -->
+      <div class="panel" id="panel-rp-design">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Design &amp; Prototyping</div>
+          <div class="section-subtitle">Designing is iterative. Your first sketch is a hypothesis. Your prototype tests it. Every iteration should be justified against the four design qualities — and the reason you moved from one version to the next should be explicit.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-des1">
+          <div class="prompt-card-header" onclick="toggleCard('card-des1')">
+            <div class="prompt-card-title"><span class="card-icon">✏️</span> Wireframes — low fidelity</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Draw low-fidelity wireframes</strong> for every screen or view in your product. These are boxes and labels — no colour, no final fonts. Include them as images in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Create at least two alternative layouts</strong> for your most important screen. Annotate the trade-offs: which arrangement better supports usability? Which better supports your aesthetic goals?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Annotate every element</strong> — what it does, what the user does with it, and which design quality it primarily serves.</span></li>
+            </ul>
+            <div class="response-hint">include annotated wireframes as images in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-des2">
+          <div class="prompt-card-header" onclick="toggleCard('card-des2')">
+            <div class="prompt-card-title"><span class="card-icon">🎨</span> Visual design system</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Define your colour palette</strong> — name each colour, give its hex value, describe its role (background, primary action, error state, text). Check every text/background combination for WCAG AA compliance (4.5:1 for body text, 3:1 for large text).</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Choose your typography.</strong> Name your typeface(s), define size and weight for each text role (heading, body, label, caption), and justify why these choices suit your audience and platform.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Define your spacing and layout rules.</strong> What is your base spacing unit? How does the layout adapt to different screen sizes?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Create a style tile or design reference sheet</strong> showing your colour, type, and key UI element styles together. Include it in your notebook document.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: a visual design system that demonstrates creativity and innovation doesn't mean unusual for its own sake. It means every choice — colour, type, spacing — is deliberate, consistent, and justified in terms of your audience and purpose. Randomness is not creativity.</span>
+            </div>
+            <div class="response-hint">include your style tile in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-des3">
+          <div class="prompt-card-header" onclick="toggleCard('card-des3')">
+            <div class="prompt-card-title"><span class="card-icon">🖥️</span> High-fidelity prototype</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Produce a high-fidelity prototype</strong> — either a clickable mockup (using a design tool) or a working implementation of your core screens. Include screenshots or a link in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>For each screen, write a design rationale note</strong> — 2–4 sentences explaining the key choices and which design quality each decision serves. This is the evidence your evaluation will reference.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Compare your prototype to your wireframes.</strong> What changed and why? Were changes driven by user feedback, technical constraints, or a better idea?</span></li>
+            </ul>
+            <div class="seqta-note"><span>📚</span><span>Check <strong>SEQTA</strong> for prototyping tool guides and design system resources.</span></div>
+            <div class="response-hint">include screenshots and design rationale notes in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-des4">
+          <div class="prompt-card-header" onclick="toggleCard('card-des4')">
+            <div class="prompt-card-title"><span class="card-icon">♿</span> Accessibility audit</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Run an accessibility audit on your prototype.</strong> Check: colour contrast ratios for all text, keyboard navigability (can you tab through the interface?), meaningful alt text for all images, appropriate heading hierarchy, sufficient touch target sizes.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What did you find?</strong> List every accessibility issue discovered, note its severity (critical / major / minor), and describe the fix you applied.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What accessibility issues remain</strong> after your fixes? Are they acceptable given your scope, or do they need to be addressed before the product is considered complete?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: an accessibility audit that finds nothing is suspicious. Real products almost always have accessibility issues at first. Finding them and fixing them — with documented evidence — is stronger than claiming your design is already accessible.</span>
+            </div>
+            <div class="response-hint">write your accessibility audit findings and fixes in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: PLAN ══ -->
+      <div class="panel" id="panel-rp-plan">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Project Plan</div>
+          <div class="section-subtitle">UX projects are non-linear — you iterate between design and testing, and findings from one stage often send you back to revise an earlier one. Your plan should reflect this, not pretend the process is a straight line.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-plan1">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan1')">
+            <div class="prompt-card-title"><span class="card-icon">📅</span> Sprint breakdown</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Break your project into 3–5 sprints.</strong> A typical UX sequence: (1) User research + problem definition, (2) Wireframes + visual design system, (3) High-fidelity prototype, (4) Usability testing + iteration, (5) Final product + evaluation.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What is the exit condition for each sprint?</strong> Name something concrete — a completed wireframe set, a style tile, a prototype with 3 tested screens.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Where have you built in iteration time?</strong> Design without testing is guessing. Show where in your plan you have space to revise based on what testing reveals.</span></li>
+            </ul>
+            <div class="response-hint">include your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-plan2">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan2')">
+            <div class="prompt-card-title"><span class="card-icon">🛠️</span> Tools &amp; assets</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Name your design and build tools.</strong> (Wireframing, prototyping, image editing, coding, video editing.) For each, note why it suits your platform and your skill level.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>List the assets you need to source.</strong> For each: the type (image, icon, font, sound), the source, and the licence that allows you to use it.</span></li>
+            </ul>
+            <div class="seqta-note"><span>📚</span><span>Check <strong>SEQTA</strong> for tool guides and links to free, licensed asset libraries approved for this course.</span></div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: TUTORIALS (Y9) ══ -->
+      <div class="panel" id="panel-pi-tutorials">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Tutorials &amp; Prototyping</div>
+          <div class="section-subtitle">Year 9 Producing &amp; Implementing builds the design and technical skills you'll need to construct your product next year — and proves your proposed design is feasible and well-considered.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— complete design tutorials on SEQTA and document your learning here.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— see Build Logs and Product Documentation instead.</span></div>
+
+        <div class="prompt-card open" id="card-tut1">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut1')">
+            <div class="prompt-card-title"><span class="card-icon">🎓</span> Tutorial completion log</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field"><div class="log-field-label">Tutorial name</div><div class="log-field-prompt">As it appears on SEQTA.</div></div>
+              <div class="log-field"><div class="log-field-label">Date completed</div><div class="log-field-prompt">When did you finish it?</div></div>
+              <div class="log-field"><div class="log-field-label">Design quality addressed</div><div class="log-field-prompt">Which pillar? Functionality / Accessibility / Usability / Aesthetics?</div></div>
+              <div class="log-field"><div class="log-field-label">What I produced</div><div class="log-field-prompt">Describe the output. Include a screenshot.</div></div>
+              <div class="log-field full-width"><div class="log-field-label">How this applies to my proposed product</div><div class="log-field-prompt">Which specific screen, interaction, or design decision in your proposed product would use this skill? Connect it to one of your requirements.</div></div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connecting each tutorial to a specific requirement from your I&amp;D phase — not just "it will be useful" — demonstrates that your proposal is coherent, not a list of disconnected skills.</span>
+            </div>
+            <div class="seqta-note"><span>📚</span><span>Tutorials are on <strong>SEQTA</strong>. Prioritise those covering your weakest design quality and your chosen platform.</span></div>
+            <div class="response-hint">add a new row to your tutorial log for each tutorial completed</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut2">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut2')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Low-fidelity prototype test</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Create a paper or digital low-fidelity prototype of your core screens and put it in front of at least one real person. Even a rough paper prototype tested with one person will reveal design assumptions you didn't know you were making.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What did you prototype?</strong> Include images of your prototype in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What task did you ask your tester to complete?</strong> Record what they did and what they said.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did you discover?</strong> What will you change in your design as a result — and which design quality does each change address?</span></li>
+            </ul>
+            <div class="response-hint">write your response and include prototype images in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut3">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut3')">
+            <div class="prompt-card-title"><span class="card-icon">🔬</span> Skills gap analysis</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List the design and technical skills your proposed product requires.</strong> (e.g. colour contrast checking, responsive CSS layout, video editing, prototyping in your chosen tool, form validation, accessible HTML structure.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Rate your confidence:</strong> ✅ Can do now / 📚 Need a tutorial / ❓ Not sure how yet.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which SEQTA tutorials</strong> will close the gaps?</span></li>
+            </ul>
+            <div class="response-hint">write your skills gap table in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: PM (Y9) ══ -->
+      <div class="panel" id="panel-pi-pm">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Project Management</div>
+          <div class="section-subtitle">UX design is non-linear — plan for iteration, not just production. Your project management tools need to account for the feedback loops that are a normal and expected part of a design process.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— plan your project as if you're about to start building next term.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— use Build Logs for active project tracking.</span></div>
+
+        <div class="prompt-card open" id="card-pm-us">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-us')">
+            <div class="prompt-card-title"><span class="card-icon">🗺️</span> User story map</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write 6–10 user stories</strong> from the perspective of your primary persona. Format: <em>As a [user], I want to [do something] so that [outcome].</em></span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Group stories by activity</strong> (e.g. "arriving for the first time", "completing the main task", "recovering from an error") and arrange them in user journey order.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Draw the MVP line.</strong> What stories must be served for the product to be usable? What is a stretch?</span></li>
+            </ul>
+            <div class="response-hint">include your user story map as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-kanban">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-kanban')">
+            <div class="prompt-card-title"><span class="card-icon">📌</span> Kanban board</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Kanban board</strong> (Backlog / To Do / In Progress / Done). Include design tasks, research tasks, build tasks, and testing tasks as separate cards.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Colour-code by design quality:</strong> functionality tasks, accessibility tasks, usability tasks, and aesthetic tasks. This surfaces which qualities are getting enough attention across your workload.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a screenshot</strong> and note your tool.</span></li>
+            </ul>
+            <div class="response-hint">include a screenshot of your board in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-scrum">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-scrum')">
+            <div class="prompt-card-title"><span class="card-icon">🏃</span> Scrum sprint planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Plan three sprints.</strong> Each sprint should end with something testable — a wireframe set you can show a user, a prototype you can click through, a design system you can audit.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which sprint is your riskiest?</strong> Where could user testing send you back to redo earlier work? How much time have you allowed for that?</span></li>
+            </ul>
+            <div class="response-hint">write your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-gantt">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-gantt')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Gantt chart</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Gantt chart</strong> for the full production term. Show research, design, build, and test as distinct phases — with overlap to reflect the iterative nature of UX work.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Mark your usability testing windows</strong> as distinct blocks — testing must happen while there is still time to act on findings.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a buffer period</strong> and reflect: what would you cut first if you ran out of time?</span></li>
+            </ul>
+            <div class="response-hint">include your Gantt chart in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-compare">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-compare')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Comparing project management tools</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which tool was most useful for a UX project?</strong> Does a design project have different planning needs from a build project?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What do these tools miss</strong> for a design process — where the main risk is not "running out of time to build" but "building the wrong thing"?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: BUILD LOGS (Y10) ══ -->
+      <div class="panel" id="panel-pi-build">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Build Logs</div>
+          <div class="section-subtitle">A build log for a UX project captures design decisions and the reasoning behind them — not just what you made, but why you made it that way, and what changed after testing.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— complete a build log for every working session.</span></div>
+
+        <div class="prompt-card open" id="card-build1">
+          <div class="prompt-card-header" onclick="toggleCard('card-build1')">
+            <div class="prompt-card-title"><span class="card-icon">🗂️</span> Build log — what to record each session</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field"><div class="log-field-label">Session / Sprint</div><div class="log-field-prompt">Date and sprint. What design quality are you focused on this session?</div></div>
+              <div class="log-field"><div class="log-field-label">Planned this session</div><div class="log-field-prompt">What screens, interactions, or design elements did you intend to work on?</div></div>
+              <div class="log-field"><div class="log-field-label">What I actually made</div><div class="log-field-prompt">What was completed? Name the screen, component, or design decision you worked on.</div></div>
+              <div class="log-field"><div class="log-field-label">Screenshot</div><div class="log-field-prompt">A screenshot of your work at the end of the session.</div></div>
+              <div class="log-field"><div class="log-field-label">Design decision made</div><div class="log-field-prompt">Describe one specific design choice: what you chose, what you considered instead, and which quality drove the decision.</div></div>
+              <div class="log-field"><div class="log-field-label">Feedback received / tested</div><div class="log-field-prompt">Did anything get tested this session? What did you observe or hear from users?</div></div>
+              <div class="log-field full-width"><div class="log-field-label">What's next</div><div class="log-field-prompt">What is the priority for next session? Has testing changed anything about your plan?</div></div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the design decision field is your most important evidence. "I increased the button size from 32px to 48px after my tester missed it twice on mobile — addressing the usability requirement for touch targets" documents thinking. "Made buttons bigger" does not.</span>
+            </div>
+            <div class="response-hint">add a new build log entry to your notebook document every session</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-build2">
+          <div class="prompt-card-header" onclick="toggleCard('card-build2')">
+            <div class="prompt-card-title"><span class="card-icon">🔁</span> Mid-project review</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y10">Year 10 <span class="banner-note">— complete at the midpoint of your project.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Review your four design quality requirements.</strong> Which qualities are well-evidenced in your current design? Which are weakest and need more attention?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Has your design changed significantly from your wireframes?</strong> Name the biggest change and what drove it — user feedback, a technical constraint, or a better idea?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What must you prioritise</strong> in the remaining time to meet all four design qualities at a sufficient level?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: PRODUCT DOC (Y10) ══ -->
+      <div class="panel" id="panel-pi-product">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Product Documentation</div>
+          <div class="section-subtitle">Product documentation is a record of your design decisions — the choices you made, the alternatives you considered, and the reasoning behind each one. It is your strongest evidence of design thinking.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— build this section throughout production, not all at once at the end.</span></div>
+
+        <div class="prompt-card open" id="card-prod1">
+          <div class="prompt-card-header" onclick="toggleCard('card-prod1')">
+            <div class="prompt-card-title"><span class="card-icon">📄</span> Design rationale — screen by screen</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each screen or major component,</strong> include a screenshot and write a design rationale: what key decisions were made, which quality each decision addresses, and what alternatives you rejected.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Use the four pillars as headers</strong> within each rationale: Functionality / Accessibility / Usability / Aesthetics. For each, write 1–2 sentences connecting the screen's design to the relevant requirement.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: design rationale that demonstrates creativity and innovation doesn't just describe what you chose — it explains why alternatives were inferior for <em>this specific user in this specific context</em>. Generic justifications ("I chose blue because it's calming") are D-range. User-specific justifications ("I chose a high-contrast amber on dark background because my persona uses the product at night on their phone") are A-range.</span>
+            </div>
+            <div class="response-hint">include screenshots and design rationale notes in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-prod2">
+          <div class="prompt-card-header" onclick="toggleCard('card-prod2')">
+            <div class="prompt-card-title"><span class="card-icon">🔄</span> Iteration log</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each significant design change</strong> you made during production, document: what changed, what triggered the change (user feedback / accessibility audit / testing result / better idea), and which design quality it addressed.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Include before-and-after screenshots</strong> for at least two changes. The contrast makes your iterative process visible.</span></li>
+            </ul>
+            <div class="response-hint">maintain your iteration log in your notebook document throughout production</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: TESTING ══ -->
+      <div class="panel" id="panel-te-testing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">User Testing</div>
+          <div class="section-subtitle">User testing means watching real people use your product — not asking them if they like it. The goal is to observe what they do, not hear what they say they would do.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-test1">
+          <div class="prompt-card-header" onclick="toggleCard('card-test1')">
+            <div class="prompt-card-title"><span class="card-icon">🧪</span> Usability test sessions</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Run at least two usability test sessions</strong> with real users — ideally people who match your primary persona. Give each tester a specific task to complete without your guidance.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Observe and record.</strong> Note exactly what each tester does — where they click, where they hesitate, where they express confusion. Do not explain or help during the test.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>After each session, identify:</strong> what worked well (the tester completed the task easily), what failed (the tester couldn't complete the task or needed help), and what surprised you.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most valuable user testing observation is a user doing something you didn't anticipate. "The tester clicked the logo to go home, but my logo wasn't linked — they had no way back" is stronger evidence than "the tester said they liked the colours."</span>
+            </div>
+            <div class="response-hint">write your usability test observations in your notebook document — one entry per session</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-test2">
+          <div class="prompt-card-header" onclick="toggleCard('card-test2')">
+            <div class="prompt-card-title"><span class="card-icon">📋</span> Requirements test table</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Test each requirement from your I&amp;D phase against your final product. Organise by design quality.</p>
+            <table class="test-table">
+              <thead>
+                <tr><th>Quality</th><th>Requirement</th><th>How I tested it</th><th>Result</th><th>Pass/Fail</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style="color:#06b6d4;font-weight:700">Func</span></td>
+                  <td>User can save entry in ≤ 2 taps</td>
+                  <td>Timed task with 3 users</td>
+                  <td style="color:var(--faint);font-style:italic">Avg 1.8 taps</td>
+                  <td><span class="pass">Pass</span></td>
+                  <td style="color:var(--faint)">—</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#a78bfa;font-weight:700">Acc</span></td>
+                  <td>All text ≥ 4.5:1 contrast ratio</td>
+                  <td>Colour contrast checker tool</td>
+                  <td style="color:var(--faint);font-style:italic">Caption text 3.8:1</td>
+                  <td><span class="fail">Fail</span></td>
+                  <td style="color:var(--faint);font-style:italic">Darkened caption colour to #475569</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#10b981;font-weight:700">Usa</span></td>
+                  <td>New user completes task in &lt;3 min</td>
+                  <td>Timed first-use session</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td><span class="partial">Partial</span></td>
+                  <td style="color:var(--faint);font-style:italic">Added onboarding tooltip</td>
+                </tr>
+                <tr>
+                  <td><span style="color:#f59e0b;font-weight:700">Aes</span></td>
+                  <td>Visual style consistent across all screens</td>
+                  <td>Design review against style tile</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td style="color:var(--faint)">—</td>
+                  <td style="color:var(--faint)">—</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="response-hint">copy this table into your notebook document and complete it for all requirements</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: EVALUATION ══ -->
+      <div class="panel" id="panel-te-eval">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Final Evaluation</div>
+          <div class="section-subtitle">A final evaluation of a UX project is a structured account of how your product performs against all four design qualities — with evidence from user testing, accessibility audits, and your own design decisions.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eval1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval1')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Against all four design qualities</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Evaluate your product against each of the four design qualities in turn.</strong> For each, state your judgement and cite specific evidence — a test result, an audit finding, a user quote, or a screenshot.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which quality was hardest to achieve?</strong> What made it difficult — was it a technical constraint, a skill gap, or a genuine tension between qualities (e.g. aesthetics choices that reduced accessibility)?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Were legal and ethical responsibilities met?</strong> Are all assets properly licensed? Is user data handled appropriately? Does the design avoid exclusion and dark patterns?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: evaluating all four qualities with specific evidence — not just "the design looks good" but "the contrast audit showed all text met WCAG AA, confirmed by the test table in section T&amp;E" — is what the "selects relevant data, media and processes to effectively communicate" CPD descriptor looks like in a UX project.</span>
+            </div>
+            <div class="response-hint">write your evaluation in your notebook document — use the four qualities as section headings</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eval2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval2')">
+            <div class="prompt-card-title"><span class="card-icon">🔮</span> Reflection &amp; next steps</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What would you do differently</strong> if starting again? Name a specific design decision, user research method, or accessibility choice you would change.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would version 2 include?</strong> Which requirements did you defer to stretch goals, and how would you approach them?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did you learn about the design process</strong> — not just about the tools, but about how to think about a user's experience from the outside?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CPD ══ -->
+      <div class="panel" id="panel-cpd">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--accent2)">Grade Self-Assessment</div>
+          <div class="section-title">Course Performance Descriptors</div>
+          <div class="section-subtitle">Use these to set your target and check what your notebook needs to demonstrate.</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this page</div>
+          <p>Click a grade card to select your target. For this focus area, your strongest evidence lives in your <strong>design rationale</strong>, <strong>user research</strong>, <strong>accessibility audit</strong>, and <strong>usability test results</strong>. All four design qualities — functionality, accessibility, usability, and aesthetics — must be evidenced for Grade B and above. A beautiful product with no usability evidence is not a Grade A submission.</p>
+        </div>
+
+        <!-- Quality self-check -->
+        <div class="quality-grid" style="margin-bottom:24px">
+          <div class="quality-card func"><div class="quality-label">Functionality evidence</div><div class="quality-desc">Requirements test table, working prototype, feature checklist. Can you point to each functional requirement being met?</div></div>
+          <div class="quality-card acc"><div class="quality-label">Accessibility evidence</div><div class="quality-desc">Accessibility audit with contrast ratios, keyboard test results, alt text review. Does your WCAG compliance have documented proof?</div></div>
+          <div class="quality-card usa"><div class="quality-label">Usability evidence</div><div class="quality-desc">Usability test observations, task completion data, iteration log. Did real users test it, and did you change things as a result?</div></div>
+          <div class="quality-card aes"><div class="quality-label">Aesthetics evidence</div><div class="quality-desc">Style tile, design rationale notes, before/after screenshots. Are your visual choices justified for your audience and purpose?</div></div>
+        </div>
+
+        <div class="cpd-full-grid">
+          <div class="cpd-full-card" data-grade="E" onclick="selectCPDCard('E')">
+            <div class="cpd-grade-letter">E</div>
+            <ul class="cpd-descriptor-list">
+              <li>Identifies innovations in computing technology</li>
+              <li>Identifies processes that may produce a solution</li>
+              <li>Works safely with data</li>
+              <li>Follows algorithms and/or partially implements them</li>
+              <li>Identifies elements of UI that contribute to user experiences</li>
+              <li>Uses data to communicate in a very limited way</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="D" onclick="selectCPDCard('D')">
+            <div class="cpd-grade-letter">D</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a basic understanding of enterprise and innovation</li>
+              <li>Uses processes to produce computing solutions</li>
+              <li>Develops basic solutions using computational or design or systems thinking</li>
+              <li>Uses data safely and responsibly</li>
+              <li>Develops basic algorithms and/or implements them</li>
+              <li>Implements basic elements of UI design to support user experiences</li>
+              <li>Uses data to communicate basic information</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="C" onclick="selectCPDCard('C')">
+            <div class="cpd-grade-letter">C</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a sound understanding of enterprise, innovation and automation</li>
+              <li>Applies iterative processes to produce computing solutions</li>
+              <li>Develops sound solutions using computational, design and systems thinking</li>
+              <li>Applies safe, secure and ethical practices</li>
+              <li>Develops common algorithms and implements them</li>
+              <li>Designs and implements UI to create user experiences</li>
+              <li>Selects appropriate data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="B" onclick="selectCPDCard('B')">
+            <div class="cpd-grade-letter">B</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a thorough understanding of enterprise, innovation and automation</li>
+              <li>Applies appropriate iterative processes</li>
+              <li>Develops effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Develops, tests and implements functional algorithms</li>
+              <li>Demonstrates creativity in the design and implementation of UI to create engaging user experiences</li>
+              <li>Selects relevant data, media and processes to communicate appropriate information</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="A" onclick="selectCPDCard('A')">
+            <div class="cpd-grade-letter">A</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates an extensive understanding of enterprise, innovation and automation</li>
+              <li>Skilfully applies appropriate iterative processes</li>
+              <li>Develops highly effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Skilfully develops, tests and implements technically concise algorithms</li>
+              <li>Demonstrates creativity and innovation in the design and implementation of UI to create engaging user experiences</li>
+              <li>Selects relevant data, media and processes to effectively communicate information</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="prompt-card open" id="card-cpd-check">
+          <div class="prompt-card-header" onclick="toggleCard('card-cpd-check')">
+            <div class="prompt-card-title"><span class="card-icon">✅</span> What does your notebook need to show?</div>
+            <div class="prompt-card-meta">
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each descriptor at your target grade,</strong> identify where in your notebook the evidence sits. Note anything thin or missing.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Check the verb.</strong> Grade E: <em>identifies.</em> Grade C: <em>designs and implements.</em> Grade A: <em>demonstrates creativity and innovation.</em> The CPD verb for this focus area is the most specific in the set — it's specifically about UI design and user experience. Does your evidence match?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>All four design qualities must be evidenced</strong> for Grade B and above. Check the quality self-check grid above — which is your weakest, and what can you still add?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Legal and ethical responsibilities</strong> (copyright, privacy, inclusive design) are specifically assessed here. Where is your evidence for each?</span></li>
+              <li><span class="prompt-num">05</span><span class="prompt-text"><strong>Creativity and innovation</strong> at Grade A means your design decisions are yours — specific, justified, and appropriate for your user — not default choices for a generic product. Does your design rationale make clear why <em>these</em> choices for <em>this</em> user?</span></li>
+            </ul>
+            <div class="response-hint">complete this reflection at the end of the project</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentYear = 9;
+  const CPD_COLORS = { E:'#64748b', D:'#f59e0b', C:'#10b981', B:'#06b6d4', A:'#0d9488' };
+  const CPD_LABELS = {
+    E: 'Identifies elements of UI that contribute to user experiences.',
+    D: 'Implements basic elements of UI design to support user experiences.',
+    C: 'Designs and implements UI to create user experiences.',
+    B: 'Demonstrates creativity in the design and implementation of UI to create engaging user experiences.',
+    A: 'Demonstrates creativity and innovation in the design and implementation of UI to create engaging user experiences.'
+  };
+  const PANEL_META = {
+    intro:              { phase: 'Overview',                 col: '#0d9488' },
+    'id-problem':       { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-requirements':  { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-ethics':        { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'rp-existing':      { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-user-research': { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-design':        { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-plan':          { phase: 'Researching & Planning',   col: '#0d9488' },
+    'pi-tutorials':     { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-pm':            { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-build':         { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-product':       { phase: 'Producing & Implementing', col: '#10b981' },
+    'te-testing':       { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    'te-eval':          { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    cpd:                { phase: 'Grade Self-Assessment',    col: '#0d9488' },
+  };
+  const PANEL_NAMES = {
+    intro: 'Project Notebook',
+    'id-problem': 'Problem & Audience',
+    'id-requirements': 'Requirements & Success Criteria',
+    'id-ethics': 'Legal, Ethical & Social',
+    'rp-existing': 'Existing Product Analysis',
+    'rp-user-research': 'User Research',
+    'rp-design': 'Design & Prototyping',
+    'rp-plan': 'Project Plan',
+    'pi-tutorials': 'Tutorials & Prototyping',
+    'pi-pm': 'Project Management',
+    'pi-build': 'Build Logs',
+    'pi-product': 'Product Documentation',
+    'te-testing': 'User Testing',
+    'te-eval': 'Final Evaluation',
+    cpd: 'Grade Self-Assessment'
+  };
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) panel.classList.add('active');
+    const nav = document.querySelector(`.nav-item[data-panel="${id}"]`);
+    if (nav) nav.classList.add('active');
+    const meta = PANEL_META[id] || { phase: '', col: '#0d9488' };
+    const pill = document.getElementById('topbar-phase-pill');
+    pill.textContent = meta.phase;
+    pill.style.background = meta.col + '22';
+    pill.style.color = meta.col;
+    document.getElementById('topbar-section-name').textContent = PANEL_NAMES[id] || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setYear(year) {
+    currentYear = year;
+    document.getElementById('btn-y9').className  = 'year-btn' + (year === 9  ? ' active-y9'  : '');
+    document.getElementById('btn-y10').className = 'year-btn' + (year === 10 ? ' active-y10' : '');
+    document.querySelectorAll('.year-banner.y9').forEach(el => { el.style.display = year === 9 ? 'flex' : 'none'; });
+    document.querySelectorAll('.year-banner.y10').forEach(el => { el.style.display = year === 10 ? 'flex' : 'none'; });
+    document.querySelectorAll('.nav-y9-only').forEach(el => { el.style.opacity = year === 9 ? '1' : '0.35'; el.style.pointerEvents = year === 9 ? 'auto' : 'none'; });
+    document.querySelectorAll('.nav-y10-only').forEach(el => { el.style.opacity = year === 10 ? '1' : '0.35'; el.style.pointerEvents = year === 10 ? 'auto' : 'none'; });
+
+    ['pi-build','pi-product'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 9) {
+        if (!p.querySelector('.y9-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y9-lock';
+          lock.style.cssText = 'background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:800;color:var(--accent2);margin-bottom:6px">Year 10 only</div><div style="font-size:13px;color:var(--muted)">This section is for students building their product in Year 10.<br>Year 9 — head to <strong>Tutorials &amp; Prototyping</strong> and <strong>Project Management</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y9-lock');
+        if (lock) lock.remove();
+      }
+    });
+    ['pi-tutorials','pi-pm'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 10) {
+        if (!p.querySelector('.y10-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y10-lock';
+          lock.style.cssText = 'background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🎨</div><div style="font-weight:800;color:#6ee7b7;margin-bottom:6px">Year 9 section</div><div style="font-size:13px;color:var(--muted)">You\'re building the real product — head to <strong>Build Logs</strong> and <strong>Product Documentation</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y10-lock');
+        if (lock) lock.remove();
+      }
+    });
+  }
+
+  function toggleCard(id) { const c = document.getElementById(id); if (c) c.classList.toggle('open'); }
+
+  function setCPD(grade) {
+    const order = ['E','D','C','B','A'];
+    const idx = order.indexOf(grade);
+    document.querySelectorAll('.cpd-bar-seg').forEach((seg, i) => { seg.classList.toggle('lit', i <= idx); });
+    const display = document.getElementById('cpd-display');
+    display.textContent = grade;
+    display.style.color = CPD_COLORS[grade];
+    document.getElementById('cpd-sidebar-desc').textContent = CPD_LABELS[grade];
+  }
+
+  function selectCPDCard(grade) {
+    document.querySelectorAll('.cpd-full-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.cpd-full-card[data-grade="${grade}"]`);
+    if (card) card.classList.add('selected');
+    setCPD(grade);
+  }
+
+  setYear(9);
+  showPanel('intro');
+</script>
+</body>
+</html>
