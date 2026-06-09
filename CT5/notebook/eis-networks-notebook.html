@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notebook — EIS: Modelling Networks &amp; Social Connections</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #13161e;
+    --surface2:  #1a1e2a;
+    --border:    #252836;
+    --border2:   #2e3347;
+
+    /* EIS strand — teal */
+    --accent:    #0d9488;
+    --accent2:   #2dd4bf;
+    --accent3:   #99f6e4;
+
+    /* D&P phase colours */
+    --id-col:   #06b6d4;
+    --rp-col:   #0d9488;
+    --pi-col:   #10b981;
+    --te-col:   #f59e0b;
+
+    /* Network concept colours */
+    --node-col:  #06b6d4;   /* cyan    — nodes / people */
+    --edge-col:  #0d9488;   /* teal    — edges / connections */
+    --path-col:  #f59e0b;   /* amber   — paths / flow */
+    --sec-col:   #f87171;   /* red     — security / vulnerability */
+
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --faint:     #475569;
+    --y9:        #06b6d4;
+    --y10:       #0d9488;
+
+    --font-body: 'Nunito', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius:    10px;
+    --sidebar-w: 230px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .ct-mark { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+  .sidebar-logo .unit-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .sidebar-logo .unit-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; margin-top: 3px; }
+
+  .year-toggle { display: flex; margin: 14px 14px 0; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; }
+  .year-btn { flex: 1; padding: 6px 0; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.18s; background: transparent; color: var(--muted); letter-spacing: 0.04em; }
+  .year-btn.active-y9  { background: var(--y9);  color: #0b0d12; }
+  .year-btn.active-y10 { background: var(--y10); color: #fff; }
+
+  .nav-section { margin-top: 16px; }
+  .nav-phase-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 0 16px 6px; display: flex; align-items: center; gap: 7px; }
+  .nav-phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; font-size: 13px; font-weight: 600; color: var(--muted); border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); border-left-color: var(--phase-col, var(--accent)); background: rgba(13,148,136,0.08); }
+  .nav-item .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--phase-col, var(--faint)); flex-shrink: 0; transition: opacity 0.2s; }
+  .nav-item:not(.active) .nav-dot { opacity: 0.35; }
+  .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.05em; margin-left: auto; }
+  .badge-y9   { background: rgba(6,182,212,0.18);  color: var(--y9); }
+  .badge-y10  { background: rgba(13,148,136,0.18); color: var(--accent2); }
+  .badge-both { background: rgba(13,148,136,0.1);  color: var(--accent3); }
+
+  .sidebar-cpd { margin: auto 14px 14px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); }
+  .sidebar-cpd .cpd-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .cpd-bar-track { display: flex; gap: 3px; margin-bottom: 8px; }
+  .cpd-bar-seg { flex: 1; height: 6px; border-radius: 3px; background: var(--border2); cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .cpd-bar-seg:hover { transform: scaleY(1.4); }
+  .cpd-bar-seg[data-grade="E"].lit { background: #64748b; }
+  .cpd-bar-seg[data-grade="D"].lit { background: #f59e0b; }
+  .cpd-bar-seg[data-grade="C"].lit { background: #10b981; }
+  .cpd-bar-seg[data-grade="B"].lit { background: #06b6d4; }
+  .cpd-bar-seg[data-grade="A"].lit { background: #0d9488; }
+  .cpd-grade-display { text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--muted); transition: color 0.2s; }
+  .cpd-desc { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; min-height: 42px; }
+
+  /* ── MAIN ── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .topbar-phase-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.06em; }
+  .topbar-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .outcome-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.3); color: var(--accent3); }
+
+  .content { padding: 32px 36px 60px; max-width: 860px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-header { margin-bottom: 28px; }
+  .section-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px; }
+  .section-title { font-size: 26px; font-weight: 900; line-height: 1.15; color: var(--text); margin-bottom: 8px; }
+  .section-subtitle { font-size: 14px; color: var(--muted); max-width: 640px; line-height: 1.6; }
+
+  .year-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 24px; border-left: 4px solid; }
+  .year-banner.y9  { background: rgba(6,182,212,0.08);  border-color: var(--y9);  color: var(--y9); }
+  .year-banner.y10 { background: rgba(13,148,136,0.08); border-color: var(--y10); color: var(--accent2); }
+  .year-banner .banner-note { color: var(--muted); font-weight: 600; margin-left: 4px; }
+
+  .prompt-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); margin-bottom: 18px; overflow: hidden; }
+  .prompt-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; gap: 12px; }
+  .prompt-card-header:hover { background: rgba(255,255,255,0.02); }
+  .prompt-card-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .prompt-card-title .card-icon { font-size: 16px; width: 28px; text-align: center; }
+  .prompt-card-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chevron { width: 18px; height: 18px; color: var(--faint); transition: transform 0.2s; flex-shrink: 0; }
+  .prompt-card.open .chevron { transform: rotate(180deg); }
+  .prompt-card-body { display: none; padding: 18px 18px 20px; }
+  .prompt-card.open .prompt-card-body { display: block; }
+
+  .prompts-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .prompts-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .prompt-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--faint); min-width: 22px; padding-top: 1px; }
+  .prompt-text { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .prompt-text strong { color: var(--text); font-weight: 700; }
+  .prompt-text code { font-family: var(--font-mono); font-size: 12px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--accent3); }
+
+  .cpd-lift { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.22); border-radius: 7px; margin-top: 14px; font-size: 12.5px; color: var(--accent3); line-height: 1.5; }
+  .cpd-lift-icon { flex-shrink: 0; font-size: 14px; padding-top: 1px; }
+
+  .response-hint { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 14px; font-family: var(--font-mono); }
+  .response-hint::before, .response-hint::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .seqta-note { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent); border-radius: 7px; font-size: 13px; color: var(--muted); margin-top: 18px; }
+  .seqta-note strong { color: var(--text); }
+
+  .info-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .info-box-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .info-box p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  /* Pathway card */
+  .pathway-card { background: rgba(13,148,136,0.06); border: 1px solid rgba(13,148,136,0.3); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 22px; }
+  .pathway-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pathway-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 3px 9px; border-radius: 20px; background: rgba(13,148,136,0.2); color: var(--accent2); }
+  .pathway-card-title { font-size: 14px; font-weight: 800; color: var(--accent2); }
+  .pathway-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .pathway-card p + p { margin-top: 8px; }
+
+  /* Network concept pills */
+  .concept-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; margin: 2px; }
+  .pill-node { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.3);  color: #06b6d4; }
+  .pill-edge { background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.3); color: var(--accent2); }
+  .pill-path { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+  .pill-sec  { background: rgba(248,113,113,0.12);border: 1px solid rgba(248,113,113,0.3);color: #f87171; }
+
+  /* Graph theory visual */
+  .graph-hint { background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 18px; margin-top: 14px; }
+  .graph-hint-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .graph-svg-wrap { display: flex; justify-content: center; }
+
+  /* Sprint log grid */
+  .sprint-log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .sprint-log-grid .full-width { grid-column: 1 / -1; }
+  .log-field { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; }
+  .log-field-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faint); margin-bottom: 6px; }
+  .log-field-prompt { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .code-hint { background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
+  .code-hint-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .code-hint pre { font-family: var(--font-mono); font-size: 12.5px; color: #64748b; line-height: 1.7; white-space: pre; }
+  .code-hint pre .kw  { color: var(--accent2); }
+  .code-hint pre .cm  { color: #475569; font-style: italic; }
+  .code-hint pre .str { color: #10b981; }
+  .code-hint pre .num { color: #f59e0b; }
+  .code-hint pre .sec { color: #f87171; }
+
+  /* Test table */
+  .test-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  .test-table th { text-align: left; padding: 10px 12px; background: var(--surface2); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); border-bottom: 1px solid var(--border2); }
+  .test-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .test-table tr:last-child td { border-bottom: none; }
+  .test-table .pass { color: #10b981; font-weight: 700; }
+  .test-table .fail { color: #f87171; font-weight: 700; }
+
+  /* Intro */
+  .intro-hero { padding: 40px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .intro-hero .hero-eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .intro-hero h1 { font-size: 32px; font-weight: 900; line-height: 1.1; color: var(--text); margin-bottom: 14px; }
+  .intro-hero h1 span { color: var(--accent2); }
+  .intro-hero p { font-size: 15px; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+  .phase-overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .phase-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: transform 0.15s, border-color 0.15s; border-top: 3px solid var(--phase-col); }
+  .phase-card:hover { transform: translateY(-2px); border-color: var(--phase-col); }
+  .phase-card .phase-name { font-size: 12px; font-weight: 800; color: var(--phase-col); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .phase-card .phase-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+  .year-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+  .year-info-card { padding: 16px 18px; border-radius: var(--radius); border: 1px solid; }
+  .year-info-card.y9  { background: rgba(6,182,212,0.06);  border-color: rgba(6,182,212,0.3); }
+  .year-info-card.y10 { background: rgba(13,148,136,0.06); border-color: rgba(13,148,136,0.3); }
+  .year-info-card .yic-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .y9 .yic-label  { color: var(--y9); }
+  .y10 .yic-label { color: var(--accent2); }
+  .year-info-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* CPD full */
+  .cpd-full-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+  .cpd-full-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; border-top: 3px solid var(--border2); }
+  .cpd-full-card:hover { transform: translateY(-2px); }
+  .cpd-full-card[data-grade="E"] { border-top-color: #64748b; }
+  .cpd-full-card[data-grade="D"] { border-top-color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] { border-top-color: #10b981; }
+  .cpd-full-card[data-grade="B"] { border-top-color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] { border-top-color: #0d9488; }
+  .cpd-full-card.selected { border-color: var(--accent2); background: rgba(13,148,136,0.1); }
+  .cpd-grade-letter { font-family: var(--font-mono); font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .cpd-full-card[data-grade="E"] .cpd-grade-letter { color: #64748b; }
+  .cpd-full-card[data-grade="D"] .cpd-grade-letter { color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] .cpd-grade-letter { color: #10b981; }
+  .cpd-full-card[data-grade="B"] .cpd-grade-letter { color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] .cpd-grade-letter { color: #0d9488; }
+  .cpd-descriptor-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .cpd-descriptor-list li { font-size: 11.5px; color: var(--muted); line-height: 1.4; padding-left: 10px; position: relative; }
+  .cpd-descriptor-list li::before { content: '›'; position: absolute; left: 0; color: var(--faint); }
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 200px; } .main { margin-left: 200px; }
+    .content { padding: 20px 18px 40px; }
+    .cpd-full-grid { grid-template-columns: repeat(3,1fr); }
+    .phase-overview-grid { grid-template-columns: 1fr 1fr; }
+    .sprint-log-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <span class="ct-mark">&lt;CT/&gt;</span>
+      <div class="unit-label">Year 9 / 10 · Stage 5</div>
+      <div class="unit-name">EIS: Networks &amp;<br>Social Connections<br>Project Notebook</div>
+    </div>
+
+    <div class="year-toggle">
+      <button class="year-btn active-y9" id="btn-y9" onclick="setYear(9)">Year 9</button>
+      <button class="year-btn" id="btn-y10" onclick="setYear(10)">Year 10</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item active" data-panel="intro" style="--phase-col:var(--accent)" onclick="showPanel('intro')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Overview
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--id-col)">Identifying &amp; Defining</div>
+      <div class="nav-item" data-panel="id-focus" style="--phase-col:var(--id-col)" onclick="showPanel('id-focus')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Focus &amp; Purpose
+      </div>
+      <div class="nav-item" data-panel="id-graph" style="--phase-col:var(--id-col)" onclick="showPanel('id-graph')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Graph Theory Concepts
+      </div>
+      <div class="nav-item" data-panel="id-ethics" style="--phase-col:var(--id-col)" onclick="showPanel('id-ethics')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Ethics, Privacy &amp; Diverse Perspectives
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--rp-col)">Researching &amp; Planning</div>
+      <div class="nav-item" data-panel="rp-existing" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Existing Networks Analysis
+      </div>
+      <div class="nav-item" data-panel="rp-design" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-design')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Network Design
+      </div>
+      <div class="nav-item" data-panel="rp-security" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-security')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Security &amp; Access Control
+      </div>
+      <div class="nav-item" data-panel="rp-plan" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-plan')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Project Plan
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+      <div class="nav-item nav-y9-only" data-panel="pi-tutorials" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-tutorials')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Tutorials &amp; Prototyping
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y9-only" data-panel="pi-pm" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-pm')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Project Management
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-build" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-build')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Build Logs
+        <span class="badge badge-y10">Y10</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-model" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-model')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Network Model &amp; Findings
+        <span class="badge badge-y10">Y10</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+      <div class="nav-item" data-panel="te-testing" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Testing
+      </div>
+      <div class="nav-item" data-panel="te-eval" style="--phase-col:var(--te-col)" onclick="showPanel('te-eval')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Evaluation
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" data-panel="cpd" style="--phase-col:var(--accent)" onclick="showPanel('cpd')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Grade Self-Assessment
+      </div>
+    </div>
+
+    <div class="sidebar-cpd" style="margin-top:16px">
+      <div class="cpd-label">Current target grade</div>
+      <div class="cpd-bar-track">
+        <div class="cpd-bar-seg" data-grade="E" onclick="setCPD('E')"></div>
+        <div class="cpd-bar-seg" data-grade="D" onclick="setCPD('D')"></div>
+        <div class="cpd-bar-seg" data-grade="C" onclick="setCPD('C')"></div>
+        <div class="cpd-bar-seg" data-grade="B" onclick="setCPD('B')"></div>
+        <div class="cpd-bar-seg" data-grade="A" onclick="setCPD('A')"></div>
+      </div>
+      <div class="cpd-grade-display" id="cpd-display">—</div>
+      <div class="cpd-desc" id="cpd-sidebar-desc">Click a segment above to set your target grade.</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <span id="topbar-phase-pill" class="topbar-phase-pill" style="background:rgba(13,148,136,0.15);color:var(--accent2)">Overview</span>
+        <span id="topbar-section-name" style="color:var(--muted);font-weight:600;font-size:13px">Project Notebook</span>
+      </div>
+      <div class="topbar-outcomes">
+        <span class="outcome-tag">CT5-SAF-01</span>
+        <span class="outcome-tag">CT5-COL-01</span>
+        <span class="outcome-tag">CT5-DAT-01</span>
+        <span class="outcome-tag">CT5-DAT-02</span>
+        <span class="outcome-tag">CT5-THI-01</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div class="panel active" id="panel-intro">
+        <div class="intro-hero">
+          <div class="hero-eyebrow">// EIS: Modelling Networks &amp; Social Connections · Stage 5</div>
+          <h1>Your Project<br><span>Notebook</span></h1>
+          <p>This notebook documents how you investigated, modelled, and evaluated a real-world network — whether that's a social network mapped with graph theory, or an infrastructure network designed for security and access control. Connections are everywhere; this project makes them visible and analysable.</p>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px">
+          <span class="concept-pill pill-node">⬤ Nodes / People</span>
+          <span class="concept-pill pill-edge">⬤ Edges / Connections</span>
+          <span class="concept-pill pill-path">⬤ Paths / Flow</span>
+          <span class="concept-pill pill-sec">⬤ Security / Vulnerabilities</span>
+        </div>
+
+        <div class="pathway-card">
+          <div class="pathway-card-header">
+            <span class="pathway-tag">Two pathways</span>
+            <span class="pathway-card-title">Social network OR infrastructure network — your choice</span>
+          </div>
+          <p><strong style="color:var(--accent2)">Pathway A — Social Network Modelling:</strong> Map and analyse a real social or community network using graph theory. A sociogram of your school year group, a kinship network, an online influencer network, or a collaboration network. Apply nodes, edges, degree, paths, and centrality to reveal patterns invisible to the naked eye.</p>
+          <p><strong style="color:var(--accent2)">Pathway B — Infrastructure &amp; Security Network:</strong> Design, evaluate, and secure a network for a real or scenario-based organisation. Specify access control, identify vulnerabilities, develop cybersecurity responses, and test your design against realistic threat scenarios.</p>
+          <p style="margin-top:8px">The prompts in this notebook work for both pathways. Where they differ significantly, each card is labelled. Both pathways require graph theory concepts, both require an ethical lens, and both require you to connect people to systems.</p>
+        </div>
+
+        <div class="year-info-row">
+          <div class="year-info-card y9">
+            <div class="yic-label">Year 9 — Proposal</div>
+            <p>You are designing a network model or security plan you <em>could</em> build or implement. Your notebook covers all four D&amp;P phases. In Producing &amp; Implementing, you complete relevant tutorials on SEQTA, prototype your network diagram or security model, and develop a full project management plan.</p>
+          </div>
+          <div class="year-info-card y10">
+            <div class="yic-label">Year 10 — Major Project</div>
+            <p>You are building your network model or security solution. Use build logs every session to document your decisions as your model develops. Your Network Model &amp; Findings section is where your analysis of the network lives — this is the analytical heart of the assessment.</p>
+          </div>
+        </div>
+
+        <div class="phase-overview-grid">
+          <div class="phase-card" style="--phase-col:var(--id-col)" onclick="showPanel('id-focus')">
+            <div class="phase-name">Identifying &amp; Defining</div>
+            <div class="phase-desc">Choose your pathway, define your network, and apply graph theory concepts to frame the problem.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+            <div class="phase-name">Researching &amp; Planning</div>
+            <div class="phase-desc">Analyse existing networks, design your model or security plan, and plan your build.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--pi-col)" onclick="showPanel(currentYear === 9 ? 'pi-tutorials' : 'pi-build')">
+            <div class="phase-name">Producing &amp; Implementing</div>
+            <div class="phase-desc">Build your network model, sociogram, or security design — iteratively, with documented decisions.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+            <div class="phase-name">Testing &amp; Evaluating</div>
+            <div class="phase-desc">Test your model against requirements, verify findings, and evaluate its real-world usefulness.</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this notebook</div>
+          <p>Navigate using the sidebar. Toggle between <strong>Year 9</strong> and <strong>Year 10</strong> to see your relevant sections. Both pathways follow the same structure — where prompts differ between social network and infrastructure network projects, they are labelled. Check SEQTA for tutorials, network diagramming tools, and scenario resources.</p>
+        </div>
+
+        <div class="seqta-note">
+          <span>🕸️</span>
+          <span><strong>Tutorials, network tools, and scenario resources</strong> are on <strong>SEQTA</strong>. Check your class page regularly.</span>
+        </div>
+      </div>
+
+      <!-- ══ I&D: FOCUS ══ -->
+      <div class="panel" id="panel-id-focus">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Focus &amp; Purpose</div>
+          <div class="section-subtitle">Networks are everywhere — in friendships, organisations, supply chains, and digital infrastructure. Before modelling or securing one, be precise about which network you're investigating and why it matters.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-focus1">
+          <div class="prompt-card-header" onclick="toggleCard('card-focus1')">
+            <div class="prompt-card-title"><span class="card-icon">🎯</span> Pathway choice &amp; focus</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which pathway are you following?</strong> Social Network Modelling (sociogram, graph analysis) or Infrastructure &amp; Security Network (network design, access control, cybersecurity)? State your choice and justify it — why is this the more interesting or useful direction for your project?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What specific network are you investigating?</strong> Name it precisely. Not "a social network" but "the collaboration network among Year 10 Computing Technology students" or "the school's IT infrastructure network across three buildings."</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What real-world question does your project answer?</strong> (e.g. "Who are the most influential connectors in this community and what happens if they leave?" or "What is the minimum set of access controls needed to protect student data on this network?")</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Who benefits from your project?</strong> Name the person or group who would use your model or security plan, and describe what decision or action it would support.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your focus should be specific enough that someone could check whether your network model is accurate. "Social network" is too broad. "The friendship network among 28 students in Year 10 CT, mapped using weekly interaction data" is specific and verifiable.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-focus2">
+          <div class="prompt-card-header" onclick="toggleCard('card-focus2')">
+            <div class="prompt-card-title"><span class="card-icon">🌍</span> Evolution of networks</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>How has the type of network you're studying evolved?</strong> Identify at least two key turning points — from handshake agreements and paper directories, through telephone exchanges, to modern digital social graphs or enterprise cloud networks.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What innovations in computing made your project possible?</strong> (e.g. graph databases, social media APIs, network monitoring tools, visualisation software, standardised security protocols.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How might networks of this type evolve in the next 10 years?</strong> Consider AI-driven network analysis, decentralised social networks, zero-trust security architectures, or quantum-resistant encryption.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connect the historical evolution to your own project context. "Before graph visualisation tools existed, researchers had to draw sociograms by hand — limiting them to networks of ~20 nodes. My project maps 80+ nodes, which is only feasible because of tools like..." is stronger than a generic history.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-focus3">
+          <div class="prompt-card-header" onclick="toggleCard('card-focus3')">
+            <div class="prompt-card-title"><span class="card-icon">🏗️</span> Requirements &amp; scope</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List your functional requirements</strong> — what your network model or security plan must be able to show, answer, or do. (e.g. "The sociogram must show all nodes with degree ≥ 3", "The security plan must specify access control for at least 4 user roles.")</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What is in scope and out of scope?</strong> Name what your model covers — and what it deliberately does not. (A network that tries to model everything typically models nothing well.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Write 3–5 success criteria</strong> — specific, testable statements you can check at the end. (e.g. "The model correctly identifies the three highest-degree nodes." or "A peer unfamiliar with the network can identify the most vulnerable access point from the diagram alone.")</span></li>
+            </ul>
+            <div class="response-hint">write your requirements and success criteria in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: GRAPH THEORY ══ -->
+      <div class="panel" id="panel-id-graph">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Graph Theory Concepts</div>
+          <div class="section-subtitle">Graph theory gives you a precise mathematical language for describing networks. Whether your network is social or technical, these concepts apply — and using them correctly is evidence of computational thinking.</div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <span class="concept-pill pill-node">Node / Vertex</span>
+          <span class="concept-pill pill-edge">Edge / Connection</span>
+          <span class="concept-pill pill-path">Path / Route</span>
+          <span class="concept-pill pill-node">Degree</span>
+          <span class="concept-pill pill-edge">Directed vs undirected</span>
+          <span class="concept-pill pill-path">Centrality</span>
+          <span class="concept-pill pill-sec">Vulnerability / Single point of failure</span>
+        </div>
+
+        <div class="prompt-card open" id="card-graph1">
+          <div class="prompt-card-header" onclick="toggleCard('card-graph1')">
+            <div class="prompt-card-title"><span class="card-icon">📐</span> Applying graph theory to your network</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What do nodes represent in your network?</strong> (People, devices, servers, locations, organisations?) What does it mean for a node to have a high degree in your specific context?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What do edges represent?</strong> (Friendships, messages, data flows, physical cables, access permissions?) Are your edges directed (one-way) or undirected (mutual)? Why?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Calculate or estimate the degree of at least three nodes</strong> in your network. What does each degree value tell you about that node's role?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Identify at least one path</strong> between two non-adjacent nodes. How many edges does it traverse? Is there a shorter path? What does this path represent in the real world?</span></li>
+              <li><span class="prompt-num">05</span><span class="prompt-text"><strong>Is your network connected?</strong> Can you reach every node from every other node? If not, what does the disconnected portion represent?</span></li>
+            </ul>
+            <div class="graph-hint">
+              <div class="graph-hint-label">Graph theory concepts — reference</div>
+              <svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg" width="100%" style="max-width:400px;display:block;margin:0 auto">
+                <!-- edges -->
+                <line x1="80" y1="90" x2="160" y2="50" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="80" y1="90" x2="160" y2="130" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="160" y1="50" x2="260" y2="50" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="160" y1="130" x2="260" y2="130" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="260" y1="50" x2="340" y2="90" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="260" y1="130" x2="340" y2="90" stroke="#0d9488" stroke-width="1.5" opacity="0.7"/>
+                <line x1="160" y1="50" x2="160" y2="130" stroke="#0d9488" stroke-width="1.5" opacity="0.5" stroke-dasharray="4,3"/>
+                <line x1="260" y1="50" x2="260" y2="130" stroke="#0d9488" stroke-width="1.5" opacity="0.5" stroke-dasharray="4,3"/>
+                <!-- highlighted path -->
+                <line x1="80" y1="90" x2="160" y2="50" stroke="#f59e0b" stroke-width="2.5" opacity="0.9"/>
+                <line x1="160" y1="50" x2="260" y2="50" stroke="#f59e0b" stroke-width="2.5" opacity="0.9"/>
+                <line x1="260" y1="50" x2="340" y2="90" stroke="#f59e0b" stroke-width="2.5" opacity="0.9"/>
+                <!-- nodes -->
+                <circle cx="80" cy="90" r="14" fill="#13161e" stroke="#06b6d4" stroke-width="2"/>
+                <text x="80" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#06b6d4">A</text>
+                <circle cx="160" cy="50" r="14" fill="#13161e" stroke="#06b6d4" stroke-width="2"/>
+                <text x="160" y="55" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#06b6d4">B</text>
+                <circle cx="160" cy="130" r="14" fill="#13161e" stroke="#06b6d4" stroke-width="2"/>
+                <text x="160" y="135" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#06b6d4">C</text>
+                <circle cx="260" cy="50" r="16" fill="#13161e" stroke="#2dd4bf" stroke-width="2.5"/>
+                <text x="260" y="55" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#2dd4bf">D</text>
+                <circle cx="260" cy="130" r="14" fill="#13161e" stroke="#06b6d4" stroke-width="2"/>
+                <text x="260" y="135" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#06b6d4">E</text>
+                <circle cx="340" cy="90" r="14" fill="#13161e" stroke="#06b6d4" stroke-width="2"/>
+                <text x="340" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" fill="#06b6d4">F</text>
+                <!-- labels -->
+                <text x="200" y="170" text-anchor="middle" font-family="Nunito,sans-serif" font-size="10" fill="#475569">D has degree 3 — highest degree node (hub). Path A→B→D→F shown in amber.</text>
+              </svg>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: don't just define the terms — apply them to your actual network. "Node D has degree 3 because it connects to B, E, and F, making it the hub of the right-hand cluster" is application. "Degree means the number of connections" is just definition.</span>
+            </div>
+            <div class="response-hint">write your graph theory analysis in your notebook document — include annotated diagrams</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-graph2">
+          <div class="prompt-card-header" onclick="toggleCard('card-graph2')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Centrality &amp; influence</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which nodes have the highest degree in your network?</strong> In a social network these are likely connectors or influencers. In an infrastructure network these may be central switches or servers. What does their high degree mean for the network's function?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What happens if the highest-degree node is removed?</strong> Does the network stay connected? Does it split into isolated clusters? This is the concept of a <em>single point of failure</em> — describe what that would mean in your real-world context.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Are there any bridge edges?</strong> An edge whose removal would disconnect the network entirely? Identify at least one and explain its real-world significance.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: the single-point-of-failure analysis connects graph theory directly to real-world consequences. "If node D (the school's main switch) fails, nodes E and F (student classrooms) lose all connectivity to the internet" is systems thinking applied to graph theory.</span>
+            </div>
+            <div class="response-hint">write your centrality analysis in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: ETHICS ══ -->
+      <div class="panel" id="panel-id-ethics">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Ethics, Privacy &amp; Diverse Perspectives</div>
+          <div class="section-subtitle">Networks connect people — and that means they carry social and ethical weight. This section is not separate from your technical work; it shapes every decision about what data you collect, whose connections you map, and how you present what you find.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eth1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth1')">
+            <div class="prompt-card-title"><span class="card-icon">👥</span> Whose network is it?</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Who are the people in your network?</strong> If you are mapping a social network, consider the diversity of the group — how are people of different cultural backgrounds, genders, ages, and abilities represented? Does your model reflect that diversity, or does it flatten it?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>The syllabus specifically asks you to consider Aboriginal and Torres Strait Islander Peoples' perspectives on networks.</strong> Kinship networks are among the oldest and most sophisticated social network structures in the world. How does this context inform how you think about connection, community, and belonging in your own network?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Do the people in your network know they are being modelled?</strong> If you collected connection data from real people, did you have their informed consent? What are your obligations to the people your nodes represent?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: engage with the ATSI perspective genuinely — not as a checkbox. "Kinship networks in Aboriginal communities encode obligations, responsibilities, and relationships across generations — a structure that modern social network theory can describe but not fully capture" is a meaningful connection.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eth2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth2')">
+            <div class="prompt-card-title"><span class="card-icon">🔐</span> Privacy, data ownership &amp; cybersecurity</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What data does your project collect about people or systems?</strong> Who owns this data? How will it be stored, protected, and eventually deleted?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What are the risks of your network model or security plan being misused?</strong> A sociogram that identifies social isolates could be used harmfully. A security audit that identifies vulnerabilities could be exploited if it fell into the wrong hands. How will you protect your work?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What cybersecurity principles apply to your network?</strong> Consider confidentiality (who can see what), integrity (can data be tampered with), and availability (what happens if the network goes down). How do these apply to your specific network context?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: security and privacy are not afterthoughts in this focus area — they are core content. Show that your ethical thinking is built into your design from the start, not added at the end.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eth3">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth3')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Social influence &amp; power in networks</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What does your network reveal about power and influence?</strong> High-degree nodes have structural power — they control information flow. Is this power evenly distributed or concentrated? What are the real-world implications?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How do social media influencers operate as high-degree nodes?</strong> What ethical and legal obligations do they have? Consider advertising disclosure, misinformation, and the responsibilities that come with a large audience.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What does it mean for a person to be isolated in your network (degree 0 or 1)?</strong> Is isolation a technical fact or a social harm? How should your findings be communicated to avoid stigmatising individuals?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: EXISTING ══ -->
+      <div class="panel" id="panel-rp-existing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Existing Networks Analysis</div>
+          <div class="section-subtitle">Real networks have been modelled and secured before. Analysing existing examples sharpens your own design decisions and gives you a baseline to compare against.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-ex1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex1')">
+            <div class="prompt-card-title"><span class="card-icon">🔍</span> Analyse a real-world network</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Find a documented example</strong> of a network similar to yours — a published sociogram, a case study of a school network infrastructure, a documented social media influencer network, or a publicly available network dataset. Include a diagram or screenshot.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Apply graph theory to what you can see.</strong> Identify visible high-degree nodes, estimate path lengths between distant nodes, and note whether the network appears sparse or dense.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What design decisions are evident?</strong> For a social network: what connection criteria were used? For an infrastructure network: what topology was chosen and why?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What will you borrow, improve, or avoid</strong> in your own model? Be specific about the decision and why you're making it.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connect your analysis directly to a decision in your own design. "This network uses a star topology centred on a single router — which is efficient but creates a single point of failure. I'll use a partial mesh instead for resilience" is the kind of reasoning that earns marks.</span>
+            </div>
+            <div class="response-hint">write your analysis and include annotated diagrams in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ex2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex2')">
+            <div class="prompt-card-title"><span class="card-icon">📡</span> Network topology comparison</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Compare at least two different network structures</strong> relevant to your project. For social networks: dense vs sparse, centralised vs distributed, directed vs undirected. For infrastructure: star, ring, mesh, bus, tree, hybrid.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>For each structure, identify:</strong> its strengths, its weaknesses, and at least one real-world example where it is used.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which structure best suits your network and why?</strong> Your choice should be justified against your specific requirements — size, resilience, cost, and use case.</span></li>
+            </ul>
+            <div class="response-hint">write your comparison in your notebook document — include diagrams</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: DESIGN ══ -->
+      <div class="panel" id="panel-rp-design">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Network Design</div>
+          <div class="section-subtitle">Design your network model before building it. For a social network this means planning your data collection and mapping approach. For an infrastructure network this means specifying topology, devices, and connections.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-des1">
+          <div class="prompt-card-header" onclick="toggleCard('card-des1')">
+            <div class="prompt-card-title"><span class="card-icon">✏️</span> Network diagram — first draft</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Draw a first-draft diagram of your network.</strong> It doesn't need to be final — it needs to show your current understanding of the nodes, edges, and overall structure. Include it as an image in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Annotate your diagram.</strong> Label each node type, explain what the edges represent, and highlight any nodes or edges with special significance (high degree, critical path, potential vulnerability).</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What assumptions have you made</strong> that you still need to verify? (e.g. "I've assumed all students interact with at least one person per week" or "I've assumed the network has a single internet gateway.")</span></li>
+            </ul>
+            <div class="response-hint">include your annotated diagram as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-des2">
+          <div class="prompt-card-header" onclick="toggleCard('card-des2')">
+            <div class="prompt-card-title"><span class="card-icon">📋</span> Data collection plan</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>How will you gather the data to build your network?</strong> For a social network: survey, observation, interaction logs, or secondary data? For an infrastructure network: network audit, documentation review, device discovery tools?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What format will your raw data take?</strong> (e.g. an adjacency matrix, an edge list, a node attribute table.) Sketch the structure before collecting any data.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What are the limitations of your data collection method?</strong> What connections might you miss, and how could that affect your model's accuracy?</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">Example — edge list format (social network)</div>
+              <pre><span class="cm">// Each row = one connection (undirected)</span>
+<span class="cm">// node_a,  node_b,  weight (interaction count)</span>
+<span class="str">Alice</span>,    <span class="str">Bob</span>,     <span class="num">5</span>
+<span class="str">Alice</span>,    <span class="str">Chen</span>,    <span class="num">3</span>
+<span class="str">Bob</span>,      <span class="str">Priya</span>,   <span class="num">8</span>
+<span class="str">Chen</span>,     <span class="str">Priya</span>,   <span class="num">2</span>
+
+<span class="cm">// Alice degree = 2, Bob degree = 2,</span>
+<span class="cm">// Priya degree = 2, Chen degree = 2</span></pre>
+            </div>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for network diagramming tools, adjacency matrix templates, and data collection guides.</span>
+            </div>
+            <div class="response-hint">write your data collection plan in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: SECURITY ══ -->
+      <div class="panel" id="panel-rp-security">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Security &amp; Access Control</div>
+          <div class="section-subtitle">Every network — social or technical — has security considerations. This section goes deeper for infrastructure network projects, but social network students should not skip it: the data about connections is itself sensitive.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-sec1">
+          <div class="prompt-card-header" onclick="toggleCard('card-sec1')">
+            <div class="prompt-card-title"><span class="card-icon">🛡️</span> Threat identification</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What are the threats to your network?</strong> For infrastructure networks: unauthorised access, data interception, denial of service, malware. For social networks: data harvesting, impersonation, manipulation of influence, exposure of private connections.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which nodes or edges are most vulnerable?</strong> Use your graph theory analysis — high-degree nodes and bridge edges are often the highest-value targets for both attackers and malicious actors.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>For each threat, rate its likelihood and impact.</strong> Which threats are your design must address, and which are acceptable risks given your scope?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connect your threat analysis directly to your graph theory findings. "Node D has degree 3, making it the hub of the network — a DDoS attack on this node would isolate clusters E and F entirely" shows integrated systems thinking.</span>
+            </div>
+            <div class="response-hint">write your threat analysis in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-sec2">
+          <div class="prompt-card-header" onclick="toggleCard('card-sec2')">
+            <div class="prompt-card-title"><span class="card-icon">🔑</span> Access control design</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Who needs access to what in your network?</strong> Define at least three user roles and describe what each role can see, do, and modify. (e.g. Student, Teacher, Administrator for a school network; Follower, Collaborator, Owner for a social network model.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Apply the principle of least privilege.</strong> Each user should only have access to what they actually need — no more. Review your role list and check whether any role has broader access than necessary.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How is identity verified in your network?</strong> What authentication method is appropriate for each user role? (Password, multi-factor, certificate-based, biometric?)</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What audit trail does your network keep?</strong> How would you know if unauthorised access occurred?</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">Example — access control matrix</div>
+              <pre><span class="cm">// Role        | Student data | Network config | Audit logs</span>
+<span class="str">Student</span>      | <span class="kw">Own only</span>      | <span class="sec">None</span>           | <span class="sec">None</span>
+<span class="str">Teacher</span>      | <span class="kw">Class only</span>    | <span class="sec">None</span>           | <span class="sec">None</span>
+<span class="str">IT Admin</span>     | <span class="sec">None</span>          | <span class="kw">Full</span>           | <span class="kw">Full</span>
+<span class="str">Principal</span>    | <span class="kw">Aggregate</span>     | <span class="sec">None</span>           | <span class="kw">Read only</span>
+
+<span class="cm">// Each role has the minimum access needed</span></pre>
+            </div>
+            <div class="response-hint">write your access control design in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-sec3">
+          <div class="prompt-card-header" onclick="toggleCard('card-sec3')">
+            <div class="prompt-card-title"><span class="card-icon">🚨</span> Vulnerability analysis &amp; mitigation</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Identify at least three vulnerabilities in your network design.</strong> For each: describe the vulnerability, who could exploit it and how, and what the consequence would be.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Propose a mitigation for each vulnerability.</strong> Is it a technical control (encryption, firewall, MFA), an organisational control (policy, training, audit), or a physical control (locked server room, cable management)?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>After applying your mitigations, are there residual risks?</strong> No network is perfectly secure — what risks remain and are they acceptable given the context?</span></li>
+            </ul>
+            <div class="response-hint">write your vulnerability analysis and mitigations in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: PLAN ══ -->
+      <div class="panel" id="panel-rp-plan">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Project Plan</div>
+          <div class="section-subtitle">Network projects have a clear dependency chain — you can't analyse a network before you've collected its data, and you can't test a security design before it's been specified. Plan accordingly.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-plan1">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan1')">
+            <div class="prompt-card-title"><span class="card-icon">📅</span> Sprint breakdown</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Break your project into 3–5 sprints.</strong> A typical sequence: (1) Data collection + initial diagram, (2) Graph theory analysis, (3) Security/ethical analysis, (4) Refinement + visualisation, (5) Testing + evaluation.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What is the exit condition for each sprint?</strong> Each sprint should end with something concrete — a completed edge list, an annotated diagram, a draft access control matrix.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What is your most time-sensitive dependency?</strong> For social networks: data collection must happen early. For infrastructure networks: the network audit must be completed before you can design security controls.</span></li>
+            </ul>
+            <div class="response-hint">include your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-plan2">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan2')">
+            <div class="prompt-card-title"><span class="card-icon">🛠️</span> Tools &amp; resources</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What tools will you use to model and visualise your network?</strong> (e.g. a specialist graph tool, spreadsheet with adjacency matrix, network diagramming software, or hand-drawn and photographed.) Justify your choice.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How will you back up your work?</strong> Network models can be rebuilt from data — so backing up your raw edge list or node table is as important as backing up your diagram file.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for network diagramming tool guides and scenario resources for your pathway.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: TUTORIALS (Y9) ══ -->
+      <div class="panel" id="panel-pi-tutorials">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Tutorials &amp; Prototyping</div>
+          <div class="section-subtitle">Year 9 Producing &amp; Implementing builds the skills you'll need to construct your network model or security plan next year, and proves your proposed design is feasible.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— complete tutorials on SEQTA and document your learning here.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— see Build Logs and Network Model &amp; Findings instead.</span></div>
+
+        <div class="prompt-card open" id="card-tut1">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut1')">
+            <div class="prompt-card-title"><span class="card-icon">🎓</span> Tutorial completion log</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field"><div class="log-field-label">Tutorial name</div><div class="log-field-prompt">As it appears on SEQTA.</div></div>
+              <div class="log-field"><div class="log-field-label">Date completed</div><div class="log-field-prompt">When did you finish it?</div></div>
+              <div class="log-field"><div class="log-field-label">Concept or skill covered</div><div class="log-field-prompt">Graph theory? Network diagramming? Security concepts? Access control? Sociogram tools?</div></div>
+              <div class="log-field"><div class="log-field-label">What I produced</div><div class="log-field-prompt">Describe the output. Include a screenshot or image.</div></div>
+              <div class="log-field full-width"><div class="log-field-label">How this applies to my proposed project</div><div class="log-field-prompt">Which specific part of your proposed network model or security plan would use this skill? Name the node type, the security control, or the analysis step.</div></div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the "how this applies" field is what elevates a tutorial log from a completion record to thinking evidence. "This tutorial taught me how to calculate node degree — I'll use this to identify the most influential students in my sociogram" is application.</span>
+            </div>
+            <div class="seqta-note"><span>📚</span><span>Tutorials are on <strong>SEQTA</strong>. Prioritise the ones covering the graph concepts and tools your proposed project needs most.</span></div>
+            <div class="response-hint">add a new row to your tutorial log for each tutorial completed</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut2">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut2')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Prototype network</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Build a small prototype of your network using a sample dataset — even 8–12 nodes is enough to prove your approach works and reveal any design problems before you commit to the full build.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which part of your network did you prototype?</strong> Explain why you chose this sample — is it representative of the full network's structure?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Apply at least two graph theory concepts</strong> to your prototype — calculate degrees, identify a path, or spot a potential vulnerability. Include screenshots or images.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did building this reveal about your design?</strong> Was it harder or easier than expected? What would you change in your full-scale plan?</span></li>
+            </ul>
+            <div class="response-hint">write your response and include images in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut3">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut3')">
+            <div class="prompt-card-title"><span class="card-icon">🔬</span> Skills gap analysis</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List the skills your proposed project requires.</strong> (e.g. constructing an adjacency matrix, calculating degree centrality, drawing a network diagram in software, specifying firewall rules, writing an access control matrix.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Rate your confidence:</strong> ✅ Can do now / 📚 Need a tutorial / ❓ Not sure how yet.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which SEQTA tutorials</strong> will close the gaps?</span></li>
+            </ul>
+            <div class="response-hint">write your skills gap table in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: PM (Y9) ══ -->
+      <div class="panel" id="panel-pi-pm">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Project Management</div>
+          <div class="section-subtitle">Network projects have a clear build sequence — plan it carefully before you start collecting data or drawing diagrams.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— plan your project as if you're about to start building next term.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— use Build Logs for active project tracking.</span></div>
+
+        <div class="prompt-card open" id="card-pm-us">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-us')">
+            <div class="prompt-card-title"><span class="card-icon">🗺️</span> User story map</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write 6–10 user stories</strong> from the perspective of people who will use or be affected by your network model or security plan. Format: <em>As a [user], I want [the system/model to do something] so that [outcome].</em></span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Group stories by activity</strong> (e.g. "data collection", "graph analysis", "security review", "communicating findings") and arrange them left to right in the order they occur.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Draw the MVP line.</strong> What is the minimum set of stories that produces a useful, shareable model or plan?</span></li>
+            </ul>
+            <div class="response-hint">include your user story map as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-kanban">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-kanban')">
+            <div class="prompt-card-title"><span class="card-icon">📌</span> Kanban board</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Kanban board</strong> (Backlog / To Do / In Progress / Done). Break your user stories into specific tasks — one per card.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Colour-code by type:</strong> data collection, graph analysis, security planning, visualisation, ethics/reflection. Network projects involve parallel workstreams that need to stay visible.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a screenshot</strong> and note the tool you used.</span></li>
+            </ul>
+            <div class="response-hint">include a screenshot of your board in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-scrum">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-scrum')">
+            <div class="prompt-card-title"><span class="card-icon">🏃</span> Scrum sprint planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Plan three sprints.</strong> For each, write the sprint goal (what the network model or security plan should show at the end of this sprint), the committed tasks, and the definition of done.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would you demonstrate in a sprint review?</strong> For this project, that's likely a draft network diagram, a completed analysis table, or a tested security scenario.</span></li>
+            </ul>
+            <div class="response-hint">write your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-gantt">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-gantt')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Gantt chart</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Gantt chart</strong> for the full production term. Mark data collection as a distinct block — it must close before analysis can begin.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Show dependencies</strong> — graph analysis depends on complete data; security testing depends on a finalised design.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a buffer period</strong> and reflect: what is the riskiest bottleneck in your plan?</span></li>
+            </ul>
+            <div class="response-hint">include your Gantt chart in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-compare">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-compare')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Comparing project management tools</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which tool was most useful for planning this type of project?</strong> Does your answer differ from what would suit a build project?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What do these tools miss</strong> for a network investigation — where the main risk is not missing a deadline but missing a connection in your data?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: BUILD LOGS (Y10) ══ -->
+      <div class="panel" id="panel-pi-build">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Build Logs</div>
+          <div class="section-subtitle">A build log for a network project captures your data collection decisions, diagram iterations, analysis choices, and security design refinements — every session, in enough detail that someone else could follow your reasoning.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— complete a build log for every working session.</span></div>
+
+        <div class="prompt-card open" id="card-build1">
+          <div class="prompt-card-header" onclick="toggleCard('card-build1')">
+            <div class="prompt-card-title"><span class="card-icon">🗂️</span> Build log — what to record each session</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field"><div class="log-field-label">Session / Sprint</div><div class="log-field-prompt">Date and sprint. What phase of the project are you in?</div></div>
+              <div class="log-field"><div class="log-field-label">Planned this session</div><div class="log-field-prompt">What did you intend to build, collect, or analyse?</div></div>
+              <div class="log-field"><div class="log-field-label">What I actually did</div><div class="log-field-prompt">What was completed? Name the specific nodes added, analysis run, security control specified, or diagram revised.</div></div>
+              <div class="log-field"><div class="log-field-label">Current node / edge count</div><div class="log-field-prompt">How many nodes and edges are in your model right now? Is it enough to draw meaningful conclusions?</div></div>
+              <div class="log-field"><div class="log-field-label">Problem or design decision</div><div class="log-field-prompt">Describe a challenge: conflicting data, a design choice you had to make, or an ethical concern that surfaced.</div></div>
+              <div class="log-field"><div class="log-field-label">How I resolved it</div><div class="log-field-prompt">What did you decide and why? What evidence or reasoning informed your choice?</div></div>
+              <div class="log-field full-width"><div class="log-field-label">What's next</div><div class="log-field-prompt">What is the priority for next session? Is your model on track to answer your research question?</div></div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most valuable build log entries document design decisions — "I had to decide whether to include indirect connections (friends of friends) in my sociogram — I chose not to because it would change the meaning of 'degree' in my analysis" is iterative thinking made visible.</span>
+            </div>
+            <div class="response-hint">add a new build log entry to your notebook document every session</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-build2">
+          <div class="prompt-card-header" onclick="toggleCard('card-build2')">
+            <div class="prompt-card-title"><span class="card-icon">🔁</span> Mid-project review</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y10">Year 10 <span class="banner-note">— complete at the midpoint of your project.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Is your dataset sufficient to answer your research question?</strong> How many nodes and edges do you have? Is the network representative of the real-world network you set out to model?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Has your design changed?</strong> Name any scope changes, redefined edge types, or revised security assumptions — and justify each change.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What must you prioritise</strong> to reach a complete, defensible model by the deadline?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: MODEL & FINDINGS (Y10) ══ -->
+      <div class="panel" id="panel-pi-model">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Network Model &amp; Findings</div>
+          <div class="section-subtitle">This section is the analytical core of your project. It documents what your completed network reveals — the structure, the patterns, the hubs, the vulnerabilities, and what they mean.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— build this section as your model develops, not all at once at the end.</span></div>
+
+        <div class="prompt-card open" id="card-model1">
+          <div class="prompt-card-header" onclick="toggleCard('card-model1')">
+            <div class="prompt-card-title"><span class="card-icon">🕸️</span> Completed network diagram</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Include your completed network diagram</strong> as a clear, labelled image. Nodes should be distinguishable (by size, colour, or shape) based on their degree or role.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Write a guided reading of your diagram.</strong> Walk the reader through what they're looking at: where are the hubs? where are the clusters? where are the isolates or weak connections?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Does your final diagram match your initial plan?</strong> Note any significant structural differences and explain what caused them.</span></li>
+            </ul>
+            <div class="response-hint">include your diagram as an image and write your analysis in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-model2">
+          <div class="prompt-card-header" onclick="toggleCard('card-model2')">
+            <div class="prompt-card-title"><span class="card-icon">🔢</span> Graph theory analysis — results</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Present your graph theory measurements.</strong> Include a table showing node degree for all or key nodes, the highest-degree node, the average degree, and at least one calculated path length.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What do these numbers mean</strong> in the context of your real-world network? Interpret each measurement — don't just report numbers.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What decisions could someone make</strong> based on your analysis? (e.g. "The school should prioritise redundancy at node D", or "Outreach efforts should target the three isolates identified in the bottom-left cluster.")</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: interpretation is what separates analysis from reporting. "Node D has degree 4" is a fact. "Node D's degree of 4 makes it the critical connector between the student cluster and the staff cluster — its removal would create two fully disconnected sub-networks" is analysis.</span>
+            </div>
+            <div class="response-hint">write your graph analysis and findings in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-model3">
+          <div class="prompt-card-header" onclick="toggleCard('card-model3')">
+            <div class="prompt-card-title"><span class="card-icon">🔐</span> Security findings</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What security vulnerabilities did your completed model reveal?</strong> For infrastructure networks: which nodes or connections represent the highest risk? For social networks: what privacy or influence risks are visible in the structure?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which of your planned mitigations were implemented?</strong> For each mitigation, describe what you did and how you verified it would work.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What residual risks remain?</strong> What would version 2 of your security plan address?</span></li>
+            </ul>
+            <div class="response-hint">write your security findings in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: TESTING ══ -->
+      <div class="panel" id="panel-te-testing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Testing</div>
+          <div class="section-subtitle">Testing a network model means checking that it accurately represents the real world and that your analysis is correct. Testing a security design means checking that it actually works against the threats you identified.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-test1">
+          <div class="prompt-card-header" onclick="toggleCard('card-test1')">
+            <div class="prompt-card-title"><span class="card-icon">🧪</span> Model accuracy test table</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <table class="test-table">
+              <thead>
+                <tr><th>Test</th><th>What I checked</th><th>Expected result</th><th>Actual result</th><th>Pass/Fail</th><th>Action taken</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Node count</td>
+                  <td>Total nodes match known network size</td>
+                  <td>28 nodes (class size)</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td><span class="pass">Pass</span></td>
+                  <td style="color:var(--faint);font-style:italic">—</td>
+                </tr>
+                <tr>
+                  <td>Degree calculation</td>
+                  <td>Manually verify degree of 3 nodes</td>
+                  <td>Matches edge list count</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td><span class="fail">Fail</span></td>
+                  <td style="color:var(--faint);font-style:italic">Found duplicate edge — removed and recalculated</td>
+                </tr>
+                <tr>
+                  <td>Security control test</td>
+                  <td>Student role cannot access admin panel</td>
+                  <td>Access denied</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td style="color:var(--faint)">—</td>
+                  <td style="color:var(--faint);font-style:italic">—</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most important tests are accuracy tests — manually verifying that your graph measurements match your raw data. A model that looks impressive but contains duplicate edges or missing nodes is misleading.</span>
+            </div>
+            <div class="response-hint">copy this table into your notebook document and complete it for all key tests</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-test2">
+          <div class="prompt-card-header" onclick="toggleCard('card-test2')">
+            <div class="prompt-card-title"><span class="card-icon">👁️</span> Peer review of model</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y9">Year 9 note <span class="banner-note">— have a classmate review your prototype model and proposal.</span></div>
+            <div class="year-banner y10">Year 10 <span class="banner-note">— present your completed model to at least one person outside your own perspective.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Show your diagram to someone unfamiliar with it.</strong> Can they identify the highest-degree nodes and explain what they represent, without your guidance?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Did they spot any errors, misrepresentations, or missing connections?</strong> What will you change as a result?</span></li>
+            </ul>
+            <div class="seqta-note"><span>📚</span><span>Check <strong>SEQTA</strong> for the peer review form template.</span></div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: EVALUATION ══ -->
+      <div class="panel" id="panel-te-eval">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Final Evaluation</div>
+          <div class="section-subtitle">A good evaluation of a network project is honest about what the model can and can't show — and connects graph theory, security, and ethical thinking into a coherent account of what you found and what it means.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eval1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval1')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Against requirements</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Return to your success criteria.</strong> For each one, state whether your model or security plan meets it — and cite specific evidence (a measurement, a test result, a diagram feature).</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How accurately does your model represent the real-world network?</strong> What are its limitations — what connections might be missing, what nodes are underrepresented?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Were privacy, security, and ethical responsibilities met?</strong> Was data collected with consent? Are findings presented in a way that protects individuals? Are vulnerabilities documented in a way that doesn't create new risks?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: the best evaluations acknowledge limitation honestly. A network model that says "this analysis is limited by self-reported connection data and may undercount weak ties" is more credible — and more analytically sophisticated — than one that claims complete accuracy.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eval2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval2')">
+            <div class="prompt-card-title"><span class="card-icon">🔮</span> Reflection &amp; next steps</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What would you do differently</strong> if starting again? Name a specific data collection decision, graph design choice, or security assumption you would change.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would version 2 include?</strong> More nodes? Weighted edges? Longitudinal data tracking how the network changes over time? Additional security layers?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did this project teach you about how networks work</strong> — not just the graph theory, but how connection shapes power, influence, vulnerability, and belonging in real communities and systems?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CPD ══ -->
+      <div class="panel" id="panel-cpd">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--accent2)">Grade Self-Assessment</div>
+          <div class="section-title">Course Performance Descriptors</div>
+          <div class="section-subtitle">Use these descriptors to set your target and check what evidence your notebook needs to demonstrate.</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this page</div>
+          <p>Click a grade card to select it as your target. For this focus area, your strongest evidence lives in your <strong>graph theory analysis</strong>, <strong>security/access control design</strong>, <strong>ethics and diverse perspectives section</strong>, and <strong>network model findings</strong>. All three strands — graph theory, security, and ethics — need to be present for Grade B and above.</p>
+        </div>
+
+        <div class="cpd-full-grid">
+          <div class="cpd-full-card" data-grade="E" onclick="selectCPDCard('E')">
+            <div class="cpd-grade-letter">E</div>
+            <ul class="cpd-descriptor-list">
+              <li>Identifies innovations in computing technology</li>
+              <li>Identifies processes that may produce a solution</li>
+              <li>Works safely with data</li>
+              <li>Follows algorithms and/or partially implements them</li>
+              <li>Identifies elements of UI that contribute to user experiences</li>
+              <li>Uses data to communicate in a very limited way</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="D" onclick="selectCPDCard('D')">
+            <div class="cpd-grade-letter">D</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a basic understanding of enterprise and innovation</li>
+              <li>Uses processes to produce computing solutions</li>
+              <li>Develops basic solutions using computational or design or systems thinking</li>
+              <li>Uses data safely and responsibly</li>
+              <li>Develops basic algorithms and/or implements them</li>
+              <li>Implements basic elements of UI design</li>
+              <li>Uses data to communicate basic information</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="C" onclick="selectCPDCard('C')">
+            <div class="cpd-grade-letter">C</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a sound understanding of enterprise, innovation and automation</li>
+              <li>Applies iterative processes to produce computing solutions</li>
+              <li>Develops sound solutions using computational, design and systems thinking</li>
+              <li>Applies safe, secure and ethical practices</li>
+              <li>Develops common algorithms and implements them</li>
+              <li>Designs and implements to create user experiences</li>
+              <li>Selects appropriate data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="B" onclick="selectCPDCard('B')">
+            <div class="cpd-grade-letter">B</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a thorough understanding of enterprise, innovation and automation</li>
+              <li>Applies appropriate iterative processes</li>
+              <li>Develops effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Develops, tests and implements functional algorithms</li>
+              <li>Demonstrates creativity in design</li>
+              <li>Selects relevant data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="A" onclick="selectCPDCard('A')">
+            <div class="cpd-grade-letter">A</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates an extensive understanding of enterprise, innovation and automation</li>
+              <li>Skilfully applies appropriate iterative processes</li>
+              <li>Develops highly effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Skilfully develops, tests and implements technically concise algorithms</li>
+              <li>Demonstrates creativity and innovation in design</li>
+              <li>Selects relevant data, media and processes to effectively communicate</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="prompt-card open" id="card-cpd-check">
+          <div class="prompt-card-header" onclick="toggleCard('card-cpd-check')">
+            <div class="prompt-card-title"><span class="card-icon">✅</span> What does your notebook need to show?</div>
+            <div class="prompt-card-meta">
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each descriptor at your target grade,</strong> identify where in your notebook the evidence sits. Note anything thin or missing.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Check the verb.</strong> Grade E: <em>identifies.</em> Grade C: <em>applies.</em> Grade A: <em>skilfully develops.</em> Does your notebook language match your target?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Graph theory, security, and ethics must all be present</strong> for Grade B and above. If any strand is missing or superficial, that is your priority to address.</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Diverse perspectives including Aboriginal and Torres Strait Islander context</strong> are a specific syllabus content point — not optional. Where does your evidence for this sit?</span></li>
+              <li><span class="prompt-num">05</span><span class="prompt-text"><strong>Ambitious models with well-documented reasoning count.</strong> A sociogram of 15 nodes with thorough graph theory analysis, genuine ethical reflection, and honest limitations acknowledged can merit high achievement.</span></li>
+            </ul>
+            <div class="response-hint">complete this reflection at the end of the project</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentYear = 9;
+  const CPD_COLORS = { E:'#64748b', D:'#f59e0b', C:'#10b981', B:'#06b6d4', A:'#0d9488' };
+  const CPD_LABELS = {
+    E: 'Identifies processes and elements — working safely with data.',
+    D: 'Uses processes — basic solutions, basic data communication.',
+    C: 'Applies iterative processes — sound solutions, applies ethical practices.',
+    B: 'Applies appropriate iterative processes — effective solutions, selects ethical practices, communicates relevant findings.',
+    A: 'Skilfully applies iterative processes — highly effective solutions, technically concise algorithms, effectively communicates insights.'
+  };
+  const PANEL_META = {
+    intro:          { phase: 'Overview',                 col: '#0d9488' },
+    'id-focus':     { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-graph':     { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-ethics':    { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'rp-existing':  { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-design':    { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-security':  { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-plan':      { phase: 'Researching & Planning',   col: '#0d9488' },
+    'pi-tutorials': { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-pm':        { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-build':     { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-model':     { phase: 'Producing & Implementing', col: '#10b981' },
+    'te-testing':   { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    'te-eval':      { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    cpd:            { phase: 'Grade Self-Assessment',    col: '#0d9488' },
+  };
+  const PANEL_NAMES = {
+    intro: 'Project Notebook',
+    'id-focus': 'Focus & Purpose',
+    'id-graph': 'Graph Theory Concepts',
+    'id-ethics': 'Ethics, Privacy & Diverse Perspectives',
+    'rp-existing': 'Existing Networks Analysis',
+    'rp-design': 'Network Design',
+    'rp-security': 'Security & Access Control',
+    'rp-plan': 'Project Plan',
+    'pi-tutorials': 'Tutorials & Prototyping',
+    'pi-pm': 'Project Management',
+    'pi-build': 'Build Logs',
+    'pi-model': 'Network Model & Findings',
+    'te-testing': 'Testing',
+    'te-eval': 'Final Evaluation',
+    cpd: 'Grade Self-Assessment'
+  };
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) panel.classList.add('active');
+    const nav = document.querySelector(`.nav-item[data-panel="${id}"]`);
+    if (nav) nav.classList.add('active');
+    const meta = PANEL_META[id] || { phase: '', col: '#0d9488' };
+    const pill = document.getElementById('topbar-phase-pill');
+    pill.textContent = meta.phase;
+    pill.style.background = meta.col + '22';
+    pill.style.color = meta.col;
+    document.getElementById('topbar-section-name').textContent = PANEL_NAMES[id] || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setYear(year) {
+    currentYear = year;
+    document.getElementById('btn-y9').className  = 'year-btn' + (year === 9  ? ' active-y9'  : '');
+    document.getElementById('btn-y10').className = 'year-btn' + (year === 10 ? ' active-y10' : '');
+    document.querySelectorAll('.year-banner.y9').forEach(el => { el.style.display = year === 9 ? 'flex' : 'none'; });
+    document.querySelectorAll('.year-banner.y10').forEach(el => { el.style.display = year === 10 ? 'flex' : 'none'; });
+    document.querySelectorAll('.nav-y9-only').forEach(el => { el.style.opacity = year === 9 ? '1' : '0.35'; el.style.pointerEvents = year === 9 ? 'auto' : 'none'; });
+    document.querySelectorAll('.nav-y10-only').forEach(el => { el.style.opacity = year === 10 ? '1' : '0.35'; el.style.pointerEvents = year === 10 ? 'auto' : 'none'; });
+
+    ['pi-build','pi-model'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 9) {
+        if (!p.querySelector('.y9-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y9-lock';
+          lock.style.cssText = 'background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:800;color:var(--accent2);margin-bottom:6px">Year 10 only</div><div style="font-size:13px;color:var(--muted)">This section is for students building their project in Year 10.<br>Year 9 — head to <strong>Tutorials &amp; Prototyping</strong> and <strong>Project Management</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y9-lock');
+        if (lock) lock.remove();
+      }
+    });
+    ['pi-tutorials','pi-pm'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 10) {
+        if (!p.querySelector('.y10-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y10-lock';
+          lock.style.cssText = 'background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🕸️</div><div style="font-weight:800;color:#6ee7b7;margin-bottom:6px">Year 9 section</div><div style="font-size:13px;color:var(--muted)">You\'re building the real thing — head to <strong>Build Logs</strong> and <strong>Network Model &amp; Findings</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y10-lock');
+        if (lock) lock.remove();
+      }
+    });
+  }
+
+  function toggleCard(id) { const card = document.getElementById(id); if (card) card.classList.toggle('open'); }
+
+  function setCPD(grade) {
+    const order = ['E','D','C','B','A'];
+    const idx = order.indexOf(grade);
+    document.querySelectorAll('.cpd-bar-seg').forEach((seg, i) => { seg.classList.toggle('lit', i <= idx); });
+    const display = document.getElementById('cpd-display');
+    display.textContent = grade;
+    display.style.color = CPD_COLORS[grade];
+    document.getElementById('cpd-sidebar-desc').textContent = CPD_LABELS[grade];
+  }
+
+  function selectCPDCard(grade) {
+    document.querySelectorAll('.cpd-full-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.cpd-full-card[data-grade="${grade}"]`);
+    if (card) card.classList.add('selected');
+    setCPD(grade);
+  }
+
+  setYear(9);
+  showPanel('intro');
+</script>
+</body>
+</html>
