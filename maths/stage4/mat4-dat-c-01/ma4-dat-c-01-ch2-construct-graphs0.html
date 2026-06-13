@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Constructing Graphs — MA4-DAT-C-01 Ch2</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4EFE9;
+    --accent: #4A7C59;
+    --accent-light: #d4e8db;
+    --slate: #3D5A80;
+    --amber: #E89C2F;
+    --forest: #4A7C59;
+    --terracotta: #C1614F;
+    --correct: #4A7C59;
+    --wrong: #C1614F;
+    --text: #1E2A35;
+    --card: #FFFFFF;
+    --radius: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; min-height: 100vh; }
+  body.font-system { font-family: system-ui, sans-serif; }
+  body.font-atkinson { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+  header { background: var(--accent); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 800; }
+  header p { font-size: 0.82rem; opacity: 0.85; }
+  .font-toggle { display: flex; gap: 6px; align-items: center; }
+  .font-toggle label { font-size: 0.78rem; color: #fff; opacity: 0.9; }
+  .font-toggle select { font-size: 0.78rem; padding: 3px 7px; border-radius: 4px; border: none; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; }
+
+  nav.tabs { display: flex; gap: 6px; padding: 16px 24px 0; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 18px; border-radius: 20px; border: none; background: #fff; color: var(--text); font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--accent-light); }
+
+  main { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  h2 { font-family: 'Nunito', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  h3 { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  p { margin-bottom: 10px; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+
+  .scenario-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 14px 18px; margin-bottom: 16px; }
+  .info-box { background: #fff8e8; border-left: 4px solid var(--amber); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+  .warn-box { background: #faeae8; border-left: 4px solid var(--terracotta); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+
+  /* Frayer */
+  .frayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-top: 12px; }
+  .flip-card { perspective: 800px; height: 210px; cursor: pointer; }
+  .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.55s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px; text-align: center; }
+  .flip-front { background: var(--accent); color: #fff; }
+  .flip-front .term { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800; }
+  .flip-front .tap-hint { font-size: 0.72rem; opacity: 0.75; margin-top: 8px; }
+  .flip-back { background: var(--bg); color: var(--text); transform: rotateY(180deg); text-align: left; align-items: flex-start; }
+  .flip-back .def { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
+  .flip-back .ex { font-size: 0.8rem; color: var(--forest); margin-bottom: 4px; }
+  .flip-back .non-ex { font-size: 0.8rem; color: var(--terracotta); }
+
+  /* Tiers */
+  .tier-btns { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tier-btn { padding: 7px 18px; border-radius: 20px; border: 2px solid var(--accent); background: #fff; color: var(--accent); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .tier-btn.active { background: var(--accent); color: #fff; }
+  .tier-panel { display: none; }
+  .tier-panel.active { display: block; }
+
+  /* Steps */
+  .step-box { border-left: 4px solid var(--accent); padding: 10px 14px; margin-bottom: 8px; background: #f4f9f6; border-radius: 0 var(--radius) var(--radius) 0; }
+  .step-box .step-label { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .step-hidden { display: none; }
+
+  .btn { display: inline-block; padding: 9px 20px; border-radius: var(--radius); border: none; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { opacity: 0.88; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+  /* MCQ */
+  .mcq-block { margin-bottom: 20px; }
+  .mcq-block .question { font-weight: 700; margin-bottom: 8px; }
+  .mcq-options { display: flex; flex-direction: column; gap: 6px; }
+  .mcq-btn { text-align: left; padding: 9px 14px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; color: var(--text); font-family: 'Nunito Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .mcq-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .mcq-btn.correct { border-color: var(--correct); background: #eaf4ee; color: var(--correct); }
+  .mcq-btn.wrong { border-color: var(--wrong); background: #faeae8; color: var(--wrong); }
+  .mcq-feedback { font-size: 0.85rem; margin-top: 6px; min-height: 20px; font-weight: 600; }
+  .mcq-feedback.correct { color: var(--correct); }
+  .mcq-feedback.wrong { color: var(--wrong); }
+
+  .type-in-block { margin-bottom: 20px; }
+  .type-in-block .question { font-weight: 700; margin-bottom: 8px; }
+  .type-in-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .type-in-row input { padding: 8px 12px; border-radius: var(--radius); border: 2px solid #ddd; font-size: 0.9rem; width: 120px; font-family: 'Nunito Sans', sans-serif; }
+  .type-in-row input:focus { outline: none; border-color: var(--accent); }
+
+  /* Error detective */
+  .error-step { padding: 10px 14px; margin-bottom: 6px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; cursor: pointer; font-size: 0.9rem; transition: border-color 0.2s, background 0.2s; text-align: left; width: 100%; }
+  .error-step:hover:not(:disabled) { border-color: var(--amber); background: #fdf6e8; }
+  .error-step.wrong-pick { border-color: var(--wrong); background: #faeae8; }
+  .error-step.correct-pick { border-color: var(--correct); background: #eaf4ee; }
+  .error-correction { margin-top: 12px; padding: 12px 16px; background: #eaf4ee; border-radius: var(--radius); border-left: 4px solid var(--correct); display: none; }
+
+  /* Newman */
+  .newman-stage { display: none; }
+  .newman-stage.active { display: block; }
+  .newman-stage.done { display: block; opacity: 0.6; }
+  .stage-header { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 6px; }
+  .scaffold { background: var(--accent-light); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; font-size: 0.88rem; }
+  .scaffold summary { cursor: pointer; font-weight: 700; font-size: 0.85rem; color: var(--accent); }
+
+  /* Journal */
+  .journal-area { width: 100%; min-height: 120px; padding: 12px; font-family: 'Nunito Sans', sans-serif; font-size: 0.95rem; border-radius: var(--radius); border: 2px solid #ddd; background: repeating-linear-gradient(transparent, transparent 31px, #ddd 31px, #ddd 32px); line-height: 32px; resize: vertical; }
+  .journal-area:focus { outline: none; border-color: var(--accent); }
+  .save-msg { font-size: 0.82rem; color: var(--forest); margin-top: 6px; min-height: 18px; }
+
+  /* Data table */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 10px 0; }
+  .data-table th { background: var(--accent); color: #fff; padding: 8px 12px; text-align: left; }
+  .data-table td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  .data-table tr:nth-child(even) td { background: #f4f9f6; }
+
+  /* Stem-leaf interactive */
+  .stem-leaf-grid { display: grid; grid-template-columns: 40px 1fr; gap: 0; border: 2px solid #ccc; border-radius: var(--radius); overflow: hidden; font-family: monospace; font-size: 1rem; }
+  .sl-stem { background: var(--accent); color: #fff; padding: 6px 10px; font-weight: 700; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); }
+  .sl-leaves { background: #fff; padding: 6px 14px; border-bottom: 1px solid #eee; }
+
+  /* Graph conventions checklist */
+  .convention-list { list-style: none; padding: 0; }
+  .convention-list li { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+  .convention-list li:last-child { border-bottom: none; }
+  .convention-list .check-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0; }
+  .check-icon.yes { background: #eaf4ee; color: var(--correct); }
+  .check-icon.req { background: #fff8e8; color: var(--amber); }
+
+  /* Canvas area */
+  .canvas-wrap { border: 2px dashed #ccc; border-radius: var(--radius); padding: 12px; background: #fafafa; margin: 12px 0; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chapter 2 — Constructing Graphs</h1>
+    <p>MA4-DAT-C-01 · MAO-WM-01 · Stage 4 Mathematics</p>
+  </div>
+  <div class="font-toggle">
+    <label for="fontSel">Font:</label>
+    <select id="fontSel" onchange="changeFont(this.value)" aria-label="Font preference">
+      <option value="default">Nunito Sans</option>
+      <option value="system">System default</option>
+      <option value="atkinson">Atkinson Hyperlegible</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true" onclick="showTab('hook')" id="tab-hook">🪝 Hook</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('explore')" id="tab-explore">🔍 Explore</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('learn')" id="tab-learn">📖 Learn</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('practise')" id="tab-practise">✏️ Practise</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('reflect')" id="tab-reflect">💭 Reflect</button>
+</nav>
+
+<main>
+
+<!-- ═══════════════ HOOK ═══════════════ -->
+<section class="tab-panel active" id="panel-hook">
+  <div class="card">
+    <h2>How Do Australians Spend Their Time?</h2>
+    <div class="scenario-box">
+      <p>Every few years, the Australian Bureau of Statistics surveys thousands of people about how they spend their time. Here are the average hours per day for a typical Australian adult:</p>
+      <table class="data-table">
+        <tr><th>Activity</th><th>Hours per day</th></tr>
+        <tr><td>Sleeping</td><td>8.0</td></tr>
+        <tr><td>Work or study</td><td>3.9</td></tr>
+        <tr><td>Screen time (leisure)</td><td>3.2</td></tr>
+        <tr><td>Household tasks</td><td>2.8</td></tr>
+        <tr><td>Physical activity</td><td>1.1</td></tr>
+        <tr><td>Other</td><td>5.0</td></tr>
+      </table>
+    </div>
+    <p>You have the raw numbers. Before we learn the rules:</p>
+    <ol>
+      <li style="margin-bottom:10px"><strong>How would you show this data so someone could understand it in 10 seconds?</strong> What would you actually draw?</li>
+      <li style="margin-bottom:10px">Does the type of data (categories with amounts) suggest any particular graph type to you?</li>
+      <li>What information would you need to include so your graph is honest and complete?</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>The challenge of this chapter</h3>
+    <p>There are <strong>seven main graph types</strong> in the NSW syllabus for Stage 4. Each has specific construction rules — titles, labels, scales, and conventions that make the graph readable and honest.</p>
+    <p>By the end of this chapter you'll be able to construct any of them correctly.</p>
+    <div style="text-align:right; margin-top:8px">
+      <button class="btn btn-accent" onclick="showTab('explore')">Start Exploring →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EXPLORE ═══════════════ -->
+<section class="tab-panel" id="panel-explore">
+  <div class="card">
+    <h2>Graph Conventions — What Makes a Graph Complete?</h2>
+    <p>Below are the conventions every graph must include. Rate your confidence with each one — have you seen it before?</p>
+    <ul class="convention-list">
+      <li><span class="check-icon yes">📌</span><span><strong>Title</strong> — tells the reader what the graph is about (who, what, when)</span></li>
+      <li><span class="check-icon yes">📌</span><span><strong>Axis labels</strong> — each axis named with what it shows and the unit (e.g. "Frequency", "Score (points)")</span></li>
+      <li><span class="check-icon yes">📌</span><span><strong>Scale</strong> — consistent spacing on axes; starts at 0 unless there's a good reason not to</span></li>
+      <li><span class="check-icon yes">📌</span><span><strong>Source</strong> — where the data came from (e.g. "Source: ABS Time Use Survey 2020")</span></li>
+      <li><span class="check-icon req">⚠️</span><span><strong>Key/legend</strong> — required when colours or patterns represent different groups</span></li>
+      <li><span class="check-icon req">⚠️</span><span><strong>Stem-and-leaf key</strong> — e.g. "3 | 7 means 37" — required for every stem-and-leaf plot</span></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Interactive: Build a Stem-and-Leaf Plot</h2>
+    <p>Dataset: Physical activity hours per week for 12 students:</p>
+    <p style="font-family:monospace; font-size:1.1rem; letter-spacing:0.05em">4, 7, 12, 8, 15, 6, 9, 11, 3, 14, 7, 10</p>
+    <p style="margin-top:10px">Click <strong>Sort the data</strong> first, then <strong>Build plot</strong> to see the stem-and-leaf constructed step by step.</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin: 12px 0">
+      <button class="btn btn-accent btn-sm" onclick="sortData()">Step 1: Sort the data</button>
+      <button class="btn btn-accent btn-sm" onclick="buildPlot()">Step 2: Build plot</button>
+      <button class="btn btn-sm" style="background:#eee;border:none;" onclick="resetPlot()">Reset</button>
+    </div>
+    <div id="sorted-display" style="font-family:monospace; font-size:1.05rem; margin-bottom:12px; min-height:24px; color:var(--accent); font-weight:700"></div>
+    <div id="sl-plot" style="display:none">
+      <div class="stem-leaf-grid">
+        <div class="sl-stem">0</div><div class="sl-leaves" id="sl-0"></div>
+        <div class="sl-stem">1</div><div class="sl-leaves" id="sl-1"></div>
+      </div>
+      <p style="margin-top:8px; font-size:0.88rem; color:var(--accent)"><strong>Key:</strong> 1 | 2 means 12 hours</p>
+    </div>
+    <div id="plot-feedback" style="margin-top:10px; font-weight:600; min-height:20px;"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ LEARN ═══════════════ -->
+<section class="tab-panel" id="panel-learn">
+  <div class="card">
+    <h2>Graph Types — Key Vocabulary</h2>
+    <p>Click each card to flip it.</p>
+    <div class="frayer-grid">
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Frequency histogram flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Frequency Histogram</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A bar graph for continuous data — bars touch, showing data grouped into equal class intervals.</p>
+            <p class="ex">✓ Use for: heights, times, test scores in ranges</p>
+            <p class="non-ex">✗ Not for: categories (use column graph instead)</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Stem-and-leaf plot flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Stem-and-Leaf Plot</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Displays individual data values using a stem (leading digit) and leaf (trailing digit). Shows shape and retains original values.</p>
+            <p class="ex">✓ Key required: "3 | 7 means 37"</p>
+            <p class="non-ex">✗ Leaves must be in ascending order</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Dot plot flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Dot Plot</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Each data value shown as a dot above a number line. Good for small datasets — shows all individual values.</p>
+            <p class="ex">✓ Use for: small discrete datasets, comparing groups</p>
+            <p class="non-ex">✗ Not practical for large datasets</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Divided bar graph flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Divided Bar Graph</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A single bar divided into sections, each proportional to its category's frequency. Shows part-to-whole relationships.</p>
+            <p class="ex">✓ Use for: comparing parts of a whole across groups</p>
+            <p class="non-ex">✗ Hard to compare non-adjacent sections</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Sector graph flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Sector Graph</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A circle divided into sectors, each proportional to its category. Angle = (frequency ÷ total) × 360°.</p>
+            <p class="ex">✓ Use for: parts of a whole (when categories sum to 100%)</p>
+            <p class="non-ex">✗ Hard to compare similar-sized sectors</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Line graph flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Line Graph</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Points plotted and connected by line segments, showing change over time or continuous progression.</p>
+            <p class="ex">✓ Use for: temperature over a week, stock prices</p>
+            <p class="non-ex">✗ Not for unordered categories</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Worked Examples</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('ch2','foundation')" id="ch2-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('ch2','core')" id="ch2-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('ch2','extension')" id="ch2-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation -->
+    <div class="tier-panel active" id="ch2-foundation">
+      <p>A class voted on their favourite sport. Results: Football – 8, Basketball – 5, Swimming – 4, Tennis – 3. Construct a column graph.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Set up axes</div>
+        <p>Horizontal axis (x): Categories — Football, Basketball, Swimming, Tennis<br>Vertical axis (y): Frequency (number of students) — scale 0 to 8, mark every 2</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-f-s2">
+        <div class="step-label">Step 2 — Draw the bars</div>
+        <p>Each bar sits above its category. Bars have equal width and gaps between them (unlike a histogram). Heights: Football = 8, Basketball = 5, Swimming = 4, Tennis = 3.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-f-s3">
+        <div class="step-label">Step 3 — Add all required conventions</div>
+        <ul>
+          <li>✓ Title: "Favourite Sports of Year 7 Students"</li>
+          <li>✓ x-axis label: "Sport"</li>
+          <li>✓ y-axis label: "Number of students"</li>
+          <li>✓ Scale: 0, 2, 4, 6, 8 (consistent intervals)</li>
+          <li>✓ Source: "Source: Year 7 class survey, 2026"</li>
+        </ul>
+      </div>
+      <div class="canvas-wrap step-hidden" id="ch2-f-s4">
+        <canvas id="col-graph" width="480" height="280" aria-label="Column graph of favourite sports"></canvas>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch2-f-btn" onclick="revealStep('ch2-f',2,4)">Show next step</button>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="ch2-core">
+      <p>Dataset — Hours of physical activity per week for 20 students:<br><span style="font-family:monospace">3, 7, 5, 12, 8, 4, 6, 9, 11, 5, 7, 8, 10, 6, 4, 9, 7, 5, 8, 6</span><br>Construct a stem-and-leaf plot. Include all conventions. Then find the median.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Sort the data</div>
+        <p>Sorted: 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10, 11, 12</p>
+        <p>Range: 3 to 12 → Stems: 0 (for values 3–9) and 1 (for values 10–12)</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-c-s2">
+        <div class="step-label">Step 2 — Build the stem-and-leaf plot</div>
+        <div class="stem-leaf-grid" style="max-width:300px">
+          <div class="sl-stem">0</div><div class="sl-leaves">3  4  4  5  5  5  6  6  6  7  7  7  8  8  8  9  9</div>
+          <div class="sl-stem">1</div><div class="sl-leaves">0  1  2</div>
+        </div>
+        <p style="margin-top:8px; font-size:0.88rem"><strong>Key:</strong> 0 | 3 means 3 hours &nbsp;|&nbsp; 1 | 0 means 10 hours</p>
+        <p style="margin-top:6px; font-size:0.88rem"><strong>Title:</strong> "Hours of Physical Activity Per Week — Year 7 Class"</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-c-s3">
+        <div class="step-label">Step 3 — Find the median</div>
+        <p>20 values → median is the mean of the 10th and 11th values</p>
+        <p>10th value = 7 &nbsp;&nbsp; 11th value = 7</p>
+        <p>Median = (7 + 7) ÷ 2 = <strong>7 hours</strong></p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch2-c-btn" onclick="revealStep('ch2-c',2,3)">Show next step</button>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="ch2-extension">
+      <p>A school council survey asks 40 students how they travel to school: Walk – 16, Bus – 12, Car – 8, Bike – 4. Construct both a <strong>divided bar graph</strong> and a <strong>sector graph</strong>. Calculate the angle for each sector.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Calculate proportions</div>
+        <p>Total = 16 + 12 + 8 + 4 = 40 students</p>
+        <p>Walk: 16/40 = 0.40 = 40% &nbsp;|&nbsp; Bus: 12/40 = 0.30 = 30%</p>
+        <p>Car: 8/40 = 0.20 = 20% &nbsp;|&nbsp; Bike: 4/40 = 0.10 = 10%</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-e-s2">
+        <div class="step-label">Step 2 — Calculate sector angles</div>
+        <p>Angle = proportion × 360°</p>
+        <p>Walk: 0.40 × 360° = <strong>144°</strong></p>
+        <p>Bus: 0.30 × 360° = <strong>108°</strong></p>
+        <p>Car: 0.20 × 360° = <strong>72°</strong></p>
+        <p>Bike: 0.10 × 360° = <strong>36°</strong></p>
+        <p>Check: 144 + 108 + 72 + 36 = 360° ✓</p>
+      </div>
+      <div class="step-box step-hidden" id="ch2-e-s3">
+        <div class="step-label">Step 3 — Divided bar graph (total length = 100 units)</div>
+        <p>Walk: 40 units | Bus: 30 units | Car: 20 units | Bike: 10 units</p>
+        <div style="display:flex; height:32px; border-radius:4px; overflow:hidden; margin:10px 0; font-size:0.8rem; font-weight:700">
+          <div style="width:40%; background:#3D5A80; color:#fff; display:flex; align-items:center; justify-content:center">Walk 40%</div>
+          <div style="width:30%; background:#4A7C59; color:#fff; display:flex; align-items:center; justify-content:center">Bus 30%</div>
+          <div style="width:20%; background:#E89C2F; color:#fff; display:flex; align-items:center; justify-content:center">Car 20%</div>
+          <div style="width:10%; background:#C1614F; color:#fff; display:flex; align-items:center; justify-content:center">Bike</div>
+        </div>
+        <p style="font-size:0.82rem">Both graphs require: Title, Source, Key/Legend. Sector graph also requires a protractor for accurate angle measurement.</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch2-e-btn" onclick="revealStep('ch2-e',2,3)">Show next step</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PRACTISE ═══════════════ -->
+<section class="tab-panel" id="panel-practise">
+  <div class="card">
+    <h2>Practise</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('prac','foundation')" id="prac-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('prac','core')" id="prac-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('prac','extension')" id="prac-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation -->
+    <div class="tier-panel active" id="prac-foundation">
+      <div class="mcq-block">
+        <p class="question">Q1. Which feature is NOT required on every graph?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A title is always required — it tells the reader what the graph shows." onclick="mcqAns(this)">A. Title</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Axis labels are always required — without them, the reader can't know what each axis represents." onclick="mcqAns(this)">B. Axis labels</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A legend/key is only required when colours or patterns represent different groups — not on every graph." onclick="mcqAns(this)">C. Legend/key</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A consistent scale is always required — without it the graph can be misleading." onclick="mcqAns(this)">D. Scale</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. In a stem-and-leaf plot of two-digit numbers, the stem represents:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The units digit is the leaf — it goes to the right of the stem." onclick="mcqAns(this)">A. The units digit</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! The stem is the leading (tens) digit — so 37 has stem 3, leaf 7." onclick="mcqAns(this)">B. The tens digit</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The stem is not the frequency — it's part of the actual data value." onclick="mcqAns(this)">C. The frequency of each group</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The stem is not the median — though you can use the plot to find the median." onclick="mcqAns(this)">D. The median value</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A frequency histogram differs from a column graph because:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both graph types use a vertical axis for frequency." onclick="mcqAns(this)">A. A histogram has no vertical axis</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! In a histogram, bars touch because data is continuous (no gaps between class intervals). Column graphs have spaces because data is categorical." onclick="mcqAns(this)">B. The bars in a histogram touch, while column graph bars have gaps</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both can display frequency — the key difference is whether bars touch." onclick="mcqAns(this)">C. A histogram cannot show frequency</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Histograms are typically used for larger datasets, not smaller ones." onclick="mcqAns(this)">D. A histogram is used for smaller datasets</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Which graph type is best for showing individual data values while also revealing the shape of the distribution?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A sector graph shows parts of a whole — it doesn't display individual values." onclick="mcqAns(this)">A. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A line graph shows change over time — not individual data values from a single dataset." onclick="mcqAns(this)">B. Line graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A divided bar graph shows proportions — individual values are not preserved." onclick="mcqAns(this)">C. Divided bar graph</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A stem-and-leaf plot preserves every individual value while also showing the shape and spread of the data." onclick="mcqAns(this)">D. Stem-and-leaf plot</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f4"></div>
+      </div>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="prac-core">
+      <div class="mcq-block">
+        <p class="question">Q1. A stem-and-leaf plot shows: 2 | 1 3 7 — what are the three data values?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The stem is 2, so combine it with each leaf: 2|1 = 21, not 1, 3, 7." onclick="mcqAns(this)">A. 1, 3, 7</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Stem 2 + leaf 1 = 21, stem 2 + leaf 3 = 23, stem 2 + leaf 7 = 27." onclick="mcqAns(this)">B. 21, 23, 27</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Check the stem — it's 2, not 20. 201 would require a three-digit stem." onclick="mcqAns(this)">C. 201, 203, 207</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The stem is the tens digit — 12, 32, 72 would need stems 1, 3, 7." onclick="mcqAns(this)">D. 12, 32, 72</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c1"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q2. A survey of 30 students shows 15 prefer swimming. What angle (in degrees) would this category occupy in a sector graph?</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-c2" placeholder="Answer °" aria-label="Sector angle answer">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-c2','180','fb-c2','Angle = (15 ÷ 30) × 360° = 0.5 × 360° = 180°')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. Which feature is specifically required on a stem-and-leaf plot but not on a column graph?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both graph types need a title." onclick="mcqAns(this)">A. Title</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both need a source citation." onclick="mcqAns(this)">B. Source</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A stem-and-leaf plot always needs a key (e.g. '3|7 means 37') because the stem-leaf notation needs decoding." onclick="mcqAns(this)">C. A key explaining the stem-leaf notation</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both need axis labels — or in the case of a stem-and-leaf, a clear heading for stems and leaves." onclick="mcqAns(this)">D. Axis labels</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. A dataset has values ranging from 41 to 78. Which stems would a stem-and-leaf plot use?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ 4 and 78 are not both stems — stems are the leading digits of each value." onclick="mcqAns(this)">A. 4 and 78</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Values from 41–49 have stem 4, 50–59 stem 5, 60–69 stem 6, 70–78 stem 7." onclick="mcqAns(this)">B. 4, 5, 6, 7</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Stems are the tens digits — 41 to 78 spans tens digits 4 through 7." onclick="mcqAns(this)">C. 41 to 78</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ You'd miss any values in the 50s and 60s — all stems in the range are needed." onclick="mcqAns(this)">D. 4 and 7 only</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c4"></div>
+      </div>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="prac-extension">
+      <div class="mcq-block">
+        <p class="question">Q1. A sector graph shows four categories. Three angles are 90°, 120°, and 80°. What is the fourth angle?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The four angles must sum to 360°. 90 + 120 + 80 + ? = 360." onclick="mcqAns(this)">A. 60°</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! 360 − (90 + 120 + 80) = 360 − 290 = 70°." onclick="mcqAns(this)">B. 70°</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Check your arithmetic: 90 + 120 + 80 = 290, not 280." onclick="mcqAns(this)">C. 80°</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ 100° would give a total of 390° — sectors must sum to exactly 360°." onclick="mcqAns(this)">D. 100°</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e1"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q2. A divided bar graph has total length 200mm. A category represents 35% of the data. How long (in mm) is its section?</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-e2" placeholder="mm" aria-label="Divided bar length answer">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-e2','70','fb-e2','0.35 × 200mm = 70mm')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A back-to-back stem-and-leaf plot compares two groups. Group A: leaves on the left, Group B: leaves on the right. In Group A, are the leaves read left-to-right or right-to-left from the stem?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ This is the tricky part — Group A's leaves extend to the left, so reading direction is reversed." onclick="mcqAns(this)">A. Left-to-right (same as Group B)</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Group A's leaves radiate outward to the left, so ascending order reads right-to-left (closest to stem is smallest)." onclick="mcqAns(this)">B. Right-to-left (ascending order from the stem outward)</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Back-to-back plots do have a defined order — leaves are always arranged in ascending order from the stem." onclick="mcqAns(this)">C. Order doesn't matter in back-to-back plots</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Descending order would make the plot harder to read and interpret." onclick="mcqAns(this)">D. Right-to-left in descending order</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4 (Multi-step). A dataset of 25 values has a minimum of 12 and maximum of 67. You build a frequency histogram with class width 10 (classes: 10–19, 20–29, …, 60–69). How many class intervals does the histogram have?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Count the classes: 10–19, 20–29, 30–39, 40–49, 50–59, 60–69. How many is that?" onclick="mcqAns(this)">A. 5</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Six classes: 10–19, 20–29, 30–39, 40–49, 50–59, 60–69. The histogram has 6 bars." onclick="mcqAns(this)">B. 6</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ You only need classes that cover the data range — 10 to 69 with width 10 gives 6 classes." onclick="mcqAns(this)">C. 7</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The number of classes depends on the range and class width, not the number of data values." onclick="mcqAns(this)">D. 25</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e4"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ REFLECT ═══════════════ -->
+<section class="tab-panel" id="panel-reflect">
+  <div class="card">
+    <h2>Error Detective 🔍</h2>
+    <p>A student constructs a stem-and-leaf plot from the dataset: 23, 31, 28, 35, 22, 19, 34, 27. Find the one error in their working.</p>
+    <div id="ed-steps">
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-1')" aria-label="Error detective step 1">
+        <strong>Step 1:</strong> Identified stems: 1, 2, 3 ✓ (values range from 19 to 35)
+      </button>
+      <div class="mcq-feedback" id="ed-fb-1" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-2')" aria-label="Error detective step 2">
+        <strong>Step 2:</strong> Leaves for stem 1: 9 ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-2" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-3')" aria-label="Error detective step 3">
+        <strong>Step 3:</strong> Leaves for stem 2: 3, 8, 2, 7 ✓ (all four values with tens digit 2 included)
+      </button>
+      <div class="mcq-feedback" id="ed-fb-3" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,true,'ed-fb-4')" aria-label="Error detective step 4">
+        <strong>Step 4:</strong> Leaves for stem 3: 1, 5, 4 — written in the order they appeared in the original data ❌?
+      </button>
+      <div class="mcq-feedback" id="ed-fb-4" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-5')" aria-label="Error detective step 5">
+        <strong>Step 5:</strong> Title and key added: "3 | 1 means 31" ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-5" style="margin-bottom:6px"></div>
+    </div>
+    <div class="error-correction" id="ed-correction">
+      <strong>✓ Correction:</strong> Leaves must always be written in <strong>ascending order</strong>, not in the order they appeared in the dataset. The correct leaves for stem 3 are: <strong>1, 4, 5</strong> (representing 31, 34, 35). This is a convention of stem-and-leaf plots — the ascending order is what allows you to read the median and identify the distribution shape.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Newman's Word Problem</h2>
+    <div class="scenario-box">
+      A Year 7 class records how many hours per week each student spends on physical activity. The results are:<br>
+      <span style="font-family:monospace; font-size:1.05rem">3, 7, 5, 12, 8, 4, 6, 9, 11, 5, 7, 8, 10, 6, 4, 9, 7, 5, 8, 6</span><br><br>
+      Construct a stem-and-leaf plot for this data. Include a title, a key, and ensure leaves are in ascending order. Then identify the median and describe the shape of the distribution in one sentence.
+    </div>
+
+    <div class="newman-stage active" id="nm-1">
+      <p class="stage-header">📖 Read — What is being asked?</p>
+      <p>Read the problem carefully. What two things are you being asked to produce?</p>
+      <button class="btn btn-accent btn-sm" onclick="nmNext(1)">I've read it — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-2">
+      <p class="stage-header">💡 Comprehend — What does the data cover?</p>
+      <p>What is the range of the data? What stems will you use?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The data ranges from ___ to ___, so the stems are ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(2)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-3">
+      <p class="stage-header">🔄 Transform — How will you organise the leaves?</p>
+      <p>What must you remember about leaf order?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"I will write each leaf next to its stem, then sort the leaves in ___ order."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(3)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-4">
+      <p class="stage-header">⚙️ Process — Construct the plot and find the median</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"There are ___ values, so the median is the ___th value, which is ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(4)">Show answers →</button>
+    </div>
+    <div class="newman-stage" id="nm-5">
+      <p class="stage-header">✅ Encode — Answer</p>
+      <div class="step-box" style="margin-bottom:10px">
+        <div class="stem-leaf-grid" style="max-width:280px">
+          <div class="sl-stem">0</div><div class="sl-leaves">3  4  4  5  5  5  6  6  6  7  7  7  8  8  8  9  9</div>
+          <div class="sl-stem">1</div><div class="sl-leaves">0  1  2</div>
+        </div>
+        <p style="margin-top:8px; font-size:0.88rem"><strong>Key:</strong> 0|3 means 3 hrs &nbsp; 1|0 means 10 hrs</p>
+        <p style="margin-top:6px"><strong>Median:</strong> 20 values → positions 10 and 11 → both = 7 → <strong>Median = 7 hours</strong></p>
+        <p style="margin-top:6px"><strong>Shape:</strong> The distribution is roughly symmetric, with most students spending 5–9 hours per week on physical activity.</p>
+      </div>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The data shows that most students spend around ___ hours per week on physical activity, and the distribution is ___."</p></details>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Metacognitive Journal ✍️</h2>
+    <p>Which graph type did you find hardest to construct and why? What's the one convention you need to remember most?</p>
+    <textarea class="journal-area" id="journal" oninput="saveJournal()" aria-label="Metacognitive journal" placeholder="Write your reflection here..."></textarea>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function changeFont(val) {
+  document.body.className = val === 'system' ? 'font-system' : val === 'atkinson' ? 'font-atkinson' : '';
+}
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id).setAttribute('aria-selected','true');
+  if (id === 'reflect') markComplete();
+}
+function showTier(group, tier) {
+  ['foundation','core','extension'].forEach(t => {
+    const panel = document.getElementById(group + '-' + t);
+    const btn = document.getElementById(group + '-tier-' + t);
+    if (panel) panel.classList.toggle('active', t === tier);
+    if (btn) btn.classList.toggle('active', t === tier);
+  });
+}
+function revealStep(prefix, current, max) {
+  const box = document.getElementById(prefix + '-s' + current);
+  if (box) { box.classList.remove('step-hidden'); box.style.display = 'block'; }
+  if (prefix === 'ch2-f' && current === 4) drawColumnGraph();
+  const btn = document.getElementById(prefix + '-btn');
+  if (current >= max) { if (btn) btn.style.display = 'none'; }
+  else { if (btn) btn.setAttribute('onclick', 'revealStep("' + prefix + '",' + (current+1) + ',' + max + ')'); }
+}
+function mcqAns(btn) {
+  const block = btn.closest('.mcq-block');
+  block.querySelectorAll('.mcq-btn').forEach(b => b.disabled = true);
+  const result = btn.getAttribute('data-result');
+  btn.classList.add(result === 'correct' ? 'correct' : 'wrong');
+  const fb = block.querySelector('.mcq-feedback');
+  fb.textContent = btn.getAttribute('data-msg');
+  fb.className = 'mcq-feedback ' + (result === 'correct' ? 'correct' : 'wrong');
+}
+function checkTypeIn(inputId, answer, fbId, hint) {
+  const val = document.getElementById(inputId).value.trim();
+  const fb = document.getElementById(fbId);
+  if (val === answer) {
+    fb.textContent = '✓ Correct!';
+    fb.className = 'mcq-feedback correct';
+    document.getElementById(inputId).disabled = true;
+  } else {
+    fb.textContent = '✗ Not quite. ' + (hint || 'Check your calculation.');
+    fb.className = 'mcq-feedback wrong';
+  }
+}
+
+// Explore stem-leaf interactive
+function sortData() {
+  const data = [4,7,12,8,15,6,9,11,3,14,7,10];
+  data.sort((a,b) => a-b);
+  document.getElementById('sorted-display').textContent = 'Sorted: ' + data.join(', ');
+}
+function buildPlot() {
+  const data = [3,4,6,7,7,8,9,10,11,12,14,15];
+  const stem0 = data.filter(v => v < 10).map(v => v).join('  ');
+  const stem1 = data.filter(v => v >= 10).map(v => v - 10).join('  ');
+  document.getElementById('sl-0').textContent = stem0;
+  document.getElementById('sl-1').textContent = stem1;
+  document.getElementById('sl-plot').style.display = 'block';
+  document.getElementById('plot-feedback').textContent = '✓ Plot built! Notice leaves are in ascending order, and we need a key: 1|0 means 10 hours.';
+  document.getElementById('plot-feedback').style.color = 'var(--correct)';
+}
+function resetPlot() {
+  document.getElementById('sorted-display').textContent = '';
+  document.getElementById('sl-plot').style.display = 'none';
+  document.getElementById('plot-feedback').textContent = '';
+}
+
+// Draw column graph
+function drawColumnGraph() {
+  const canvas = document.getElementById('col-graph');
+  if (!canvas) return;
+  document.getElementById('ch2-f-s4').classList.remove('step-hidden');
+  const dpr = window.devicePixelRatio || 1;
+  const W = 480, H = 280;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const data = [{label:'Football',val:8},{label:'Basketball',val:5},{label:'Swimming',val:4},{label:'Tennis',val:3}];
+  const pad = {top:40,right:20,bottom:60,left:50};
+  const gW = W - pad.left - pad.right;
+  const gH = H - pad.top - pad.bottom;
+  const maxVal = 8;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+  // Title
+  ctx.fillStyle = '#1E2A35'; ctx.font = 'bold 13px Nunito Sans, sans-serif';
+  ctx.textAlign = 'center'; ctx.fillText('Favourite Sports of Year 7 Students', W/2, 22);
+  // Axes
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top+gH); ctx.lineTo(pad.left+gW, pad.top+gH); ctx.stroke();
+  // Y scale
+  ctx.font = '11px Nunito Sans'; ctx.textAlign = 'right'; ctx.fillStyle = '#555';
+  for (let i=0;i<=8;i+=2) {
+    const y = pad.top + gH - (i/maxVal)*gH;
+    ctx.fillText(i, pad.left-6, y+4);
+    ctx.strokeStyle='#eee'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+gW,y); ctx.stroke();
+  }
+  // Bars
+  const barW = gW / data.length * 0.6;
+  const gap = gW / data.length;
+  const colors = ['#3D5A80','#4A7C59','#E89C2F','#C1614F'];
+  data.forEach((d,i) => {
+    const x = pad.left + i*gap + gap*0.2;
+    const bH = (d.val/maxVal)*gH;
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(x, pad.top+gH-bH, barW, bH);
+    ctx.fillStyle = '#1E2A35'; ctx.font='11px Nunito Sans'; ctx.textAlign='center';
+    ctx.fillText(d.label, x+barW/2, pad.top+gH+16);
+    ctx.fillStyle='#fff'; ctx.font='bold 12px Nunito Sans';
+    ctx.fillText(d.val, x+barW/2, pad.top+gH-bH-6);
+  });
+  // Axis labels
+  ctx.fillStyle = '#333'; ctx.font = '12px Nunito Sans'; ctx.textAlign='center';
+  ctx.fillText('Sport', pad.left+gW/2, H-8);
+  ctx.save(); ctx.translate(14, pad.top+gH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('Number of students', 0, 0); ctx.restore();
+}
+
+// Error detective
+let edDone = false;
+function edCheck(btn, isError, fbId) {
+  if (edDone) return;
+  const fb = document.getElementById(fbId);
+  if (isError) {
+    btn.classList.add('correct-pick'); btn.disabled = true;
+    fb.textContent = '✓ Found it!'; fb.className = 'mcq-feedback correct';
+    document.getElementById('ed-correction').style.display = 'block';
+    document.querySelectorAll('.error-step').forEach(b => b.disabled = true);
+    edDone = true;
+  } else {
+    btn.classList.add('wrong-pick');
+    fb.textContent = '✗ This step is correct — keep looking.'; fb.className = 'mcq-feedback wrong';
+    setTimeout(() => { btn.classList.remove('wrong-pick'); fb.textContent = ''; }, 1800);
+  }
+}
+function nmNext(current) {
+  document.getElementById('nm-' + current).classList.remove('active');
+  document.getElementById('nm-' + current).classList.add('done');
+  const next = document.getElementById('nm-' + (current+1));
+  if (next) next.classList.add('active');
+}
+function saveJournal() {
+  localStorage.setItem('dat-ch2-journal', document.getElementById('journal').value);
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '✓ Saved'; setTimeout(() => msg.textContent = '', 2000);
+}
+function markComplete() { localStorage.setItem('dat-ch2-complete','true'); }
+const saved = localStorage.getItem('dat-ch2-journal');
+if (saved) document.getElementById('journal').value = saved;
+</script>
+</body>
+</html>

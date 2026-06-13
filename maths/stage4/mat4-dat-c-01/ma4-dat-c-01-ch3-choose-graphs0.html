@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choosing the Right Graph — MA4-DAT-C-01 Ch3</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4EFE9;
+    --accent: #E89C2F;
+    --accent-light: #faefd9;
+    --slate: #3D5A80;
+    --amber: #E89C2F;
+    --forest: #4A7C59;
+    --terracotta: #C1614F;
+    --correct: #4A7C59;
+    --wrong: #C1614F;
+    --text: #1E2A35;
+    --card: #FFFFFF;
+    --radius: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; min-height: 100vh; }
+  body.font-system { font-family: system-ui, sans-serif; }
+  body.font-atkinson { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+  header { background: var(--accent); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 800; }
+  header p { font-size: 0.82rem; opacity: 0.85; }
+  .font-toggle { display: flex; gap: 6px; align-items: center; }
+  .font-toggle label { font-size: 0.78rem; color: #fff; opacity: 0.9; }
+  .font-toggle select { font-size: 0.78rem; padding: 3px 7px; border-radius: 4px; border: none; background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; }
+
+  nav.tabs { display: flex; gap: 6px; padding: 16px 24px 0; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 18px; border-radius: 20px; border: none; background: #fff; color: var(--text); font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--accent-light); }
+
+  main { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  h2 { font-family: 'Nunito', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  h3 { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  p { margin-bottom: 10px; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+
+  .scenario-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 14px 18px; margin-bottom: 16px; }
+  .info-box { background: #edf3ee; border-left: 4px solid var(--forest); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+
+  /* Decision cards */
+  .decision-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 12px; }
+  .decision-card { background: var(--bg); border: 2px solid #ddd; border-radius: var(--radius); padding: 14px; }
+  .decision-card h4 { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.9rem; color: var(--accent); margin-bottom: 6px; }
+  .decision-card p { font-size: 0.85rem; margin-bottom: 6px; }
+  .graph-tag { display: inline-block; background: var(--accent); color: #fff; border-radius: 12px; padding: 2px 9px; font-size: 0.75rem; font-weight: 700; margin: 2px 2px 0 0; }
+  .graph-tag.slate { background: var(--slate); }
+  .graph-tag.forest { background: var(--forest); }
+  .graph-tag.terra { background: var(--terracotta); }
+
+  /* Frayer */
+  .frayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-top: 12px; }
+  .flip-card { perspective: 800px; height: 200px; cursor: pointer; }
+  .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.55s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px; text-align: center; }
+  .flip-front { background: var(--accent); color: #fff; }
+  .flip-front .term { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800; }
+  .flip-front .tap-hint { font-size: 0.72rem; opacity: 0.8; margin-top: 8px; }
+  .flip-back { background: var(--bg); color: var(--text); transform: rotateY(180deg); text-align: left; align-items: flex-start; }
+  .flip-back .def { font-size: 0.84rem; font-weight: 700; margin-bottom: 6px; }
+  .flip-back .ex { font-size: 0.8rem; color: var(--forest); margin-bottom: 4px; }
+  .flip-back .non-ex { font-size: 0.8rem; color: var(--terracotta); }
+
+  /* Tiers */
+  .tier-btns { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tier-btn { padding: 7px 18px; border-radius: 20px; border: 2px solid var(--accent); background: #fff; color: var(--accent); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .tier-btn.active { background: var(--accent); color: #fff; }
+  .tier-panel { display: none; }
+  .tier-panel.active { display: block; }
+
+  .step-box { border-left: 4px solid var(--accent); padding: 10px 14px; margin-bottom: 8px; background: #fdf8ee; border-radius: 0 var(--radius) var(--radius) 0; }
+  .step-box .step-label { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .step-hidden { display: none; }
+
+  .btn { display: inline-block; padding: 9px 20px; border-radius: var(--radius); border: none; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { opacity: 0.88; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+  /* Match game */
+  .match-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .match-scenario { background: var(--accent-light); border-radius: var(--radius); padding: 10px 14px; font-size: 0.88rem; font-weight: 600; }
+  .match-select { padding: 8px 10px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; font-family: 'Nunito Sans', sans-serif; font-size: 0.88rem; width: 100%; cursor: pointer; }
+  .match-select:focus { outline: none; border-color: var(--accent); }
+  .match-fb { font-size: 0.82rem; font-weight: 600; min-height: 18px; }
+  .match-fb.correct { color: var(--correct); }
+  .match-fb.wrong { color: var(--wrong); }
+
+  /* MCQ */
+  .mcq-block { margin-bottom: 20px; }
+  .mcq-block .question { font-weight: 700; margin-bottom: 8px; }
+  .mcq-options { display: flex; flex-direction: column; gap: 6px; }
+  .mcq-btn { text-align: left; padding: 9px 14px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; color: var(--text); font-family: 'Nunito Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .mcq-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .mcq-btn.correct { border-color: var(--correct); background: #eaf4ee; color: var(--correct); }
+  .mcq-btn.wrong { border-color: var(--wrong); background: #faeae8; color: var(--wrong); }
+  .mcq-feedback { font-size: 0.85rem; margin-top: 6px; min-height: 20px; font-weight: 600; }
+  .mcq-feedback.correct { color: var(--correct); }
+  .mcq-feedback.wrong { color: var(--wrong); }
+
+  /* Error detective */
+  .error-step { padding: 10px 14px; margin-bottom: 6px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; cursor: pointer; font-size: 0.9rem; transition: border-color 0.2s, background 0.2s; text-align: left; width: 100%; }
+  .error-step:hover:not(:disabled) { border-color: var(--amber); background: var(--accent-light); }
+  .error-step.wrong-pick { border-color: var(--wrong); background: #faeae8; }
+  .error-step.correct-pick { border-color: var(--correct); background: #eaf4ee; }
+  .error-correction { margin-top: 12px; padding: 12px 16px; background: #eaf4ee; border-radius: var(--radius); border-left: 4px solid var(--correct); display: none; }
+
+  /* Newman */
+  .newman-stage { display: none; }
+  .newman-stage.active { display: block; }
+  .newman-stage.done { display: block; opacity: 0.6; }
+  .stage-header { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 6px; }
+  .scaffold { background: var(--accent-light); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; font-size: 0.88rem; }
+  .scaffold summary { cursor: pointer; font-weight: 700; font-size: 0.85rem; color: #8a6200; }
+
+  /* Journal */
+  .journal-area { width: 100%; min-height: 120px; padding: 12px; font-family: 'Nunito Sans', sans-serif; font-size: 0.95rem; border-radius: var(--radius); border: 2px solid #ddd; background: repeating-linear-gradient(transparent, transparent 31px, #ddd 31px, #ddd 32px); line-height: 32px; resize: vertical; }
+  .journal-area:focus { outline: none; border-color: var(--accent); }
+  .save-msg { font-size: 0.82rem; color: var(--forest); margin-top: 6px; min-height: 18px; }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 10px 0; }
+  .data-table th { background: var(--accent); color: #fff; padding: 8px 12px; text-align: left; }
+  .data-table td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  .data-table tr:nth-child(even) td { background: var(--accent-light); }
+
+  /* Bar demo */
+  .bar-demo { height: 30px; border-radius: 4px; overflow: hidden; display: flex; margin: 10px 0; font-size: 0.8rem; font-weight: 700; }
+  .bar-seg { display: flex; align-items: center; justify-content: center; color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chapter 3 — Choosing the Right Graph</h1>
+    <p>MA4-DAT-C-01 · MAO-WM-01 · Stage 4 Mathematics</p>
+  </div>
+  <div class="font-toggle">
+    <label for="fontSel">Font:</label>
+    <select id="fontSel" onchange="changeFont(this.value)" aria-label="Font preference">
+      <option value="default">Nunito Sans</option>
+      <option value="system">System default</option>
+      <option value="atkinson">Atkinson Hyperlegible</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true" onclick="showTab('hook')" id="tab-hook">🪝 Hook</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('explore')" id="tab-explore">🔍 Explore</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('learn')" id="tab-learn">📖 Learn</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('practise')" id="tab-practise">✏️ Practise</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('reflect')" id="tab-reflect">💭 Reflect</button>
+</nav>
+
+<main>
+
+<!-- ═══════════════ HOOK ═══════════════ -->
+<section class="tab-panel active" id="panel-hook">
+  <div class="card">
+    <h2>Same Data, Different Story?</h2>
+    <div class="scenario-box">
+      <p>Two students receive the same dataset about monthly rainfall in Sydney (mm per month across one year). One displays it as a <strong>column graph</strong>, the other as a <strong>line graph</strong>.</p>
+      <p>Both graphs are technically correct. Both use proper titles, labels, and scales.</p>
+    </div>
+    <p>Before we learn the rules, think about these questions:</p>
+    <ol>
+      <li style="margin-bottom:10px">Are the two graphs <strong>equally good</strong> for this data, or is one more appropriate?</li>
+      <li style="margin-bottom:10px">The line graph implies a continuous trend — does rainfall <em>really</em> flow continuously between months, or are the monthly totals separate amounts?</li>
+      <li>Could the choice of graph change <strong>what story the data seems to tell</strong>? Could it lead a reader to a different conclusion?</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Why graph choice matters</h3>
+    <p>A graph is a communication tool. The "best" graph for a dataset is the one that <strong>most honestly represents what the data actually shows</strong> — and makes the right comparisons easy to see.</p>
+    <p>Choosing the wrong graph type isn't just a technicality. It can mislead readers — even unintentionally.</p>
+    <div style="text-align:right; margin-top:8px">
+      <button class="btn btn-accent" onclick="showTab('explore')">Start Exploring →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EXPLORE ═══════════════ -->
+<section class="tab-panel" id="panel-explore">
+  <div class="card">
+    <h2>Match the Scenario to the Graph</h2>
+    <p>For each dataset scenario below, select the most appropriate graph type. There may be more than one defensible answer — the key is your justification.</p>
+    <div id="match-area">
+      <div class="match-row">
+        <div class="match-scenario">A school records how many students chose each sport at the athletics carnival (basketball, swimming, athletics, tennis).</div>
+        <div>
+          <select class="match-select" id="m1" aria-label="Graph for scenario 1">
+            <option value="">— Select —</option>
+            <option value="column">Column graph</option>
+            <option value="line">Line graph</option>
+            <option value="sector">Sector graph</option>
+            <option value="stem">Stem-and-leaf</option>
+            <option value="dot">Dot plot</option>
+            <option value="histogram">Frequency histogram</option>
+          </select>
+          <div class="match-fb" id="mfb1"></div>
+        </div>
+      </div>
+      <div class="match-row">
+        <div class="match-scenario">A student tracks the daily maximum temperature in their city over 30 days.</div>
+        <div>
+          <select class="match-select" id="m2" aria-label="Graph for scenario 2">
+            <option value="">— Select —</option>
+            <option value="column">Column graph</option>
+            <option value="line">Line graph</option>
+            <option value="sector">Sector graph</option>
+            <option value="stem">Stem-and-leaf</option>
+            <option value="dot">Dot plot</option>
+            <option value="histogram">Frequency histogram</option>
+          </select>
+          <div class="match-fb" id="mfb2"></div>
+        </div>
+      </div>
+      <div class="match-row">
+        <div class="match-scenario">A family's monthly budget is split into: Rent 40%, Food 25%, Transport 15%, Entertainment 10%, Savings 10%.</div>
+        <div>
+          <select class="match-select" id="m3" aria-label="Graph for scenario 3">
+            <option value="">— Select —</option>
+            <option value="column">Column graph</option>
+            <option value="line">Line graph</option>
+            <option value="sector">Sector graph</option>
+            <option value="stem">Stem-and-leaf</option>
+            <option value="dot">Dot plot</option>
+            <option value="histogram">Frequency histogram</option>
+          </select>
+          <div class="match-fb" id="mfb3"></div>
+        </div>
+      </div>
+      <div class="match-row">
+        <div class="match-scenario">A PE teacher records the 100m sprint times (seconds) for 28 students — wants to see the distribution shape.</div>
+        <div>
+          <select class="match-select" id="m4" aria-label="Graph for scenario 4">
+            <option value="">— Select —</option>
+            <option value="column">Column graph</option>
+            <option value="line">Line graph</option>
+            <option value="sector">Sector graph</option>
+            <option value="stem">Stem-and-leaf</option>
+            <option value="dot">Dot plot</option>
+            <option value="histogram">Frequency histogram</option>
+          </select>
+          <div class="match-fb" id="mfb4"></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="checkMatch()">Check my choices ✓</button>
+      <button class="btn btn-sm" style="background:#eee;border:none" onclick="resetMatch()">Reset</button>
+    </div>
+    <div id="match-total" style="margin-top:10px; font-weight:700; min-height:24px;"></div>
+  </div>
+</section>
+
+<!-- ═══════════════ LEARN ═══════════════ -->
+<section class="tab-panel" id="panel-learn">
+  <div class="card">
+    <h2>The Graph Choice Framework</h2>
+    <p>Ask these three questions in order:</p>
+    <div class="decision-grid">
+      <div class="decision-card">
+        <h4>1. Parts of a whole?</h4>
+        <p>Do categories add up to a meaningful total (100%)? Use:</p>
+        <span class="graph-tag">Sector graph</span>
+        <span class="graph-tag">Divided bar graph</span>
+      </div>
+      <div class="decision-card">
+        <h4>2. Change over time?</h4>
+        <p>Is the x-axis a continuous time variable? Use:</p>
+        <span class="graph-tag slate">Line graph</span>
+        <span class="graph-tag slate">Frequency polygon</span>
+      </div>
+      <div class="decision-card">
+        <h4>3. Comparing categories?</h4>
+        <p>Independent groups without a time component? Use:</p>
+        <span class="graph-tag forest">Column graph</span>
+        <span class="graph-tag forest">Dot plot</span>
+        <span class="graph-tag forest">Pictogram</span>
+      </div>
+      <div class="decision-card">
+        <h4>4. Distribution shape?</h4>
+        <p>Want to see spread, clusters, or shape of data? Use:</p>
+        <span class="graph-tag terra">Stem-and-leaf</span>
+        <span class="graph-tag terra">Histogram</span>
+        <span class="graph-tag terra">Dot plot</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Key Vocabulary</h2>
+    <div class="frayer-grid">
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Parts of a whole flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Parts of a Whole</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Data where each category is a portion of a total — all categories together equal 100%.</p>
+            <p class="ex">✓ Budget split, transport methods, election vote shares</p>
+            <p class="non-ex">✗ Monthly temperatures (they don't add to a meaningful total)</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Trend flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Trend</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A general direction or pattern in data over time — increasing, decreasing, or stable.</p>
+            <p class="ex">✓ Line graphs reveal trends — the slope shows direction of change</p>
+            <p class="non-ex">✗ Column graphs for time data obscure trends by separating each period</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Distribution flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Distribution</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">How data values are spread across the range — shows where most values cluster and how spread out the data is.</p>
+            <p class="ex">✓ Histograms and stem-and-leaf plots reveal distribution shape</p>
+            <p class="non-ex">✗ Sector graphs hide individual values and distribution shape</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Justification flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Justifying Graph Choice</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Explaining why one graph type is more appropriate than another using data-specific reasons.</p>
+            <p class="ex">✓ "A line graph is better here because the data shows change over time and a trend is visible."</p>
+            <p class="non-ex">✗ "I chose a line graph because it looks good." (Not a justification)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Worked Examples</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('ch3','foundation')" id="ch3-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('ch3','core')" id="ch3-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('ch3','extension')" id="ch3-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation -->
+    <div class="tier-panel active" id="ch3-foundation">
+      <p>Match three scenarios to the correct graph type from the list: <em>sector graph, line graph, column graph</em>.</p>
+      <ol>
+        <li>Showing how a student's test scores changed week by week over a term</li>
+        <li>Showing which sport was most popular at a school carnival</li>
+        <li>Showing what proportion of a day is spent on different activities</li>
+      </ol>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Identify what each dataset is about</div>
+        <p>Scenario 1: Change over time → time is on the x-axis</p>
+        <p>Scenario 2: Comparing separate categories → sports are independent groups</p>
+        <p>Scenario 3: Parts of a whole → all activities together = 24 hours = 100%</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-f-s2">
+        <div class="step-label">Step 2 — Apply the framework</div>
+        <p><strong>Scenario 1 → Line graph</strong> — change over time; connected points show the trend</p>
+        <p><strong>Scenario 2 → Column graph</strong> — comparing independent categories; each sport gets its own bar</p>
+        <p><strong>Scenario 3 → Sector graph</strong> — parts of a whole; each activity is a slice of the 24-hour day</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-f-s3">
+        <div class="step-label">Step 3 — Justify each choice in one sentence</div>
+        <p>Line graph: "Time is a continuous variable and we want to see the trend in scores."</p>
+        <p>Column graph: "Sports are independent categories with no time order or part-whole relationship."</p>
+        <p>Sector graph: "All activities together make up exactly one day — this is a part-whole relationship."</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch3-f-btn" onclick="revealStep('ch3-f',2,3)">Show next step</button>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="ch3-core">
+      <p>A dataset shows the monthly average temperature in Sydney across 12 months. A student displays this as a column graph. Justify why a line graph is more appropriate.</p>
+      <table class="data-table" style="margin-bottom:12px">
+        <tr><th>Month</th><th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th></tr>
+        <tr><td>Temp (°C)</td><td>26</td><td>26</td><td>24</td><td>22</td><td>19</td><td>17</td></tr>
+      </table>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Identify the nature of the x-axis variable</div>
+        <p>The x-axis is <strong>time</strong> (months in order). Time is a continuous variable — there is a natural, ordered progression from January to December. The months are not independent categories.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-c-s2">
+        <div class="step-label">Step 2 — Identify the purpose: what does the reader need to see?</div>
+        <p>The reader wants to see <strong>how temperature changes across the year</strong> — a trend. A connected line makes the trend (cooling through winter, warming through summer) immediately visible.</p>
+        <p>A column graph separates each month into an isolated bar — this makes comparing adjacent months harder and hides the continuous nature of temperature change.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-c-s3">
+        <div class="step-label">Step 3 — Write the justification</div>
+        <p>"A <strong>line graph</strong> is more appropriate because the x-axis is a continuous time variable (months in sequence), and the purpose is to show how temperature changes over the year. The connected line clearly reveals the trend — falling through autumn and winter, rising through spring and summer. A column graph would treat each month as a separate category, obscuring the continuous relationship between time and temperature."</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch3-c-btn" onclick="revealStep('ch3-c',2,3)">Show next step</button>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="ch3-extension">
+      <p>A researcher wants to compare the breakdown of travel methods (Walk/Bus/Car/Bike) across two school years (2024 and 2025). Evaluate whether a <strong>divided bar graph</strong> or <strong>side-by-side column graph</strong> better serves their purpose. Under what conditions might that answer change?</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Identify what each graph type shows well</div>
+        <p><strong>Divided bar graph:</strong> Excellent for part-to-whole relationships within each year. The reader can immediately see how the proportions shift. Hard to compare individual categories (e.g. Bus 2024 vs Bus 2025) when segments are not aligned.</p>
+        <p><strong>Side-by-side column graph:</strong> Excellent for comparing specific categories across years (e.g. how Bus usage changed). Harder to perceive the overall proportional composition of each year.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-e-s2">
+        <div class="step-label">Step 2 — Identify the researcher's primary purpose</div>
+        <p>The researcher wants to <strong>compare</strong> across two time periods. The key question: are they most interested in (a) how the <em>overall mix</em> of methods changed, or (b) how <em>each specific method</em> changed?</p>
+        <p>If (a) → divided bar graph is better<br>If (b) → side-by-side column graph is better</p>
+      </div>
+      <div class="step-box step-hidden" id="ch3-e-s3">
+        <div class="step-label">Step 3 — Evaluate and state the conditional answer</div>
+        <p><strong>If the purpose is to show the overall composition</strong> (what proportion uses each method each year), the <strong>divided bar graph</strong> is better — it makes the part-whole structure of each year immediately visible.</p>
+        <p><strong>If the purpose is to compare specific modes</strong> (how walking grew, how car use fell), the <strong>side-by-side column graph</strong> is better — adjacent bars for the same category make direct comparison easy.</p>
+        <p><strong>Condition where the answer changes:</strong> If one category is very small (e.g. Bike = 2%), a divided bar segment is nearly invisible. Here the column graph is fairer — it gives the small category a visible bar height.</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch3-e-btn" onclick="revealStep('ch3-e',2,3)">Show next step</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PRACTISE ═══════════════ -->
+<section class="tab-panel" id="panel-practise">
+  <div class="card">
+    <h2>Practise</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('prac','foundation')" id="prac-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('prac','core')" id="prac-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('prac','extension')" id="prac-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation -->
+    <div class="tier-panel active" id="prac-foundation">
+      <div class="mcq-block">
+        <p class="question">Q1. A dataset shows the number of goals scored by five different players in a season. The best graph to display this is:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A line graph implies change over time — but this is a comparison of five separate players, not a trend." onclick="mcqAns(this)">A. Line graph</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A column graph is ideal for comparing separate, independent categories (players)." onclick="mcqAns(this)">B. Column graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A sector graph is for parts-of-a-whole — five players' goal counts don't represent portions of a total." onclick="mcqAns(this)">C. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A frequency histogram is for continuous data grouped into class intervals, not for separate categories." onclick="mcqAns(this)">D. Frequency histogram</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. "The proportion of students who prefer each subject" — which graph type best shows this?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A stem-and-leaf plot shows the distribution of numerical data — not proportions of categories." onclick="mcqAns(this)">A. Stem-and-leaf plot</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A line graph shows change over time — subject preference is not a time-based variable." onclick="mcqAns(this)">B. Line graph</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A sector graph is designed for parts-of-a-whole — each subject slice represents its proportion of the total." onclick="mcqAns(this)">C. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A dot plot shows individual values — not overall proportions of categories." onclick="mcqAns(this)">D. Dot plot</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A researcher tracks how many hours of TV Australians watch per day, measured each year from 2015 to 2025. The most appropriate graph is:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A dot plot would show individual year values but would make the trend harder to read than a line." onclick="mcqAns(this)">A. Dot plot</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A line graph shows change over continuous time — connecting points reveals whether TV watching is increasing, decreasing, or stable." onclick="mcqAns(this)">B. Line graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A sector graph is for proportions — TV hours per year don't represent parts of a whole." onclick="mcqAns(this)">C. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A stem-and-leaf plot shows distribution shape — it wouldn't show the trend across years." onclick="mcqAns(this)">D. Stem-and-leaf plot</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Which graph type is LEAST appropriate for showing the distribution (spread and shape) of a dataset of 30 exam scores?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A frequency histogram shows distribution very well — bars represent class intervals of scores." onclick="mcqAns(this)">A. Frequency histogram</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A stem-and-leaf plot is excellent for distribution — it shows every individual value and the shape." onclick="mcqAns(this)">B. Stem-and-leaf plot</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A sector graph shows proportions/parts-of-a-whole — it cannot show spread, clusters, or distribution shape." onclick="mcqAns(this)">C. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A dot plot shows every score and its frequency — useful for small datasets to see distribution." onclick="mcqAns(this)">D. Dot plot</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f4"></div>
+      </div>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="prac-core">
+      <div class="mcq-block">
+        <p class="question">Q1. A student uses a line graph to show survey responses: "Favourite colours of 30 students." Why is this inappropriate?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The problem isn't the title — it's the graph type chosen for the data." onclick="mcqAns(this)">A. The graph has no title</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A line graph implies a continuous relationship between x-axis values — but colours have no order, and connecting them implies a trend that doesn't exist." onclick="mcqAns(this)">B. Colours are unordered categories — connecting points implies a trend that doesn't exist</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The sample size of 30 is reasonable — the issue is the graph type, not the sample." onclick="mcqAns(this)">C. The sample size is too small for a line graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A line graph can display frequency — the problem is the type of variable on the x-axis." onclick="mcqAns(this)">D. Line graphs cannot display frequency</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. Monthly electricity bills for a household over one year — which graph best shows both the trend AND individual monthly amounts?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A sector graph shows proportions — it can't show individual monthly amounts or a time trend." onclick="mcqAns(this)">A. Sector graph</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A stem-and-leaf plot shows distribution — it loses the time dimension (which month had which bill)." onclick="mcqAns(this)">B. Stem-and-leaf plot</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A line graph with plotted points shows both the individual monthly values (the dots) and the overall trend (the line's direction)." onclick="mcqAns(this)">C. Line graph with plotted points</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A dot plot loses the time sequence — you can't tell which dot belongs to which month." onclick="mcqAns(this)">D. Dot plot</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A column graph and a divided bar graph both show "mode of transport to school." What does the divided bar graph show that the column graph does NOT?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both graph types show individual category counts or proportions." onclick="mcqAns(this)">A. The exact number of students using each mode</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both graphs can show change if you use them for time-series data." onclick="mcqAns(this)">B. How the mode of transport changed over time</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! The divided bar graph makes the part-to-whole relationship explicit — each segment's width shows its proportion of the whole bar." onclick="mcqAns(this)">C. The proportion each mode represents of the total</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both graph types can display categorical data — neither is limited to numerical data." onclick="mcqAns(this)">D. Distribution of numerical data</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. A dataset tracks daily step counts for one person over 90 days. Which TWO graph types would be most useful together?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A sector graph can't show time trend or distribution of step counts." onclick="mcqAns(this)">A. Sector graph + divided bar graph</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A line graph shows the trend over 90 days; a histogram shows the distribution (how often they hit different step count ranges)." onclick="mcqAns(this)">B. Line graph + frequency histogram</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Two identical graph types would show the same thing in different formats — not complementary." onclick="mcqAns(this)">C. Column graph + dot plot</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Two part-to-whole graphs would not reveal trend or distribution of step counts." onclick="mcqAns(this)">D. Divided bar graph + sector graph</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c4"></div>
+      </div>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="prac-extension">
+      <div class="mcq-block">
+        <p class="question">Q1. A journalist wants to compare voter support for 5 parties across 3 elections (2016, 2020, 2024). Which graph type best serves this, and why?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A single line graph would conflate 5 parties into one trend — you'd need 5 lines, which is valid but cluttered." onclick="mcqAns(this)">A. Single line graph — shows the trend across elections</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A grouped (side-by-side) column graph or multi-line graph both work. Grouped columns make within-election comparisons easy; multi-line makes trends across elections clear. Both are defensible — the best choice depends on whether the journalist prioritises within-election or across-election comparisons." onclick="mcqAns(this)">B. Grouped column graph — compares parties within each election and across elections</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A stem-and-leaf plot can't show multiple groups across time." onclick="mcqAns(this)">C. Stem-and-leaf plot — shows distribution of votes</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Three sector graphs (one per election) could work but make it hard to compare party-to-party across elections." onclick="mcqAns(this)">D. Three separate sector graphs — one per election</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. A frequency histogram and a column graph look similar. Which statement correctly identifies a key structural difference?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both can use a vertical axis for frequency — this is not a distinguishing feature." onclick="mcqAns(this)">A. A histogram uses a vertical axis; a column graph uses a horizontal axis</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both can display data from surveys." onclick="mcqAns(this)">B. A histogram can only be used for survey data</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! In a histogram, bars touch because data is continuous (class intervals are adjacent, with no gaps). In a column graph, bars have spaces because categories are discrete and independent." onclick="mcqAns(this)">C. Histogram bars touch (continuous data); column graph bars have gaps (discrete categories)</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both histograms and column graphs can represent any number of groups." onclick="mcqAns(this)">D. A histogram is for fewer than 10 groups; a column graph handles more</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A data scientist argues "a sector graph is always inferior to a divided bar graph because it's harder to read." What is the strongest counter-argument?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Being more common doesn't make something better — familiarity is not an argument for accuracy." onclick="mcqAns(this)">A. Sector graphs are more commonly used in newspapers</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Computer generation is not a statistical argument." onclick="mcqAns(this)">B. Sector graphs are easier to make with a computer</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Sector graphs (pie charts) have high visual recognition for part-whole relationships for general audiences. The 'harder to read' critique applies mainly to comparing similar-sized sectors — for clearly different proportions, they are highly effective for non-expert audiences." onclick="mcqAns(this)">C. Sector graphs are more intuitive for general audiences showing dominant and minor categories</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Neither graph type is limited to any number of categories — both become hard to read with too many." onclick="mcqAns(this)">D. Sector graphs can show more categories than divided bar graphs</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4 (Multi-step). A dataset has: (i) 200 continuous values ranging from 45 to 98, (ii) the researcher wants to see distribution shape AND be able to compare group A vs group B. Which combination is most appropriate?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Two sector graphs would show proportions — not distribution of continuous data values." onclick="mcqAns(this)">A. Two sector graphs</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A dot plot of 200 continuous values would be very cluttered — and hard to compare groups." onclick="mcqAns(this)">B. A single dot plot for both groups</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Back-to-back histograms (or a back-to-back stem-and-leaf if dataset is smaller) allow direct comparison of distribution shape between two groups on continuous data." onclick="mcqAns(this)">C. Two frequency histograms side-by-side (or back-to-back) with the same scale</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Two divided bar graphs would only show proportions of class intervals — not the full distribution shape." onclick="mcqAns(this)">D. Two divided bar graphs</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e4"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ REFLECT ═══════════════ -->
+<section class="tab-panel" id="panel-reflect">
+  <div class="card">
+    <h2>Error Detective 🔍</h2>
+    <p>A student justifies their graph choice for a dataset showing time spent on different activities in a day. Find the one error in their working.</p>
+    <div class="scenario-box" style="margin-bottom:14px">
+      <strong>Dataset:</strong> Sleep 8 hrs, School 6 hrs, Sport 1.5 hrs, Screen 3.5 hrs, Other 5 hrs (total = 24 hours)
+    </div>
+    <div id="ed-steps">
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-1')" aria-label="Error detective step 1">
+        <strong>Step 1:</strong> The dataset shows parts of a whole — all activities together make up one full day (24 hours) ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-1" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-2')" aria-label="Error detective step 2">
+        <strong>Step 2:</strong> Total = 8 + 6 + 1.5 + 3.5 + 5 = 24 hours ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-2" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-3')" aria-label="Error detective step 3">
+        <strong>Step 3:</strong> A line graph would imply change over time — this data doesn't involve time progression, so a line graph is not appropriate ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-3" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,true,'ed-fb-4')" aria-label="Error detective step 4">
+        <strong>Step 4:</strong> Selected a column graph — "because it clearly shows the size of each category" ❌?
+      </button>
+      <div class="mcq-feedback" id="ed-fb-4" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-5')" aria-label="Error detective step 5">
+        <strong>Step 5:</strong> Added title, axis labels, and scale ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-5" style="margin-bottom:6px"></div>
+    </div>
+    <div class="error-correction" id="ed-correction">
+      <strong>✓ Correction:</strong> When data represents <strong>parts of a whole</strong>, a <strong>sector graph</strong> or <strong>divided bar graph</strong> is more appropriate than a column graph. A column graph does show category sizes, but it does not communicate the part-whole relationship — the reader cannot see that the activities together make up exactly one day. The student correctly eliminated the line graph in Step 3 but selected the wrong alternative in Step 4.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Newman's Word Problem</h2>
+    <div class="scenario-box">
+      A school council surveys 120 students about how they travel to school: 45 walk, 30 catch the bus, 25 are driven, 15 ride a bike, and 5 use other transport.
+      <br><br>A student displays this using a line graph. Explain why this choice is inappropriate. Select a more suitable graph type, justify your choice, and describe one feature your graph must include to clearly communicate the part-whole relationship.
+    </div>
+
+    <div class="newman-stage active" id="nm-1">
+      <p class="stage-header">📖 Read — What is the dataset about?</p>
+      <p>Read the problem. What is the student's graph choice? What is wrong with it?</p>
+      <button class="btn btn-accent btn-sm" onclick="nmNext(1)">I've read it — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-2">
+      <p class="stage-header">💡 Comprehend — What does the data represent?</p>
+      <p>Does this data show change over time, or parts of a whole?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"This data shows ___ because ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(2)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-3">
+      <p class="stage-header">🔄 Transform — Which graph types are designed for parts-of-a-whole data?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"Graphs suited to parts-of-a-whole include ___ and ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(3)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-4">
+      <p class="stage-header">⚙️ Process — Justify your chosen graph and identify the key feature</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"I would use a ___ because ___. An important feature is ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(4)">Show answers →</button>
+    </div>
+    <div class="newman-stage" id="nm-5">
+      <p class="stage-header">✅ Encode — Model answer</p>
+      <div class="step-box" style="margin-bottom:10px">
+        <p><strong>Why line graph is wrong:</strong> A line graph is designed for data showing change over time — it implies a continuous trend between data points. Transport categories (walk, bus, car, bike, other) are not time points and have no sequential relationship. Connecting them with a line implies a trend that doesn't exist.</p>
+        <p style="margin-top:8px"><strong>Better choice:</strong> Sector graph or divided bar graph. Both are designed for part-to-whole data. Total = 45 + 30 + 25 + 15 + 5 = 120 students.</p>
+        <p style="margin-top:8px"><strong>Key feature:</strong> The graph must include a <strong>key/legend</strong> mapping each colour/section to a transport category, so the reader knows which slice or segment represents which method.</p>
+        <div class="bar-demo" style="margin-top:10px">
+          <div class="bar-seg" style="width:37.5%; background:#3D5A80">Walk 37.5%</div>
+          <div class="bar-seg" style="width:25%; background:#4A7C59">Bus 25%</div>
+          <div class="bar-seg" style="width:20.8%; background:#E89C2F; color:#1E2A35">Car</div>
+          <div class="bar-seg" style="width:12.5%; background:#C1614F">Bike</div>
+          <div class="bar-seg" style="width:4.2%; background:#888">Other</div>
+        </div>
+      </div>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"A line graph is unsuitable here because ___. A better choice would be ___ because ___."</p></details>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Metacognitive Journal ✍️</h2>
+    <p>What rule will you use to decide between a sector graph and a column graph? Can you think of a dataset where the choice is genuinely difficult?</p>
+    <textarea class="journal-area" id="journal" oninput="saveJournal()" aria-label="Metacognitive journal" placeholder="Write your reflection here..."></textarea>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function changeFont(val) {
+  document.body.className = val === 'system' ? 'font-system' : val === 'atkinson' ? 'font-atkinson' : '';
+}
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id).setAttribute('aria-selected','true');
+  if (id === 'reflect') markComplete();
+}
+function showTier(group, tier) {
+  ['foundation','core','extension'].forEach(t => {
+    const panel = document.getElementById(group + '-' + t);
+    const btn = document.getElementById(group + '-tier-' + t);
+    if (panel) panel.classList.toggle('active', t === tier);
+    if (btn) btn.classList.toggle('active', t === tier);
+  });
+}
+function revealStep(prefix, current, max) {
+  const box = document.getElementById(prefix + '-s' + current);
+  if (box) { box.classList.remove('step-hidden'); box.style.display = 'block'; }
+  const btn = document.getElementById(prefix + '-btn');
+  if (current >= max) { if (btn) btn.style.display = 'none'; }
+  else { if (btn) btn.setAttribute('onclick', 'revealStep("' + prefix + '",' + (current+1) + ',' + max + ')'); }
+}
+function mcqAns(btn) {
+  const block = btn.closest('.mcq-block');
+  block.querySelectorAll('.mcq-btn').forEach(b => b.disabled = true);
+  const result = btn.getAttribute('data-result');
+  btn.classList.add(result === 'correct' ? 'correct' : 'wrong');
+  const fb = block.querySelector('.mcq-feedback');
+  fb.textContent = btn.getAttribute('data-msg');
+  fb.className = 'mcq-feedback ' + (result === 'correct' ? 'correct' : 'wrong');
+}
+
+// Match game
+const matchAnswers = {m1: 'column', m2: 'line', m3: 'sector', m4: ['stem','histogram']};
+const matchMessages = {
+  m1: 'A column graph compares independent categories — sports are separate, unordered groups.',
+  m2: 'A line graph shows change over continuous time — 30 days is a time series.',
+  m3: 'A sector graph shows parts of a whole — budget categories total 100%.',
+  m4: 'A frequency histogram or stem-and-leaf plot both show distribution shape for continuous data (sprint times).'
+};
+function checkMatch() {
+  let correct = 0;
+  ['m1','m2','m3','m4'].forEach(id => {
+    const sel = document.getElementById(id);
+    const fb = document.getElementById('mfb' + id.slice(1));
+    const ans = matchAnswers[id];
+    const val = sel.value;
+    const isCorrect = Array.isArray(ans) ? ans.includes(val) : val === ans;
+    fb.textContent = (val === '' ? 'Please select an answer.' : (isCorrect ? '✓ ' : '✗ ') + matchMessages[id]);
+    fb.className = 'match-fb ' + (val === '' ? '' : isCorrect ? 'correct' : 'wrong');
+    if (isCorrect) correct++;
+  });
+  document.getElementById('match-total').textContent = correct + ' of 4 correct.';
+  document.getElementById('match-total').style.color = correct === 4 ? 'var(--correct)' : 'var(--wrong)';
+}
+function resetMatch() {
+  ['m1','m2','m3','m4'].forEach(id => {
+    document.getElementById(id).value = '';
+    const fb = document.getElementById('mfb' + id.slice(1));
+    fb.textContent = ''; fb.className = 'match-fb';
+  });
+  document.getElementById('match-total').textContent = '';
+}
+
+let edDone = false;
+function edCheck(btn, isError, fbId) {
+  if (edDone) return;
+  const fb = document.getElementById(fbId);
+  if (isError) {
+    btn.classList.add('correct-pick'); btn.disabled = true;
+    fb.textContent = '✓ Found it!'; fb.className = 'mcq-feedback correct';
+    document.getElementById('ed-correction').style.display = 'block';
+    document.querySelectorAll('.error-step').forEach(b => b.disabled = true);
+    edDone = true;
+  } else {
+    btn.classList.add('wrong-pick');
+    fb.textContent = '✗ This step is correct — keep looking.'; fb.className = 'mcq-feedback wrong';
+    setTimeout(() => { btn.classList.remove('wrong-pick'); fb.textContent = ''; }, 1800);
+  }
+}
+function nmNext(current) {
+  document.getElementById('nm-' + current).classList.remove('active');
+  document.getElementById('nm-' + current).classList.add('done');
+  const next = document.getElementById('nm-' + (current+1));
+  if (next) next.classList.add('active');
+}
+function saveJournal() {
+  localStorage.setItem('dat-ch3-journal', document.getElementById('journal').value);
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '✓ Saved'; setTimeout(() => msg.textContent = '', 2000);
+}
+function markComplete() { localStorage.setItem('dat-ch3-complete','true'); }
+const saved = localStorage.getItem('dat-ch3-journal');
+if (saved) document.getElementById('journal').value = saved;
+</script>
+</body>
+</html>

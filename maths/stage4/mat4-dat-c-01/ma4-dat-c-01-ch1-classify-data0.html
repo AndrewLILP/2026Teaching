@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classifying Data — MA4-DAT-C-01 Ch1</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4EFE9;
+    --accent: #3D5A80;
+    --accent-light: #d0dcea;
+    --slate: #3D5A80;
+    --amber: #E89C2F;
+    --forest: #4A7C59;
+    --terracotta: #C1614F;
+    --correct: #4A7C59;
+    --wrong: #C1614F;
+    --text: #1E2A35;
+    --card: #FFFFFF;
+    --radius: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+  body.font-system { font-family: system-ui, sans-serif; }
+  body.font-atkinson { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 800; }
+  header p { font-size: 0.82rem; opacity: 0.85; }
+  .font-toggle { display: flex; gap: 6px; align-items: center; }
+  .font-toggle label { font-size: 0.78rem; color: #fff; opacity: 0.9; }
+  .font-toggle select {
+    font-size: 0.78rem; padding: 3px 7px; border-radius: 4px;
+    border: none; background: rgba(255,255,255,0.15); color: #fff; cursor: pointer;
+  }
+
+  nav.tabs {
+    display: flex; gap: 6px; padding: 16px 24px 0;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 8px 18px; border-radius: 20px; border: none;
+    background: #fff; color: var(--text); font-family: 'Nunito', sans-serif;
+    font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--accent-light); }
+
+  main { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 22px 24px; margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  h2 { font-family: 'Nunito', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  h3 { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  p { margin-bottom: 10px; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+
+  /* Frayer cards */
+  .frayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px; }
+  .flip-card { perspective: 800px; height: 200px; cursor: pointer; }
+  .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.55s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-face {
+    position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+    border-radius: var(--radius); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 14px; text-align: center;
+  }
+  .flip-front { background: var(--accent); color: #fff; }
+  .flip-front .term { font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800; }
+  .flip-front .tap-hint { font-size: 0.72rem; opacity: 0.75; margin-top: 8px; }
+  .flip-back { background: var(--bg); color: var(--text); transform: rotateY(180deg); text-align: left; align-items: flex-start; }
+  .flip-back .def { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; }
+  .flip-back .ex { font-size: 0.82rem; color: var(--forest); margin-bottom: 4px; }
+  .flip-back .non-ex { font-size: 0.82rem; color: var(--terracotta); }
+
+  /* Explore interactive */
+  .sort-area { display: flex; gap: 16px; flex-wrap: wrap; }
+  .sort-items { flex: 1; min-width: 180px; }
+  .sort-items h4 { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; }
+  .item-chip {
+    display: inline-block; margin: 4px; padding: 6px 14px; border-radius: 20px;
+    background: var(--accent-light); color: var(--text); font-size: 0.88rem;
+    cursor: grab; user-select: none; border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .item-chip.dragging { opacity: 0.5; }
+  .drop-zone {
+    min-height: 80px; border: 2px dashed #aaa; border-radius: var(--radius);
+    padding: 10px; margin-bottom: 12px; background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+  .drop-zone h4 { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.85rem; color: var(--accent); margin-bottom: 6px; }
+
+  /* Worked examples */
+  .tier-btns { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tier-btn {
+    padding: 7px 18px; border-radius: 20px; border: 2px solid var(--accent);
+    background: #fff; color: var(--accent); font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .tier-btn.active { background: var(--accent); color: #fff; }
+  .tier-panel { display: none; }
+  .tier-panel.active { display: block; }
+
+  .step-box {
+    border-left: 4px solid var(--accent); padding: 10px 14px; margin-bottom: 8px;
+    background: #f8f9fb; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .step-box .step-label { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .step-hidden { display: none; }
+
+  .btn {
+    display: inline-block; padding: 9px 20px; border-radius: var(--radius);
+    border: none; font-family: 'Nunito', sans-serif; font-weight: 700;
+    font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { opacity: 0.88; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+  /* MCQ */
+  .mcq-block { margin-bottom: 20px; }
+  .mcq-block .question { font-weight: 700; margin-bottom: 8px; }
+  .mcq-options { display: flex; flex-direction: column; gap: 6px; }
+  .mcq-btn {
+    text-align: left; padding: 9px 14px; border-radius: var(--radius);
+    border: 2px solid #ddd; background: #fff; color: var(--text);
+    font-family: 'Nunito Sans', sans-serif; font-size: 0.9rem; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .mcq-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .mcq-btn.correct { border-color: var(--correct); background: #eaf4ee; color: var(--correct); }
+  .mcq-btn.wrong { border-color: var(--wrong); background: #faeae8; color: var(--wrong); }
+  .mcq-feedback { font-size: 0.85rem; margin-top: 6px; min-height: 20px; font-weight: 600; }
+  .mcq-feedback.correct { color: var(--correct); }
+  .mcq-feedback.wrong { color: var(--wrong); }
+
+  .type-in-block { margin-bottom: 20px; }
+  .type-in-block .question { font-weight: 700; margin-bottom: 8px; }
+  .type-in-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .type-in-row input {
+    padding: 8px 12px; border-radius: var(--radius); border: 2px solid #ddd;
+    font-size: 0.9rem; width: 160px; font-family: 'Nunito Sans', sans-serif;
+  }
+  .type-in-row input:focus { outline: none; border-color: var(--accent); }
+
+  /* Error detective */
+  .error-step {
+    padding: 10px 14px; margin-bottom: 6px; border-radius: var(--radius);
+    border: 2px solid #ddd; background: #fff; cursor: pointer;
+    font-size: 0.9rem; transition: border-color 0.2s, background 0.2s;
+    text-align: left; width: 100%;
+  }
+  .error-step:hover:not(:disabled) { border-color: var(--amber); background: #fdf6e8; }
+  .error-step.wrong-pick { border-color: var(--wrong); background: #faeae8; }
+  .error-step.correct-pick { border-color: var(--correct); background: #eaf4ee; }
+  .error-correction { margin-top: 12px; padding: 12px 16px; background: #eaf4ee; border-radius: var(--radius); border-left: 4px solid var(--correct); display: none; }
+
+  /* Newman */
+  .newman-stage { display: none; }
+  .newman-stage.active { display: block; }
+  .newman-stage.done { display: block; opacity: 0.6; }
+  .stage-header { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 6px; }
+  .scaffold { background: var(--accent-light); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; font-size: 0.88rem; }
+  .scaffold summary { cursor: pointer; font-weight: 700; font-size: 0.85rem; color: var(--accent); }
+
+  /* Journal */
+  .journal-area {
+    width: 100%; min-height: 120px; padding: 12px; font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.95rem; border-radius: var(--radius); border: 2px solid #ddd;
+    background: repeating-linear-gradient(transparent, transparent 31px, #ddd 31px, #ddd 32px);
+    line-height: 32px; resize: vertical;
+  }
+  .journal-area:focus { outline: none; border-color: var(--accent); }
+  .save-msg { font-size: 0.82rem; color: var(--forest); margin-top: 6px; min-height: 18px; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+  .badge-accent { background: var(--accent); color: #fff; }
+
+  .highlight { background: var(--accent-light); padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .classify-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+  .classify-table th { background: var(--accent); color: #fff; padding: 8px 12px; text-align: left; }
+  .classify-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+  .classify-table tr:nth-child(even) td { background: #f8f9fb; }
+
+  .scenario-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 14px 18px; margin-bottom: 16px; }
+  .info-box { background: #fff8e8; border-left: 4px solid var(--amber); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chapter 1 — Classifying Data</h1>
+    <p>MA4-DAT-C-01 · MAO-WM-01 · Stage 4 Mathematics</p>
+  </div>
+  <div class="font-toggle">
+    <label for="fontSel">Font:</label>
+    <select id="fontSel" onchange="changeFont(this.value)" aria-label="Font preference">
+      <option value="default">Nunito Sans</option>
+      <option value="system">System default</option>
+      <option value="atkinson">Atkinson Hyperlegible</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true" onclick="showTab('hook')" id="tab-hook">🪝 Hook</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('explore')" id="tab-explore">🔍 Explore</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('learn')" id="tab-learn">📖 Learn</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('practise')" id="tab-practise">✏️ Practise</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="showTab('reflect')" id="tab-reflect">💭 Reflect</button>
+</nav>
+
+<main>
+
+<!-- ═══════════════ HOOK ═══════════════ -->
+<section class="tab-panel active" id="panel-hook">
+  <div class="card">
+    <h2>The Canteen Survey</h2>
+    <div class="scenario-box">
+      <p>A school is planning a new canteen menu. To help, they survey every student and record four things about each person:</p>
+      <ul>
+        <li>Their <strong>favourite food</strong></li>
+        <li>The <strong>number of items</strong> they buy per week</li>
+        <li>Their <strong>height</strong> in centimetres</li>
+        <li>Their <strong>preferred meal type</strong> — Snack, Lunch, or Dinner</li>
+      </ul>
+    </div>
+    <p>Before we learn any definitions, think about these questions:</p>
+    <ol>
+      <li style="margin-bottom:10px">Which of these pieces of information are <strong>numbers</strong>? Which are <strong>labels or categories</strong>?</li>
+      <li style="margin-bottom:10px">Of the ones that are numbers — can you count them exactly, or do they exist on a continuous scale (like a ruler)?</li>
+      <li>Does "preferred meal type" behave like a number at all? What's different about it compared to height?</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Why does this matter?</h3>
+    <p>The type of data you collect determines <em>which graphs you can use</em> and <em>what questions you can answer</em>. Choosing the wrong graph for your data type is one of the most common mistakes in statistics — even by professional journalists.</p>
+    <p>By the end of this chapter you'll have a precise vocabulary to describe any data you encounter.</p>
+    <div style="text-align:right; margin-top:8px">
+      <button class="btn btn-accent" onclick="showTab('explore')">Start Exploring →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ EXPLORE ═══════════════ -->
+<section class="tab-panel" id="panel-explore">
+  <div class="card">
+    <h2>Sort the Variables</h2>
+    <p>Below are eight variables from different surveys. Drag each one into the box you think it belongs in — or just think about your answer before we reveal the classification.</p>
+    <div class="sort-area">
+      <div class="sort-items">
+        <h4>Variables to classify:</h4>
+        <div id="chip-pool">
+          <span class="item-chip" draggable="true" data-type="num-discrete" id="chip1">Number of pets 🐾</span>
+          <span class="item-chip" draggable="true" data-type="categorical-nominal" id="chip2">Eye colour 👁</span>
+          <span class="item-chip" draggable="true" data-type="num-continuous" id="chip3">Temperature 🌡</span>
+          <span class="item-chip" draggable="true" data-type="categorical-ordinal" id="chip4">T-shirt size (S/M/L/XL) 👕</span>
+          <span class="item-chip" draggable="true" data-type="num-discrete" id="chip5">Shoe size 👟</span>
+          <span class="item-chip" draggable="true" data-type="num-continuous" id="chip6">Weight (kg) ⚖️</span>
+          <span class="item-chip" draggable="true" data-type="categorical-nominal" id="chip7">Favourite sport 🏅</span>
+          <span class="item-chip" draggable="true" data-type="categorical-ordinal" id="chip8">Year group 📚</span>
+        </div>
+      </div>
+      <div style="flex:2; min-width:220px">
+        <div class="drop-zone" id="zone-num-discrete" ondragover="dzOver(event)" ondrop="dzDrop(event,'num-discrete')" ondragleave="dzLeave(event)">
+          <h4>Numerical — Discrete</h4>
+        </div>
+        <div class="drop-zone" id="zone-num-continuous" ondragover="dzOver(event)" ondrop="dzDrop(event,'num-continuous')" ondragleave="dzLeave(event)">
+          <h4>Numerical — Continuous</h4>
+        </div>
+        <div class="drop-zone" id="zone-categorical-nominal" ondragover="dzOver(event)" ondrop="dzDrop(event,'categorical-nominal')" ondragleave="dzLeave(event)">
+          <h4>Categorical — Nominal</h4>
+        </div>
+        <div class="drop-zone" id="zone-categorical-ordinal" ondragover="dzOver(event)" ondrop="dzDrop(event,'categorical-ordinal')" ondragleave="dzLeave(event)">
+          <h4>Categorical — Ordinal</h4>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="checkSort()">Check my sorting ✓</button>
+      <button class="btn btn-sm" style="background:#eee; border:none;" onclick="resetSort()">Reset</button>
+    </div>
+    <div id="sort-feedback" style="margin-top:12px; font-weight:600; min-height:24px;"></div>
+  </div>
+  <div class="card">
+    <h3>The key question to ask</h3>
+    <div class="info-box">
+      <p><strong>Step 1:</strong> Is the data a <em>number</em> or a <em>label/category</em>?</p>
+      <p style="margin-bottom:0"><strong>Step 2:</strong> If it's a number — can you <em>count it exactly</em> (discrete) or does it exist on a <em>continuous scale</em> (continuous)?<br>If it's a category — does it have a <em>natural order</em> (ordinal) or <em>no meaningful order</em> (nominal)?</p>
+    </div>
+    <p>Notice that <strong>Year group</strong> looks like a number but behaves like an ordered category — Year 8 is not "twice" Year 4. This is the trickiest distinction in this chapter.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ LEARN ═══════════════ -->
+<section class="tab-panel" id="panel-learn">
+  <div class="card">
+    <h2>Key Vocabulary</h2>
+    <p>Click each card to flip it and see the definition, example, and non-example.</p>
+    <div class="frayer-grid">
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Variable flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Variable</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Any characteristic, number, or quantity that can be measured or counted.</p>
+            <p class="ex">✓ Example: Height, eye colour, test score</p>
+            <p class="non-ex">✗ Non-example: A fixed constant like π</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Numerical variable flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Numerical Variable</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A variable whose values are meaningful numbers — arithmetic operations make sense.</p>
+            <p class="ex">✓ Example: Height (180cm), number of siblings (3)</p>
+            <p class="non-ex">✗ Non-example: Phone number (adding phone numbers is meaningless)</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Discrete flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Discrete</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A numerical variable that can only take specific, countable values — no values in between.</p>
+            <p class="ex">✓ Example: Number of students (you can't have 2.7 students)</p>
+            <p class="non-ex">✗ Non-example: Height — 170.2 cm is valid</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Continuous flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Continuous</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A numerical variable that can take any value within a range — measured, not counted.</p>
+            <p class="ex">✓ Example: Temperature (can be 23.47°C), time, weight</p>
+            <p class="non-ex">✗ Non-example: Number of pets — you can't have 1.5 pets</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Categorical flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Categorical Variable</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A variable whose values are names, labels, or groups — not meaningful numbers.</p>
+            <p class="ex">✓ Example: Eye colour, favourite sport, suburb</p>
+            <p class="non-ex">✗ Non-example: Temperature — arithmetic is meaningful</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Nominal flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Nominal</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A categorical variable with <em>no natural order</em> between categories.</p>
+            <p class="ex">✓ Example: Eye colour — blue is not "greater" than green</p>
+            <p class="non-ex">✗ Non-example: T-shirt size (S &lt; M &lt; L — there is an order)</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" aria-label="Ordinal flip card" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Ordinal</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A categorical variable with a <em>natural order</em>, but the gaps between categories aren't equal or meaningful.</p>
+            <p class="ex">✓ Example: Survey rating (Disagree / Neutral / Agree)</p>
+            <p class="non-ex">✗ Non-example: Temperature — the gaps (degrees) are equal and measurable</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Worked Examples</h2>
+    <p>Select your tier:</p>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('ch1','foundation')" id="ch1-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('ch1','core')" id="ch1-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('ch1','extension')" id="ch1-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation -->
+    <div class="tier-panel active" id="ch1-foundation">
+      <p>A survey records six items about each student. Sort each into the table: <strong>Numerical</strong> or <strong>Categorical</strong>.</p>
+      <p><em>Items: shoe size, eye colour, number of siblings, temperature outside, grade level (Year 7/8/9), favourite sport</em></p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Ask: Is it a number or a label?</div>
+        <p>Numbers: shoe size, number of siblings, temperature, grade level (written as 7, 8, 9)</p>
+        <p>Labels: eye colour, favourite sport</p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-f-s2">
+        <div class="step-label">Step 2 — Classify the numbers: discrete or continuous?</div>
+        <p>Shoe size → countable whole/half values → <strong>Numerical Discrete</strong></p>
+        <p>Number of siblings → countable whole numbers → <strong>Numerical Discrete</strong></p>
+        <p>Temperature → measured on a scale → <strong>Numerical Continuous</strong></p>
+        <p>Grade level → looks like a number, but it's an ordered label → <strong>Categorical Ordinal</strong></p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-f-s3">
+        <div class="step-label">Step 3 — Classify the labels: nominal or ordinal?</div>
+        <p>Eye colour → no natural order → <strong>Categorical Nominal</strong></p>
+        <p>Favourite sport → no natural order → <strong>Categorical Nominal</strong></p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-f-s4">
+        <div class="step-label">Complete classification table</div>
+        <table class="classify-table">
+          <tr><th>Variable</th><th>Type</th></tr>
+          <tr><td>Shoe size</td><td>Numerical Discrete</td></tr>
+          <tr><td>Eye colour</td><td>Categorical Nominal</td></tr>
+          <tr><td>Number of siblings</td><td>Numerical Discrete</td></tr>
+          <tr><td>Temperature</td><td>Numerical Continuous</td></tr>
+          <tr><td>Grade level</td><td>Categorical Ordinal</td></tr>
+          <tr><td>Favourite sport</td><td>Categorical Nominal</td></tr>
+        </table>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch1-f-btn" onclick="revealStep('ch1-f',2,4)">Show next step</button>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="ch1-core">
+      <p>A dataset describes participants in a fun run. Classify each variable as discrete, continuous, nominal, or ordinal, and explain why.</p>
+      <p><em>Variables: finishing time (minutes and seconds), gender identity, age group (Under 18 / 18–40 / 40+), number of fun runs completed, suburb of residence</em></p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Identify whether each variable is numerical or categorical</div>
+        <p>Numerical: finishing time, number of fun runs completed</p>
+        <p>Categorical: gender identity, age group, suburb of residence</p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-c-s2">
+        <div class="step-label">Step 2 — Classify numerical variables</div>
+        <p><strong>Finishing time</strong> → measured precisely (e.g. 43 min 17.4 sec) → <strong>Continuous</strong><br><em>Why: Time can take any value; it's measured not counted</em></p>
+        <p><strong>Number of fun runs completed</strong> → counted whole numbers → <strong>Discrete</strong><br><em>Why: You can't complete 3.5 fun runs</em></p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-c-s3">
+        <div class="step-label">Step 3 — Classify categorical variables</div>
+        <p><strong>Gender identity</strong> → categories with no meaningful order → <strong>Nominal</strong></p>
+        <p><strong>Age group</strong> → categories with a natural order (Under 18 &lt; 18–40 &lt; 40+) → <strong>Ordinal</strong></p>
+        <p><strong>Suburb of residence</strong> → no natural order between suburbs → <strong>Nominal</strong></p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch1-c-btn" onclick="revealStep('ch1-c',2,3)">Show next step</button>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="ch1-extension">
+      <p><strong>Claim:</strong> "A star rating out of 5 (★★★☆☆) is a numerical discrete variable — it uses whole numbers from 1 to 5."</p>
+      <p>Evaluate this claim. Is a 5-star rating discrete, ordinal, or does it depend on context? Justify your answer.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Apply the numerical test</div>
+        <p>Does arithmetic make sense? Is 4 stars "twice as good" as 2 stars? If you average ratings across 100 reviewers, does 3.7 stars mean something?</p>
+        <p>Arithmetic operations on star ratings are used in practice (e.g. average ratings on Google), so they <em>appear</em> numerical.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-e-s2">
+        <div class="step-label">Step 2 — Apply the ordinal test</div>
+        <p>The gaps between star levels are not necessarily equal. The difference in quality between 1★ and 2★ may not equal the difference between 4★ and 5★. There's no guarantee the scale is evenly spaced.</p>
+        <p>This is the key feature of ordinal data: order is meaningful, gaps are not.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch1-e-s3">
+        <div class="step-label">Step 3 — Evaluate the claim</div>
+        <p>The claim is <strong>contestable</strong>. In strict statistical terms, star ratings are <strong>Categorical Ordinal</strong> — the values have order but the intervals between them are not guaranteed to be equal.</p>
+        <p>However, in practice, analysts often treat them as numerical discrete for convenience. This is a known debate in data science. The correct answer depends on the assumptions your analysis makes about the equal-interval property.</p>
+        <p><strong>Conclusion:</strong> The student's claim oversimplifies. Star ratings are most accurately described as ordinal, not discrete — though the distinction matters most when interpreting averages.</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch1-e-btn" onclick="revealStep('ch1-e',2,3)">Show next step</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ PRACTISE ═══════════════ -->
+<section class="tab-panel" id="panel-practise">
+  <div class="card">
+    <h2>Practise</h2>
+    <p>Select your tier:</p>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('prac','foundation')" id="prac-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('prac','core')" id="prac-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('prac','extension')" id="prac-tier-extension">Extension</button>
+    </div>
+
+    <!-- Foundation MCQ -->
+    <div class="tier-panel active" id="prac-foundation">
+      <div class="mcq-block">
+        <p class="question">Q1. The variable "number of books read this year" is best described as:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Continuous variables can take any value on a scale — you can't read a fraction of a book in this context." onclick="mcqAns(this)">A. Numerical continuous</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Books are counted as whole numbers — you can't read 2.7 books." onclick="mcqAns(this)">B. Numerical discrete</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Nominal variables are categories with no order — this variable is a number." onclick="mcqAns(this)">C. Categorical nominal</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Ordinal variables are ordered categories — this variable is a meaningful number, not a label." onclick="mcqAns(this)">D. Categorical ordinal</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. A student records their classmates' favourite colours. This variable is:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Colours are not numbers — arithmetic on colours doesn't make sense." onclick="mcqAns(this)">A. Numerical discrete</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Ordinal variables have a natural order — is blue really 'greater' than green?" onclick="mcqAns(this)">B. Categorical ordinal</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Favourite colour is a category with no natural order — that's nominal." onclick="mcqAns(this)">C. Categorical nominal</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Continuous variables are measured on a scale — colours are labels." onclick="mcqAns(this)">D. Numerical continuous</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. Temperature measured in degrees Celsius is:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Temperature can take any value (e.g. 23.47°C) — it's not limited to whole numbers." onclick="mcqAns(this)">A. Numerical discrete</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Temperature is measured on a continuous scale and can take any value." onclick="mcqAns(this)">B. Numerical continuous</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Temperature is a meaningful number — arithmetic (averages, differences) makes sense." onclick="mcqAns(this)">C. Categorical ordinal</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Temperature is not a label or category." onclick="mcqAns(this)">D. Categorical nominal</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Survey responses: "Strongly Disagree / Disagree / Neutral / Agree / Strongly Agree" — this is:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ These are not meaningful numbers — Strongly Agree is not 'five times' Strongly Disagree." onclick="mcqAns(this)">A. Numerical discrete</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Nominal means no order — but Strongly Agree is clearly 'more agreement' than Neutral." onclick="mcqAns(this)">B. Categorical nominal</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ These responses are categories, not measurements on a continuous scale." onclick="mcqAns(this)">C. Numerical continuous</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! The responses have a clear order, but the gaps between them aren't equal — that's ordinal." onclick="mcqAns(this)">D. Categorical ordinal</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f4"></div>
+      </div>
+    </div>
+
+    <!-- Core -->
+    <div class="tier-panel" id="prac-core">
+      <div class="mcq-block">
+        <p class="question">Q1. A dataset records the weight of fish caught in a river (in grams). Which classification is correct?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Weight is measured on a continuous scale — 347.6g is a valid measurement." onclick="mcqAns(this)">A. Numerical continuous</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Weight can take any value on a scale, not just whole numbers." onclick="mcqAns(this)">B. Numerical discrete</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Weight is a meaningful number — arithmetic makes sense." onclick="mcqAns(this)">C. Categorical ordinal</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Weight is not a label or category." onclick="mcqAns(this)">D. Categorical nominal</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. A student argues that "postcode" is numerical discrete because it's a whole number. Which response best addresses this?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Being a whole number doesn't make something discrete — the key test is whether arithmetic is meaningful." onclick="mcqAns(this)">A. They are correct — postcodes are whole numbers so they must be discrete.</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Postcodes are labels — adding or averaging them has no meaning. Postcode 2000 + 2060 is not a real place." onclick="mcqAns(this)">B. They are wrong — postcodes are labels with no arithmetic meaning, so they are categorical nominal.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Postcodes are categories, not measurements on a continuous scale." onclick="mcqAns(this)">C. They are wrong — postcodes are numerical continuous.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Postcodes have no natural order (2000 is not 'less than' 3000 in any meaningful way)." onclick="mcqAns(this)">D. They are wrong — postcodes are categorical ordinal.</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c2"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q3. A variable can take values: Small, Medium, Large, Extra Large. What type of variable is this? (Type: nominal or ordinal)</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-c3" placeholder="Type your answer" aria-label="Type in answer for Q3">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-c3','ordinal','fb-c3')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Which pair of variables are BOTH categorical?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Height is numerical continuous — it's measured on a scale." onclick="mcqAns(this)">A. Height and hair colour</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Number of goals is numerical discrete — it's counted." onclick="mcqAns(this)">B. Number of goals and jersey number</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Both suburb and transport method are categories/labels — neither is a meaningful number." onclick="mcqAns(this)">C. Suburb and transport method</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Temperature is numerical continuous." onclick="mcqAns(this)">D. Temperature and year group</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c4"></div>
+      </div>
+    </div>
+
+    <!-- Extension -->
+    <div class="tier-panel" id="prac-extension">
+      <div class="mcq-block">
+        <p class="question">Q1. A researcher encodes gender identity as: 1 = Male, 2 = Female, 3 = Non-binary, 4 = Prefer not to say. A colleague calculates the mean: 1.8. What is the most serious problem with this?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The issue is more fundamental than rounding." onclick="mcqAns(this)">A. The mean should be rounded to a whole number.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Sample size affects precision but not the fundamental classification error." onclick="mcqAns(this)">B. The sample size is probably too small.</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! The numbers 1–4 are arbitrary labels — gender identity is nominal. Calculating a mean implies equal intervals and arithmetic meaning, which don't exist here." onclick="mcqAns(this)">C. Gender identity is nominal — the numbers are labels, and averaging them is meaningless.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The encoding method itself (1–4) is not the problem — treating it as arithmetic is." onclick="mcqAns(this)">D. The encoding should use letters instead of numbers.</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. The Richter scale measures earthquake magnitude. Magnitude 6 releases about 31 times more energy than magnitude 5. What type of variable is Richter magnitude, and why is this classification tricky?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Discrete implies equal-spaced countable values — Richter scale intervals are not equal in energy terms." onclick="mcqAns(this)">A. Numerical discrete — the values are whole numbers.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Nominal implies no order — magnitudes clearly have a meaningful order." onclick="mcqAns(this)">B. Categorical nominal — the values are labels for earthquake size.</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Ordinal implies we can rank but not measure — but Richter values do have measurable (logarithmic) differences." onclick="mcqAns(this)">C. Categorical ordinal — there is order but the gaps are not equal.</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Richter scale values are continuous measurements (can be 5.4, 6.7) but the scale is logarithmic — intervals are not intuitively equal. This makes classification nuanced." onclick="mcqAns(this)">D. Numerical continuous — values are measured, though the logarithmic scale makes interpretation complex.</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e2"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q3. A dataset has the variable "distance from school in km" recorded to 2 decimal places. What type of variable is this? (Type: discrete or continuous)</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-e3" placeholder="Type your answer" aria-label="Type in answer extension Q3">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-e3','continuous','fb-e3')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4 (Multi-step). A survey collects: (i) income bracket (Under $30k / $30–60k / $60–100k / Over $100k), (ii) exact annual salary in dollars, (iii) job satisfaction score 1–10. How many of these three variables are categorical?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Check each variable: income bracket has ordered categories; salary is a measured number; satisfaction score is debatable but most likely ordinal." onclick="mcqAns(this)">A. 0</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Think again — does the income bracket have a natural order? Is that ordinal?" onclick="mcqAns(this)">B. 0 — all three are numerical</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Income bracket (ordinal) and job satisfaction 1–10 (ordinal — equal intervals not guaranteed) are both categorical. Exact salary is numerical continuous." onclick="mcqAns(this)">C. 2 — income bracket (ordinal) and satisfaction score (ordinal)</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Exact salary in dollars is a meaningful number — arithmetic (averages, totals) makes complete sense." onclick="mcqAns(this)">D. 3 — all three are categorical</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e4"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ REFLECT ═══════════════ -->
+<section class="tab-panel" id="panel-reflect">
+  <div class="card">
+    <h2>Error Detective 🔍</h2>
+    <p>A student classified variables from a survey. One step contains a genuine error — find it.</p>
+    <div class="scenario-box" style="margin-bottom:16px">
+      <strong>Survey variables:</strong> number of pets, favourite colour, distance to school, year group
+    </div>
+    <div id="ed-steps">
+      <button class="error-step" onclick="edCheck(this, false, 'ed-fb-1')" aria-label="Error detective step 1">
+        <strong>Step 1:</strong> Identified variables: number of pets, favourite colour, distance to school, year group ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-1" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this, false, 'ed-fb-2')" aria-label="Error detective step 2">
+        <strong>Step 2:</strong> Numerical variables: number of pets, distance to school, year group — because year group is written as a number (7, 8, 9) ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-2" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this, false, 'ed-fb-3')" aria-label="Error detective step 3">
+        <strong>Step 3:</strong> Categorical variables: favourite colour ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-3" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this, false, 'ed-fb-4')" aria-label="Error detective step 4">
+        <strong>Step 4:</strong> Numerical discrete: number of pets ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-4" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this, true, 'ed-fb-5')" aria-label="Error detective step 5">
+        <strong>Step 5:</strong> Numerical discrete: year group — because year group is a whole number ❌?
+      </button>
+      <div class="mcq-feedback" id="ed-fb-5" style="margin-bottom:6px"></div>
+    </div>
+    <div class="error-correction" id="ed-correction">
+      <strong>✓ Correction:</strong> Year group (Year 7, 8, 9) is <strong>Categorical Ordinal</strong>, not numerical discrete. Although year groups are written as numbers, they are labels that have a natural order — Year 8 is not "twice" Year 4, and you can't meaningfully average year groups. The numbers are identifiers, not quantities. The student confused "looks like a number" with "is a number."
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Newman's Word Problem</h2>
+    <div class="scenario-box">
+      A sports scientist is analysing data from a local swimming carnival. She records the following for each swimmer: their <strong>age group</strong> (Under 12, Under 14, Under 16), their <strong>finishing time</strong> in seconds, whether they <strong>qualified for finals</strong> (yes/no), and their <strong>lane number</strong>.
+      <br><br>Classify each variable as numerical or categorical. For each numerical variable, state whether it is discrete or continuous. For each categorical variable, state whether it is nominal or ordinal.
+    </div>
+
+    <div class="newman-stage active" id="nm-1">
+      <p class="stage-header">📖 Read — What is being asked?</p>
+      <p>Read the problem carefully. What are the four variables? What are you being asked to do with each one?</p>
+      <button class="btn btn-accent btn-sm" onclick="nmNext(1)">I've read it — Next stage →</button>
+    </div>
+    <div class="newman-stage" id="nm-2">
+      <p class="stage-header">💡 Comprehend — What are the variables?</p>
+      <p>List the four variables from the scenario before moving on.</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The four variables are ___, ___, ___, ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(2)">Ready — Next stage →</button>
+    </div>
+    <div class="newman-stage" id="nm-3">
+      <p class="stage-header">🔄 Transform — What strategy will you use?</p>
+      <p>Which classification test will you apply to each variable?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"I will classify each variable by asking: is it a number or a label? If a number, can it be counted exactly or measured on a scale?"</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(3)">Ready — Next stage →</button>
+    </div>
+    <div class="newman-stage" id="nm-4">
+      <p class="stage-header">⚙️ Process — Classify each variable</p>
+      <p>Work through each variable. Check your answers below when ready.</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"___ is ___ because ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(4)">Show answers →</button>
+    </div>
+    <div class="newman-stage" id="nm-5">
+      <p class="stage-header">✅ Encode — Write your answer</p>
+      <div class="step-box" style="margin-bottom:10px">
+        <p><strong>Age group</strong> (Under 12 / Under 14 / Under 16) → ordered categories → <strong>Categorical Ordinal</strong></p>
+        <p><strong>Finishing time</strong> → measured in seconds (e.g. 58.43 s) → <strong>Numerical Continuous</strong></p>
+        <p><strong>Qualified for finals</strong> (yes/no) → two categories, no order → <strong>Categorical Nominal</strong></p>
+        <p><strong>Lane number</strong> → looks like a number, but it's a label (Lane 4 is not "twice" Lane 2) → <strong>Categorical Nominal</strong></p>
+      </div>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The scientist collected both ___ and ___ data, including ___."</p></details>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Metacognitive Journal ✍️</h2>
+    <p>What was the trickiest distinction in this chapter and why? Give an example of a variable that sits on the boundary between two types.</p>
+    <textarea class="journal-area" id="journal" oninput="saveJournal()" aria-label="Metacognitive journal" placeholder="Write your reflection here..."></textarea>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ── Font toggle ──
+function changeFont(val) {
+  document.body.className = val === 'system' ? 'font-system' : val === 'atkinson' ? 'font-atkinson' : '';
+}
+
+// ── Tab switching ──
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+  document.getElementById('panel-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  document.getElementById('tab-' + id).setAttribute('aria-selected','true');
+  if (id === 'reflect') markComplete();
+}
+
+// ── Tier switching ──
+function showTier(group, tier) {
+  ['foundation','core','extension'].forEach(t => {
+    const panel = document.getElementById(group + '-' + t);
+    const btn = document.getElementById(group + '-tier-' + t);
+    if (panel) panel.classList.toggle('active', t === tier);
+    if (btn) btn.classList.toggle('active', t === tier);
+  });
+}
+
+// ── Step reveal ──
+function revealStep(prefix, current, max) {
+  const box = document.getElementById(prefix + '-s' + current);
+  if (box) { box.classList.remove('step-hidden'); box.style.display = 'block'; }
+  const btn = document.getElementById(prefix + '-btn');
+  if (current >= max) { if (btn) btn.style.display = 'none'; }
+  else { if (btn) btn.setAttribute('onclick', 'revealStep("' + prefix + '",' + (current+1) + ',' + max + ')'); }
+}
+
+// ── MCQ ──
+function mcqAns(btn) {
+  const block = btn.closest('.mcq-block');
+  const btns = block.querySelectorAll('.mcq-btn');
+  btns.forEach(b => { b.disabled = true; });
+  const result = btn.getAttribute('data-result');
+  const msg = btn.getAttribute('data-msg');
+  btn.classList.add(result === 'correct' ? 'correct' : 'wrong');
+  const fbId = block.querySelector('.mcq-feedback').id;
+  const fb = document.getElementById(fbId);
+  fb.textContent = msg;
+  fb.className = 'mcq-feedback ' + (result === 'correct' ? 'correct' : 'wrong');
+}
+
+// ── Type-in ──
+function checkTypeIn(inputId, answer, fbId) {
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  if (val === answer.toLowerCase()) {
+    fb.textContent = '✓ Correct!';
+    fb.className = 'mcq-feedback correct';
+    document.getElementById(inputId).disabled = true;
+  } else {
+    fb.textContent = '✗ Not quite — think about whether the categories have a meaningful order.';
+    fb.className = 'mcq-feedback wrong';
+  }
+}
+
+// ── Drag and drop sort ──
+let dragged = null;
+document.querySelectorAll('.item-chip').forEach(chip => {
+  chip.addEventListener('dragstart', e => { dragged = chip; chip.classList.add('dragging'); });
+  chip.addEventListener('dragend', () => chip.classList.remove('dragging'));
+});
+function dzOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function dzLeave(e) { e.currentTarget.classList.remove('dragover'); }
+function dzDrop(e, zone) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  if (dragged) { e.currentTarget.appendChild(dragged); dragged = null; }
+}
+function checkSort() {
+  const zones = ['num-discrete','num-continuous','categorical-nominal','categorical-ordinal'];
+  let correct = 0, total = 8;
+  zones.forEach(zone => {
+    const zEl = document.getElementById('zone-' + zone);
+    zEl.querySelectorAll('.item-chip').forEach(chip => {
+      if (chip.getAttribute('data-type') === zone) correct++;
+    });
+  });
+  const fb = document.getElementById('sort-feedback');
+  if (correct === total) {
+    fb.textContent = '✓ All ' + total + ' variables correctly classified! Great work.';
+    fb.style.color = 'var(--correct)';
+  } else {
+    fb.textContent = correct + ' of ' + total + ' correct. Check the ones in the wrong box — remember to ask: is it a number or a label? If a number: counted or measured?';
+    fb.style.color = 'var(--wrong)';
+  }
+}
+function resetSort() {
+  const pool = document.getElementById('chip-pool');
+  document.querySelectorAll('.item-chip').forEach(chip => pool.appendChild(chip));
+  document.getElementById('sort-feedback').textContent = '';
+}
+
+// ── Error detective ──
+let edDone = false;
+function edCheck(btn, isError, fbId) {
+  if (edDone) return;
+  const fb = document.getElementById(fbId);
+  if (isError) {
+    btn.classList.add('correct-pick');
+    btn.disabled = true;
+    fb.textContent = '✓ Found it! This is the error.';
+    fb.className = 'mcq-feedback correct';
+    document.getElementById('ed-correction').style.display = 'block';
+    document.querySelectorAll('.error-step').forEach(b => b.disabled = true);
+    edDone = true;
+  } else {
+    btn.classList.add('wrong-pick');
+    fb.textContent = '✗ This step is correct — keep looking.';
+    fb.className = 'mcq-feedback wrong';
+    setTimeout(() => { btn.classList.remove('wrong-pick'); fb.textContent = ''; }, 1800);
+  }
+}
+
+// ── Newman's ──
+function nmNext(current) {
+  document.getElementById('nm-' + current).classList.remove('active');
+  document.getElementById('nm-' + current).classList.add('done');
+  const next = document.getElementById('nm-' + (current + 1));
+  if (next) next.classList.add('active');
+}
+
+// ── Journal ──
+function saveJournal() {
+  const val = document.getElementById('journal').value;
+  localStorage.setItem('dat-ch1-journal', val);
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '✓ Saved to your device';
+  setTimeout(() => msg.textContent = '', 2000);
+}
+function loadJournal() {
+  const saved = localStorage.getItem('dat-ch1-journal');
+  if (saved) document.getElementById('journal').value = saved;
+}
+
+// ── Progress ──
+function markComplete() {
+  localStorage.setItem('dat-ch1-complete', 'true');
+}
+
+// ── Init ──
+loadJournal();
+</script>
+</body>
+</html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading and Interpreting Graphs — MA4-DAT-C-01 Ch4</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4EFE9;
+    --accent: #C1614F;
+    --accent-light: #f5e0dc;
+    --slate: #3D5A80;
+    --amber: #E89C2F;
+    --forest: #4A7C59;
+    --terracotta: #C1614F;
+    --correct: #4A7C59;
+    --wrong: #C1614F;
+    --text: #1E2A35;
+    --card: #FFFFFF;
+    --radius: 8px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; min-height: 100vh; }
+  body.font-system { font-family: system-ui, sans-serif; }
+  body.font-atkinson { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+  header { background: var(--accent); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  header h1 { font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 800; }
+  header p { font-size: 0.82rem; opacity: 0.85; }
+  .font-toggle { display: flex; gap: 6px; align-items: center; }
+  .font-toggle label { font-size: 0.78rem; color: #fff; opacity: 0.9; }
+  .font-toggle select { font-size: 0.78rem; padding: 3px 7px; border-radius: 4px; border: none; background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; }
+
+  nav.tabs { display: flex; gap: 6px; padding: 16px 24px 0; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 18px; border-radius: 20px; border: none; background: #fff; color: var(--text); font-family: 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+  .tab-btn:hover:not(.active) { background: var(--accent-light); }
+
+  main { padding: 24px; max-width: 860px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card { background: var(--card); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  h2 { font-family: 'Nunito', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--accent); margin-bottom: 10px; }
+  h3 { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+  p { margin-bottom: 10px; }
+  ul, ol { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+
+  .scenario-box { background: var(--accent-light); border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding: 14px 18px; margin-bottom: 16px; }
+  .info-box { background: #edf3ee; border-left: 4px solid var(--forest); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+  .warn-box { background: #fff8e8; border-left: 4px solid var(--amber); border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 16px; margin-bottom: 12px; }
+
+  .phase-label { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+  .phase-ido  { background: var(--accent); color: #fff; }
+  .phase-wedo { background: var(--slate);  color: #fff; }
+  .phase-youdo{ background: var(--forest); color: #fff; }
+
+  /* Frayer */
+  .frayer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-top: 12px; }
+  .flip-card { perspective: 800px; height: 200px; cursor: pointer; }
+  .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.55s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 14px; text-align: center; }
+  .flip-front { background: var(--accent); color: #fff; }
+  .flip-front .term { font-family: 'Nunito', sans-serif; font-size: 1.05rem; font-weight: 800; }
+  .flip-front .tap-hint { font-size: 0.72rem; opacity: 0.8; margin-top: 8px; }
+  .flip-back { background: var(--bg); color: var(--text); transform: rotateY(180deg); text-align: left; align-items: flex-start; }
+  .flip-back .def    { font-size: 0.84rem; font-weight: 700; margin-bottom: 6px; }
+  .flip-back .ex     { font-size: 0.8rem; color: var(--forest); margin-bottom: 4px; }
+  .flip-back .non-ex { font-size: 0.8rem; color: var(--terracotta); }
+
+  /* Tiers */
+  .tier-btns { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tier-btn { padding: 7px 18px; border-radius: 20px; border: 2px solid var(--accent); background: #fff; color: var(--accent); font-family: 'Nunito', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .tier-btn.active { background: var(--accent); color: #fff; }
+  .tier-panel { display: none; }
+  .tier-panel.active { display: block; }
+
+  .step-box { border-left: 4px solid var(--accent); padding: 10px 14px; margin-bottom: 8px; background: #fdf0ed; border-radius: 0 var(--radius) var(--radius) 0; }
+  .step-box .step-label { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .step-hidden { display: none; }
+
+  .btn { display: inline-block; padding: 9px 20px; border-radius: var(--radius); border: none; font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover { opacity: 0.88; }
+  .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+
+  /* MCQ */
+  .mcq-block { margin-bottom: 20px; }
+  .mcq-block .question { font-weight: 700; margin-bottom: 8px; }
+  .mcq-options { display: flex; flex-direction: column; gap: 6px; }
+  .mcq-btn { text-align: left; padding: 9px 14px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; color: var(--text); font-family: 'Nunito Sans', sans-serif; font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .mcq-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .mcq-btn.correct { border-color: var(--correct); background: #eaf4ee; color: var(--correct); }
+  .mcq-btn.wrong   { border-color: var(--wrong);   background: #faeae8; color: var(--wrong); }
+  .mcq-feedback { font-size: 0.85rem; margin-top: 6px; min-height: 20px; font-weight: 600; }
+  .mcq-feedback.correct { color: var(--correct); }
+  .mcq-feedback.wrong   { color: var(--wrong); }
+
+  .type-in-block { margin-bottom: 20px; }
+  .type-in-block .question { font-weight: 700; margin-bottom: 8px; }
+  .type-in-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .type-in-row input { padding: 8px 12px; border-radius: var(--radius); border: 2px solid #ddd; font-size: 0.9rem; width: 140px; font-family: 'Nunito Sans', sans-serif; }
+  .type-in-row input:focus { outline: none; border-color: var(--accent); }
+
+  /* Error detective */
+  .error-step { padding: 10px 14px; margin-bottom: 6px; border-radius: var(--radius); border: 2px solid #ddd; background: #fff; cursor: pointer; font-size: 0.9rem; transition: border-color 0.2s, background 0.2s; text-align: left; width: 100%; }
+  .error-step:hover:not(:disabled) { border-color: var(--amber); background: var(--accent-light); }
+  .error-step.wrong-pick  { border-color: var(--wrong);   background: #faeae8; }
+  .error-step.correct-pick{ border-color: var(--correct); background: #eaf4ee; }
+  .error-correction { margin-top: 12px; padding: 12px 16px; background: #eaf4ee; border-radius: var(--radius); border-left: 4px solid var(--correct); display: none; }
+
+  /* Newman */
+  .newman-stage { display: none; }
+  .newman-stage.active { display: block; }
+  .newman-stage.done   { display: block; opacity: 0.6; }
+  .stage-header { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem; color: var(--accent); margin-bottom: 6px; }
+  .scaffold { background: var(--accent-light); border-radius: var(--radius); padding: 10px 14px; margin-top: 8px; font-size: 0.88rem; }
+  .scaffold summary { cursor: pointer; font-weight: 700; font-size: 0.85rem; color: #8a3020; }
+
+  /* Journal */
+  .journal-area { width: 100%; min-height: 120px; padding: 12px; font-family: 'Nunito Sans', sans-serif; font-size: 0.95rem; border-radius: var(--radius); border: 2px solid #ddd; background: repeating-linear-gradient(transparent, transparent 31px, #ddd 31px, #ddd 32px); line-height: 32px; resize: vertical; }
+  .journal-area:focus { outline: none; border-color: var(--accent); }
+  .save-msg { font-size: 0.82rem; color: var(--forest); margin-top: 6px; min-height: 18px; }
+
+  .stem-leaf-grid { display: grid; grid-template-columns: 40px 1fr; gap: 0; border: 2px solid #ccc; border-radius: var(--radius); overflow: hidden; font-family: monospace; font-size: 1rem; max-width: 400px; }
+  .sl-stem { background: var(--accent); color: #fff; padding: 6px 10px; font-weight: 700; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); }
+  .sl-leaves { background: #fff; padding: 6px 14px; border-bottom: 1px solid #eee; }
+
+  .mislead-graph { background: #fafafa; border: 2px solid #ddd; border-radius: var(--radius); padding: 16px; margin: 12px 0; }
+  .bar-row { display: flex; align-items: flex-end; gap: 24px; height: 160px; margin-bottom: 8px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bar-rect { width: 48px; background: var(--accent); border-radius: 4px 4px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; color: #fff; font-size: 0.8rem; font-weight: 700; }
+  .bar-label { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+  .axis-line { height: 2px; background: #888; width: 100%; margin-top: 4px; }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 10px 0; }
+  .data-table th { background: var(--accent); color: #fff; padding: 8px 12px; text-align: left; }
+  .data-table td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+  .data-table tr:nth-child(even) td { background: var(--accent-light); }
+
+  .reveal-btn { font-size: 0.82rem; padding: 5px 12px; border-radius: 20px; border: none; background: var(--accent); color: #fff; font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer; }
+  .reveal-answer { display: none; margin-top: 8px; padding: 8px 12px; background: #eaf4ee; border-radius: var(--radius); font-size: 0.88rem; border-left: 3px solid var(--correct); }
+  .graph-question { background: var(--accent-light); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
+  .graph-question p { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Chapter 4 — Reading and Interpreting Graphs</h1>
+    <p>MA4-DAT-C-01 · MAO-WM-01 · Stage 4 Mathematics</p>
+  </div>
+  <div class="font-toggle">
+    <label for="fontSel">Font:</label>
+    <select id="fontSel" onchange="changeFont(this.value)" aria-label="Font preference">
+      <option value="default">Nunito Sans</option>
+      <option value="system">System default</option>
+      <option value="atkinson">Atkinson Hyperlegible</option>
+    </select>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true"  onclick="showTab('hook')"        id="tab-hook">🪝 Hook</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="showTab('learn')"       id="tab-learn">📖 Learn</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="showTab('investigate')" id="tab-investigate">🔍 Investigate</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="showTab('practise')"    id="tab-practise">✏️ Practise</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" onclick="showTab('reflect')"     id="tab-reflect">💭 Reflect</button>
+</nav>
+
+<main>
+
+<!-- ═══════════ HOOK ═══════════ -->
+<section class="tab-panel active" id="panel-hook">
+  <div class="card">
+    <h2>An Honest Graph?</h2>
+    <p>A local council publishes a graph showing the "cost of services" has grown over four years. Here are the actual values:</p>
+    <table class="data-table" style="max-width:360px;margin-bottom:16px">
+      <tr><th>Year</th><th>Cost of Services</th></tr>
+      <tr><td>Year 1</td><td>$18,753</td></tr>
+      <tr><td>Year 2</td><td>$27,915</td></tr>
+      <tr><td>Year 3</td><td>$51,208</td></tr>
+      <tr><td>Year 4</td><td>$74,632</td></tr>
+    </table>
+    <p>The graph uses 3D money bag icons — each year's icon is taller <em>and</em> wider <em>and</em> deeper than the last. By Year 4, the icon looks roughly <strong>10–15 times larger</strong> than Year 1's.</p>
+    <div class="mislead-graph" aria-label="Misleading graph example">
+      <p style="font-size:0.82rem;font-weight:700;color:#555;margin-bottom:8px">Cost of Services (misleading visualisation)</p>
+      <div class="bar-row" aria-hidden="true">
+        <div class="bar-col"><div class="bar-rect" style="height:28px">💰</div><div class="bar-label">$18,753</div><div class="bar-label" style="font-size:0.75rem;color:#888">Yr 1</div></div>
+        <div class="bar-col"><div class="bar-rect" style="height:46px;width:58px;font-size:0.9rem">💰</div><div class="bar-label">$27,915</div><div class="bar-label" style="font-size:0.75rem;color:#888">Yr 2</div></div>
+        <div class="bar-col"><div class="bar-rect" style="height:88px;width:72px;font-size:1.1rem">💰</div><div class="bar-label">$51,208</div><div class="bar-label" style="font-size:0.75rem;color:#888">Yr 3</div></div>
+        <div class="bar-col"><div class="bar-rect" style="height:140px;width:88px;font-size:1.4rem">💰</div><div class="bar-label">$74,632</div><div class="bar-label" style="font-size:0.75rem;color:#888">Yr 4</div></div>
+      </div>
+      <div class="axis-line"></div>
+    </div>
+    <ol>
+      <li style="margin-bottom:10px"><strong>Is this graph honest?</strong> The cost in Year 4 ($74,632) is about 4 times Year 1 ($18,753). Does the graph give you that impression?</li>
+      <li style="margin-bottom:10px">What is the graph doing to make the growth seem larger than it really is?</li>
+      <li>Who might benefit from readers thinking costs grew more dramatically than they did?</li>
+    </ol>
+    <div style="text-align:right;margin-top:10px">
+      <button class="btn btn-accent" onclick="showTab('learn')">Start Learning →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ LEARN ═══════════ -->
+<section class="tab-panel" id="panel-learn">
+  <div class="card">
+    <span class="phase-label phase-ido">I Do — Key Vocabulary</span>
+    <h2>Key Terms</h2>
+    <div class="frayer-grid">
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Pattern flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Pattern</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A regular, repeating structure in data — a trend, cycle, or cluster the graph makes visible.</p>
+            <p class="ex">✓ "Scores cluster between 12 and 16" is a pattern</p>
+            <p class="non-ex">✗ "The highest score is 18" is a reading, not a pattern</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Conclusion flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Conclusion</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A statement drawn from the data that goes beyond simply reading values — an interpretation supported by evidence.</p>
+            <p class="ex">✓ "Most students scored above 12 out of 20" — uses the pattern</p>
+            <p class="non-ex">✗ "The most common score was 12" — just a reading</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Prediction flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Prediction</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">Using a pattern in the data to estimate future or unobserved values — always stated with appropriate uncertainty.</p>
+            <p class="ex">✓ "Based on the trend, spending is likely to exceed $90k in Year 5"</p>
+            <p class="non-ex">✗ "Spending will definitely be $95k" — overstated certainty</p>
+          </div>
+        </div>
+      </div>
+      <div class="flip-card" onclick="this.classList.toggle('flipped')" tabindex="0" onkeydown="if(event.key==='Enter')this.classList.toggle('flipped')" aria-label="Misleading graph flip card">
+        <div class="flip-card-inner">
+          <div class="flip-face flip-front"><span class="term">Misleading Graph</span><span class="tap-hint">Tap to flip</span></div>
+          <div class="flip-face flip-back">
+            <p class="def">A graph that gives the reader a false impression through design choices — even when the data values are accurate.</p>
+            <p class="ex">✓ Truncated axis, 3D icons, inconsistent scales, missing labels</p>
+            <p class="non-ex">✗ A misleading graph ≠ wrong data — the data can be accurate but the design deceptive</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="phase-label phase-ido">I Do — Interpretation Framework</span>
+    <h2>How to Interpret a Graph — Four Steps</h2>
+    <div class="info-box">
+      <p><strong>Step 1 — Read:</strong> What does the graph show? What are the axes? What is the scale? What time period or group?</p>
+      <p><strong>Step 2 — Identify features:</strong> Maximum? Minimum? Mode? Median? Where do values cluster?</p>
+      <p><strong>Step 3 — Identify patterns:</strong> Trend (increasing/decreasing)? A cluster? An outlier? Symmetric or skewed shape?</p>
+      <p style="margin-bottom:0"><strong>Step 4 — Conclude and predict:</strong> What does the data tell us? What might happen next? What questions does it raise?</p>
+    </div>
+    <div class="warn-box">
+      <strong>⚠️ Critical reading:</strong> Always check the scale, the axis origin, and whether icon sizes are proportional. Ask: "Does the visual impression match the actual numbers?"
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="phase-label phase-ido">I Do — Worked Examples</span>
+    <h2>Reading and Interpreting — Step by Step</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('ch4','foundation')" id="ch4-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('ch4','core')" id="ch4-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('ch4','extension')" id="ch4-tier-extension">Extension</button>
+    </div>
+
+    <div class="tier-panel active" id="ch4-foundation">
+      <p>A dot plot shows class test scores: 8, 9, 11, 11, 12, 12, 12, 13, 14, 14, 15, 15, 16, 17, 18. Identify the mode, range, and describe the shape.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Read the graph</div>
+        <p>Values range from 8 to 18. The score 12 has three dots above it — more than any other score.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-f-s2">
+        <div class="step-label">Step 2 — Identify the mode</div>
+        <p>Mode = the value with the most dots = <strong>12</strong> (appears 3 times)</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-f-s3">
+        <div class="step-label">Step 3 — Calculate the range</div>
+        <p>Range = maximum − minimum = 18 − 8 = <strong>10</strong></p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-f-s4">
+        <div class="step-label">Step 4 — Describe the shape</div>
+        <p>"The distribution is roughly symmetric, with most scores clustered between 11 and 15. There is one low outlier at 8 which pulls the left tail slightly lower. Most students scored above 10 out of 20."</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch4-f-btn" onclick="revealStep('ch4-f',2,4)">Show next step</button>
+    </div>
+
+    <div class="tier-panel" id="ch4-core">
+      <p>A stem-and-leaf plot shows the ages of 11 community event participants:</p>
+      <div class="stem-leaf-grid" style="margin-bottom:12px">
+        <div class="sl-stem">1</div><div class="sl-leaves">4  7  9</div>
+        <div class="sl-stem">2</div><div class="sl-leaves">1  3  5  8</div>
+        <div class="sl-stem">3</div><div class="sl-leaves">2  6</div>
+        <div class="sl-stem">4</div><div class="sl-leaves">1  5</div>
+      </div>
+      <p style="font-size:0.85rem;margin-bottom:12px"><strong>Key:</strong> 1|4 means 14 years old</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Read specific values</div>
+        <p>Youngest: 14 &nbsp;|&nbsp; Oldest: 45 &nbsp;|&nbsp; Values in the 20s: 21, 23, 25, 28</p>
+        <p>Total: 3 + 4 + 2 + 2 = 11 participants</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-c-s2">
+        <div class="step-label">Step 2 — Find the median</div>
+        <p>11 values → median is the 6th value</p>
+        <p>In order: 14, 17, 19, 21, 23, <strong>25</strong>, 28, 32, 36, 41, 45 → Median = <strong>25 years old</strong></p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-c-s3">
+        <div class="step-label">Step 3 — Describe the distribution</div>
+        <p>The distribution is roughly uniform to slightly right-skewed. Most participants are in their teens and twenties (7 of 11), with fewer older participants. Ages spread from 14 to 45.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-c-s4">
+        <div class="step-label">Step 4 — Make a prediction</div>
+        <p>"Based on the pattern, if a 12th participant joins, they are most likely to be in their 20s — this is the most represented age group. The event appears to attract a younger adult audience."</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch4-c-btn" onclick="revealStep('ch4-c',2,4)">Show next step</button>
+    </div>
+
+    <div class="tier-panel" id="ch4-extension">
+      <p>Council spending on parks: Year 1 = $200,000, Year 2 = $220,000. The y-axis starts at $195,000. The bars appear to show Year 2 is more than three times Year 1. Identify the technique, calculate the actual percentage increase, and explain the distortion.</p>
+      <div class="step-box">
+        <div class="step-label">Step 1 — Identify the misleading technique</div>
+        <p><strong>Truncated y-axis</strong> — the y-axis starts at $195,000 instead of $0.</p>
+        <p>Visible bar for Year 1 = $200k − $195k = $5k &nbsp;|&nbsp; Visible bar for Year 2 = $220k − $195k = $25k</p>
+        <p>Visual ratio: $25k ÷ $5k = <strong>5:1</strong> — the bar appears 5 times taller.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-e-s2">
+        <div class="step-label">Step 2 — Calculate the actual percentage increase</div>
+        <p>Increase = $220,000 − $200,000 = $20,000</p>
+        <p>Percentage increase = (20,000 ÷ 200,000) × 100 = <strong>10%</strong></p>
+        <p>The graph implies a ~400% visual increase for what is actually a 10% increase.</p>
+      </div>
+      <div class="step-box step-hidden" id="ch4-e-s3">
+        <div class="step-label">Step 3 — Explain for two audiences</div>
+        <p><strong>For a mathematician:</strong> "The y-axis truncation amplifies a 10% increase into a visual ratio of approximately 5:1. The labelled values are accurate but the bar heights are visually deceptive."</p>
+        <p><strong>For a general reader:</strong> "The graph starts at $195,000 instead of zero, so the bars only show the top sliver of each value. A small real difference looks enormous because you're not seeing the full bars."</p>
+      </div>
+      <button class="btn btn-accent btn-sm" id="ch4-e-btn" onclick="revealStep('ch4-e',2,3)">Show next step</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="phase-label phase-wedo">We Do — Guided Practice</span>
+    <h2>Reading Together</h2>
+    <p>A line graph shows weekly sales: Mon 120, Tue 145, Wed 138, Thu 160, Fri 172.</p>
+    <div class="info-box">
+      <p><strong>Step 1 — Read:</strong> Sales figures for one week, Mon–Fri.</p>
+      <p><strong>Step 2 — Features:</strong> Lowest = Mon (120), Highest = Fri (172). Mid-week dip on Wed (138).</p>
+      <p><strong>Step 3 — Pattern:</strong> Overall upward trend Mon → Fri, despite the Wed dip.</p>
+      <p style="margin-bottom:0"><strong>Step 4 — Conclusion:</strong> "Sales showed an overall upward trend across the week. The Wednesday dip may reflect mid-week behaviour patterns worth investigating."</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ INVESTIGATE ═══════════ -->
+<section class="tab-panel" id="panel-investigate">
+  <div class="card">
+    <h2>Reading a Dot Plot</h2>
+    <p>A class of 15 students sat a test. Scores out of 20:</p>
+    <p style="font-family:monospace;font-size:1.05rem">8, 12, 15, 12, 18, 14, 11, 12, 16, 9, 14, 15, 13, 11, 17</p>
+    <div style="overflow-x:auto;margin:12px 0">
+      <canvas id="dotPlotCanvas" width="520" height="120" aria-label="Dot plot of class test scores"></canvas>
+    </div>
+    <div class="graph-question">
+      <p><strong>Q1.</strong> What is the most common score (mode)?</p>
+      <button class="reveal-btn" onclick="revealAns('a1')">Reveal answer</button>
+      <div class="reveal-answer" id="a1">Mode = <strong>12</strong> — it appears 3 times, more than any other score.</div>
+    </div>
+    <div class="graph-question">
+      <p><strong>Q2.</strong> What is the range of scores?</p>
+      <button class="reveal-btn" onclick="revealAns('a2')">Reveal answer</button>
+      <div class="reveal-answer" id="a2">Range = 18 − 8 = <strong>10</strong></div>
+    </div>
+    <div class="graph-question">
+      <p><strong>Q3.</strong> Describe the shape of the distribution in one sentence.</p>
+      <button class="reveal-btn" onclick="revealAns('a3')">Reveal answer</button>
+      <div class="reveal-answer" id="a3">The scores are roughly symmetric, clustered in the 11–15 range, with one low outlier at 8.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Spotting Misleading Techniques</h2>
+    <p>Two common techniques used to mislead readers. For each, identify what has been done and why it distorts the data.</p>
+    <div class="graph-question">
+      <p><strong>Technique 1 — Truncated y-axis.</strong> A bar graph shows sales of $198,000 and $202,000. The y-axis starts at $195,000. The second bar appears about 4 times taller than the first.</p>
+      <button class="reveal-btn" onclick="revealAns('b1')">Reveal explanation</button>
+      <div class="reveal-answer" id="b1">Starting above zero removes baseline context. The actual difference is $4,000 — about 2%. The visual impression of "4 times taller" vastly exaggerates this. An honest graph's y-axis should start at 0, or clearly mark the truncation with a break symbol (//).</div>
+    </div>
+    <div class="graph-question">
+      <p><strong>Technique 2 — 3D icons scaled in all dimensions.</strong> An icon for $18k is 1cm tall; the $74k icon is 4cm tall AND 4cm wide AND 4cm deep.</p>
+      <button class="reveal-btn" onclick="revealAns('b2')">Reveal explanation</button>
+      <div class="reveal-answer" id="b2">When scaled in all three dimensions, visual volume grows by the cube of the scale factor. 4× taller looks 4³ = 64× larger to the eye. The actual ratio is $74k ÷ $18k ≈ 4. The graph makes it look like 64 times the cost, not 4 times.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ PRACTISE ═══════════ -->
+<section class="tab-panel" id="panel-practise">
+  <div class="card">
+    <span class="phase-label phase-youdo">You Do — Independent Practice</span>
+    <h2>Practise</h2>
+    <div class="tier-btns">
+      <button class="tier-btn active" onclick="showTier('prac','foundation')" id="prac-tier-foundation">Foundation</button>
+      <button class="tier-btn" onclick="showTier('prac','core')" id="prac-tier-core">Core</button>
+      <button class="tier-btn" onclick="showTier('prac','extension')" id="prac-tier-extension">Extension</button>
+    </div>
+
+    <div class="tier-panel active" id="prac-foundation">
+      <div class="mcq-block">
+        <p class="question">Q1. A dot plot shows scores: 5, 5, 6, 7, 7, 7, 8, 9, 9, 10. What is the mode?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ 5 appears twice — check which value has the most dots." onclick="mcqAns(this)">A. 5</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! 7 appears three times — more than any other value." onclick="mcqAns(this)">B. 7</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ 9 appears twice — not the most common value." onclick="mcqAns(this)">C. 9</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ 10 appears only once." onclick="mcqAns(this)">D. 10</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f1"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q2. A graph's y-axis starts at 800 instead of 0. This is most likely to:</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Starting above zero makes differences look bigger, not smaller." onclick="mcqAns(this)">A. Make differences between bars look smaller than they really are</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! A truncated axis removes baseline context, making small differences appear visually dramatic." onclick="mcqAns(this)">B. Exaggerate differences between bars</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The axis starting point doesn't affect the labelled data values — only the visual impression." onclick="mcqAns(this)">C. Change the actual data values shown</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Axis truncation affects all bars proportionally." onclick="mcqAns(this)">D. Only affect the first bar shown</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. A stem-and-leaf plot has stems 1, 2, 3, 4 with the most leaves on stem 2. What does this tell you?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Stem 2 has the most leaves — the median could be in the 20s, but not necessarily in the 30s." onclick="mcqAns(this)">A. The median is in the 30s</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The highest value is in the 40s (stem 4)." onclick="mcqAns(this)">B. The highest value is in the 20s</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Stem 2 having the most leaves means most data values are in the 20s — the data clusters there." onclick="mcqAns(this)">C. Most data values are in the 20s</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The range depends on the minimum and maximum values, not where most values cluster." onclick="mcqAns(this)">D. The range is between 20 and 29</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Which of these is an interpretation rather than just a reading?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Reading off the maximum is a direct reading — it doesn't interpret what the data means." onclick="mcqAns(this)">A. "The maximum temperature was 34°C in January."</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ This is reading a value directly — not an interpretation." onclick="mcqAns(this)">B. "In Week 3, sales were $4,200."</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! This uses the data pattern to draw a conclusion about a relationship — that's interpretation." onclick="mcqAns(this)">C. "The data suggests students who exercise more tend to score higher on tests."</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Counting data points is a reading — it doesn't tell us what the data means." onclick="mcqAns(this)">D. "There are 20 data points in the dot plot."</button>
+        </div>
+        <div class="mcq-feedback" id="fb-f4"></div>
+      </div>
+    </div>
+
+    <div class="tier-panel" id="prac-core">
+      <p style="font-style:italic;color:#555;margin-bottom:14px">Use this stem-and-leaf plot for Q1–Q3:</p>
+      <div class="stem-leaf-grid" style="margin-bottom:16px">
+        <div class="sl-stem">2</div><div class="sl-leaves">3  5  8</div>
+        <div class="sl-stem">3</div><div class="sl-leaves">1  4  4  6  9</div>
+        <div class="sl-stem">4</div><div class="sl-leaves">2  2  7</div>
+        <div class="sl-stem">5</div><div class="sl-leaves">0  3</div>
+      </div>
+      <p style="font-size:0.85rem;margin-bottom:14px"><strong>Key:</strong> 2|3 means 23</p>
+      <div class="type-in-block">
+        <p class="question">Q1. How many data values are in this dataset?</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-c1" placeholder="Count" aria-label="Number of values">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-c1','13','fb-c1','Count all leaves: 3+5+3+2 = 13')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c1"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q2. What is the median value?</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-c2" placeholder="Median" aria-label="Median value">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-c2','36','fb-c2','13 values → 7th value is median. Count: 23,25,28,31,34,34,36 — 7th is 36.')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. Which description best fits the distribution?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ There are more values in the 30s and 40s than below 30 — the data is not clustered at the low end." onclick="mcqAns(this)">A. Skewed left with most values below 30</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! The 30s have the most leaves (5), making it the central cluster. The distribution extends from the 20s to 50s with a slight right tail." onclick="mcqAns(this)">B. Roughly symmetric, clustered in the 30s, with a slight spread into the 50s</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A uniform distribution would have equal numbers of values in each stem — here the 30s dominate." onclick="mcqAns(this)">C. Perfectly uniform across all stems</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The 50s have the fewest values (2) — the tail is not in the 20s." onclick="mcqAns(this)">D. Strongly skewed right with most values in the 50s</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4. Website traffic Mon–Fri: 120, 145, 138, 160, 172. Which conclusion is best supported?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Traffic went up overall but not every single day — Wednesday (138) was lower than Tuesday (145)." onclick="mcqAns(this)">A. Traffic increased every single day</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Despite a dip on Wednesday, the overall pattern shows an upward trend from Monday (120) to Friday (172)." onclick="mcqAns(this)">B. Traffic showed an overall upward trend, despite a mid-week dip</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Friday had the highest traffic (172), not Wednesday (138)." onclick="mcqAns(this)">C. Wednesday had the highest traffic of the week</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ One week of data is insufficient to confirm a seasonal pattern." onclick="mcqAns(this)">D. Traffic always peaks on Fridays due to seasonal factors</button>
+        </div>
+        <div class="mcq-feedback" id="fb-c4"></div>
+      </div>
+    </div>
+
+    <div class="tier-panel" id="prac-extension">
+      <div class="mcq-block">
+        <p class="question">Q1. Company A uses a y-axis from 0 to $10M. Company B uses a second y-axis from $8M to $10M. What problem does this create?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Both companies' data could still be accurate — the problem is visual comparability." onclick="mcqAns(this)">A. It makes Company B's data inaccurate</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! Dual axes with different scales make the two trends visually incomparable — readers instinctively compare bar heights without noticing the different scales." onclick="mcqAns(this)">B. It makes the two companies' trends visually incomparable — readers compare heights without accounting for different scales</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ A second axis is a legitimate technique — the problem is the mismatch in scale ranges." onclick="mcqAns(this)">C. Using two axes is never permitted in statistics</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Company A's trend is not affected by Company B's axis." onclick="mcqAns(this)">D. It causes Company A's trend to appear flat</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e1"></div>
+      </div>
+      <div class="type-in-block">
+        <p class="question">Q2. Sales: $50,000 in Year 1, $55,000 in Year 2. Y-axis starts at $48,000. What is the actual percentage increase?</p>
+        <div class="type-in-row">
+          <input type="text" id="ti-e2" placeholder="%" aria-label="Percentage increase">
+          <button class="btn btn-accent btn-sm" onclick="checkTypeIn('ti-e2','10','fb-e2','(5000 ÷ 50000) × 100 = 10%')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e2"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q3. "The line graph shows a clear upward trend from 1980–2020, so temperatures will definitely continue rising." What is the statistical problem?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Line graphs can legitimately show trends." onclick="mcqAns(this)">A. Line graphs cannot be used to show trends</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Forty years is substantial — sample size is not the core issue." onclick="mcqAns(this)">B. 40 years is too small a sample</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! 'Definitely' overstates certainty. Predictions from data should include uncertainty language (e.g. 'the trend suggests...' not 'will definitely...')." onclick="mcqAns(this)">C. Using past trends to make definite predictions overstates certainty — predictions should include uncertainty language</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Graphs can support predictions — the problem is the language of certainty." onclick="mcqAns(this)">D. Graphs should never be used to make predictions</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e3"></div>
+      </div>
+      <div class="mcq-block">
+        <p class="question">Q4 (Multi-step). A stem-and-leaf has 15 values. Stems 4, 5, 6, 7 with 2, 6, 5, 2 leaves. A student claims the median is in the 50s. Are they correct?</p>
+        <div class="mcq-options">
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ The most leaves doesn't automatically mean the median is there — count to the 8th value." onclick="mcqAns(this)">A. Yes — the 50s have the most leaves so the median must be there</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ Count: stem 4 has 2 values (positions 1–2), stem 5 has 6 values (positions 3–8). The 8th is the last leaf in stem 5 — so the median IS in the 50s." onclick="mcqAns(this)">B. No — the 8th value falls in the 60s</button>
+          <button class="mcq-btn" data-result="correct" data-msg="✓ Correct! 15 values → median is the 8th. Stem 4: positions 1–2. Stem 5: positions 3–8. The 8th value is the last leaf in the 50s row. The student is right." onclick="mcqAns(this)">C. Yes — the 8th value falls within the 50s</button>
+          <button class="mcq-btn" data-result="wrong" data-msg="✗ For an odd number of values, the median is a single middle value — no averaging needed." onclick="mcqAns(this)">D. Cannot be determined without averaging the 7th and 8th values</button>
+        </div>
+        <div class="mcq-feedback" id="fb-e4"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ REFLECT ═══════════ -->
+<section class="tab-panel" id="panel-reflect">
+  <div class="card">
+    <h2>Error Detective 🔍</h2>
+    <p>A student finds the median of a stem-and-leaf plot with 9 values. Find the one error.</p>
+    <div class="scenario-box" style="margin-bottom:14px">
+      <div class="stem-leaf-grid" style="max-width:280px;margin-bottom:8px">
+        <div class="sl-stem">1</div><div class="sl-leaves">2  5  8</div>
+        <div class="sl-stem">2</div><div class="sl-leaves">1  4  7</div>
+        <div class="sl-stem">3</div><div class="sl-leaves">0  3  6</div>
+      </div>
+      <p style="font-size:0.85rem"><strong>Key:</strong> 1|2 means 12</p>
+    </div>
+    <div id="ed-steps">
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-1')" aria-label="Step 1">
+        <strong>Step 1:</strong> Data values: 12, 15, 18, 21, 24, 27, 30, 33, 36 ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-1" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-2')" aria-label="Step 2">
+        <strong>Step 2:</strong> Count values: 9 values total ✓
+      </button>
+      <div class="mcq-feedback" id="ed-fb-2" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,true,'ed-fb-3')" aria-label="Step 3">
+        <strong>Step 3:</strong> Median position = 9 ÷ 2 = 4.5, so the median is between the 4th and 5th values ❌?
+      </button>
+      <div class="mcq-feedback" id="ed-fb-3" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-4')" aria-label="Step 4">
+        <strong>Step 4:</strong> 4th value = 21, 5th value = 24
+      </button>
+      <div class="mcq-feedback" id="ed-fb-4" style="margin-bottom:6px"></div>
+      <button class="error-step" onclick="edCheck(this,false,'ed-fb-5')" aria-label="Step 5">
+        <strong>Step 5:</strong> Median = (21 + 24) ÷ 2 = 22.5
+      </button>
+      <div class="mcq-feedback" id="ed-fb-5" style="margin-bottom:6px"></div>
+    </div>
+    <div class="error-correction" id="ed-correction">
+      <strong>✓ Correction:</strong> For an <strong>odd</strong> number of values, the median is the single middle value — not the average of two values. With 9 values, the median is at position (9 + 1) ÷ 2 = <strong>5th value = 24</strong>. The student applied the even-number rule to an odd dataset. This is one of the most common median misconceptions.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Newman's Word Problem</h2>
+    <div class="scenario-box">
+      A journalist publishes a graph showing that a council's spending on parks increased from $200,000 to $220,000 over two years. The y-axis starts at $195,000. The bars appear to show the second year's spending is more than three times the first year's.
+      <br><br>Identify the technique used to create a misleading impression. Calculate the actual percentage increase in spending. Explain how a reader unfamiliar with graph conventions might misinterpret this graph.
+    </div>
+    <div class="newman-stage active" id="nm-1">
+      <p class="stage-header">📖 Read — What does the graph claim to show?</p>
+      <p>What do you notice about the y-axis? What values are shown?</p>
+      <button class="btn btn-accent btn-sm" onclick="nmNext(1)">I've read it — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-2">
+      <p class="stage-header">💡 Comprehend — What is the actual difference?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The actual increase is $___, from $___ to $___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(2)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-3">
+      <p class="stage-header">🔄 Transform — What formula gives percentage increase?</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>Percentage increase = (increase ÷ original) × 100</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(3)">Ready — Next →</button>
+    </div>
+    <div class="newman-stage" id="nm-4">
+      <p class="stage-header">⚙️ Process — Calculate and describe the distortion</p>
+      <details class="scaffold"><summary>Scaffold frame</summary><p>"The actual increase is ___%. The graph makes it look like ___."</p></details>
+      <button class="btn btn-accent btn-sm" style="margin-top:10px" onclick="nmNext(4)">Show answers →</button>
+    </div>
+    <div class="newman-stage" id="nm-5">
+      <p class="stage-header">✅ Encode — Model answer</p>
+      <div class="step-box" style="margin-bottom:10px">
+        <p><strong>Technique:</strong> Truncated y-axis — starting at $195,000 removes the baseline and exaggerates the visual difference.</p>
+        <p style="margin-top:8px"><strong>Actual percentage increase:</strong> (220,000 − 200,000) ÷ 200,000 × 100 = <strong>10%</strong></p>
+        <p style="margin-top:8px"><strong>Visual distortion:</strong> Visible bars are $5,000 (Yr 1) and $25,000 (Yr 2) — a 5:1 ratio. But the actual ratio is 1.1:1.</p>
+      </div>
+      <details class="scaffold"><summary>Scaffold frame</summary>
+        <p>"Mathematically, the spending increased by 10%. A general reader might think spending more than tripled because the bar appears 5 times taller — created by starting the y-axis well above zero."</p>
+      </details>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Metacognitive Journal ✍️</h2>
+    <p>What is the difference between <em>reading</em> a graph and <em>interpreting</em> one? Describe one technique a graph maker could use to mislead you — and how you would spot it.</p>
+    <textarea class="journal-area" id="journal" oninput="saveJournal()" aria-label="Metacognitive journal" placeholder="Write your reflection here..."></textarea>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function changeFont(val){document.body.className=val==='system'?'font-system':val==='atkinson'?'font-atkinson':'';}
+function showTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('tab-'+id).setAttribute('aria-selected','true');
+  if(id==='reflect')markComplete();
+  if(id==='investigate')drawDotPlot();
+}
+function showTier(group,tier){
+  ['foundation','core','extension'].forEach(t=>{
+    const p=document.getElementById(group+'-'+t);
+    const b=document.getElementById(group+'-tier-'+t);
+    if(p)p.classList.toggle('active',t===tier);
+    if(b)b.classList.toggle('active',t===tier);
+  });
+}
+function revealStep(prefix,current,max){
+  const box=document.getElementById(prefix+'-s'+current);
+  if(box){box.classList.remove('step-hidden');box.style.display='block';}
+  const btn=document.getElementById(prefix+'-btn');
+  if(current>=max){if(btn)btn.style.display='none';}
+  else{if(btn)btn.setAttribute('onclick','revealStep("'+prefix+'",'+(current+1)+','+max+')');}
+}
+function mcqAns(btn){
+  const block=btn.closest('.mcq-block');
+  block.querySelectorAll('.mcq-btn').forEach(b=>b.disabled=true);
+  const result=btn.getAttribute('data-result');
+  btn.classList.add(result==='correct'?'correct':'wrong');
+  const fb=block.querySelector('.mcq-feedback');
+  fb.textContent=btn.getAttribute('data-msg');
+  fb.className='mcq-feedback '+(result==='correct'?'correct':'wrong');
+}
+function checkTypeIn(inputId,answer,fbId,hint){
+  const val=document.getElementById(inputId).value.trim();
+  const fb=document.getElementById(fbId);
+  if(val===answer){fb.textContent='✓ Correct!';fb.className='mcq-feedback correct';document.getElementById(inputId).disabled=true;}
+  else{fb.textContent='✗ Not quite. '+(hint||'');fb.className='mcq-feedback wrong';}
+}
+function revealAns(id){document.getElementById(id).style.display='block';}
+function drawDotPlot(){
+  const canvas=document.getElementById('dotPlotCanvas');
+  if(!canvas)return;
+  const scores=[8,12,15,12,18,14,11,12,16,9,14,15,13,11,17];
+  const dpr=window.devicePixelRatio||1;
+  const W=520,H=120;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  const min=7,max=19;
+  const pad={left:30,right:20,bottom:30,top:10};
+  const gW=W-pad.left-pad.right;
+  const dotR=7;
+  ctx.strokeStyle='#888';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.left,H-pad.bottom);ctx.lineTo(W-pad.right,H-pad.bottom);ctx.stroke();
+  const counts={};
+  scores.forEach(s=>counts[s]=(counts[s]||0)+1);
+  for(let v=min+1;v<=max-1;v++){
+    const x=pad.left+((v-min)/(max-min))*gW;
+    ctx.fillStyle='#888';ctx.font='11px Nunito Sans,sans-serif';ctx.textAlign='center';
+    ctx.fillText(v,x,H-pad.bottom+14);
+    if(counts[v]){
+      for(let i=0;i<counts[v];i++){
+        const cy=H-pad.bottom-dotR-i*(dotR*2+2)-4;
+        ctx.beginPath();ctx.arc(x,cy,dotR,0,Math.PI*2);
+        ctx.fillStyle='#C1614F';ctx.fill();
+        ctx.strokeStyle='#a04030';ctx.lineWidth=1;ctx.stroke();
+      }
+    }
+  }
+  ctx.fillStyle='#555';ctx.font='11px Nunito Sans,sans-serif';ctx.textAlign='center';
+  ctx.fillText('Test Score (out of 20)',W/2,H-2);
+}
+let edDone=false;
+function edCheck(btn,isError,fbId){
+  if(edDone)return;
+  const fb=document.getElementById(fbId);
+  if(isError){
+    btn.classList.add('correct-pick');btn.disabled=true;
+    fb.textContent='✓ Found it!';fb.className='mcq-feedback correct';
+    document.getElementById('ed-correction').style.display='block';
+    document.querySelectorAll('.error-step').forEach(b=>b.disabled=true);
+    edDone=true;
+  } else {
+    btn.classList.add('wrong-pick');
+    fb.textContent='✗ This step is correct — keep looking.';fb.className='mcq-feedback wrong';
+    setTimeout(()=>{btn.classList.remove('wrong-pick');fb.textContent='';},1800);
+  }
+}
+function nmNext(current){
+  document.getElementById('nm-'+current).classList.remove('active');
+  document.getElementById('nm-'+current).classList.add('done');
+  const next=document.getElementById('nm-'+(current+1));
+  if(next)next.classList.add('active');
+}
+function saveJournal(){
+  localStorage.setItem('dat-ch4-journal',document.getElementById('journal').value);
+  const msg=document.getElementById('save-msg');
+  msg.textContent='✓ Saved';setTimeout(()=>msg.textContent='',2000);
+}
+function markComplete(){localStorage.setItem('dat-ch4-complete','true');}
+const saved=localStorage.getItem('dat-ch4-journal');
+if(saved)document.getElementById('journal').value=saved;
+</script>
+</body>
+</html>
