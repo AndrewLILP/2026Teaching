@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Horror Clone · Keys, Doors &amp; NavMesh AI · CT5</title>
+  <meta name="description" content="Capstone project: build a horror-style game with key collection, door unlocking, and NavMesh AI pursuit in Unity 6. Stage 5 Computing Technology.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <!-- SD: Games & Simulations accent — violet -->
+  <style>
+    :root {
+      --accent:         #8b5cf6;
+      --accent-dim:     #6d28d9;
+      --accent-bright:  #a78bfa;
+      --accent-surface: rgba(139, 92, 246, 0.10);
+      --accent-border:  rgba(139, 92, 246, 0.28);
+    }
+
+    /* ── Page-specific components ─────────────────────────────────── */
+
+    /* Genre guidelines — must appear before brief */
+    .genre-guidelines {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(244, 114, 182, 0.30);
+      border-left: 4px solid var(--color-phase-test);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin-bottom: var(--space-8);
+    }
+    .genre-guidelines__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--color-phase-test);
+      margin-bottom: var(--space-3);
+    }
+    .genre-guidelines h3 {
+      font-size: var(--text-xl);
+      margin-bottom: var(--space-4);
+    }
+    .genre-rules {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+    }
+    @media (max-width: 600px) { .genre-rules { grid-template-columns: 1fr; } }
+    .genre-rule {
+      display: flex;
+      gap: var(--space-3);
+      align-items: flex-start;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.55;
+    }
+    .genre-rule .rule-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Project brief card */
+    .project-brief {
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin: var(--space-6) 0 var(--space-8);
+    }
+    .project-brief__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+    }
+    .project-brief h3 {
+      font-size: var(--text-2xl);
+      margin-bottom: var(--space-4);
+    }
+    .project-brief p {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: var(--space-3);
+      line-height: 1.7;
+    }
+    .brief-requirements {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+    }
+    @media (max-width: 600px) { .brief-requirements { grid-template-columns: 1fr; } }
+    .brief-req-col h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+    }
+    .brief-req-col ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-5);
+      max-width: none;
+    }
+    .brief-req-col li { margin-bottom: var(--space-2); line-height: 1.55; }
+
+    /* NavMesh teaching moment */
+    .navmesh-callout {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(52, 211, 153, 0.30);
+      border-left: 4px solid var(--color-phase-produce);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin: var(--space-6) 0;
+    }
+    .navmesh-callout__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      margin-bottom: var(--space-3);
+    }
+    .navmesh-callout h3 {
+      font-size: var(--text-lg);
+      margin-bottom: var(--space-3);
+    }
+    .navmesh-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: var(--space-3);
+      line-height: 1.65;
+    }
+    .navmesh-callout p:last-child { margin-bottom: 0; }
+
+    /* Ethics callout */
+    .ethics-required {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(251, 146, 60, 0.30);
+      border-left: 4px solid var(--color-phase-research);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin: var(--space-8) 0;
+    }
+    .ethics-required__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--color-phase-research);
+      margin-bottom: var(--space-3);
+    }
+    .ethics-required h3 {
+      font-size: var(--text-lg);
+      margin-bottom: var(--space-4);
+    }
+    .ethics-questions {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+    .ethics-q {
+      background: var(--color-surface-3);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+    }
+    .ethics-q h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-phase-research);
+      margin-bottom: var(--space-2);
+    }
+    .ethics-q p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+      line-height: 1.6;
+    }
+
+    /* Class structure cards */
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    .class-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+    }
+    .class-card__name {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+      display: block;
+    }
+    .class-card ul {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-4);
+      max-width: none;
+    }
+    .class-card li { margin-bottom: var(--space-1); line-height: 1.5; font-family: var(--font-mono); }
+
+    /* Sprint cards */
+    .sprint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    .sprint-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .sprint-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .sprint-number {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      padding: var(--space-1) var(--space-2);
+      background: var(--color-phase-produce);
+      color: var(--color-text-inverse);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .sprint-card h4 { font-size: var(--text-sm); font-weight: 700; margin: 0; }
+    .sprint-card__duration { font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; }
+    .sprint-card p { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; line-height: 1.6; }
+    .sprint-card__dod { background: var(--color-surface-3); border-radius: var(--radius-sm); padding: var(--space-3) var(--space-4); }
+    .sprint-card__dod-label { font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-phase-produce); margin-bottom: var(--space-2); }
+    .sprint-card__dod ul { font-size: var(--text-xs); color: var(--color-text-secondary); padding-left: var(--space-4); max-width: none; }
+    .sprint-card__dod li { margin-bottom: var(--space-1); line-height: 1.5; }
+
+    /* Inspector steps */
+    .inspector-steps {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-5) 0;
+    }
+    .inspector-steps h4 {
+      color: var(--accent-bright);
+      font-size: var(--text-sm);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-label);
+      margin-bottom: var(--space-3);
+    }
+    .inspector-steps ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+    .inspector-steps li { margin-bottom: var(--space-2); line-height: 1.6; }
+
+    /* Test table */
+    .test-table-wrap { overflow-x: auto; margin: var(--space-5) 0; }
+    .test-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .test-table th, .test-table td {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .test-table th {
+      background: var(--color-surface-3);
+      color: var(--accent-bright);
+      font-weight: 700;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .test-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .test-table .td-case { color: var(--color-text-primary); font-weight: 600; }
+    .test-table .td-expected { color: var(--color-text-secondary); }
+    .test-table .td-blank { color: var(--color-text-muted); font-style: italic; min-width: 120px; }
+
+    /* MCQ set wrapper */
+    .mcq-set { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-6) 0; }
+
+    /* Workflow bug special treatment */
+    .bug-workflow-note {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: rgba(251, 146, 60, 0.10);
+      border: 1px solid rgba(251, 146, 60, 0.30);
+      border-radius: var(--radius-sm);
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-phase-research);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-3);
+    }
+
+    /* Section scroll margin */
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    @media (max-width: 768px) {
+      .tier-grid { grid-template-columns: 1fr; }
+      .sprint-grid { grid-template-columns: 1fr; }
+      .project-brief { padding: var(--space-5) var(--space-4); }
+      .project-brief h3 { font-size: var(--text-xl); }
+      .genre-guidelines { padding: var(--space-5) var(--space-4); }
+      .navmesh-callout { padding: var(--space-5) var(--space-4); }
+      .ethics-required { padding: var(--space-5) var(--space-4); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Games &amp; Simulations</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Skills: Horror Clone</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills.html" class="ct-nav-btn">↑ All Skills Pages</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Games &amp; Simulations</a></li>
+      <li><a href="skills.html">Skills</a></li>
+      <li aria-current="page">Horror Clone</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- Sidebar -->
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#genre">Genre Guidelines</a>
+          <a href="#brief">Project Brief</a>
+          <a href="#navmesh">NavMesh — Predefined AI</a>
+          <a href="#prior-knowledge">What You Bring</a>
+          <a href="#scene-setup">Scene Setup</a>
+          <a href="#class-structure">Class Structure</a>
+          <a href="#pseudocode">Pseudocode</a>
+          <a href="#sprints">Sprint Plan</a>
+          <a href="#ethics">Ethics &amp; Responsibilities</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#bug">Bug Detective</a>
+          <a href="#test-table">Test Table</a>
+          <a href="#tasks">Tiered Tasks</a>
+          <a href="#cpd">Grade Descriptors</a>
+          <a href="#notebook">Notebook Prompts</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-EVL-01</span>
+          <span class="outcome-tag">CT5-SAF-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction: column;">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- ── Page Hero ─────────────────────────────────────────────── -->
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Stage 5 · Skills Page 5 of 5 · Capstone</div>
+        <h1>Horror Clone — Keys, Doors &amp; NavMesh AI</h1>
+        <p class="page-intro">
+          The final capstone. You'll build a game where the player collects three keys
+          to unlock a door while being pursued by an AI enemy. The enemy uses Unity's
+          NavMesh system — a predefined pathfinding algorithm you configure and control
+          rather than write from scratch. <strong>Read the genre guidelines before anything else.</strong>
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ── 1. Genre Guidelines — MUST APPEAR FIRST ───────────────── -->
+      <section id="genre" class="content-section">
+
+        <div class="genre-guidelines">
+          <div class="genre-guidelines__eyebrow">⚠️ Read Before Starting — Genre Scope</div>
+          <h3>This is a Horror-Inspired Game — Not a Horror Game</h3>
+          <p>The "horror" genre is used on this page because its core game logic — collecting items, unlocking paths, being pursued by an AI — is excellent for practising arrays, triggers, and NavMesh. The genre is a <em>design context</em>, not a content directive.</p>
+          <p>Your game must stay within these boundaries. Age suitability is a non-functional requirement and a legal responsibility for any game developer. Violations of these guidelines are a design failure, not just a rules issue.</p>
+
+          <div class="genre-rules">
+            <div class="genre-rule">
+              <span class="rule-icon">✅</span>
+              <span>Atmosphere through <strong>lighting and sound only</strong> — darkness, ambient music, footsteps</span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">✅</span>
+              <span>Enemy is a <strong>stylised shape or low-poly character</strong> — not a realistic human</span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">✅</span>
+              <span>Keys, doors, and an exit — <strong>puzzle and exploration mechanics</strong></span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">✅</span>
+              <span>Player is caught and game ends — <strong>no damage, no health, no death animation</strong></span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">❌</span>
+              <span><strong>No gore, no blood, no realistic violence</strong> of any kind</span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">❌</span>
+              <span><strong>No weapons</strong> — the player cannot fight the enemy</span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">❌</span>
+              <span><strong>No distressing content</strong> targeting real-world trauma</span>
+            </div>
+            <div class="genre-rule">
+              <span class="rule-icon">❌</span>
+              <span><strong>No realistic human enemy</strong> models — stylised only</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 2. Project Brief ──────────────────────────────────────── -->
+      <section id="brief" class="content-section">
+
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+
+        <h2>Project Brief</h2>
+
+        <div class="project-brief">
+          <div class="project-brief__eyebrow">🎮 Design Brief — Stage 5 Capstone</div>
+          <h3>The Hollow</h3>
+          <p>Design and build a first-person or third-person exploration game in Unity 6. The player moves through a darkened indoor environment, collecting three keys scattered through different rooms. Each key unlocks a door. When all doors are unlocked, the player can reach the exit. An AI pursues the player throughout. If the AI catches the player, the game ends.</p>
+          <p>Atmosphere is conveyed through lighting, ambient audio, and level design — not graphic content. The game must be designed with age suitability considered from the start, documented in your design brief in the notebook.</p>
+          <div class="brief-requirements">
+            <div class="brief-req-col">
+              <h4>Functional Requirements</h4>
+              <ul>
+                <li>Player moves through a multi-room environment</li>
+                <li>3 keys placed in different rooms — player collects by walking over them</li>
+                <li>Each key collected: HUD updates (e.g. 🗝️ 🗝️ ☐)</li>
+                <li>All 3 keys collected: final door unlocks</li>
+                <li>Player reaches the exit: win panel appears, input disabled</li>
+                <li>AI enemy patrols when player not in sight; chases when visible</li>
+                <li>AI catches player: game-over panel appears, input disabled</li>
+              </ul>
+            </div>
+            <div class="brief-req-col">
+              <h4>Non-Functional Requirements</h4>
+              <ul>
+                <li>Age suitability: specify target rating (e.g. PG) — justify in notebook</li>
+                <li>Atmosphere: tension through lighting and sound, not content</li>
+                <li>Enemy: must be stylised — no realistic human model</li>
+                <li>Performance: NavMesh baked correctly — no teleporting enemy</li>
+                <li>Accessibility: subtitles or visual cues for any audio warning</li>
+                <li>Code quality: all scripts documented, modular structure</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <strong>NESA Syllabus connection</strong>
+          Specifying functional and non-functional requirements (I&amp;D-4, I&amp;D-5) ·
+          Evaluating solutions against social, ethical and legal responsibilities (T&amp;E-2) ·
+          Evaluating social, ethical and cybersecurity considerations (T&amp;E-5) ·
+          Exploring how predefined algorithms and AI control computer components (R&amp;P-1).
+        </div>
+
+      </section>
+
+
+      <!-- ── 3. NavMesh — Predefined Algorithm Callout ──────────────── -->
+      <section id="navmesh" class="content-section">
+
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+
+        <h2>NavMesh — Using a Predefined Algorithm</h2>
+
+        <div class="navmesh-callout">
+          <div class="navmesh-callout__eyebrow">🧠 R&amp;P-1 — Predefined Algorithms &amp; AI</div>
+          <h3>You don't write the pathfinding. You use it.</h3>
+          <p>The NESA syllabus asks you to <em>"explore how predefined algorithms and artificial intelligence (AI) control computer components."</em> NavMesh is your primary example on this page.</p>
+          <p><strong>NavMesh</strong> (Navigation Mesh) is a baked representation of the walkable surfaces in your scene. Unity's <code>NavMeshAgent</code> component uses an <strong>A* (A-star) pathfinding algorithm</strong> to find the shortest walkable route between any two points. You set a destination; the algorithm calculates the path and moves the agent along it, avoiding obstacles automatically.</p>
+          <p>This is identical to how game studios use physics engines — you don't write the rigid-body simulation, you configure it and control it. Using predefined algorithms efficiently is a professional skill. Understanding <em>what the algorithm does</em> and <em>what can go wrong when it's misconfigured</em> is what the Bug Detective section on this page tests.</p>
+        </div>
+
+        <div class="inspector-steps">
+          <h4>🎮 Baking a NavMesh in Unity</h4>
+          <ol>
+            <li>Build your level geometry (floors, walls, corridors). All static geometry must have the <strong>Static</strong> checkbox ticked in the Inspector — specifically <strong>Navigation Static</strong>.</li>
+            <li>Open Window → AI → <strong>Navigation</strong>. The Navigation window opens.</li>
+            <li>Click the <strong>Bake</strong> tab. Leave default settings for a first bake. Click <strong>Bake</strong>.</li>
+            <li>A blue overlay appears on the floor in Scene view — this is the NavMesh. Blue = walkable. The AI can only navigate the blue areas.</li>
+            <li>Select your enemy GameObject. In the Inspector, click <strong>Add Component</strong> → <strong>NavMesh Agent</strong>.</li>
+            <li>Set <strong>Speed</strong>, <strong>Stopping Distance</strong>, and <strong>Angular Speed</strong> to match your game's feel.</li>
+            <li><strong>Critical:</strong> if you move any walls or add geometry after baking, you must rebake. Un-rebaked NavMeshes cause the Bug Detective's third bug — the enemy teleports.</li>
+          </ol>
+        </div>
+
+        <div class="info-box">
+          <strong>What is A*?</strong> A* (A-star) is a graph search algorithm that finds the shortest path between two nodes. It balances the actual distance travelled so far with an estimated distance remaining (the heuristic). Unity's NavMesh pre-computes the graph from your geometry; the agent runs A* on it at runtime. You'll study graph algorithms in Stage 6 — for now, understand it as a smart, efficient map reader.
+        </div>
+
+      </section>
+
+
+      <!-- ── 4. Prior Knowledge ────────────────────────────────────── -->
+      <section id="prior-knowledge" class="content-section">
+
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+
+        <h2>What You Bring From Pages 1–4</h2>
+
+        <div class="word-bank">
+          <h3>Prerequisites Checklist</h3>
+          <div class="word-bank-grid">
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 1 — Movement</div>
+              <div class="word-bank-def">Player movement using <code>Input.GetAxis</code> and <code>Time.deltaTime</code>. The player moves through the level with WASD or arrow keys.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 2 — Triggers</div>
+              <div class="word-bank-def"><code>OnTriggerEnter</code> with <code>CompareTag</code>. Used for key pickup, enemy catch detection, and exit trigger. Exact same pattern.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 3 — Game State</div>
+              <div class="word-bank-def"><code>enum GameState</code> and <code>playerMovement.enabled</code>. Win and game-over states disable input using the same <code>enabled</code> pattern.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 4 — Arrays &amp; HUD</div>
+              <div class="word-bank-def"><code>bool[] keysCollected</code> with a FOR loop. <code>TMP_Text</code> for HUD updates. <code>using TMPro;</code> required.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">New this page — NavMeshAgent</div>
+              <div class="word-bank-def"><code>using UnityEngine.AI;</code> — required namespace. <code>NavMeshAgent.destination</code> sets where the enemy moves. <code>NavMeshAgent.remainingDistance</code> checks if it's arrived. Baking is an editor step, not code.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">New this page — Line of Sight</div>
+              <div class="word-bank-def"><code>Physics.Raycast</code> — fires an invisible ray from the enemy toward the player. If nothing blocks it, the enemy can "see" the player and begins chasing. If blocked by a wall, it returns to patrol.</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 5. Scene Setup ────────────────────────────────────────── -->
+      <section id="scene-setup" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Starter Scene Setup</h2>
+        <p>Build or receive this scene before Sprint 2. Every item in the list is required — missing any one will cause a bug that is difficult to diagnose under time pressure.</p>
+
+        <div class="inspector-steps">
+          <h4>Required GameObjects &amp; Configuration</h4>
+          <ol>
+            <li><strong>Level geometry</strong> — at least 3 rooms connected by corridors. All floor/wall/ceiling objects must be marked <strong>Navigation Static</strong>. Bake NavMesh after placing all geometry.</li>
+            <li><strong>Player</strong> — Capsule with <code>CharacterController</code> and your movement script. Tag: <strong>Player</strong>. Add a Camera as a child (first-person) or a separate camera that follows (third-person).</li>
+            <li><strong>Key (×3)</strong> — small mesh prefabs. Each: Box Collider → Is Trigger → Is Kinematic. Tag: <strong>Key</strong>. Give each a unique index value via a <code>[SerializeField] int keyIndex</code> on <code>KeyPickup.cs</code>.</li>
+            <li><strong>Door</strong> — a Cube or imported mesh that blocks the exit corridor. Has a <code>DoorController.cs</code> with an <code>Unlock()</code> method. Initially blocking the path.</li>
+            <li><strong>Exit trigger</strong> — an invisible trigger zone beyond the door. Box Collider → Is Trigger → Is Kinematic. Tag: <strong>Exit</strong>.</li>
+            <li><strong>Enemy</strong> — a Capsule or low-poly stylised mesh. Has: <code>NavMeshAgent</code> component, <code>EnemyAI.cs</code>. Tag: <strong>Enemy</strong>.</li>
+            <li><strong>Waypoints (×3–5)</strong> — empty GameObjects placed around the level for patrol. Store references in <code>EnemyAI.cs</code> as a <code>[SerializeField] Transform[]</code>.</li>
+            <li><strong>HorrorGameManager</strong> — empty GameObject with <code>HorrorGameManager.cs</code> and <code>HUDManager.cs</code>.</li>
+            <li><strong>Canvas</strong> — Key HUD (3 icon slots), Game-Over Panel (hidden), Win Panel (hidden). Uses TMP.</li>
+          </ol>
+        </div>
+
+      </section>
+
+
+      <!-- ── 6. Class Structure ────────────────────────────────────── -->
+      <section id="class-structure" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Class Structure</h2>
+        <p>Four scripts, four responsibilities. Each connects to others only through clearly defined <code>public</code> methods or <code>[SerializeField]</code> references — not by reaching into each other's private state.</p>
+
+        <div class="class-grid">
+
+          <div class="class-card">
+            <span class="class-card__name">KeyPickup.cs</span>
+            <ul>
+              <li>OnTriggerEnter(Collider other)</li>
+              <li>[SerializeField] int keyIndex</li>
+              <li>[SerializeField] HorrorGameManager gm</li>
+              <li>calls gm.CollectKey(keyIndex)</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">DoorController.cs</span>
+            <ul>
+              <li>public bool IsLocked { get; private set; }</li>
+              <li>public void Unlock()</li>
+              <li>// animates door open</li>
+              <li>// or SetActive(false) for simple</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">EnemyAI.cs</span>
+            <ul>
+              <li>void Update()</li>
+              <li>private bool CanSeePlayer()</li>
+              <li>private void Chase()</li>
+              <li>private void Patrol()</li>
+              <li>[SerializeField] Transform player</li>
+              <li>[SerializeField] Transform[] waypoints</li>
+              <li>NavMeshAgent agent</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">HorrorGameManager.cs</span>
+            <ul>
+              <li>bool[] keysCollected</li>
+              <li>public void CollectKey(int i)</li>
+              <li>private bool AllKeysCollected()</li>
+              <li>public void UnlockFinalDoor()</li>
+              <li>public void OnPlayerCaught()</li>
+              <li>public void OnPlayerEscaped()</li>
+              <li>[SerializeField] DoorController door</li>
+              <li>[SerializeField] HUDManager hud</li>
+              <li>[SerializeField] PlayerMovement pm</li>
+            </ul>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ── 7. Pseudocode ─────────────────────────────────────────── -->
+      <section id="pseudocode" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Pseudocode — Four Core Algorithms</h2>
+        <p>Write all four algorithms in your project notebook before Sprint 2. Annotate each with the C# concept it maps to.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Key &amp; Door System</div>
+          <pre>ARRAY keysCollected[3] ← [FALSE, FALSE, FALSE]
+CONST KEYS_NEEDED ← 3
+
+FUNCTION CollectKey(index : integer)
+  keysCollected[index] ← TRUE
+  CALL UpdateKeyHUD()
+  IF AllKeysCollected() THEN
+    CALL UnlockFinalDoor()
+  ENDIF
+ENDFUNCTION
+
+FUNCTION AllKeysCollected() : boolean
+  FOR i ← 0 TO 2
+    IF keysCollected[i] = FALSE THEN
+      RETURN FALSE
+    ENDIF
+  NEXT i
+  RETURN TRUE
+ENDFUNCTION
+
+PROCEDURE OnTriggerEnter(other : Collider)   // enemy catches player
+  IF other.tag = "Enemy" THEN
+    gameState ← "caught"
+    CALL ShowGameOver()
+  ENDIF
+ENDPROCEDURE</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Reading AllKeysCollected() carefully</strong>
+          The logic is: assume all keys are collected, return FALSE the moment one is not. If the loop completes without returning FALSE, all three must be TRUE — so return TRUE. This pattern is called an <em>early exit</em>. Bug 2 in the Bug Detective has this logic inverted — study it carefully before you implement.
+        </div>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — NavMesh Enemy AI</div>
+          <pre>// Enemy AI — uses predefined NavMesh pathfinding (A* algorithm)
+PROCEDURE UpdateEnemy()
+  IF CanSeePlayer() THEN
+    agent.destination ← player.position
+    agent.speed ← chaseSpeed
+  ELSE
+    CALL Patrol()
+  ENDIF
+ENDPROCEDURE
+
+PROCEDURE Patrol()
+  IF agent.remainingDistance < 0.5 THEN
+    nextWaypoint ← waypoints[currentIndex]
+    agent.destination ← nextWaypoint.position
+    currentIndex ← (currentIndex + 1) MOD waypoints.length
+  ENDIF
+ENDPROCEDURE</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>MOD — modulo operator</strong>
+          <code>(currentIndex + 1) MOD waypoints.length</code> wraps the index back to 0 after the last waypoint, creating a loop. In C#: <code>currentIndex = (currentIndex + 1) % waypoints.Length;</code>. Without it, the index would exceed the array bounds and Unity would throw an <code>IndexOutOfRangeException</code>.
+        </div>
+
+        <h3>Key C# reference patterns</h3>
+
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">C#</span>
+            <span class="step-label">EnemyAI.cs — core pattern (write your own full version)</span>
+          </div>
+          <div class="code-change-banner">📋 REFERENCE — not a complete file. NavMeshAgent requires using UnityEngine.AI;</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.AI;   // ← REQUIRED — NavMeshAgent lives here
+
+public class EnemyAI : MonoBehaviour
+{
+    [SerializeField] private Transform   player;
+    [SerializeField] private Transform[] waypoints;
+    [SerializeField] private float       chaseSpeed  = 4f;
+    [SerializeField] private float       patrolSpeed = 2f;
+    [SerializeField] private float       sightRange  = 10f;
+
+    private NavMeshAgent agent;
+    private int currentIndex = 0;
+
+    void Start()
+    {
+        agent = GetComponent&lt;NavMeshAgent&gt;();
+    }
+
+    void Update()
+    {
+        if (CanSeePlayer())
+        {
+            agent.speed = chaseSpeed;
+            agent.destination = player.position;
+        }
+        else
+        {
+            agent.speed = patrolSpeed;
+            Patrol();
+        }
+    }
+
+    private bool CanSeePlayer()
+    {
+        // Check distance first — Raycast only within sightRange
+        if (Vector3.Distance(transform.position, player.position) > sightRange)
+            return false;
+
+        // Fire a ray from this enemy toward the player
+        Vector3 direction = (player.position - transform.position).normalized;
+        if (Physics.Raycast(transform.position, direction, out RaycastHit hit, sightRange))
+        {
+            return hit.transform.CompareTag("Player");   // true only if ray hits player first
+        }
+        return false;
+    }
+
+    private void Patrol()
+    {
+        if (waypoints.Length == 0) return;
+
+        if (agent.remainingDistance < 0.5f)
+        {
+            currentIndex = (currentIndex + 1) % waypoints.Length;   // MOD wrap
+            agent.destination = waypoints[currentIndex].position;
+        }
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>Physics.Raycast</strong> fires an invisible ray. <code>out RaycastHit hit</code> captures what it hit. We check <code>hit.transform.CompareTag("Player")</code> — if the first thing the ray hits is tagged Player, the enemy can see them. If a wall is in the way, the ray hits the wall first and returns false — the enemy loses sight and returns to patrol. In the Inspector, drag the Player object into the <strong>Player</strong> slot and fill the <strong>Waypoints</strong> array with your empty patrol point GameObjects.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 8. Sprint Plan ────────────────────────────────────────── -->
+      <section id="sprints" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Sprint Plan</h2>
+        <p>Five sprints — this is the most complex project in the series. Record all progress in your sprint log in the notebook. If a sprint takes longer than planned, record why.</p>
+
+        <div class="sprint-grid">
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S1</span>
+              <h4>Scene &amp; NavMesh</h4>
+            </div>
+            <span class="sprint-card__duration">1–2 lessons</span>
+            <p>Build the level, mark all geometry Navigation Static, bake the NavMesh. Set up the enemy with a NavMeshAgent and verify it reaches a destination.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>NavMesh baked — blue overlay visible on floor</li>
+                <li>Enemy navigates to a hardcoded position when Play is pressed</li>
+                <li>Player moves through all rooms without falling through</li>
+                <li>Sprint 1 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S2</span>
+              <h4>Key Pickup &amp; HUD</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Implement key collection using <code>OnTriggerEnter</code> and the bool array. Update the HUD when each key is collected.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>All 3 keys collected individually without errors</li>
+                <li>HUD updates on each collection</li>
+                <li><code>keysCollected</code> array reflects correct state</li>
+                <li>Sprint 2 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S3</span>
+              <h4>Door Unlock System</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Implement <code>AllKeysCollected()</code> and connect it to the <code>DoorController.Unlock()</code> method. Verify door opens only after all 3 keys.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Door remains locked until all 3 keys collected</li>
+                <li>Door unlocks immediately when 3rd key is collected</li>
+                <li>Player can walk through unlocked door</li>
+                <li>Sprint 3 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S4</span>
+              <h4>Enemy Chase &amp; Line of Sight</h4>
+            </div>
+            <span class="sprint-card__duration">1–2 lessons</span>
+            <p>Implement patrol waypoints, <code>CanSeePlayer()</code> with <code>Physics.Raycast</code>, and the chase behaviour. Verify the enemy transitions between states.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Enemy patrols waypoints when player not in sight</li>
+                <li>Enemy chases when player is within sight range and no wall blocks</li>
+                <li>Enemy returns to patrol when player goes behind a wall</li>
+                <li>Sprint 4 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S5</span>
+              <h4>Win / Lose &amp; Polish</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Implement win (player reaches exit) and game-over (enemy catches player) states. Complete the test table. Add one polish element. Ethics reflection in notebook.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Enemy catching player shows game-over panel</li>
+                <li>Player reaching exit shows win panel</li>
+                <li>All 5 test cases completed in notebook</li>
+                <li>Ethics reflection written (age, accessibility, cybersecurity)</li>
+                <li>Sprint 5 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- ── 9. Ethics & Responsibilities ─────────────────────────── -->
+      <section id="ethics" class="content-section">
+
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+
+        <h2>Ethics &amp; Social Responsibilities</h2>
+        <p>This section is required — not optional. Answer all three questions in your project notebook during Sprint 5. These connect directly to the Testing &amp; Evaluating outcomes of the NSW syllabus.</p>
+
+        <div class="ethics-required">
+          <div class="ethics-required__eyebrow">⚖️ Required — T&amp;E-2 &amp; T&amp;E-5</div>
+          <h3>Evaluate Your Game Against Three Criteria</h3>
+
+          <div class="ethics-questions">
+            <div class="ethics-q">
+              <h4>1. Age Suitability</h4>
+              <p>What classification would Australia's Classification Board give your game — G, PG, M, or MA15+? Identify the specific elements of your design (lighting, sound, enemy behaviour, content) that determined this rating. What would you need to change to achieve a G rating? What design choices <em>kept</em> it at that level?</p>
+            </div>
+            <div class="ethics-q">
+              <h4>2. Inclusive Design</h4>
+              <p>Is your game accessible to players with low vision? With audio impairment? With limited motor control? For each, identify one specific barrier in your current design and propose a concrete fix — for example, a visual pulse on keys for players who can't distinguish colours, or an on-screen warning when the enemy is nearby for players who can't hear footsteps.</p>
+            </div>
+            <div class="ethics-q">
+              <h4>3. Cybersecurity &amp; Privacy</h4>
+              <p>If your game were released online and collected player data — completion time, rooms visited, number of times caught — what data would you collect, and how would you protect it? Who would own it? Would you need to disclose this to players? Reference the Privacy Act and the principle of data minimisation.</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 10. Check Your Understanding ──────────────────────────── -->
+      <section id="check" class="content-section">
+        <h2>Check Your Understanding</h2>
+        <p>Select your answer — feedback appears immediately. Use ↩ to try again.</p>
+
+        <div class="mcq-set">
+
+          <!-- Q1 -->
+          <div class="mcq-card"
+               data-q="1"
+               data-correct="C"
+               data-feedback-a="Incorrect — NavMeshAgent is in the UnityEngine.AI namespace, not the main UnityEngine namespace. This is the same pattern as SceneManager and UnityEngine.SceneManagement."
+               data-feedback-b="Incorrect — there is no UnityEngine.NavMesh namespace. The correct one is UnityEngine.AI."
+               data-feedback-c="✓ Correct — NavMeshAgent lives in UnityEngine.AI. Without this using statement the compiler doesn't recognise NavMeshAgent and refuses to build. This is Bug 1 in the Bug Detective."
+               data-feedback-d="Incorrect — there is no UnityEngine.Pathfinding namespace in Unity's built-in packages.">
+            <div class="mcq-question">1. Your script declares a <code>NavMeshAgent agent</code> variable but won't compile. What namespace is missing?</div>
+            <div class="mcq-options" role="group" aria-label="Question 1 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>using UnityEngine;</code></button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>using UnityEngine.NavMesh;</code></button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>using UnityEngine.AI;</code></button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>using UnityEngine.Pathfinding;</code></button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-1"></div>
+            <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+          </div>
+
+          <!-- Q2 -->
+          <div class="mcq-card"
+               data-q="2"
+               data-correct="B"
+               data-feedback-a="Incorrect — the enemy cannot walk on walls (those are not marked walkable on the NavMesh). This would simply fail to navigate."
+               data-feedback-b="✓ Correct — Physics.Raycast fires an invisible ray from the enemy toward the player. If the first object it hits is tagged Player, the enemy has line of sight. If a wall is hit first, the player is hidden."
+               data-feedback-c="Incorrect — Vector3.Distance measures distance but cannot determine whether a wall is between the enemy and the player. It would give false positives through walls."
+               data-feedback-d="Incorrect — checking tags is part of the raycast result, not the detection method itself. You check the tag of whatever the ray hits.">
+            <div class="mcq-question">2. How does <code>CanSeePlayer()</code> determine whether a wall is blocking the enemy's view of the player?</div>
+            <div class="mcq-options" role="group" aria-label="Question 2 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It checks whether the enemy can walk to the player's position along the NavMesh</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It fires a <code>Physics.Raycast</code> toward the player — if the ray hits a wall first, the player is not visible</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It uses <code>Vector3.Distance</code> to check if the player is within range</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It checks the Player tag on all objects in the scene using <code>FindObjectsWithTag</code></button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-2"></div>
+            <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+          </div>
+
+          <!-- Q3 -->
+          <div class="mcq-card"
+               data-q="3"
+               data-correct="D"
+               data-feedback-a="Incorrect — the array does store correct values when keys are collected. The bug is in the logic that reads the array, not how it's written."
+               data-feedback-b="Incorrect — the loop index range is correct (0 to 2 for a 3-element array). That's not the bug."
+               data-feedback-c="Incorrect — CollectKey() sets the correct index to true. The problem is in AllKeysCollected(), not in the collection step."
+               data-feedback-d="✓ Correct — the inverted bug returns TRUE the moment it finds one key that IS collected (not FALSE). The correct logic is: return FALSE if any key is NOT collected. If the loop completes without finding a false, return TRUE.">
+            <div class="mcq-question">3. <code>AllKeysCollected()</code> returns <code>true</code> after only one key is collected. What is the logical error?</div>
+            <div class="mcq-options" role="group" aria-label="Question 3 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The <code>keysCollected</code> array is not storing the correct values when keys are picked up</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The FOR loop uses the wrong index range — it should run from 1 to 3, not 0 to 2</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>CollectKey()</code> is setting the wrong index to true when a key is collected</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> The condition is inverted — it returns <code>TRUE</code> when it finds a collected key instead of returning <code>FALSE</code> when it finds an uncollected one</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-3"></div>
+            <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+          </div>
+
+          <!-- Q4 -->
+          <div class="mcq-card"
+               data-q="4"
+               data-correct="A"
+               data-feedback-a="✓ Correct — the NavMesh is baked from static geometry. If you move a wall after baking, the NavMesh still has the old data — it thinks the old wall position is still there. The agent navigates the old map, not the actual scene, causing teleporting or incorrect paths. Always rebake after moving geometry."
+               data-feedback-b="Incorrect — the NavMeshAgent script isn't missing a using statement at runtime. Namespace issues cause compile errors, not runtime navigation problems."
+               data-feedback-c="Incorrect — waypoint positions affect where the enemy patrols, not whether it navigates correctly through the scene."
+               data-feedback-d="Incorrect — the enemy's speed affects how quickly it moves, not whether it can navigate or whether it teleports.">
+            <div class="mcq-question">4. The enemy teleports across the scene instead of navigating corridors. No code has changed. What is the most likely cause?</div>
+            <div class="mcq-options" role="group" aria-label="Question 4 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The NavMesh was not rebaked after walls were moved — the agent is navigating stale baked data</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The <code>using UnityEngine.AI;</code> statement is missing at runtime</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The waypoints array contains incorrect world positions</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> The <code>agent.speed</code> value is set too high, causing the enemy to skip over geometry</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-4"></div>
+            <button class="mcq-reset" id="mcq-reset-4">↩ Try again</button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 11. Bug Detective ─────────────────────────────────────── -->
+      <section id="bug" class="content-section">
+
+        <h2>Bug Detective</h2>
+        <p>Three bugs — but only two are code errors. The third is a <strong>workflow error</strong>: a problem caused by how the editor was used, not what the code says. Find all three.</p>
+
+        <div class="example-box">
+          <strong>A new type: Workflow Error</strong>
+          Not every problem in game development is a bug in your code. Some problems come from how you configure the Unity editor — baking, prefab settings, Inspector connections. These don't appear in the script and won't be caught by a compiler. Learning to distinguish code bugs from configuration bugs is a professional skill.
+        </div>
+
+        <!-- Bug 1 — Syntax -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 1 — Syntax Error</div>
+          <h3>EnemyAI.cs — missing namespace</h3>
+          <p>This script won't compile. Error: <code>The type or namespace name 'NavMeshAgent' could not be found. Are you missing a using directive?</code></p>
+          <pre><code><span class="bug-line">using UnityEngine;   // ← something is missing above or below this</span>
+
+public class EnemyAI : MonoBehaviour
+{
+    private NavMeshAgent agent;
+
+    void Start()
+    {
+        agent = GetComponent&lt;NavMeshAgent&gt;();
+    }
+
+    void Update()
+    {
+        agent.destination = player.position;
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> <code>using UnityEngine.AI;</code> is missing. <code>NavMeshAgent</code> lives in the <code>UnityEngine.AI</code> namespace — the same pattern as <code>SceneManager</code> requiring <code>UnityEngine.SceneManagement</code>. Fix: add <code>using UnityEngine.AI;</code> as the second line of the file.
+          </div>
+        </div>
+
+        <!-- Bug 2 — Logical -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 2 — Logical Error</div>
+          <h3>HorrorGameManager.cs — AllKeysCollected() returns true too early</h3>
+          <p>This script compiles and runs. The player collects the first key — and the door immediately unlocks. The remaining two keys have no effect. What is wrong with the condition?</p>
+          <pre><code>using UnityEngine;
+
+public class HorrorGameManager : MonoBehaviour
+{
+    private bool[] keysCollected = new bool[3];
+
+    public void CollectKey(int index)
+    {
+        keysCollected[index] = true;
+        if (AllKeysCollected())
+            UnlockFinalDoor();
+    }
+
+    private bool AllKeysCollected()
+    {
+        for (int i = 0; i &lt; keysCollected.Length; i++)
+        {
+<span class="bug-line">            if (keysCollected[i] == true)   // ← inverted condition</span>
+<span class="bug-line">                return true;                  // ← returns too early</span>
+        }
+        return false;
+    }
+
+    private void UnlockFinalDoor() { /* ... */ }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The condition is inverted. The current code returns <code>true</code> the moment it finds <em>any</em> key that has been collected. The correct logic is the opposite: return <code>false</code> immediately if any key has <em>not</em> been collected; if the loop completes without finding a false, return <code>true</code>. Fix: change <code>if (keysCollected[i] == true) return true;</code> to <code>if (keysCollected[i] == false) return false;</code> and change the final return to <code>return true;</code>.
+          </div>
+        </div>
+
+        <!-- Bug 3 — Workflow (not code) -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 3 — Workflow Error</div>
+          <div class="bug-workflow-note">⚙️ Not a code error — a configuration error</div>
+          <h3>Enemy teleports instead of navigating — no code changed</h3>
+          <p>All scripts compile. The enemy was navigating correctly yesterday. Today, the level designer moved two walls to widen a corridor. Now the enemy skips from room to room instantly, passing through walls it shouldn't be able to cross. No code was changed between yesterday and today. What happened?</p>
+          <pre><code>// EnemyAI.cs — unchanged, no errors
+// NavMeshAgent — attached, no errors
+// Scene geometry — walls moved in the editor this morning
+
+// Error observed at runtime:
+// Enemy moves to destination in a straight line through walls
+// Enemy appears to "teleport" across rooms
+// No errors in Console</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Workflow error found — not a code bug:</strong> The NavMesh was not rebaked after the walls were moved. The NavMesh is a snapshot of the scene's walkable geometry taken at bake time. When walls move, the NavMesh still reflects the old layout — the agent navigates the old map, not the actual scene, producing straight-line movement through what are now solid walls. Fix: open Window → AI → Navigation → Bake tab → click <strong>Bake</strong>. The NavMesh will update to reflect the new wall positions. This is why NavMesh baking must be part of your workflow whenever you change static geometry — it is not automatic.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 12. Test Table ─────────────────────────────────────────── -->
+      <section id="test-table" class="content-section">
+
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+
+        <h2>Test Table</h2>
+        <p>Complete the <strong>Actual</strong> and <strong>Pass / Fail</strong> columns in your project notebook during Sprint 5. For any fail, record the bug type — including whether it was a code bug or a workflow error.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table" aria-label="Horror clone test cases">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected outcome</th>
+                <th>Actual outcome</th>
+                <th>Pass / Fail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-case">Player walks over a key</td>
+                <td class="td-expected">Key deactivates, HUD updates to show one key collected</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">All 3 keys collected</td>
+                <td class="td-expected">Final door unlocks — player can walk through</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Enemy reaches player (no keys)</td>
+                <td class="td-expected">Game-over panel appears, player input disabled</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Player moves behind a wall mid-chase</td>
+                <td class="td-expected">Enemy loses sight and returns to patrol</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Player reaches exit trigger with all keys</td>
+                <td class="td-expected">Win panel appears, player input disabled</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <strong>Recording workflow errors in the test table:</strong> If a test fails because of a NavMesh baking issue, record it as a "workflow error" in the bug type column — not syntax, logical, or run-time. Explain the fix (rebake). This demonstrates that you understand the difference between code problems and configuration problems.
+        </div>
+
+      </section>
+
+
+      <!-- ── 13. Tiered Tasks ──────────────────────────────────────── -->
+      <section id="tasks" class="content-section">
+        <h2>Tiered Tasks</h2>
+        <p>Complete after Sprint 5 or alongside it if you finish early. All tasks require pseudocode first and sprint log entries.</p>
+
+        <div class="tier-tasks">
+          <div class="tier-grid">
+
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade D–E</span>
+              <h4>Fourth Key and Door</h4>
+              <p>Add a fourth key and a fourth door to the level. Update the <code>keysCollected</code> array to size 4 and change <code>KEYS_NEEDED</code> to 4. Place the new key and door in a new room or corridor.</p>
+              <ul>
+                <li>Update: <code>private bool[] keysCollected = new bool[4];</code></li>
+                <li>Add a fourth <code>KeyPickup</code> prefab with <code>keyIndex = 3</code>.</li>
+                <li>Test: collect only 3 keys — door should stay locked. Collect 4 — door opens.</li>
+                <li>Record the change, your test cases, and results in your sprint log.</li>
+              </ul>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade C</span>
+              <h4>Stamina System</h4>
+              <p>Add a stamina bar — the player can sprint (hold Shift) but depletes stamina. When stamina reaches 0, movement slows to walking speed. <strong>Write NSW pseudocode first.</strong></p>
+              <ul>
+                <li>Declare: <code>float stamina = 100f; float maxStamina = 100f;</code></li>
+                <li>Sprinting depletes stamina with <code>Time.deltaTime</code>; stamina recharges when not sprinting.</li>
+                <li>Add a TMP or UI Slider to the HUD showing stamina.</li>
+                <li>Write test cases: sprint until stamina depletes — does speed drop? Does it recharge when walking?</li>
+              </ul>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade B–A</span>
+              <h4>Hearing-Based Detection</h4>
+              <p>Implement a secondary detection system: the enemy investigates a position when the player bumps into a physics object (e.g. knocks over a crate). No starter code.</p>
+              <ul>
+                <li>When a physics object collides with the player, emit a "sound trigger" at that position.</li>
+                <li>If the enemy is within hearing range, set <code>agent.destination</code> to the sound position and enter an "investigate" state.</li>
+                <li>Design in NSW pseudocode first. Use a queue or secondary destination variable to avoid interrupting an active chase.</li>
+                <li>In your notebook: draw the updated AI state machine (Patrol → Investigate → Chase → Patrol). What triggers each transition?</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── 14. CPD Strip ─────────────────────────────────────────── -->
+      <section id="cpd" class="cpd-section">
+        <h2>Where Are You?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. Use this to reflect on your overall progress across the skills series.</p>
+
+        <div class="cpd-strip" role="group" aria-label="Course performance descriptors">
+
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully develops, tests and implements technically concise, modular algorithms — including NavMesh AI, Physics.Raycast line of sight, and bool array key systems — using OOP principles. Demonstrates creativity and innovation in detection design (hearing system, multi-state AI). Systematically validates against functional and non-functional requirements and evaluates social, ethical and cybersecurity responsibilities in depth.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Develops, tests and implements functional AI and key-system scripts in C# using NavMeshAgent, Physics.Raycast, bool arrays, and the AllKeysCollected() pattern. Demonstrates creativity by extending with stamina or improved detection. Applies iterative processes, completes five sprint logs, test table, and ethics reflection.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Develops and implements key collection and enemy patrol/chase algorithms in C# using OnTriggerEnter, NavMeshAgent, and bool arrays. Identifies and explains the AllKeysCollected() pattern. Completes all five sprints, sprint logs, test table, and the three ethics questions in the notebook.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Implements key collection and enemy patrol with support, using provided reference code. Bakes a NavMesh with guidance and connects a NavMeshAgent to a waypoint system. Records some sprint log entries and at least three test cases. Completes at least one ethics question in the notebook.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Follows provided scripts with guidance, modifying key count or waypoint positions. Identifies that the NavMesh is used for AI navigation and that OnTriggerEnter handles key collection. Records minimal project progress and one ethics observation with support.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 15. Notebook Prompts ──────────────────────────────────── -->
+      <section id="notebook">
+        <aside class="notebook-prompt" aria-label="Project notebook prompts">
+          <div class="notebook-prompt__label">📓 Project Notebook — Skills Page 5 Prompts</div>
+          <ul>
+            <li>
+              <strong>Producing &amp; Implementing — Sprint logs (required, one per session):</strong>
+              All five sprints need a log entry. Record: date, planned, completed, problems and solutions, next steps. Include at least one entry that documents a problem and how you diagnosed whether it was a code bug or a configuration/workflow error.
+            </li>
+            <li>
+              <strong>Producing &amp; Implementing — Code annotation:</strong>
+              Paste your <code>EnemyAI.cs</code> into the notebook. For each significant block — <code>CanSeePlayer()</code>, <code>Chase()</code>, <code>Patrol()</code> — write one sentence explaining what it does and one sentence explaining why you implemented it that way.
+              <span class="sentence-starter">Sentence starter: "This block [does X] because [Y]. I chose this approach over [alternative] because…"</span>
+            </li>
+            <li>
+              <strong>Testing &amp; Evaluating — Test table and workflow error:</strong>
+              Complete all five test cases. If the NavMesh teleporting bug appeared in your project, explain: why it happened, how you identified it was a workflow error not a code error, and how you fixed it.
+              <span class="sentence-starter">Sentence starter: "I knew this was a workflow error and not a code error because… The fix was not to change any code but to…"</span>
+            </li>
+            <li>
+              <strong>Social Awareness (required) — Ethics reflection:</strong>
+              Answer all three ethics questions from the Ethics &amp; Responsibilities section: age suitability (with specific design choices), inclusive design (barriers and proposed fixes), and cybersecurity/privacy (data collected, ownership, protection, disclosure). All three are required for a complete submission.
+            </li>
+          </ul>
+
+          <div style="display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4);">
+            <a href="../../project-notebooks/sd-games-notebook.html#pi-sprint" class="notebook-link">Sprint Logs →</a>
+            <a href="../../project-notebooks/sd-games-notebook.html#pi-code" class="notebook-link">Code &amp; Implementation →</a>
+            <a href="../../project-notebooks/sd-games-notebook.html#te-testing" class="notebook-link">Test Log →</a>
+            <a href="../../project-notebooks/sd-games-notebook.html#te-eval" class="notebook-link">Evaluation →</a>
+          </div>
+        </aside>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>

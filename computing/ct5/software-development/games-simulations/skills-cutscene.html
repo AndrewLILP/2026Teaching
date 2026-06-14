@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Cutscenes, Timeline &amp; Game State · Games &amp; Simulations · CT5</title>
+  <meta name="description" content="Build a cutscene using Unity Timeline and a Playable Director, then manage game state with a string flag and an enum. Stage 5 Computing Technology.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <!-- SD: Games & Simulations accent — violet -->
+  <style>
+    :root {
+      --accent:         #8b5cf6;
+      --accent-dim:     #6d28d9;
+      --accent-bright:  #a78bfa;
+      --accent-surface: rgba(139, 92, 246, 0.10);
+      --accent-border:  rgba(139, 92, 246, 0.28);
+    }
+
+    /* ── Page-specific components ─────────────────────────────────── */
+
+    /* Timeline editor description block */
+    .timeline-ui {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    .timeline-ui__header {
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-3) var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .timeline-ui__title {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-text-secondary);
+    }
+    .timeline-ui__badge {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-sm);
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      color: var(--accent-bright);
+    }
+    .timeline-tracks {
+      padding: var(--space-4) var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .timeline-track {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .track-label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-text-secondary);
+      text-align: right;
+      padding-right: var(--space-3);
+      border-right: 2px solid var(--color-border-mid);
+      font-family: var(--font-mono);
+    }
+    .track-clip {
+      height: 28px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      padding: 0 var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-inverse);
+    }
+    .track-clip.camera  { background: #60a5fa; width: 70%; }
+    .track-clip.audio   { background: #34d399; width: 85%; }
+    .track-clip.signal  { background: #f472b6; width: 20px; border-radius: 50%; padding: 0; justify-content: center; margin-left: 65%; }
+    .timeline-ruler {
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-5) var(--space-2) calc(140px + var(--space-5) + var(--space-3));
+      display: flex;
+      gap: 0;
+    }
+    .ruler-mark {
+      flex: 1;
+      font-size: var(--text-xs);
+      font-family: var(--font-mono);
+      color: var(--color-text-muted);
+      text-align: left;
+    }
+
+    /* State machine diagram */
+    .state-machine {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin: var(--space-5) 0 var(--space-6);
+      flex-wrap: wrap;
+    }
+    .state-node {
+      background: var(--color-surface-2);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-3) var(--space-5);
+      text-align: center;
+      min-width: 110px;
+    }
+    .state-node.active-state {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+    }
+    .state-node .sn-label {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--accent-bright);
+      display: block;
+    }
+    .state-node .sn-desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      display: block;
+      line-height: 1.4;
+    }
+    .state-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .state-arrow .arrow-line {
+      font-size: 1.2rem;
+      color: var(--color-text-muted);
+    }
+    .state-arrow .arrow-label {
+      font-size: var(--text-xs);
+      color: var(--color-phase-test);
+      font-weight: 600;
+      white-space: nowrap;
+      text-align: center;
+      max-width: 90px;
+      line-height: 1.3;
+    }
+
+    /* String vs enum comparison */
+    .compare-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    @media (max-width: 640px) { .compare-pair { grid-template-columns: 1fr; } }
+    .compare-col-label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+    .compare-col-label.danger { color: #f87171; }
+    .compare-col-label.safe   { color: #34d399; }
+
+    /* Shader cross-reference callout */
+    .shader-xref {
+      background: var(--color-surface-2);
+      border: 1px solid rgba(6, 182, 212, 0.30);
+      border-left: 4px solid #06b2d4;
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-8) 0;
+    }
+    .shader-xref__label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #06b2d4;
+      margin-bottom: var(--space-2);
+    }
+    .shader-xref h4 {
+      font-size: var(--text-base);
+      margin-bottom: var(--space-2);
+      color: var(--color-text-primary);
+    }
+    .shader-xref p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+      line-height: 1.65;
+    }
+    .shader-xref a { color: #06b2d4; }
+
+    /* Inspector steps */
+    .inspector-steps {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-5) 0;
+    }
+    .inspector-steps h4 {
+      color: var(--accent-bright);
+      font-size: var(--text-sm);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-label);
+      margin-bottom: var(--space-3);
+    }
+    .inspector-steps ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+    .inspector-steps li { margin-bottom: var(--space-2); line-height: 1.6; }
+
+    /* MCQ set wrapper */
+    .mcq-set { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-6) 0; }
+
+    /* Section scroll margin */
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    @media (max-width: 768px) {
+      .tier-grid { grid-template-columns: 1fr; }
+      .state-machine { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Games &amp; Simulations</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Skills: Cutscene</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills-triggers.html" class="ct-nav-btn">← Page 2: Triggers</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Games &amp; Simulations</a></li>
+      <li aria-current="page">Skills: Cutscene &amp; Game State</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- Sidebar -->
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#vocabulary">Key Vocabulary</a>
+          <a href="#timeline-tool">What is Timeline?</a>
+          <a href="#game-state">Game State</a>
+          <a href="#enum">Enums — Safer State</a>
+          <a href="#pseudo">Algorithm: Start Game</a>
+          <a href="#walkthrough">Code: GameManager</a>
+          <a href="#events">Event Subscription</a>
+          <a href="#signal">SignalEmitter</a>
+          <a href="#shader-xref">Shader Cross-Reference</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#bug">Bug Detective</a>
+          <a href="#tasks">Tiered Tasks</a>
+          <a href="#cpd">Grade Descriptors</a>
+          <a href="#notebook">Notebook Prompts</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-COL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phase</div>
+        <div class="phase-pills" style="flex-direction: column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- ── Page Hero ─────────────────────────────────────────────── -->
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Stage 5 · Skills Page 3 of 5</div>
+        <h1>Cutscenes, Timeline &amp; Game State</h1>
+        <p class="page-intro">
+          Almost every game has moments where you take control away from the player —
+          a story introduction, a level transition, a boss arrival. These are cutscenes.
+          On this page you'll build one using Unity's Timeline tool, then write a
+          <strong>game state machine</strong> in C# to manage the transition from
+          cutscene into gameplay. You'll also meet <code>enum</code> — a safer and
+          more expressive way to represent state than a plain string.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ── 1. Key Vocabulary ──────────────────────────────────────── -->
+      <section id="vocabulary" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Key Vocabulary</h2>
+        <p>These terms are all new on this page. Several of them describe Unity tools rather than C# syntax — read the definitions before opening Unity.</p>
+
+        <div class="word-bank">
+          <h3>Word Bank — Cutscenes &amp; Game State</h3>
+          <div class="word-bank-grid">
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Timeline</div>
+              <div class="word-bank-def">A Unity editor window for sequencing animations, audio, and camera movements over time — like a video editing timeline. You arrange clips on tracks; the Playable Director plays them back. No C# required to build the clip content.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Playable Director</div>
+              <div class="word-bank-def">A Unity component that controls playback of a Timeline asset. You add it to a GameObject in your scene, assign a Timeline asset to it, and call <code>director.Play()</code> or <code>director.Stop()</code> from C# to control it.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Animation Track</div>
+              <div class="word-bank-def">One row in the Timeline window. You bind it to a GameObject (e.g. the camera) and add animation clips to it. The Director plays those clips in sequence when the Timeline runs.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">game state</div>
+              <div class="word-bank-def">A variable that records what mode the game is currently in — "cutscene", "playing", "paused", "game over". Code reads this variable to decide what to allow: player input is blocked during a cutscene, enabled during play.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">enum</div>
+              <div class="word-bank-def">A C# keyword that defines a named set of constant values. <code>enum GameState { Cutscene, Playing, Paused }</code> creates a type where the only valid values are exactly those names. Safer than strings because typos cause compile errors instead of silent bugs.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">event subscription</div>
+              <div class="word-bank-def">The pattern of connecting a method to an event using <code>+=</code>. <code>director.stopped += OnCutsceneComplete</code> tells Unity: "when the director stops, call my <code>OnCutsceneComplete</code> method." The opposite — disconnecting — uses <code>-=</code>.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">enabled</div>
+              <div class="word-bank-def">A property on Unity components. Setting <code>playerMovement.enabled = false</code> stops the script from running its <code>Update()</code> without destroying it. Setting it back to <code>true</code> resumes it. Used to freeze player input during cutscenes.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">SignalEmitter</div>
+              <div class="word-bank-def">A Unity Timeline marker that fires a signal at a specific time in the Timeline. A <strong>SignalReceiver</strong> component on a GameObject listens for it and calls a C# method — letting Timeline trigger your code without polling.</div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 2. What is Timeline? ───────────────────────────────────── -->
+      <section id="timeline-tool" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>What is Timeline? — A No-Code Sequencer</h2>
+        <p>Unity's Timeline window lets you arrange clips on tracks and play them back in sequence — similar to a video editor. Each row is a <strong>track</strong> bound to a specific object; each coloured block is a <strong>clip</strong> that animates, plays audio, or triggers an event.</p>
+
+        <div class="timeline-ui" role="img" aria-label="Diagram of a Unity Timeline window with three tracks">
+          <div class="timeline-ui__header">
+            <span class="timeline-ui__title">Timeline (Cutscene)</span>
+            <span class="timeline-ui__badge">Unity Editor — no C# required here</span>
+          </div>
+          <div class="timeline-ruler">
+            <span class="ruler-mark">0s</span>
+            <span class="ruler-mark">1s</span>
+            <span class="ruler-mark">2s</span>
+            <span class="ruler-mark">3s</span>
+            <span class="ruler-mark">4s</span>
+          </div>
+          <div class="timeline-tracks">
+            <div class="timeline-track">
+              <span class="track-label">Camera</span>
+              <div class="track-clip camera">Camera pan</div>
+            </div>
+            <div class="timeline-track">
+              <span class="track-label">Audio</span>
+              <div class="track-clip audio">Intro music</div>
+            </div>
+            <div class="timeline-track">
+              <span class="track-label">Signal</span>
+              <div class="track-clip signal">📍</div>
+            </div>
+          </div>
+        </div>
+
+        <p>The <strong>Signal marker</strong> (📍 on the third track) fires at a specific point in the timeline — in this case, near the end. It calls your C# method (<code>OnCutsceneComplete</code>) to hand control back to the player.</p>
+
+        <div class="inspector-steps">
+          <h4>🎮 Set up Timeline in Unity</h4>
+          <ol>
+            <li>Open Window → Sequencing → <strong>Timeline</strong>.</li>
+            <li>Create an empty GameObject in the Hierarchy. Name it <strong>CutsceneDirector</strong>.</li>
+            <li>With it selected, click <strong>Create</strong> in the Timeline window. Unity adds a <strong>Playable Director</strong> component and saves a new <code>.playable</code> asset.</li>
+            <li>In the Timeline window, click <strong>+ Add</strong> → <strong>Animation Track</strong>. Drag your Main Camera from the Hierarchy into the track's binding slot on the left.</li>
+            <li>Right-click on the track → <strong>Add From Animation Clip</strong> — or record a clip directly by pressing the red record button and moving the camera.</li>
+            <li>Press Play in the Timeline window (not the game) to preview. Press Play in the game to run it live.</li>
+          </ol>
+        </div>
+
+        <div class="example-box">
+          <strong>NESA Syllabus connection</strong>
+          Developing appropriate supporting documentation and using program-development support tools (P&amp;I-1, P&amp;I-8). Timeline is a visual production tool — recording your Timeline setup and the choices you made about track layout is part of your project documentation.
+        </div>
+
+      </section>
+
+
+      <!-- ── 3. Game State ──────────────────────────────────────────── -->
+      <section id="game-state" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Game State — Tracking What the Game is Doing</h2>
+        <p>A <strong>game state</strong> is a variable that records the current mode of the game. During a cutscene the player should be frozen — input disabled, camera under Timeline control. When the cutscene ends, the player is unfrozen and takes control.</p>
+        <p>Without a state variable, your code has no reliable way to ask "am I currently in a cutscene?" — and things like the skip button or pause logic become impossible to implement correctly.</p>
+
+        <div class="state-machine" aria-label="State machine diagram: Cutscene → Playing → Paused → Game Over">
+          <div class="state-node active-state">
+            <span class="sn-label">Cutscene</span>
+            <span class="sn-desc">input disabled<br>director playing</span>
+          </div>
+          <div class="state-arrow">
+            <span class="arrow-line">→</span>
+            <span class="arrow-label">cutscene ends<br>(or skip pressed)</span>
+          </div>
+          <div class="state-node">
+            <span class="sn-label">Playing</span>
+            <span class="sn-desc">input enabled<br>player in control</span>
+          </div>
+          <div class="state-arrow">
+            <span class="arrow-line">→</span>
+            <span class="arrow-label">Esc / pause<br>button</span>
+          </div>
+          <div class="state-node">
+            <span class="sn-label">Paused</span>
+            <span class="sn-desc">input disabled<br>time frozen</span>
+          </div>
+          <div class="state-arrow">
+            <span class="arrow-line">→</span>
+            <span class="arrow-label">player dies or<br>goal reached</span>
+          </div>
+          <div class="state-node">
+            <span class="sn-label">GameOver</span>
+            <span class="sn-desc">input disabled<br>result shown</span>
+          </div>
+        </div>
+
+        <p>On this page you'll implement only the first transition — <strong>Cutscene → Playing</strong>. Pages 4 and 5 add the remaining states.</p>
+
+      </section>
+
+
+      <!-- ── 4. Enum — Safer State ──────────────────────────────────── -->
+      <section id="enum" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Enums — Safer Than Strings</h2>
+        <p>The simplest way to represent game state is a string: <code>string gameState = "cutscene"</code>. This works — but it's fragile. A single typo (<code>"Cutscene"</code> vs <code>"cutscene"</code>) creates a bug that compiles fine and fails silently at runtime.</p>
+        <p>An <strong>enum</strong> is a named set of constant values. The compiler enforces valid values — a typo is a compile error, not a hidden bug.</p>
+
+        <div class="compare-pair">
+          <div>
+            <div class="compare-col-label danger">❌ String state — fragile</div>
+            <pre><code>string gameState = "cutscene";
+
+// Later in code:
+if (gameState == "Cutscene")  // typo — capital C
+{
+    // This never runs — silent bug
+}</code></pre>
+          </div>
+          <div>
+            <div class="compare-col-label safe">✓ Enum state — safe</div>
+            <pre><code>enum GameState { Cutscene, Playing, Paused }
+GameState gameState = GameState.Cutscene;
+
+// Later in code:
+if (gameState == GameState.Cutscen)  // typo
+{
+    // Compile error — caught immediately
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Enum is a conceptual step up.</strong> Before writing any C#, draw the state machine in your project notebook. Label each state (box) and each transition (arrow with the trigger that causes it). This diagram is your design evidence for the D&amp;P framework — keep it.
+        </div>
+
+      </section>
+
+
+      <!-- ── 5. NSW Pseudocode — StartGame ─────────────────────────── -->
+      <section id="pseudo" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Algorithm: Starting the Game via Cutscene</h2>
+        <p>This algorithm runs when the scene loads. It sets the state, disables player input, plays the cutscene, then waits for it to finish before handing control back.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — StartGame algorithm</div>
+          <pre>BEGIN StartGame
+  gameState ← "cutscene"
+  playerInput.enabled ← FALSE
+  CALL director.Play()
+  WAIT UNTIL director.state ≠ PlayState.Playing
+  gameState ← "playing"
+  playerInput.enabled ← TRUE
+END StartGame</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Reading the pseudocode — the WAIT UNTIL challenge</strong>
+          <code>WAIT UNTIL director.state ≠ PlayState.Playing</code> cannot be written as a simple loop in C# — it would block the main thread and freeze Unity. Instead, we use an <strong>event subscription</strong>: <code>director.stopped += OnCutsceneComplete</code>. Unity calls our method when the director stops, rather than us checking every frame. This is the same event-driven pattern from Page 2.
+        </div>
+
+        <div class="teaching-advice">
+          <h4>📝 Before continuing</h4>
+          <p>Write this pseudocode in your project notebook. Then annotate each line: what C# concept does it map to? <code>playerInput.enabled ← FALSE</code> maps to the <code>enabled</code> property; <code>CALL director.Play()</code> maps to a method call; <code>WAIT UNTIL</code> maps to an event subscription. Draw the mapping, then read the walkthrough.</p>
+        </div>
+
+      </section>
+
+
+      <!-- ── 6. Code Walkthrough — GameManager.cs ───────────────────── -->
+      <section id="walkthrough" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Code Walkthrough: GameManager.cs</h2>
+
+        <div class="concept-recap">
+          <strong>Setup:</strong> In the Hierarchy, create an empty GameObject → name it <strong>GameManager</strong>. Right-click in Project → Create → C# Script → <code>GameManager</code>. Drag it onto the GameManager object. In the scene, ensure you have: a CutsceneDirector object with a Playable Director component, and your player with a <code>PlayerMovement</code> script from Page 1. You'll drag both into the Inspector slots.
+        </div>
+
+        <!-- Step 1 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">Add the Cinemachine/Director namespace and declare the enum</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 1 — using statement for Timeline and the GameState enum</div>
+          <pre><code>using UnityEngine;
+<span class="code-new">using UnityEngine.Playables;   // ── NEW IN STEP 1 — gives us PlayableDirector</span>
+
+<span class="code-new">public enum GameState          // ── NEW IN STEP 1 — defined OUTSIDE the class</span>
+<span class="code-new">{                              // ── NEW IN STEP 1 ──</span>
+<span class="code-new">    Cutscene,                  // ── NEW IN STEP 1 ──</span>
+<span class="code-new">    Playing,                   // ── NEW IN STEP 1 ──</span>
+<span class="code-new">    Paused,                    // ── NEW IN STEP 1 ──</span>
+<span class="code-new">    GameOver                   // ── NEW IN STEP 1 ──</span>
+<span class="code-new">}                              // ── NEW IN STEP 1 ──</span>
+
+public class GameManager : MonoBehaviour
+{
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>using UnityEngine.Playables</strong> gives us access to <code>PlayableDirector</code> — the component that drives Timeline. <strong>The enum is declared <em>outside</em> the class</strong> — this makes it accessible to any other script in the project. If it's inside the class, other scripts would need to write <code>GameManager.GameState.Cutscene</code>, which is verbose. Outside the class, they just write <code>GameState.Cutscene</code>.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Declare serialised fields and the current state variable</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 2 — three fields: director, player movement script, and current state</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+<span class="code-new">    [SerializeField] private PlayableDirector director;        // ── NEW IN STEP 2 ──</span>
+<span class="code-new">    [SerializeField] private PlayerMovement   playerMovement;  // ── NEW IN STEP 2 ──</span>
+<span class="code-new">    private GameState currentState;                            // ── NEW IN STEP 2 ──</span>
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>director</strong> is a reference to the Playable Director on the CutsceneDirector object. <strong>playerMovement</strong> is the <code>PlayerMovement</code> script from Page 1 — we'll toggle its <code>enabled</code> property to freeze and unfreeze the player. <strong>currentState</strong> is private — no <code>[SerializeField]</code> — because external scripts should not be able to change game state directly. In the Inspector, drag the CutsceneDirector object into the Director slot, and the Player into the Player Movement slot.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 3</span>
+            <span class="step-label">Subscribe to the director.stopped event in Start()</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 3 — event subscription in Start(), unsubscription in OnDestroy()</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private PlayableDirector director;
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+<span class="code-new">        director.stopped += OnCutsceneComplete;   // ── NEW IN STEP 3 ──</span>
+    }
+
+<span class="code-new">    void OnDestroy()                              // ── NEW IN STEP 3 ──</span>
+<span class="code-new">    {                                             // ── NEW IN STEP 3 ──</span>
+<span class="code-new">        director.stopped -= OnCutsceneComplete;   // ── NEW IN STEP 3 ──</span>
+<span class="code-new">    }                                             // ── NEW IN STEP 3 ──</span>
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>director.stopped += OnCutsceneComplete</strong> — the <code>+=</code> operator <em>subscribes</em> a method to an event. When the director finishes playing, Unity calls <code>OnCutsceneComplete</code> automatically. The <strong>OnDestroy()</strong> method uses <code>-=</code> to <em>unsubscribe</em> when the GameManager object is destroyed. This is essential: if you don't unsubscribe, Unity may try to call a method on a destroyed object and crash. Always subscribe in <code>Start()</code> and unsubscribe in <code>OnDestroy()</code>.
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 4</span>
+            <span class="step-label">Implement StartCutscene() — disable input, play director</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 4 — StartCutscene() sets state and plays the Timeline</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private PlayableDirector director;
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+        director.stopped += OnCutsceneComplete;
+<span class="code-new">        StartCutscene();   // ── NEW IN STEP 4 — call on scene load</span>
+    }
+
+    void OnDestroy()
+    {
+        director.stopped -= OnCutsceneComplete;
+    }
+
+    void Update()
+    {
+
+    }
+
+<span class="code-new">    private void StartCutscene()                      // ── NEW IN STEP 4 ──</span>
+<span class="code-new">    {                                                  // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        currentState = GameState.Cutscene;             // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        playerMovement.enabled = false;                // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        director.Play();                               // ── NEW IN STEP 4 ──</span>
+<span class="code-new">    }                                                  // ── NEW IN STEP 4 ──</span>
+}</code></pre>
+          <div class="step-explain">
+            <strong>currentState = GameState.Cutscene</strong> — we set the enum value before doing anything else, so the state is accurate from the start. <strong>playerMovement.enabled = false</strong> — stops the PlayerMovement script's <code>Update()</code> from running, so the player cannot move during the cutscene. The script is not destroyed — just paused. <strong>director.Play()</strong> — starts the Timeline. Compare to the pseudocode: <code>gameState ← "cutscene"</code>, <code>playerInput.enabled ← FALSE</code>, <code>CALL director.Play()</code> — line for line.
+          </div>
+        </div>
+
+        <!-- Step 5 — Final -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 5</span>
+            <span class="step-label">Implement OnCutsceneComplete() — re-enable input, update state</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 5 — OnCutsceneComplete() completes the state transition</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private PlayableDirector director;
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+        director.stopped += OnCutsceneComplete;
+        StartCutscene();
+    }
+
+    void OnDestroy()
+    {
+        director.stopped -= OnCutsceneComplete;
+    }
+
+    void Update()
+    {
+
+    }
+
+    private void StartCutscene()
+    {
+        currentState = GameState.Cutscene;
+        playerMovement.enabled = false;
+        director.Play();
+    }
+
+<span class="code-new">    private void OnCutsceneComplete(PlayableDirector pd)  // ── NEW IN STEP 5 ──</span>
+<span class="code-new">    {                                                      // ── NEW IN STEP 5 ──</span>
+<span class="code-new">        currentState = GameState.Playing;                  // ── NEW IN STEP 5 ──</span>
+<span class="code-new">        playerMovement.enabled = true;                     // ── NEW IN STEP 5 ──</span>
+<span class="code-new">    }                                                      // ── NEW IN STEP 5 ──</span>
+}</code></pre>
+          <div class="step-explain">
+            <strong>OnCutsceneComplete(PlayableDirector pd)</strong> — the parameter <code>pd</code> is the director that stopped. We don't use it here, but the signature must match what Unity's event passes. <strong>currentState = GameState.Playing</strong> — update the state first, then re-enable input. The order matters: if another script checks the state in the same frame, it sees <code>Playing</code> before the player can move. <strong>playerMovement.enabled = true</strong> — the <code>Update()</code> loop in PlayerMovement resumes, and the player regains control. Press Play in Unity — the cutscene should run, then the player should become moveable when it ends.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 7. Event Subscription in Depth ────────────────────────── -->
+      <section id="events" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Event Subscription — The += / -= Pattern</h2>
+        <p>You first saw event-driven programming in Page 2 with <code>OnTriggerEnter</code> — Unity called your method when a collision happened. The <code>director.stopped</code> event is the same idea, but you control the subscription explicitly with <code>+=</code> and <code>-=</code>.</p>
+
+        <div class="frayer-card" aria-label="Frayer model for event subscription">
+          <div class="frayer-center">event subscription (<code>+=</code>)</div>
+          <div class="frayer-cell">
+            <h4>What it is</h4>
+            <p>Connecting a method (your code) to an event (Unity's signal) so that Unity calls your method when the event fires.</p>
+          </div>
+          <div class="frayer-cell">
+            <h4>Example</h4>
+            <p><code>director.stopped += OnCutsceneComplete;</code><br>When the director stops, call <code>OnCutsceneComplete</code>.</p>
+          </div>
+          <div class="frayer-cell">
+            <h4>Why unsubscribe?</h4>
+            <p>If the GameManager is destroyed but the director still exists, Unity tries to call a method on a null object — NullReferenceException. Always use <code>-=</code> in <code>OnDestroy()</code>.</p>
+          </div>
+          <div class="frayer-cell">
+            <h4>Analogy</h4>
+            <p>Subscribing to a newsletter: <code>+=</code> opts you in, <code>-=</code> opts you out. If you leave town (object destroyed) without opting out, letters arrive at an empty house.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 8. SignalEmitter ───────────────────────────────────────── -->
+      <section id="signal" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Alternative: SignalEmitter and SignalReceiver</h2>
+        <p>Instead of subscribing to <code>director.stopped</code>, you can fire a method at a <em>precise moment</em> during the Timeline using a <strong>SignalEmitter</strong> marker. This is useful when the cutscene should hand control back before it finishes — for example, the camera finishes panning at 4 seconds but the audio fades out until 5 seconds.</p>
+
+        <div class="inspector-steps">
+          <h4>🎮 Add a SignalEmitter to Timeline</h4>
+          <ol>
+            <li>In the Timeline window, right-click on the timeline ruler at the point you want the signal — e.g. at 4 seconds.</li>
+            <li>Select <strong>Add Signal Emitter</strong>. A small marker (📍) appears on the ruler.</li>
+            <li>In the Inspector for that marker, click <strong>Create Signal</strong>. Name it <code>CutsceneEndSignal</code> and save it.</li>
+            <li>Select your GameManager object in the Hierarchy. Add a <strong>Signal Receiver</strong> component.</li>
+            <li>In the Signal Receiver, click <strong>+</strong>. Drag the <code>CutsceneEndSignal</code> asset into the signal slot. In the reaction field, drag the GameManager object in and choose <code>OnCutsceneComplete</code>.</li>
+            <li>Now when the Timeline reaches that marker, Unity calls your method — no C# subscription needed in this approach.</li>
+          </ol>
+        </div>
+
+        <div class="info-box">
+          <strong>Which approach to use?</strong> <code>director.stopped +=</code> is simpler to code and fires when the entire Timeline finishes. SignalEmitter is more flexible — it fires at any point in the Timeline regardless of when playback ends. For this page, either works. For the Extension task, SignalEmitter becomes essential.
+        </div>
+
+      </section>
+
+
+      <!-- ── 9. Shader Cross-Reference ─────────────────────────────── -->
+      <section id="shader-xref">
+        <div class="shader-xref">
+          <div class="shader-xref__label">🎨 Shader Lesson Cross-Reference</div>
+          <h4>Want to add a fade-to-black transition?</h4>
+          <p>A common polish effect is fading the screen to black at the start of a cutscene and fading back in when gameplay begins. This is done with a full-screen shader on a UI overlay — a quad that covers the camera, driven by an alpha value your C# code changes over time.</p>
+          <p>See <a href="skills-shader-01.html">Shader Lesson 01: Unlit Colour &amp; Transparency</a> — specifically the transparency section — for how to create and control an unlit material's alpha from a script. The fade would be called at the start of <code>StartCutscene()</code> and reversed inside <code>OnCutsceneComplete()</code>.</p>
+        </div>
+      </section>
+
+
+      <!-- ── 10. Check Your Understanding ──────────────────────────── -->
+      <section id="check" class="content-section">
+        <h2>Check Your Understanding</h2>
+        <p>Select your answer — feedback appears immediately. Use ↩ to try again.</p>
+
+        <div class="mcq-set">
+
+          <!-- Q1 -->
+          <div class="mcq-card"
+               data-q="1"
+               data-correct="B"
+               data-feedback-a="Incorrect — Timeline is a sequencing tool for animation and audio. It doesn't add physics. Rigidbody does that."
+               data-feedback-b="✓ Correct — Timeline sequences animations, audio, and camera movements over time using tracks and clips. A Playable Director component controls playback."
+               data-feedback-c="Incorrect — game state is a variable in your C# code, not a Unity editor window."
+               data-feedback-d="Incorrect — the Input System is a separate Unity package for handling controllers and keys. Timeline has nothing to do with input.">
+            <div class="mcq-question">1. What does Unity's Timeline window do?</div>
+            <div class="mcq-options" role="group" aria-label="Question 1 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It adds physics to GameObjects so they collide and bounce</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It sequences animations, audio, and camera movements over time using tracks and clips</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It displays the current game state variable in the editor</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It manages player input from keyboards and controllers</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-1"></div>
+            <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+          </div>
+
+          <!-- Q2 -->
+          <div class="mcq-card"
+               data-q="2"
+               data-correct="C"
+               data-feedback-a="Incorrect — setting it to null would destroy the reference and cause a NullReferenceException when you try to use the script again."
+               data-feedback-b="Incorrect — destroying the component removes it entirely from the object. You'd need to re-add and reconfigure it to enable it again."
+               data-feedback-c="✓ Correct — setting enabled = false pauses the script's Update() without destroying it. Setting it back to true resumes it exactly where it was."
+               data-feedback-d="Incorrect — Time.timeScale affects all physics and animation in the scene, not just one script. It's too broad and would also freeze the cutscene.">
+            <div class="mcq-question">2. How do you freeze player movement during a cutscene without destroying the <code>PlayerMovement</code> script?</div>
+            <div class="mcq-options" role="group" aria-label="Question 2 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Set <code>playerMovement = null</code> to clear the reference</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Call <code>Destroy(playerMovement)</code> to remove the script</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Set <code>playerMovement.enabled = false</code> to pause the script</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Set <code>Time.timeScale = 0</code> to freeze all time</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-2"></div>
+            <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+          </div>
+
+          <!-- Q3 -->
+          <div class="mcq-card"
+               data-q="3"
+               data-correct="D"
+               data-feedback-a="Incorrect — strings compile fine with any content, including typos. The error won't be caught until runtime, if at all."
+               data-feedback-b="Incorrect — enums are not faster at runtime than string comparisons in any meaningful way for this use case. The advantage is safety, not speed."
+               data-feedback-c="Incorrect — both strings and enums can be serialized and shown in the Inspector. That's not the reason to prefer enums."
+               data-feedback-d="✓ Correct — a typo in an enum value causes a compile error. A typo in a string compiles and runs, but the condition silently never matches — a logical bug that's very hard to find.">
+            <div class="mcq-question">3. Why is <code>enum GameState</code> safer than using a <code>string</code> to track game state?</div>
+            <div class="mcq-options" role="group" aria-label="Question 3 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Strings don't compile in C# — enums are the only valid option</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Enum comparisons are much faster at runtime than string comparisons</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Enums can be shown in the Inspector but strings cannot</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A typo in an enum value is a compile error — a typo in a string is a silent logical bug</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-3"></div>
+            <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+          </div>
+
+          <!-- Q4 -->
+          <div class="mcq-card"
+               data-q="4"
+               data-correct="A"
+               data-feedback-a="✓ Correct — += subscribes (opts in): Unity will call your method when the event fires. -= unsubscribes (opts out): Unity stops calling it. Always unsubscribe in OnDestroy() to prevent null reference crashes."
+               data-feedback-b="Incorrect — += and -= are not increment and decrement operators here. In the context of events, they mean subscribe and unsubscribe."
+               data-feedback-c="Incorrect — you don't call OnCutsceneComplete yourself. You subscribe it and Unity calls it when the director stops."
+               data-feedback-d="Incorrect — += subscribes; -= unsubscribes. They do the opposite of what this answer describes.">
+            <div class="mcq-question">4. What do <code>director.stopped += OnCutsceneComplete</code> and <code>director.stopped -= OnCutsceneComplete</code> each do?</div>
+            <div class="mcq-options" role="group" aria-label="Question 4 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>+=</code> subscribes the method to the event (opt in); <code>-=</code> unsubscribes it (opt out)</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>+=</code> increments a counter; <code>-=</code> decrements it</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>+=</code> calls the method immediately; <code>-=</code> cancels a scheduled call</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>+=</code> removes the method from the event; <code>-=</code> adds it</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-4"></div>
+            <button class="mcq-reset" id="mcq-reset-4">↩ Try again</button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 11. Bug Detective ─────────────────────────────────────── -->
+      <section id="bug" class="content-section">
+
+        <h2>Bug Detective</h2>
+        <p>The script below has <strong>three bugs</strong> — one of each type. Find them before revealing the answers. Add findings to your bug log in the project notebook.</p>
+
+        <div class="example-box">
+          <strong>Bug types — quick reference</strong>
+          <strong>Syntax</strong>: breaks C# rules — won't compile. ·
+          <strong>Logical</strong>: compiles and runs but wrong behaviour. ·
+          <strong>Run-time</strong>: compiles but crashes during Play mode.
+        </div>
+
+        <!-- Bug 1 — Syntax -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 1 — Syntax Error</div>
+          <h3>GameManager.cs — wrong event operator</h3>
+          <p>This script won't compile. The error reads: <code>Cannot implicitly convert type 'void' to 'UnityEngine.Playables.PlayableDirector'</code>. The event subscription line is wrong. Find it.</p>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private PlayableDirector director;
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+<span class="bug-line">        director.stopped = OnCutsceneComplete;   // ← wrong operator</span>
+        StartCutscene();
+    }
+
+    void OnDestroy()
+    {
+        director.stopped -= OnCutsceneComplete;
+    }
+
+    private void StartCutscene()
+    {
+        currentState = GameState.Cutscene;
+        playerMovement.enabled = false;
+        director.Play();
+    }
+
+    private void OnCutsceneComplete(PlayableDirector pd)
+    {
+        currentState = GameState.Playing;
+        playerMovement.enabled = true;
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> <code>director.stopped = OnCutsceneComplete</code> uses <code>=</code> (assignment) instead of <code>+=</code> (subscribe). Events cannot be assigned with <code>=</code> from outside the class that declares them — it's a C# rule. Fix: change <code>=</code> to <code>+=</code>.
+          </div>
+        </div>
+
+        <!-- Bug 2 — Logical -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 2 — Logical Error</div>
+          <h3>GameManager.cs — player input re-enabled before cutscene ends</h3>
+          <p>This script compiles and runs. The cutscene plays — but the player can move during the cutscene from the very first frame. Then when the cutscene ends, nothing changes. What is wrong?</p>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+    [SerializeField] private PlayableDirector director;
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+        director.stopped += OnCutsceneComplete;
+        StartCutscene();
+    }
+
+    void OnDestroy()
+    {
+        director.stopped -= OnCutsceneComplete;
+    }
+
+    private void StartCutscene()
+    {
+        currentState = GameState.Cutscene;
+<span class="bug-line">        playerMovement.enabled = true;   // ← wrong value — should be false</span>
+        director.Play();
+    }
+
+    private void OnCutsceneComplete(PlayableDirector pd)
+    {
+<span class="bug-line">        currentState = GameState.Cutscene;   // ← wrong state — should be Playing</span>
+        playerMovement.enabled = true;
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Two logical errors found:</strong> (1) <code>StartCutscene()</code> sets <code>playerMovement.enabled = true</code> instead of <code>false</code> — the player is never frozen, so they can move freely during the cutscene. (2) <code>OnCutsceneComplete()</code> sets <code>currentState = GameState.Cutscene</code> instead of <code>GameState.Playing</code> — the state never transitions, so any code that checks for the Playing state will never run. Fix both values.
+          </div>
+        </div>
+
+        <!-- Bug 3 — Run-time -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 3 — Run-time Error</div>
+          <h3>GameManager.cs — NullReferenceException on director</h3>
+          <p>This script compiles. When you press Play, Unity immediately logs: <code>NullReferenceException: Object reference not set to an instance of an object — GameManager.Start()</code>. The game does not start. What is missing?</p>
+          <pre><code>using UnityEngine;
+using UnityEngine.Playables;
+
+public enum GameState { Cutscene, Playing, Paused, GameOver }
+
+public class GameManager : MonoBehaviour
+{
+<span class="bug-line">    [SerializeField] private PlayableDirector director;   // ← Inspector slot empty</span>
+    [SerializeField] private PlayerMovement   playerMovement;
+    private GameState currentState;
+
+    void Start()
+    {
+        director.stopped += OnCutsceneComplete;   // ← crashes here — director is null
+        StartCutscene();
+    }
+
+    void OnDestroy()
+    {
+        director.stopped -= OnCutsceneComplete;
+    }
+
+    private void StartCutscene()
+    {
+        currentState = GameState.Cutscene;
+        playerMovement.enabled = false;
+        director.Play();
+    }
+
+    private void OnCutsceneComplete(PlayableDirector pd)
+    {
+        currentState = GameState.Playing;
+        playerMovement.enabled = true;
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The <code>director</code> field is declared with <code>[SerializeField]</code> but was never assigned in the Inspector — the slot is empty. <code>director</code> is <code>null</code>, so <code>director.stopped +=</code> crashes on the first line of <code>Start()</code>. Fix: in the Unity Inspector, drag the CutsceneDirector GameObject (which has the Playable Director component) into the <strong>Director</strong> slot on the GameManager component.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 12. Tiered Tasks ──────────────────────────────────────── -->
+      <section id="tasks" class="content-section">
+        <h2>Tiered Tasks</h2>
+        <p>Choose the tier that matches where you are. Write pseudocode before any code. All tasks go in your sprint log.</p>
+
+        <div class="tier-tasks">
+          <div class="tier-grid">
+
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade D–E</span>
+              <h4>Add a Second Animation Track</h4>
+              <p>Given the complete Timeline cutscene and <code>GameManager.cs</code>, add a second Animation Track that moves a prop (a crate, a light, anything) during the cutscene.</p>
+              <ul>
+                <li>In the Timeline window, click + Add → Animation Track. Bind it to your prop.</li>
+                <li>Record a short clip — the prop moves, rotates, or scales during the cutscene.</li>
+                <li>Draw the Timeline window in your notebook: label each track, label the clips, mark where the Signal fires. This is your design documentation.</li>
+              </ul>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade C</span>
+              <h4>Add a Skip Button</h4>
+              <p>Add a UI button that appears during the cutscene and immediately calls <code>OnCutsceneComplete()</code> when pressed. <strong>Write the NSW pseudocode first.</strong></p>
+              <p>Steps to consider: the button should only be visible when <code>currentState == GameState.Cutscene</code>. Pressing it should stop the director and call the completion method. The button should hide when gameplay begins.</p>
+              <p>In your notebook, explain why calling <code>OnCutsceneComplete(director)</code> manually is safe in this case — what does the <code>pd</code> parameter represent and why don't we use it here?</p>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade B–A</span>
+              <h4>Full Multi-State Game Manager</h4>
+              <p>Design and implement a complete game manager with all four states: <code>Cutscene</code>, <code>Playing</code>, <code>Paused</code>, and <code>GameOver</code>. No starter code.</p>
+              <p>All transitions must be triggered by events or method calls — no polling in <code>Update()</code>. Each state must have clear enter/exit behaviour (e.g. entering Paused freezes <code>Time.timeScale</code>; exiting Paused restores it).</p>
+              <p>In your notebook: draw the full state machine diagram with all states and transitions labelled. Justify each design decision. Write your own test cases — at least one per transition.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── 13. CPD Strip ─────────────────────────────────────────── -->
+      <section id="cpd" class="cpd-section">
+        <h2>Where Are You?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. Use this to reflect on your progress before moving to Page 4.</p>
+
+        <div class="cpd-strip" role="group" aria-label="Course performance descriptors">
+
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully develops, tests and implements a technically concise, multi-state game manager using <code>enum</code>, event subscriptions, and the <code>enabled</code> property. Demonstrates creativity and innovation in cutscene design — including skip functionality and SignalEmitter integration. Systematically validates all state transitions against self-designed test cases.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Develops, tests and implements a functional game state manager using <code>enum GameState</code>, <code>director.stopped +=</code> event subscription, and the <code>enabled</code> property for input gating. Demonstrates creativity by adding a skip button or additional state. Applies iterative processes and records sprint logs.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Develops and implements a game state machine in C# with Cutscene and Playing states using a string or enum. Correctly uses event subscription (<code>+=</code>) and the <code>enabled</code> property. Sets up a Timeline cutscene and documents the track layout in their notebook.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Modifies provided <code>GameManager.cs</code> with support, adding a second Animation Track or changing state labels. Identifies what <code>director.Play()</code> and <code>playerMovement.enabled</code> do with guidance. Records some sprint progress.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Follows provided <code>GameManager.cs</code> with guidance, making basic variable changes. Identifies that <code>enabled = false</code> freezes a script and that Timeline sequences animations. Records minimal project progress with support.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 14. Notebook Prompts ──────────────────────────────────── -->
+      <section id="notebook">
+        <aside class="notebook-prompt" aria-label="Project notebook prompts">
+          <div class="notebook-prompt__label">📓 Project Notebook — Skills Page 3 Prompts</div>
+          <ul>
+            <li>
+              <strong>Producing &amp; Implementing — State machine diagram:</strong>
+              Draw or describe your game state machine. What are the states? What triggers each transition? Include this diagram in your notebook as design evidence for the D&amp;P framework.
+              <span class="sentence-starter">Sentence starter: "My game state machine has [N] states: … The transition from Cutscene to Playing is triggered by…"</span>
+            </li>
+            <li>
+              <strong>Producing &amp; Implementing — Pseudocode mapping:</strong>
+              Annotate your NSW pseudocode. For each line, write what C# concept it maps to — e.g. <code>WAIT UNTIL director.state ≠ Playing</code> maps to <code>director.stopped +=</code>. Where did the implementation differ from the pseudocode structure, and why?
+              <span class="sentence-starter">Sentence starter: "The pseudocode line WAIT UNTIL… could not be implemented directly because… Instead I used…"</span>
+            </li>
+            <li>
+              <strong>Testing &amp; Evaluating — Three test conditions:</strong>
+              Test your cutscene in three ways: (1) play from the start normally, (2) if you implemented a skip button — press it immediately, (3) play a second time without reloading the scene. What happens in each case? Record your findings.
+              <span class="sentence-starter">Sentence starter: "When I tested condition [N], what happened was… This is because…"</span>
+            </li>
+            <li>
+              <strong>Sprint log — one entry per session:</strong>
+              Date, planned, completed, problems encountered and how you solved them, what you plan next.
+            </li>
+          </ul>
+          <a href="../../project-notebooks/sd-games-notebook.html#pi-sprint" class="notebook-link">Open SD Games project notebook — Sprint Logs →</a>
+        </aside>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Collisions, Triggers &amp; Portals · Games &amp; Simulations · CT5</title>
+  <meta name="description" content="Understand the difference between colliders and triggers, write your first event-driven callback in C#, and build a portal system in Unity 6. Stage 5 Computing Technology.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <!-- SD: Games & Simulations accent — violet -->
+  <style>
+    :root {
+      --accent:         #8b5cf6;
+      --accent-dim:     #6d28d9;
+      --accent-bright:  #a78bfa;
+      --accent-surface: rgba(139, 92, 246, 0.10);
+      --accent-border:  rgba(139, 92, 246, 0.28);
+    }
+
+    /* ── Page-specific components ─────────────────────────────────── */
+
+    /* Collider vs Trigger comparison grid */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    @media (max-width: 600px) { .compare-grid { grid-template-columns: 1fr; } }
+
+    .compare-col {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+    }
+    .compare-col.trigger-col {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+    }
+    .compare-col h4 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      margin-bottom: var(--space-3);
+    }
+    .compare-col.trigger-col h4 { color: var(--accent-bright); }
+    .compare-col ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-5);
+      max-width: none;
+    }
+    .compare-col li { margin-bottom: var(--space-2); line-height: 1.55; }
+
+    /* Event-driven concept diagram */
+    .event-flow {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin: var(--space-5) 0 var(--space-6);
+      max-width: 520px;
+    }
+    .event-row {
+      display: grid;
+      grid-template-columns: 140px 24px 1fr;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .event-actor {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+    }
+    .event-actor.engine {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+      color: var(--accent-bright);
+    }
+    .event-arrow {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 1rem;
+    }
+    .event-label {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.4;
+    }
+    .event-label strong { color: var(--color-text-primary); }
+
+    /* Inspector callout — Unity UI steps */
+    .inspector-steps {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-5) 0;
+    }
+    .inspector-steps h4 {
+      color: var(--accent-bright);
+      font-size: var(--text-sm);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-label);
+      margin-bottom: var(--space-3);
+    }
+    .inspector-steps ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+    .inspector-steps li { margin-bottom: var(--space-2); line-height: 1.6; }
+    .inspector-steps code { font-size: 0.85em; }
+
+    /* Test table scaffold */
+    .test-table-wrap { overflow-x: auto; margin: var(--space-5) 0; }
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .test-table th, .test-table td {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .test-table th {
+      background: var(--color-surface-3);
+      color: var(--accent-bright);
+      font-weight: 700;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .test-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .test-table .td-case { color: var(--color-text-primary); font-weight: 600; }
+    .test-table .td-blank {
+      color: var(--color-text-muted);
+      font-style: italic;
+      min-width: 120px;
+    }
+
+    /* MCQ set wrapper */
+    .mcq-set { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-6) 0; }
+
+    /* Section scroll margin */
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    @media (max-width: 768px) {
+      .tier-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Games &amp; Simulations</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Skills: Triggers</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills-movement.html" class="ct-nav-btn">← Page 1: Movement</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Games &amp; Simulations</a></li>
+      <li aria-current="page">Skills: Triggers &amp; Portals</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- Sidebar -->
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#vocabulary">Key Vocabulary</a>
+          <a href="#concepts">Colliders vs Triggers</a>
+          <a href="#event-driven">Event-Driven Callbacks</a>
+          <a href="#pseudo-teleport">Algorithm 1: Teleport</a>
+          <a href="#walkthrough-portal">Code: PortalController</a>
+          <a href="#pseudo-scene">Algorithm 2: Scene Load</a>
+          <a href="#walkthrough-scene">Code: Scene Loader</a>
+          <a href="#pulse">Bonus: Portal Pulse</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#bug">Bug Detective</a>
+          <a href="#tasks">Tiered Tasks</a>
+          <a href="#test-table">Test Table</a>
+          <a href="#cpd">Grade Descriptors</a>
+          <a href="#notebook">Notebook Prompts</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-COL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phase</div>
+        <div class="phase-pills" style="flex-direction: column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- ── Page Hero ─────────────────────────────────────────────── -->
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Stage 5 · Skills Page 2 of 5</div>
+        <h1>Collisions, Triggers &amp; Portals</h1>
+        <p class="page-intro">
+          On this page you'll meet the most important idea in event-driven game programming:
+          a method that Unity calls for you. You don't put it in <code>Update()</code>.
+          You don't call it yourself. When a player walks into a trigger zone, Unity fires
+          <code>OnTriggerEnter</code> — and your code runs. Understanding <em>why</em> is
+          more important than memorising the syntax.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ── 1. Key Vocabulary ──────────────────────────────────────── -->
+      <section id="vocabulary" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Key Vocabulary</h2>
+        <p>These terms are new on this page — they do not appear in Page 1. Read them before continuing.</p>
+
+        <div class="word-bank">
+          <h3>Word Bank — Triggers &amp; Portals</h3>
+          <div class="word-bank-grid">
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Collider</div>
+              <div class="word-bank-def">A Unity component that gives a GameObject a physical shape for the physics engine. When two colliders meet, Unity applies physics — objects push each other, bounce, or stop. The player stands on the floor because both have colliders.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Trigger</div>
+              <div class="word-bank-def">A collider with the <strong>Is Trigger</strong> checkbox ticked. Objects pass through it as if it isn't there — but Unity fires an event when they enter. Used for invisible zones: collectibles, portals, checkpoints, area-of-effect.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">OnTriggerEnter</div>
+              <div class="word-bank-def">A Unity event function (callback) called automatically by the engine when another collider enters this trigger zone. You write the method body — Unity decides when to call it. This is event-driven programming.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Collider other</div>
+              <div class="word-bank-def">The parameter passed into <code>OnTriggerEnter</code>. It represents whatever entered the trigger. You check <code>other.CompareTag("Player")</code> to verify it was the player and not a random physics object.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">CompareTag()</div>
+              <div class="word-bank-def">A Unity method that checks whether a GameObject's tag matches a string. Faster and safer than using <code>==</code> with <code>other.tag</code> — it avoids memory allocation on every call and throws a useful error if the tag doesn't exist.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">SceneManager</div>
+              <div class="word-bank-def">A Unity class in the <code>UnityEngine.SceneManagement</code> namespace. <code>SceneManager.LoadScene()</code> loads a different scene by name or index. Requires a <code>using</code> statement at the top of the file.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">bool</div>
+              <div class="word-bank-def">A data type that holds only <code>true</code> or <code>false</code>. Used here as a gate — <code>bool portalActive = true</code> lets us disable the portal after it fires once, preventing it from triggering again on the next frame.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Mathf.Sin()</div>
+              <div class="word-bank-def">A Unity maths function that returns a value oscillating smoothly between –1 and 1 over time. Multiplied by a small number and added to a scale, it makes an object gently breathe or pulse — no animation system required.</div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 2. Colliders vs Triggers ────────────────────────────────── -->
+      <section id="concepts" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Colliders vs Triggers — What's the Difference?</h2>
+        <p>Every Unity physics interaction starts with a <strong>Collider</strong> component. The single checkbox labelled <strong>Is Trigger</strong> changes its behaviour entirely.</p>
+
+        <div class="compare-grid">
+          <div class="compare-col">
+            <h4>Collider (Is Trigger: off)</h4>
+            <ul>
+              <li>Objects cannot pass through — they collide physically</li>
+              <li>Fires <code>OnCollisionEnter</code> / <code>OnCollisionExit</code></li>
+              <li>Unity applies forces, friction, and bounce</li>
+              <li>Used for: floors, walls, character bodies</li>
+            </ul>
+          </div>
+          <div class="compare-col trigger-col">
+            <h4>Trigger (Is Trigger: on)</h4>
+            <ul>
+              <li>Objects pass through — no physical interaction</li>
+              <li>Fires <code>OnTriggerEnter</code> / <code>OnTriggerExit</code></li>
+              <li>No physics — only the event fires</li>
+              <li>Used for: portals, collectibles, checkpoints, zones</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="inspector-steps">
+          <h4>🎮 Set up a trigger in Unity</h4>
+          <ol>
+            <li>Create a Cube (GameObject → 3D Object → Cube) and position it where the portal should be.</li>
+            <li>In the Inspector, find the <strong>Box Collider</strong> component.</li>
+            <li>Tick the <strong>Is Trigger</strong> checkbox. The collider outline in the Scene view turns green.</li>
+            <li>The cube's Mesh Renderer is still on — it's visible but passable. You can remove the renderer entirely for an invisible zone, or keep it styled as a portal frame.</li>
+            <li>Add a <code>Rigidbody</code> to the portal cube and tick <strong>Is Kinematic</strong> — this tells Unity to include it in trigger detection without simulating physics on the portal itself.</li>
+          </ol>
+        </div>
+
+        <div class="example-box">
+          <strong>NESA Syllabus connection</strong>
+          Implementing an event loop to respond to user input (P&amp;I-5) and developing game UI / UX using event-driven programming (P&amp;I-15). <code>OnTriggerEnter</code> is a Unity event callback — it responds to a physics event, not direct user input, but the pattern is identical.
+        </div>
+
+      </section>
+
+
+      <!-- ── 3. Event-Driven Callbacks ───────────────────────────────── -->
+      <section id="event-driven" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>What Makes This Event-Driven?</h2>
+        <p>In Page 1, you called your own logic from <code>Update()</code> — checking input 60 times a second, applying movement if a key was held. That is <strong>polling</strong>: your code constantly asks "did anything happen?"</p>
+        <p><code>OnTriggerEnter</code> is different. You write the method and wait. Unity watches the physics engine, and when an overlap is detected, it <em>calls your method for you</em>. This is an <strong>event-driven callback</strong> — the engine notifies your code, not the other way around.</p>
+
+        <div class="event-flow" aria-label="Event-driven flow diagram">
+          <div class="event-row">
+            <div class="event-actor">Player Capsule</div>
+            <div class="event-arrow">→</div>
+            <div class="event-label">walks into the portal trigger zone</div>
+          </div>
+          <div class="event-row">
+            <div class="event-actor engine">Unity Physics</div>
+            <div class="event-arrow">→</div>
+            <div class="event-label">detects the overlap, looks for <code>OnTriggerEnter</code> on the portal</div>
+          </div>
+          <div class="event-row">
+            <div class="event-actor engine">Unity Engine</div>
+            <div class="event-arrow">→</div>
+            <div class="event-label"><strong>calls your method</strong> — <code>OnTriggerEnter(other)</code> fires</div>
+          </div>
+          <div class="event-row">
+            <div class="event-actor">Your C# Code</div>
+            <div class="event-arrow">→</div>
+            <div class="event-label">checks the tag, calls <code>Teleport()</code> or loads the scene</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Prediction task — do this before writing any code.</strong> In your notebook, predict: what will happen if a coin (not the player) rolls into the trigger zone? What line of code controls this? Write your answer, then check it when you run the code.
+        </div>
+
+      </section>
+
+
+      <!-- ── 4. NSW Pseudocode — Teleport ───────────────────────────── -->
+      <section id="pseudo-teleport" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Algorithm 1: Trigger Zone Teleport</h2>
+        <p>The first portal teleports the player to a new position in the same scene — for example, from one end of a level to the other. Write the algorithm in NSW pseudocode before reading the code.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Teleport algorithm</div>
+          <pre>// Trigger zone — detects player entry and teleports
+
+FUNCTION Teleport(destination : Vector3)
+  player.position ← destination
+ENDFUNCTION
+
+PROCEDURE OnTriggerEnter(other : Collider)
+  IF other.tag = "Player" THEN
+    CALL Teleport(exitPoint.position)
+  ENDIF
+ENDPROCEDURE</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Reading the pseudocode</strong>
+          Notice the structure: <code>OnTriggerEnter</code> is a <code>PROCEDURE</code> — it does not return a value, it just runs. <code>Teleport</code> is a <code>FUNCTION</code> in NSW pseudocode terms, though in this case it also returns nothing (in C# it will be <code>void</code>). The key line is the <code>IF</code> check — without it, any physics object entering the trigger would teleport.
+        </div>
+
+      </section>
+
+
+      <!-- ── 5. Code Walkthrough — PortalController ─────────────────── -->
+      <section id="walkthrough-portal" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Code Walkthrough: PortalController.cs</h2>
+
+        <div class="concept-recap">
+          <strong>Setup:</strong> Use the player from Page 1. In the Unity Inspector, select the Player Capsule → Tag → Player (create the tag if needed). Create a Cube for the portal. Tick <strong>Is Trigger</strong> on its Box Collider. Add a Rigidbody and tick <strong>Is Kinematic</strong>. Right-click in Project → Create → C# Script → name it <code>PortalController</code>. Drag it onto the portal Cube.
+        </div>
+
+        <!-- Step 1 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">Starter stub</span>
+          </div>
+          <div class="code-change-banner">📄 COMPLETE FILE — PortalController.cs — starting point</div>
+          <pre><code>using UnityEngine;
+
+public class PortalController : MonoBehaviour
+{
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            Same structure as every script in Page 1. We'll replace most of this — the <code>Update()</code> method will remain empty until the pulse animation step.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Declare the exit point and a portal active flag</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 2 — two SerializeField variables: exit point and portal gate</div>
+          <pre><code>using UnityEngine;
+
+public class PortalController : MonoBehaviour
+{
+<span class="code-new">    [SerializeField] private Transform exitPoint;      // ── NEW IN STEP 2 ──</span>
+<span class="code-new">    [SerializeField] private bool portalActive = true; // ── NEW IN STEP 2 ──</span>
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>exitPoint</strong> is a <code>Transform</code> — we'll drag an empty GameObject into this slot in the Inspector to mark where the player should land after teleporting. <strong>portalActive</strong> is our boolean gate. Once the portal fires, we set it to <code>false</code> so it can't fire again on the next physics frame — preventing the player from being teleported repeatedly on a single walk-through.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 3</span>
+            <span class="step-label">Add the Teleport function</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 3 — Teleport() method moves the player to the exit point</div>
+          <pre><code>using UnityEngine;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private bool portalActive = true;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+
+<span class="code-new">    private void Teleport(Transform player)                   // ── NEW IN STEP 3 ──</span>
+<span class="code-new">    {                                                          // ── NEW IN STEP 3 ──</span>
+<span class="code-new">        player.position = exitPoint.position;                 // ── NEW IN STEP 3 ──</span>
+<span class="code-new">    }                                                          // ── NEW IN STEP 3 ──</span>
+}</code></pre>
+          <div class="step-explain">
+            <strong>Teleport(Transform player)</strong> takes the player's Transform as a parameter and moves it to the exit point's position. Compare this to the pseudocode: <code>player.position ← destination</code> becomes <code>player.position = exitPoint.position</code> in C#. Note we pass in the player Transform — we don't reference it directly — which makes this method reusable and testable.
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 4</span>
+            <span class="step-label">Add OnTriggerEnter — the event-driven callback</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 4 — OnTriggerEnter: Unity calls this, you don't</div>
+          <pre><code>using UnityEngine;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private bool portalActive = true;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+
+    private void Teleport(Transform player)
+    {
+        player.position = exitPoint.position;
+    }
+
+<span class="code-new">    private void OnTriggerEnter(Collider other)                // ── NEW IN STEP 4 ──</span>
+<span class="code-new">    {                                                          // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        if (!portalActive) return;                             // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        if (other.CompareTag("Player"))                        // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        {                                                      // ── NEW IN STEP 4 ──</span>
+<span class="code-new">            portalActive = false;                              // ── NEW IN STEP 4 ──</span>
+<span class="code-new">            Teleport(other.transform);                         // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        }                                                      // ── NEW IN STEP 4 ──</span>
+<span class="code-new">    }                                                          // ── NEW IN STEP 4 ──</span>
+}</code></pre>
+          <div class="step-explain">
+            <strong>OnTriggerEnter(Collider other)</strong> — Unity calls this automatically whenever another collider enters this trigger. You never call it yourself. The first line <code>if (!portalActive) return;</code> exits immediately if the portal has already fired — the <code>!</code> means "not". <strong>CompareTag("Player")</strong> is safer than <code>other.tag == "Player"</code>: it's faster (no string allocation) and throws a useful error in the console if the "Player" tag hasn't been created in Unity's Tag Manager. In the Inspector, drag an empty GameObject (your exit point) into the <strong>Exit Point</strong> slot.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Press Play.</strong> Walk the player capsule into the portal cube. The player should snap to the exit point's position. If nothing happens: check the Player tag is set, the Box Collider has Is Trigger ticked, and the Exit Point Transform is assigned in the Inspector.
+        </div>
+
+      </section>
+
+
+      <!-- ── 6. NSW Pseudocode — Scene Loader ────────────────────────── -->
+      <section id="pseudo-scene" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Algorithm 2: Load a New Scene on Trigger Entry</h2>
+        <p>The second portal loads an entirely different Unity scene — for example, a level transition. The algorithm is simpler than the teleport, but requires a new tool: <code>SceneManager</code>.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Scene Loader algorithm</div>
+          <pre>// Scene loader — load new scene on trigger entry
+PROCEDURE OnTriggerEnter(other : Collider)
+  IF other.tag = "Player" THEN
+    CALL SceneManager.LoadScene(sceneName)
+  ENDIF
+ENDPROCEDURE</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>New concept: namespaces</strong>
+          <code>SceneManager</code> lives in <code>UnityEngine.SceneManagement</code> — a separate namespace from the default <code>UnityEngine</code>. Without the correct <code>using</code> statement at the top of your file, C# will not know what <code>SceneManager</code> means and will refuse to compile. This is Bug 1 in the Bug Detective section.
+        </div>
+
+      </section>
+
+
+      <!-- ── 7. Code Walkthrough — Scene Loader ──────────────────────── -->
+      <section id="walkthrough-scene" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Code Walkthrough: Scene Loader Version</h2>
+
+        <div class="concept-recap">
+          <strong>Setup:</strong> In Unity, go to File → Build Settings → Add Open Scenes. Add both Scene 1 (your main scene) and Scene 2 (a second scene you create — it can be an empty room). Scenes must be in the Build Settings list for <code>SceneManager.LoadScene()</code> to find them.
+        </div>
+
+        <!-- Step 1 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">Add the SceneManagement namespace</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 1 — the using statement that unlocks SceneManager</div>
+          <pre><code>using UnityEngine;
+<span class="code-new">using UnityEngine.SceneManagement;   // ── NEW IN STEP 1 ──</span>
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private bool portalActive = true;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+
+    private void Teleport(Transform player)
+    {
+        player.position = exitPoint.position;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!portalActive) return;
+        if (other.CompareTag("Player"))
+        {
+            portalActive = false;
+            Teleport(other.transform);
+        }
+    }
+}</code></pre>
+          <div class="step-explain">
+            One new line at the top unlocks the entire <code>SceneManagement</code> namespace. Without it, C# doesn't know <code>SceneManager</code> exists. This is where the syntax bug in the Bug Detective comes from — the code looks correct but won't compile because the namespace is missing.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Add a scene name variable and update OnTriggerEnter</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 2 — sceneName variable and LoadScene call replaces Teleport</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+<span class="code-new">    [SerializeField] private string sceneName = "Scene2";   // ── NEW IN STEP 2 ──</span>
+    [SerializeField] private bool portalActive = true;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+
+    private void Teleport(Transform player)
+    {
+        player.position = exitPoint.position;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!portalActive) return;
+        if (other.CompareTag("Player"))
+        {
+            portalActive = false;
+<span class="code-new">            SceneManager.LoadScene(sceneName);               // ── NEW IN STEP 2 ──</span>
+        }
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>sceneName</strong> is a <code>string</code> — the exact name of the scene file (without the <code>.unity</code> extension) as it appears in Build Settings. By using <code>[SerializeField]</code> you can change which scene loads from the Inspector without editing code. <strong>SceneManager.LoadScene(sceneName)</strong> tells Unity to load that scene — it replaces everything in memory, so the current scene stops. The <code>Teleport()</code> method remains in the file — you can use one portal for in-scene teleports and another for scene loading by commenting out whichever call you don't need.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 8. Bonus: Portal Pulse ──────────────────────────────────── -->
+      <section id="pulse" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Bonus: Making the Portal Breathe</h2>
+        <p>A portal that just sits still looks inactive. One line of code in <code>Update()</code> makes the cube gently scale up and down — a breathing pulse that signals "I'm interactive" to the player.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Portal pulse</div>
+          <pre>BEGIN PulsePortal
+  WHILE gameIsRunning DO
+    pulseScale ← 1 + (Mathf.Sin(Time.time) × 0.1)
+    portal.localScale ← Vector3.one × pulseScale
+  ENDWHILE
+END PulsePortal</pre>
+        </div>
+
+        <!-- Complete file with pulse -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">FINAL</span>
+            <span class="step-label">Complete PortalController.cs — with pulse animation</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN FINAL — pulse animation added to Update()</div>
+          <pre><code>using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private string sceneName = "Scene2";
+    [SerializeField] private bool portalActive = true;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+<span class="code-new">        // Pulse: breathe gently between 90% and 110% of base scale ── NEW IN FINAL ──</span>
+<span class="code-new">        float pulse = 1f + Mathf.Sin(Time.time) * 0.1f;              // ── NEW IN FINAL ──</span>
+<span class="code-new">        transform.localScale = Vector3.one * pulse;                   // ── NEW IN FINAL ──</span>
+    }
+
+    private void Teleport(Transform player)
+    {
+        player.position = exitPoint.position;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!portalActive) return;
+        if (other.CompareTag("Player"))
+        {
+            portalActive = false;
+            SceneManager.LoadScene(sceneName);
+            // To teleport instead of loading a scene, replace the line above with:
+            // Teleport(other.transform);
+        }
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>Mathf.Sin(Time.time)</strong> returns a value that oscillates between –1 and 1 as time passes — a smooth wave. Multiplying by <code>0.1f</code> makes the swing small (10%). Adding <code>1f</code> centres the range at 1, so the scale moves between 0.9 and 1.1. <strong>Vector3.one</strong> is shorthand for <code>new Vector3(1, 1, 1)</code> — multiplying it by <code>pulse</code> scales all three axes equally. The portal cube breathes continuously without an Animator component or animation clip.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 9. Check Your Understanding ────────────────────────────── -->
+      <section id="check" class="content-section">
+        <h2>Check Your Understanding</h2>
+        <p>Select your answer — feedback appears immediately. Use ↩ to try again.</p>
+
+        <div class="mcq-set">
+
+          <!-- Q1 -->
+          <div class="mcq-card"
+               data-q="1"
+               data-correct="B"
+               data-feedback-a="Incorrect — a regular collider blocks movement and fires OnCollisionEnter, not OnTriggerEnter."
+               data-feedback-b="✓ Correct — ticking Is Trigger on a collider makes it a trigger zone. Objects pass through it, but Unity fires OnTriggerEnter when they do."
+               data-feedback-c="Incorrect — a Rigidbody adds physics simulation (gravity, forces). It doesn't create a trigger."
+               data-feedback-d="Incorrect — a script component runs code. It doesn't define the physical shape or trigger behaviour.">
+            <div class="mcq-question">1. To create a trigger zone in Unity that fires <code>OnTriggerEnter</code>, what must you do?</div>
+            <div class="mcq-options" role="group" aria-label="Question 1 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Add a regular Box Collider and leave Is Trigger unticked</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Add a Box Collider and tick the <strong>Is Trigger</strong> checkbox</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Add a Rigidbody component to the GameObject</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Add a script component with a custom collision method</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-1"></div>
+            <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+          </div>
+
+          <!-- Q2 -->
+          <div class="mcq-card"
+               data-q="2"
+               data-correct="D"
+               data-feedback-a="Incorrect — you never call OnTriggerEnter yourself. Calling it in Update() would fire it every frame regardless of collisions."
+               data-feedback-b="Incorrect — Start() runs once on scene load, not when a collision happens."
+               data-feedback-c="Incorrect — OnTriggerEnter is not called in Awake(). Awake() is a Unity lifecycle method for initialisation, not physics events."
+               data-feedback-d="✓ Correct — OnTriggerEnter is a Unity callback. You write the method body and Unity calls it for you when the overlap is detected. You never call it directly.">
+            <div class="mcq-question">2. You've written an <code>OnTriggerEnter</code> method in your script. How does it get called?</div>
+            <div class="mcq-options" role="group" aria-label="Question 2 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> You call it from inside <code>Update()</code> when you detect a key press</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> You call it from inside <code>Start()</code> to set it up</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Unity calls it from <code>Awake()</code> automatically</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Unity calls it automatically when another collider enters the trigger — you don't call it yourself</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-2"></div>
+            <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+          </div>
+
+          <!-- Q3 -->
+          <div class="mcq-card"
+               data-q="3"
+               data-correct="A"
+               data-feedback-a="✓ Correct — CompareTag() avoids a string allocation on every call, which matters at 60fps. It also throws a useful error if the tag doesn't exist in Unity's Tag Manager."
+               data-feedback-b="Incorrect — both approaches check the same tag. The difference is performance and error handling, not behaviour."
+               data-feedback-c="Incorrect — CompareTag() doesn't change what the tag is. The tag is set on the GameObject in the Inspector."
+               data-feedback-d="Incorrect — both return a boolean true/false result. CompareTag() is just the preferred method.">
+            <div class="mcq-question">3. Why is <code>other.CompareTag("Player")</code> preferred over <code>other.tag == "Player"</code>?</div>
+            <div class="mcq-options" role="group" aria-label="Question 3 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It is faster (no memory allocation) and throws a useful error if the tag doesn't exist</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It checks all tags on the object instead of just one</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It automatically sets the Player tag on the object if it's missing</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It returns an integer result instead of a boolean, which is easier to use in conditions</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-3"></div>
+            <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+          </div>
+
+          <!-- Q4 -->
+          <div class="mcq-card"
+               data-q="4"
+               data-correct="C"
+               data-feedback-a="Incorrect — SceneManager is in a different namespace. UnityEngine alone is not enough."
+               data-feedback-b="Incorrect — there is no UnityEngine.Physics namespace. Physics events are part of UnityEngine directly."
+               data-feedback-c="✓ Correct — SceneManager lives in UnityEngine.SceneManagement. Without this using statement, C# doesn't know what SceneManager refers to and the file won't compile."
+               data-feedback-d="Incorrect — there is no UnityEngine.Scenes namespace. The correct one is UnityEngine.SceneManagement.">
+            <div class="mcq-question">4. Your script uses <code>SceneManager.LoadScene()</code> but won't compile. What is most likely missing?</div>
+            <div class="mcq-options" role="group" aria-label="Question 4 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>using UnityEngine;</code> — the main Unity namespace</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>using UnityEngine.Physics;</code> — the physics namespace</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>using UnityEngine.SceneManagement;</code> — the scene management namespace</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>using UnityEngine.Scenes;</code> — the scenes namespace</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-4"></div>
+            <button class="mcq-reset" id="mcq-reset-4">↩ Try again</button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 10. Bug Detective ─────────────────────────────────────── -->
+      <section id="bug" class="content-section">
+
+        <h2>Bug Detective</h2>
+        <p>The script below has <strong>three bugs</strong> — one of each type. Find them before revealing the answers. Write your findings in your project notebook under your bug log.</p>
+
+        <div class="example-box">
+          <strong>Bug types — quick reference</strong>
+          <strong>Syntax</strong>: breaks the rules of C# — won't compile. ·
+          <strong>Logical</strong>: compiles and runs but produces wrong behaviour. ·
+          <strong>Run-time</strong>: compiles but crashes or misbehaves during Play mode.
+        </div>
+
+        <!-- Bug 1 — Syntax -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 1 — Syntax Error</div>
+          <h3>PortalController.cs — missing namespace</h3>
+          <p>This script won't compile. The error message reads: <code>The name 'SceneManager' does not exist in the current context</code>. Find the missing line.</p>
+          <pre><code><span class="bug-line">using UnityEngine;                        // ← something is missing above or below this</span>
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private string sceneName = "Scene2";
+    [SerializeField] private bool portalActive = true;
+
+    void Start() { }
+
+    void Update() { }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!portalActive) return;
+        if (other.CompareTag("Player"))
+        {
+            portalActive = false;
+            SceneManager.LoadScene(sceneName);
+        }
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The line <code>using UnityEngine.SceneManagement;</code> is missing. <code>SceneManager</code> lives in that namespace — without the <code>using</code> statement, C# has no idea what <code>SceneManager</code> refers to. Fix: add <code>using UnityEngine.SceneManagement;</code> as the second line of the file.
+          </div>
+        </div>
+
+        <!-- Bug 2 — Logical -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 2 — Logical Error</div>
+          <h3>PortalController.cs — teleport fires every frame</h3>
+          <p>This script compiles and runs, but the player teleports continuously and can never stand near the portal without being thrown to the exit point over and over. What is wrong?</p>
+          <pre><code>using UnityEngine;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private bool portalActive = true;
+
+    void Start() { }
+
+<span class="bug-line">    void Update()                                  // ← teleport logic is in the wrong method</span>
+    {
+<span class="bug-line">        if (portalActive)                          // ← wrong method</span>
+<span class="bug-line">        {                                          // ← wrong method</span>
+<span class="bug-line">            portalActive = false;                  // ← wrong method</span>
+<span class="bug-line">            transform.position = exitPoint.position; // ← wrong method</span>
+<span class="bug-line">        }                                          // ← wrong method</span>
+    }
+
+    private void OnTriggerEnter(Collider other) { }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The teleport logic is inside <code>Update()</code>, which runs every frame. It fires immediately when the scene loads — not when the player enters the trigger. The fix: move the teleport logic into <code>OnTriggerEnter(Collider other)</code> with a <code>CompareTag("Player")</code> check. <code>Update()</code> should be empty (or contain only the pulse animation).
+          </div>
+        </div>
+
+        <!-- Bug 3 — Run-time -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 3 — Run-time Error</div>
+          <h3>PortalController.cs — portal fires for all objects</h3>
+          <p>This script compiles and runs. The portal works correctly when the player walks in — but it also fires when a coin rolls into the trigger zone, or when any physics prop touches the portal. The result is coins disappearing and random objects being teleported. What is missing?</p>
+          <pre><code>using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PortalController : MonoBehaviour
+{
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private bool portalActive = true;
+
+    void Start() { }
+    void Update() { }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!portalActive) return;
+<span class="bug-line">        // Missing: tag check — portal fires for ANY collider  // ← broken</span>
+        portalActive = false;
+        other.transform.position = exitPoint.position;
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The <code>CompareTag("Player")</code> check is missing. <code>OnTriggerEnter</code> fires for <em>any</em> collider that enters the zone — coins, crates, enemies, everything. Without the tag check, whatever enters first triggers the portal. Fix: wrap the teleport call in <code>if (other.CompareTag("Player")) { ... }</code> so only the player can activate it.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 11. Tiered Tasks ──────────────────────────────────────── -->
+      <section id="tasks" class="content-section">
+        <h2>Tiered Tasks</h2>
+        <p>Choose the tier that matches where you are right now. Write pseudocode before any code. All tasks go in your sprint log.</p>
+
+        <div class="tier-tasks">
+          <div class="tier-grid">
+
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade D–E</span>
+              <h4>Modify and Record</h4>
+              <p>Given the complete <code>PortalController.cs</code> from the Final step, make these changes one at a time:</p>
+              <ul>
+                <li>Change the exit point to a different position by moving the Exit Point GameObject in the scene. Record where the player lands.</li>
+                <li>Change <code>sceneName</code> in the Inspector to the name of a different scene in your Build Settings. Test the load.</li>
+                <li>Change <code>0.1f</code> in the pulse animation to <code>0.4f</code>. What changes? Change it back.</li>
+              </ul>
+              <p>For each change: record what you did, what you expected, and what happened in your sprint log.</p>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade C</span>
+              <h4>Add a Cooldown</h4>
+              <p>Modify <code>PortalController.cs</code> so the portal can fire again after 3 seconds — not just once. <strong>Write the NSW pseudocode first</strong>, then implement.</p>
+              <p>Hint: instead of a boolean gate, use a <code>float lastActivatedTime</code> variable. Compare <code>Time.time - lastActivatedTime</code> against your cooldown value in <code>OnTriggerEnter</code>.</p>
+              <p>Test your cooldown: walk in once, walk back and walk in again before 3 seconds. What happens? After 3 seconds? Record in your sprint log.</p>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade B–A</span>
+              <h4>Two-Way Portal System</h4>
+              <p>Design and implement a two-way portal system: Portal A teleports to Portal B's exit, and Portal B teleports to Portal A's exit. No starter code.</p>
+              <p>Design in NSW pseudocode first. Consider: should each portal be its own script, or should one <code>PortalController</code> reference the other portal as a <code>[SerializeField]</code>? Justify your design decision in your notebook.</p>
+              <p>Write at least three test cases — including one that tests what happens if a player rapidly activates both portals.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── 12. Test Table Scaffold ─────────────────────────────────── -->
+      <section id="test-table" class="content-section">
+        <h2>Test Table</h2>
+        <p>Complete the <strong>Actual</strong> and <strong>Pass / Fail</strong> columns in your project notebook — not on this page. For any fail, record the bug type and your fix.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table" aria-label="Portal system test cases">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected outcome</th>
+                <th>Actual outcome</th>
+                <th>Pass / Fail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-case">Player walks into portal trigger</td>
+                <td>Player teleports to exit point position</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">A coin rolls into portal trigger</td>
+                <td>Nothing happens — only Player tag activates portal</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Player walks into portal a second time immediately</td>
+                <td>Portal does not fire again (portalActive = false)</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Scene name field is blank in Inspector</td>
+                <td>Unity logs an error — no scene loads</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Exit Point Transform is unassigned in Inspector</td>
+                <td>NullReferenceException on teleport call</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <strong>Why test the failure cases?</strong> A test that only checks the happy path tells you the code works when everything is set up correctly. Tests 4 and 5 check what happens when the developer makes a mistake — exactly the kind of error that causes run-time bugs. Good testing includes cases that are expected to fail.
+        </div>
+      </section>
+
+
+      <!-- ── 13. CPD Strip ─────────────────────────────────────────── -->
+      <section id="cpd" class="cpd-section">
+        <h2>Where Are You?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. Use this to reflect on your progress before moving to Page 3.</p>
+
+        <div class="cpd-strip" role="group" aria-label="Course performance descriptors">
+
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully develops, tests and implements technically concise, modular event-driven C# scripts — including reusable portal logic with boolean gating, cooldowns, and tag-based filtering. Demonstrates creativity and innovation in portal design (two-way systems, pulse animation). Systematically validates against a self-designed test table including edge and failure cases.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Develops, tests and implements functional event-driven C# scripts using <code>OnTriggerEnter</code>, <code>CompareTag</code>, boolean gating, and <code>SceneManager.LoadScene()</code>. Demonstrates creativity by extending the portal with cooldowns or multi-portal logic. Applies appropriate iterative processes and records progress in sprint logs.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Develops and implements portal algorithms in C# using <code>OnTriggerEnter</code>, tag checks, and boolean gating. Correctly identifies event-driven callbacks as distinct from <code>Update()</code>. Applies iterative processes and records test results and sprint logs.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Modifies provided portal scripts with support — changing exit point positions, scene names, and pulse values. Identifies what <code>OnTriggerEnter</code> does with guidance. Records some testing and sprint progress.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Follows provided portal scripts with guidance, making basic variable changes. Identifies that <code>OnTriggerEnter</code> is related to player–portal interaction. Records minimal project progress with support.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 14. Notebook Prompts ──────────────────────────────────── -->
+      <section id="notebook">
+        <aside class="notebook-prompt" aria-label="Project notebook prompts">
+          <div class="notebook-prompt__label">📓 Project Notebook — Skills Page 2 Prompts</div>
+          <ul>
+            <li>
+              <strong>Producing &amp; Implementing — Event-driven explanation:</strong>
+              Describe in your own words what happens when <code>OnTriggerEnter</code> fires. Why is this method called by Unity rather than called by your own code? How is this different from the input polling in Page 1?
+              <span class="sentence-starter">Sentence starter: "OnTriggerEnter is an event-driven method, which means… Unlike Update() which polls constantly, this method…"</span>
+            </li>
+            <li>
+              <strong>Producing &amp; Implementing — Prediction check:</strong>
+              Before you ran the code, you predicted what would happen if a coin entered the trigger. What did you predict? What actually happened? Why?
+              <span class="sentence-starter">Sentence starter: "I predicted that… What actually happened was… This is because…"</span>
+            </li>
+            <li>
+              <strong>Testing &amp; Evaluating — Test table:</strong>
+              Complete the five test cases from the Test Table section. For any test that fails, describe the bug (syntax, logical, or run-time?) and what you did to fix it.
+              <span class="sentence-starter">Sentence starter: "Test case [N] failed because… This was a [type] error. I fixed it by…"</span>
+            </li>
+            <li>
+              <strong>Sprint log — one entry per session:</strong>
+              Date, what you planned to complete, what you actually completed, any problems and how you solved them, and what you plan next.
+            </li>
+          </ul>
+          <a href="../../project-notebooks/sd-games-notebook.html#pi-sprint" class="notebook-link">Open SD Games project notebook — Sprint Logs →</a>
+        </aside>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>

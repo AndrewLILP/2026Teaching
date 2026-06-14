@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Platformer Clone · Coins, Stars &amp; Win States · CT5</title>
+  <meta name="description" content="Capstone project: build a Mario-style platformer with coin collection, a win condition, and HUD in Unity 6. Stage 5 Computing Technology.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <!-- SD: Games & Simulations accent — violet -->
+  <style>
+    :root {
+      --accent:         #8b5cf6;
+      --accent-dim:     #6d28d9;
+      --accent-bright:  #a78bfa;
+      --accent-surface: rgba(139, 92, 246, 0.10);
+      --accent-border:  rgba(139, 92, 246, 0.28);
+    }
+
+    /* ── Page-specific components ─────────────────────────────────── */
+
+    /* Project brief card */
+    .project-brief {
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin: var(--space-6) 0 var(--space-8);
+    }
+    .project-brief__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+    }
+    .project-brief h3 {
+      font-size: var(--text-2xl);
+      margin-bottom: var(--space-4);
+      color: var(--color-text-primary);
+    }
+    .project-brief p {
+      font-size: var(--text-base);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: var(--space-3);
+      line-height: 1.7;
+    }
+    .brief-requirements {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-top: var(--space-5);
+    }
+    @media (max-width: 600px) { .brief-requirements { grid-template-columns: 1fr; } }
+    .brief-req-col h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+    }
+    .brief-req-col ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-5);
+      max-width: none;
+    }
+    .brief-req-col li { margin-bottom: var(--space-2); line-height: 1.55; }
+
+    /* Class structure cards */
+    .class-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    .class-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+    }
+    .class-card__name {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+      display: block;
+    }
+    .class-card ul {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-4);
+      max-width: none;
+    }
+    .class-card li { margin-bottom: var(--space-1); line-height: 1.5; font-family: var(--font-mono); }
+
+    /* Sprint cards */
+    .sprint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+    .sprint-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    .sprint-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .sprint-number {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      padding: var(--space-1) var(--space-2);
+      background: var(--color-phase-produce);
+      color: var(--color-text-inverse);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+    .sprint-card h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+    .sprint-card__duration {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+    .sprint-card p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+      line-height: 1.6;
+    }
+    .sprint-card__dod {
+      background: var(--color-surface-3);
+      border-radius: var(--radius-sm);
+      padding: var(--space-3) var(--space-4);
+    }
+    .sprint-card__dod-label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-phase-produce);
+      margin-bottom: var(--space-2);
+    }
+    .sprint-card__dod ul {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-4);
+      max-width: none;
+    }
+    .sprint-card__dod li { margin-bottom: var(--space-1); line-height: 1.5; }
+
+    /* Test table */
+    .test-table-wrap { overflow-x: auto; margin: var(--space-5) 0; }
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .test-table th, .test-table td {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .test-table th {
+      background: var(--color-surface-3);
+      color: var(--accent-bright);
+      font-weight: 700;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+    .test-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .test-table .td-case { color: var(--color-text-primary); font-weight: 600; max-width: 200px; }
+    .test-table .td-expected { color: var(--color-text-secondary); max-width: 220px; }
+    .test-table .td-blank {
+      color: var(--color-text-muted);
+      font-style: italic;
+      min-width: 120px;
+    }
+
+    /* Starter scene description */
+    .scene-layout {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0 var(--space-6);
+    }
+    .scene-layout h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .scene-layout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-5);
+      max-width: none;
+    }
+    .scene-layout li { margin-bottom: var(--space-2); line-height: 1.6; }
+
+    /* MCQ set wrapper */
+    .mcq-set { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-6) 0; }
+
+    /* Section scroll margin */
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    @media (max-width: 768px) {
+      .tier-grid { grid-template-columns: 1fr; }
+      .sprint-grid { grid-template-columns: 1fr; }
+      .project-brief { padding: var(--space-5) var(--space-4); }
+      .project-brief h3 { font-size: var(--text-xl); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Games &amp; Simulations</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Skills: Platformer</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills.html" class="ct-nav-btn">↑ All Skills Pages</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Games &amp; Simulations</a></li>
+      <li><a href="skills.html">Skills</a></li>
+      <li aria-current="page">Platformer Clone</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- Sidebar -->
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Project Brief</a>
+          <a href="#prior-knowledge">What You Bring</a>
+          <a href="#scene-setup">Scene Setup</a>
+          <a href="#class-structure">Class Structure</a>
+          <a href="#pseudocode">Pseudocode</a>
+          <a href="#sprints">Sprint Plan</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#bug">Bug Detective</a>
+          <a href="#test-table">Test Table</a>
+          <a href="#tasks">Tiered Tasks</a>
+          <a href="#cpd">Grade Descriptors</a>
+          <a href="#notebook">Notebook Prompts</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-EVL-01</span>
+          <span class="outcome-tag">CT5-SAF-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction: column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- ── Page Hero ─────────────────────────────────────────────── -->
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Stage 5 · Skills Page 4 of 5 · Capstone</div>
+        <h1>Platformer Clone — Coins, Stars &amp; Win States</h1>
+        <p class="page-intro">
+          This is a capstone page. There is no step-by-step walkthrough — you are the designer and
+          developer now. You'll receive a project brief, pseudocode, a class structure, and a
+          sprint plan. Everything else — the decisions, the implementation, the testing — is yours.
+          Apply what you built on Pages 1, 2, and 3.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ── 1. Project Brief ──────────────────────────────────────── -->
+      <section id="brief" class="content-section">
+
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+
+        <h2>Project Brief</h2>
+
+        <div class="project-brief">
+          <div class="project-brief__eyebrow">🎮 Design Brief — Stage 5 Platformer</div>
+          <h3>Coin Rush</h3>
+          <p>Design and build a 3D platformer in Unity 6 inspired by the mechanics of classic coin-collection games. The player moves through a level, collecting coins to reach a target. When enough coins are collected, a star spawns. Collecting the star completes the level and shows a win screen.</p>
+          <p>The game must be designed for a broad audience — consider age suitability, accessible controls, and clear visual feedback at every stage. You are responsible for all implementation decisions not specified below.</p>
+
+          <div class="brief-requirements">
+            <div class="brief-req-col">
+              <h4>Functional Requirements</h4>
+              <ul>
+                <li>Player moves using WASD or arrow keys</li>
+                <li>10 coins placed in the scene — player collects by walking over them</li>
+                <li>Each coin collected: coin disappears, score increases by 1</li>
+                <li>When all 10 coins are collected: a star spawns at a marked position</li>
+                <li>Player collects star: win panel appears, player input disabled</li>
+                <li>HUD shows current coin count at all times</li>
+              </ul>
+            </div>
+            <div class="brief-req-col">
+              <h4>Non-Functional Requirements</h4>
+              <ul>
+                <li>Age suitability: suitable for all ages (G rating — justify in notebook)</li>
+                <li>Visual feedback: score updates must be immediate and clearly visible</li>
+                <li>Performance: no frame-rate drops from coin collision detection</li>
+                <li>Accessibility: controls must be remappable via Unity Input Manager</li>
+                <li>Code quality: all scripts documented with comments, modular structure</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <strong>NESA Syllabus connection</strong>
+          Specifying functional and non-functional requirements (I&amp;D-4, I&amp;D-5) · Developing prototypes to communicate design ideas (P&amp;I-4) · Planning and managing a project using an iterative approach (P&amp;I-13) · Evaluating whether solutions meet social, ethical and legal responsibilities (T&amp;E-2).
+        </div>
+
+      </section>
+
+
+      <!-- ── 2. Prior Knowledge ────────────────────────────────────── -->
+      <section id="prior-knowledge" class="content-section">
+
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+
+        <h2>What You Bring From Pages 1–3</h2>
+        <p>This project uses every skill from the earlier pages. Before starting Sprint 1, confirm you have each item working:</p>
+
+        <div class="word-bank">
+          <h3>Prerequisites Checklist</h3>
+          <div class="word-bank-grid">
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 1 — Movement</div>
+              <div class="word-bank-def">A player script using <code>Input.GetAxis</code>, <code>transform.Translate</code>, and <code>Time.deltaTime</code>. The player moves on the XZ plane with WASD or arrow keys.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 2 — Triggers</div>
+              <div class="word-bank-def"><code>OnTriggerEnter(Collider other)</code> with a <code>CompareTag</code> check. This is the exact pattern used in <code>CoinCollector.cs</code> and <code>StarPickup.cs</code>.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">From Page 3 — Game State</div>
+              <div class="word-bank-def">A <code>GameState</code> enum and a <code>GameManager</code> that controls the win state. The <code>enabled</code> property disables player input when the win panel appears.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">New this page — HUD &amp; TMP</div>
+              <div class="word-bank-def">TextMeshPro UI text updated from a script. Add <code>using TMPro;</code> to any script that updates on-screen text. Use <code>scoreText.text = "Coins: " + coinCount;</code>.</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 3. Scene Setup ────────────────────────────────────────── -->
+      <section id="scene-setup" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Starter Scene Setup</h2>
+        <p>Your starter scene is provided. If you are building from scratch, the scene must contain the following before Sprint 2 begins:</p>
+
+        <div class="scene-layout">
+          <h4>Required GameObjects in the Scene</h4>
+          <ul>
+            <li><strong>Platform</strong> — a flat Cube scaled to form the floor. Add a Box Collider so the player stands on it.</li>
+            <li><strong>Player</strong> — a Capsule with a CharacterController (or Rigidbody + Collider). Has your <code>PlayerMovement.cs</code> from Page 1. Tag it <strong>Player</strong>.</li>
+            <li><strong>Coin (×10)</strong> — small Cylinders or imported prefabs. Each has a Box Collider with <strong>Is Trigger</strong> ticked. Add a Rigidbody → Is Kinematic. Tag each <strong>Coin</strong>.</li>
+            <li><strong>StarSpawnPoint</strong> — an empty GameObject at the centre of the level. The GameManager spawns the star here.</li>
+            <li><strong>Star</strong> — a prefab (e.g. a yellow Sphere) with a Sphere Collider → Is Trigger → Is Kinematic. Initially inactive (<code>SetActive(false)</code>). Tag it <strong>Star</strong>.</li>
+            <li><strong>GameManager</strong> — an empty GameObject with <code>GameManager.cs</code>, <code>CoinCollector.cs</code>, and <code>HUDManager.cs</code> attached.</li>
+            <li><strong>Canvas</strong> — contains: Score Text (TMP), Win Panel (hidden by default with a child TMP label). The Canvas is set to Screen Space — Overlay.</li>
+          </ul>
+        </div>
+
+        <div class="info-box">
+          <strong>TextMeshPro first-time setup:</strong> When you first add a TextMeshPro component, Unity may prompt you to import TMP Essentials. Click <strong>Import TMP Essentials</strong>. Without this, TMP text components will not render. This is a one-time step per project.
+        </div>
+
+      </section>
+
+
+      <!-- ── 4. Class Structure ────────────────────────────────────── -->
+      <section id="class-structure" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Class Structure</h2>
+        <p>You will write three C# scripts this project, plus update the <code>GameManager</code> from Page 3. Each has a single, clearly defined responsibility. Keeping concerns separate makes each script easier to test and change.</p>
+
+        <div class="class-grid">
+
+          <div class="class-card">
+            <span class="class-card__name">CoinCollector.cs</span>
+            <ul>
+              <li>OnTriggerEnter(Collider other)</li>
+              <li>private void CollectCoin()</li>
+              <li>private void CheckWinCondition()</li>
+              <li>[SerializeField] GameManager gm</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">StarPickup.cs</span>
+            <ul>
+              <li>OnTriggerEnter(Collider other)</li>
+              <li>calls gm.OnStarCollected()</li>
+              <li>[SerializeField] GameManager gm</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">HUDManager.cs</span>
+            <ul>
+              <li>public void UpdateScore(int count)</li>
+              <li>public void ShowWinPanel()</li>
+              <li>public void HideWinPanel()</li>
+              <li>[SerializeField] TMP_Text scoreText</li>
+              <li>[SerializeField] GameObject winPanel</li>
+            </ul>
+          </div>
+
+          <div class="class-card">
+            <span class="class-card__name">GameManager.cs</span>
+            <ul>
+              <li>public int coinCount</li>
+              <li>public GameState currentState</li>
+              <li>public void OnStarCollected()</li>
+              <li>[SerializeField] HUDManager hud</li>
+              <li>[SerializeField] PlayerMovement pm</li>
+              <li>[SerializeField] GameObject star</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <div class="example-box">
+          <strong>Design decision — why separate scripts?</strong>
+          Each script handles one thing. <code>CoinCollector.cs</code> handles coin logic; it doesn't know about the HUD. <code>HUDManager.cs</code> handles display; it doesn't know about coins. This is the <strong>Single Responsibility Principle</strong> — an OOP pattern the Extension task will take further with an interface. In your notebook, explain why this structure makes it easier to add a new coin type later.
+        </div>
+
+      </section>
+
+
+      <!-- ── 5. Pseudocode ─────────────────────────────────────────── -->
+      <section id="pseudocode" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Pseudocode — Three Core Algorithms</h2>
+        <p>Write each of these in your project notebook before opening Visual Studio. The pseudocode is your plan — note where each algorithm maps to a class above.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Coin Collection system</div>
+          <pre>ARRAY coins[10]
+coinCount ← 0
+CONST COINS_NEEDED ← 10
+
+FUNCTION CollectCoin(index : integer)
+  coins[index].active ← FALSE      // deactivate the collected coin
+  coinCount ← coinCount + 1
+  CALL UpdateHUD(coinCount)
+  CALL CheckWinCondition()
+ENDFUNCTION
+
+PROCEDURE CheckWinCondition()
+  IF coinCount ≥ COINS_NEEDED THEN
+    CALL SpawnStar()
+  ENDIF
+ENDPROCEDURE
+
+PROCEDURE OnStarCollected()
+  gameState ← "win"
+  CALL ShowWinScreen()
+ENDPROCEDURE</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Three things to notice</strong>
+          (1) <code>coinCount ≥ COINS_NEEDED</code> uses ≥ not = — this handles the edge case where two coins are collected in the same frame. Using = would require exactly 10 and could be skipped. (2) <code>coins[index].active ← FALSE</code> maps to <code>gameObject.SetActive(false)</code> in C# — the coin disappears without being destroyed, so it can be re-enabled if needed. (3) <code>CALL SpawnStar()</code> — the star is already in the scene, inactive. Spawning it just calls <code>star.SetActive(true)</code>.
+        </div>
+
+        <h3>Key C# patterns you'll need</h3>
+
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">C#</span>
+            <span class="step-label">CoinCollector.cs — core pattern (write your own full version)</span>
+          </div>
+          <div class="code-change-banner">📋 REFERENCE — not a complete file. Use this as a starting point.</div>
+          <pre><code>using UnityEngine;
+
+public class CoinCollector : MonoBehaviour
+{
+    [SerializeField] private GameManager gameManager;
+    private int coinCount = 0;
+    private const int COINS_NEEDED = 10;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            other.gameObject.SetActive(false);   // coins[index].active ← FALSE
+            coinCount++;                          // coinCount ← coinCount + 1
+            gameManager.hud.UpdateScore(coinCount);
+            CheckWinCondition();
+        }
+    }
+
+    private void CheckWinCondition()
+    {
+        if (coinCount >= COINS_NEEDED)            // IF coinCount ≥ COINS_NEEDED
+        {
+            gameManager.SpawnStar();
+        }
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>This is a reference pattern, not a handout.</strong> Notice that the trigger is on the <em>player</em> this time — the player walks into coins, not the other way around. Alternatively, you can put <code>CoinCollector.cs</code> on each coin and have the coin deactivate itself on trigger entry. Discuss the trade-offs with your teacher or in your notebook: which approach is easier to manage with 10 coins? Which is more reusable if you add more coins later?
+          </div>
+        </div>
+
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">C#</span>
+            <span class="step-label">HUDManager.cs — TMP text update pattern</span>
+          </div>
+          <div class="code-change-banner">📋 REFERENCE — add using TMPro; or TMP_Text won't compile</div>
+          <pre><code>using UnityEngine;
+using TMPro;   // ← REQUIRED for TextMeshPro — don't forget this
+
+public class HUDManager : MonoBehaviour
+{
+    [SerializeField] private TMP_Text scoreText;
+    [SerializeField] private GameObject winPanel;
+
+    void Start()
+    {
+        winPanel.SetActive(false);               // hide win panel on scene load
+        UpdateScore(0);                          // show "Coins: 0" from the start
+    }
+
+    public void UpdateScore(int count)
+    {
+        scoreText.text = "Coins: " + count + " / 10";
+    }
+
+    public void ShowWinPanel()
+    {
+        winPanel.SetActive(true);
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>using TMPro;</strong> is easy to forget — it's the most common compile error on this project. Without it, <code>TMP_Text</code> is an unknown type. In the Inspector, drag your Canvas → Score Text object into the Score Text slot, and your Canvas → Win Panel into the Win Panel slot.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 6. Sprint Plan ────────────────────────────────────────── -->
+      <section id="sprints" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Sprint Plan</h2>
+        <p>Work through one sprint per lesson. Record your actual progress, problems, and solutions in the sprint log in your project notebook — not on this page. At the end of each sprint, compare your actual progress to the definition of done.</p>
+
+        <div class="sprint-grid">
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S1</span>
+              <h4>Movement &amp; Scene Setup</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Set up the starter scene, verify the player moves correctly, place all 10 coins and one star in the scene.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Player moves with WASD at correct speed</li>
+                <li>Player stands on the platform (no falling through)</li>
+                <li>10 coins visible in scene, tagged Coin</li>
+                <li>Star in scene, tagged Star, initially inactive</li>
+                <li>Sprint 1 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S2</span>
+              <h4>Coin Collection &amp; Score</h4>
+            </div>
+            <span class="sprint-card__duration">1–2 lessons</span>
+            <p>Implement coin collection trigger logic and connect it to the HUD score display using TextMeshPro.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Walking into a coin deactivates it</li>
+                <li>Score HUD updates immediately on collection</li>
+                <li><code>using TMPro;</code> present — no compile errors</li>
+                <li>All 10 coins can be collected without errors</li>
+                <li>Sprint 2 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S3</span>
+              <h4>Win Condition &amp; Star</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Implement the win condition: star spawns at 10 coins, player collects star to trigger the win screen and disable input.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>Star activates when coinCount ≥ 10</li>
+                <li>Collecting star shows win panel</li>
+                <li>Player input disabled after win</li>
+                <li>Win panel score matches actual coin count</li>
+                <li>Sprint 3 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-card">
+            <div class="sprint-card__header">
+              <span class="sprint-number">S4</span>
+              <h4>Polish, Testing &amp; Peer Review</h4>
+            </div>
+            <span class="sprint-card__duration">1 lesson</span>
+            <p>Complete the test table, fix any failing tests, add at least one polish element, and conduct a peer review.</p>
+            <div class="sprint-card__dod">
+              <div class="sprint-card__dod-label">Definition of Done</div>
+              <ul>
+                <li>All 5 test cases completed in notebook</li>
+                <li>Any failed tests: bug type identified and fixed</li>
+                <li>At least one polish element added (e.g. coin spin, sound, particle)</li>
+                <li>Peer has played the game and given written feedback</li>
+                <li>Sprint 4 log entry written in notebook</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="info-box">
+          <strong>Sprint log reminder:</strong> A sprint log is not a summary written at the end. Write it during or immediately after each session — planned, actual, problems, solutions, next steps. The log is evidence of your iterative process for the D&amp;P framework.
+        </div>
+
+      </section>
+
+
+      <!-- ── 7. Check Your Understanding ────────────────────────────── -->
+      <section id="check" class="content-section">
+        <h2>Check Your Understanding</h2>
+        <p>These questions test concepts you'll need in this project. Select your answer — feedback appears immediately.</p>
+
+        <div class="mcq-set">
+
+          <!-- Q1 -->
+          <div class="mcq-card"
+               data-q="1"
+               data-correct="B"
+               data-feedback-a="Incorrect — Destroy() removes the coin from the scene permanently. SetActive(false) just hides it, leaving it available to re-enable if needed (e.g. for a restart mechanic)."
+               data-feedback-b="✓ Correct — SetActive(false) deactivates the coin without destroying it. Its collider stops firing, it becomes invisible, and it can be re-enabled later. This is the pattern in the pseudocode: coins[index].active ← FALSE."
+               data-feedback-c="Incorrect — disabling the collider would stop trigger detection but the coin would still be visible. You need to deactivate the whole GameObject."
+               data-feedback-d="Incorrect — setting the position moves the coin but doesn't remove it from play. The collider is still active and the player could re-collect it.">
+            <div class="mcq-question">1. What is the correct way to make a collected coin disappear while keeping it available to re-enable later?</div>
+            <div class="mcq-options" role="group" aria-label="Question 1 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>Destroy(other.gameObject)</code></button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>other.gameObject.SetActive(false)</code></button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>other.GetComponent&lt;Collider&gt;().enabled = false</code></button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>other.transform.position = Vector3.zero</code></button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-1"></div>
+            <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+          </div>
+
+          <!-- Q2 -->
+          <div class="mcq-card"
+               data-q="2"
+               data-correct="C"
+               data-feedback-a="Incorrect — using = checks for exactly 10. If two coins are collected on the same frame and coinCount jumps from 9 to 11, the condition is never true — the star never spawns."
+               data-feedback-b="Incorrect — > 10 would only trigger after the 11th coin, which doesn't exist. It would never be true."
+               data-feedback-c="✓ Correct — >= 10 (or ≥ in pseudocode) fires when coinCount is 10 OR MORE. This handles edge cases where counts might jump — and matches the pseudocode exactly."
+               data-feedback-d="Incorrect — != 10 is true for every value except 10. The star would spawn immediately when coinCount is 0, 1, 2... 9, and then stop at 10.">
+            <div class="mcq-question">2. The win condition check in C# should use which comparison operator?</div>
+            <div class="mcq-options" role="group" aria-label="Question 2 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>coinCount == COINS_NEEDED</code></button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>coinCount > COINS_NEEDED</code></button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>coinCount >= COINS_NEEDED</code></button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>coinCount != COINS_NEEDED</code></button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-2"></div>
+            <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+          </div>
+
+          <!-- Q3 -->
+          <div class="mcq-card"
+               data-q="3"
+               data-correct="A"
+               data-feedback-a="✓ Correct — TMP_Text is in the TMPro namespace. Without using TMPro; the compiler doesn't know what TMP_Text means and refuses to build. This is the most common compile error on this project."
+               data-feedback-b="Incorrect — using UnityEngine; is already present in every Unity script by default. That's not the missing namespace."
+               data-feedback-c="Incorrect — there is no UnityEngine.UI.TMP namespace. TextMeshPro has its own package namespace: TMPro."
+               data-feedback-d="Incorrect — UnityEngine.UI covers legacy UI components (Text, Button, Image). TextMeshPro is separate and requires its own using statement.">
+            <div class="mcq-question">3. Your script uses <code>TMP_Text scoreText</code> but won't compile. What is most likely missing?</div>
+            <div class="mcq-options" role="group" aria-label="Question 3 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>using TMPro;</code> at the top of the file</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>using UnityEngine;</code> at the top of the file</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>using UnityEngine.UI.TMP;</code> at the top of the file</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>using UnityEngine.UI;</code> at the top of the file</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-3"></div>
+            <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+          </div>
+
+          <!-- Q4 -->
+          <div class="mcq-card"
+               data-q="4"
+               data-correct="D"
+               data-feedback-a="Incorrect — a const value is set at compile time and never changes during the game. Making COINS_NEEDED a const is correct and intentional here."
+               data-feedback-b="Incorrect — the tag check in OnTriggerEnter prevents non-coin objects from being collected. Only objects tagged Coin will trigger the logic."
+               data-feedback-c="Incorrect — the HUDManager's UpdateScore() method is called from CoinCollector.cs each time a coin is collected, keeping the display current."
+               data-feedback-d="✓ Correct — if Destroy() is used instead of SetActive(false), and the player's collider overlaps the coin on multiple frames before it's fully destroyed, OnTriggerEnter can fire again on a destroyed object — causing a MissingReferenceException. SetActive(false) prevents this.">
+            <div class="mcq-question">4. A student uses <code>Destroy(other.gameObject)</code> for coin collection and gets a <code>MissingReferenceException</code> when two coins are nearby. What is the most likely cause?</div>
+            <div class="mcq-options" role="group" aria-label="Question 4 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>COINS_NEEDED</code> is declared as <code>const</code> and cannot be changed at runtime</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The tag check is missing, so non-coin objects trigger the collection logic</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The HUD is not updating because UpdateScore() is not connected to the canvas</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>OnTriggerEnter</code> fires again before the coin is fully destroyed, calling methods on a destroyed object</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-4"></div>
+            <button class="mcq-reset" id="mcq-reset-4">↩ Try again</button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 8. Bug Detective ──────────────────────────────────────── -->
+      <section id="bug" class="content-section">
+
+        <h2>Bug Detective</h2>
+        <p>The script below is a broken <code>CoinCollector.cs</code>. It has <strong>three bugs</strong> — one of each type. Find all three before revealing answers. Add findings to your bug log in the project notebook.</p>
+
+        <div class="example-box">
+          <strong>Bug types — quick reference</strong>
+          <strong>Syntax</strong>: breaks C# rules — won't compile. ·
+          <strong>Logical</strong>: compiles and runs but wrong behaviour. ·
+          <strong>Run-time</strong>: compiles but crashes or misbehaves during Play.
+        </div>
+
+        <!-- Bug 1 — Syntax -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 1 — Syntax Error</div>
+          <h3>CoinCollector.cs — broken constant declaration</h3>
+          <p>This script will not compile. The error appears on the highlighted line. Find the missing character.</p>
+          <pre><code>using UnityEngine;
+
+public class CoinCollector : MonoBehaviour
+{
+    [SerializeField] private GameManager gameManager;
+    private int coinCount = 0;
+<span class="bug-line">    private const int COINS_NEEDED = 10   // ← this line won't compile</span>
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            other.gameObject.SetActive(false);
+            coinCount++;
+            gameManager.hud.UpdateScore(coinCount);
+            CheckWinCondition();
+        }
+    }
+
+    private void CheckWinCondition()
+    {
+        if (coinCount >= COINS_NEEDED)
+        {
+            gameManager.SpawnStar();
+        }
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> Missing semicolon at the end of the <code>const</code> declaration. Every C# statement must end with <code>;</code>. Fix: <code>private const int COINS_NEEDED = 10;</code>
+          </div>
+        </div>
+
+        <!-- Bug 2 — Logical -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 2 — Logical Error</div>
+          <h3>CoinCollector.cs — win condition only fires at exactly 10</h3>
+          <p>This script compiles and runs. Coins collect correctly. But when the student collects the 10th coin, the star never spawns — even though the counter shows 10. What is wrong with the condition?</p>
+          <pre><code>using UnityEngine;
+
+public class CoinCollector : MonoBehaviour
+{
+    [SerializeField] private GameManager gameManager;
+    private int coinCount = 0;
+    private const int COINS_NEEDED = 10;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+            other.gameObject.SetActive(false);
+            coinCount++;
+            gameManager.hud.UpdateScore(coinCount);
+            CheckWinCondition();
+        }
+    }
+
+    private void CheckWinCondition()
+    {
+<span class="bug-line">        if (coinCount == COINS_NEEDED)   // ← wrong operator</span>
+        {
+            gameManager.SpawnStar();
+        }
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> <code>coinCount == COINS_NEEDED</code> requires the count to equal <em>exactly</em> 10. If two coins are collected on the same physics frame (the player stands between two overlapping coins), the count can jump from 9 to 11, skipping 10 entirely — and the star never spawns. Fix: change <code>==</code> to <code>>=</code> so the condition fires at 10 or above.
+          </div>
+        </div>
+
+        <!-- Bug 3 — Run-time -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 3 — Run-time Error</div>
+          <h3>CoinCollector.cs — MissingReferenceException on Destroy</h3>
+          <p>This script compiles. When the player collects a coin, it usually works. But occasionally — especially when walking quickly through multiple coins — Unity logs: <code>MissingReferenceException: The object of type 'GameObject' has been destroyed but you are still trying to access it.</code> What is causing this?</p>
+          <pre><code>using UnityEngine;
+
+public class CoinCollector : MonoBehaviour
+{
+    [SerializeField] private GameManager gameManager;
+    private int coinCount = 0;
+    private const int COINS_NEEDED = 10;
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Coin"))
+        {
+<span class="bug-line">            Destroy(other.gameObject);   // ← using Destroy instead of SetActive</span>
+            coinCount++;
+            gameManager.hud.UpdateScore(coinCount);
+            CheckWinCondition();
+        }
+    }
+
+    private void CheckWinCondition()
+    {
+        if (coinCount >= COINS_NEEDED)
+        {
+            gameManager.SpawnStar();
+        }
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> <code>Destroy(other.gameObject)</code> queues the destruction for the end of the frame — but the coin's collider remains active until then. If the player's collider overlaps the coin across multiple physics updates in the same frame, <code>OnTriggerEnter</code> can fire a second time before the destroy completes, attempting to call methods on an object that's been marked for destruction. Fix: replace <code>Destroy(other.gameObject)</code> with <code>other.gameObject.SetActive(false)</code>. The collider is immediately disabled, so no second trigger is possible.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 9. Test Table ─────────────────────────────────────────── -->
+      <section id="test-table" class="content-section">
+
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+
+        <h2>Test Table</h2>
+        <p>Complete the <strong>Actual</strong> and <strong>Pass / Fail</strong> columns in your project notebook during Sprint 4. For any fail, record the bug type and your fix.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table" aria-label="Platformer test cases">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected outcome</th>
+                <th>Actual outcome</th>
+                <th>Pass / Fail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-case">Player presses A key</td>
+                <td class="td-expected">Player moves left at correct speed</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Player walks into a coin</td>
+                <td class="td-expected">Coin deactivates, score increases by 1, HUD updates immediately</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">coinCount reaches 10</td>
+                <td class="td-expected">Star activates at spawn point — no other changes yet</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Player walks into the star</td>
+                <td class="td-expected">Win panel appears, player input disabled, star deactivates</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+              <tr>
+                <td class="td-case">Win panel is showing</td>
+                <td class="td-expected">Score on win panel matches number of coins collected (10)</td>
+                <td class="td-blank">record in notebook</td>
+                <td class="td-blank">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <strong>What counts as a pass?</strong> A test passes when the actual outcome matches the expected outcome exactly. If it nearly matches — e.g. the coin disappears but the score doesn't update — that is a fail. Record exactly what happened, identify the bug type, and fix it before Sprint 4 ends.
+        </div>
+
+      </section>
+
+
+      <!-- ── 10. Tiered Tasks ──────────────────────────────────────── -->
+      <section id="tasks" class="content-section">
+        <h2>Tiered Tasks</h2>
+        <p>Complete these after Sprint 4 — or instead of Sprint 4 if you finish early. All tasks go in your project notebook and sprint log.</p>
+
+        <div class="tier-tasks">
+          <div class="tier-grid">
+
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade D–E</span>
+              <h4>Second Coin Type</h4>
+              <p>Add a second coin type worth 5 points (a larger, differently coloured coin). Change <code>COINS_NEEDED</code> so the win condition requires 20 points total.</p>
+              <ul>
+                <li>Create a new prefab for the 5-point coin. Tag it <strong>BigCoin</strong>.</li>
+                <li>Update <code>CoinCollector.cs</code> to handle both tags — <code>CompareTag("Coin")</code> adds 1, <code>CompareTag("BigCoin")</code> adds 5.</li>
+                <li>Test both coin types and record results in your notebook. Update the test table with two new test cases.</li>
+              </ul>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade C</span>
+              <h4>Countdown Timer</h4>
+              <p>Add a countdown timer that starts at 60 seconds. If the timer reaches 0 before all coins are collected, show a "Time's Up!" game-over panel and disable input. <strong>Write NSW pseudocode first.</strong></p>
+              <ul>
+                <li>Declare a <code>float timeRemaining = 60f</code> in GameManager.</li>
+                <li>Decrement it in <code>Update()</code> using <code>Time.deltaTime</code>.</li>
+                <li>Display remaining time on a second TMP text element in the HUD.</li>
+                <li>Write test cases for: timer reaches 0 before coins collected; timer reaches 0 after coins collected; player wins before timer runs out.</li>
+              </ul>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade B–A</span>
+              <h4>ICoinPickup Interface</h4>
+              <p>Refactor the coin system so that coins, gems, and power-ups all implement a shared <code>ICoinPickup</code> interface with a single <code>Collect()</code> method. No starter code.</p>
+              <ul>
+                <li>Define: <code>public interface ICoinPickup { void Collect(CoinCollector collector); }</code></li>
+                <li>Implement it on separate <code>Coin.cs</code>, <code>Gem.cs</code>, and <code>PowerUp.cs</code> classes — each with different <code>Collect()</code> behaviour.</li>
+                <li><code>CoinCollector.OnTriggerEnter</code> calls <code>other.GetComponent&lt;ICoinPickup&gt;()?.Collect(this)</code> — no tag check needed.</li>
+                <li>In your notebook: explain why this approach is more extensible than tag-based checking. What OOP principle does it demonstrate?</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── 11. CPD Strip ─────────────────────────────────────────── -->
+      <section id="cpd" class="cpd-section">
+        <h2>Where Are You?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. Use this to reflect on your capstone progress.</p>
+
+        <div class="cpd-strip" role="group" aria-label="Course performance descriptors">
+
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully develops, tests and implements a technically concise, modular coin-collection system in C# using OOP principles — including an interface-based pickup architecture. Demonstrates creativity and innovation in game feature design. Systematically validates all mechanics against functional and non-functional requirements with self-designed test cases.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Develops, tests and implements functional coin-collection, win-condition, and HUD scripts in C# using correct OOP structure, trigger callbacks, and TMP. Demonstrates creativity by extending the system with a timer or second coin type. Applies appropriate iterative processes and completes sprint logs and test tables.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Develops and implements coin collection and win-condition algorithms in C# using <code>OnTriggerEnter</code>, <code>SetActive</code>, and <code>>=</code> comparison. Updates TMP HUD correctly. Completes all four sprints, sprint logs, and the test table in the notebook.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Implements basic coin collection with support, using provided reference code. Completes Sprint 1 and Sprint 2. Records some sprint log entries and at least three test cases in the notebook.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Follows provided coin collection scripts with guidance, making basic variable changes. Identifies elements of the game — coins, HUD, win panel — that contribute to the player experience. Records minimal project progress with support.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 12. Notebook Prompts ──────────────────────────────────── -->
+      <section id="notebook">
+        <aside class="notebook-prompt" aria-label="Project notebook prompts">
+          <div class="notebook-prompt__label">📓 Project Notebook — Skills Page 4 Prompts</div>
+          <ul>
+            <li>
+              <strong>Producing &amp; Implementing — Sprint logs (required, one per session):</strong>
+              For each of the four sprints, record: date, what you planned, what you completed, problems encountered and how you solved them, what you plan next. Incomplete sprint logs are incomplete evidence of iterative process.
+            </li>
+            <li>
+              <strong>Testing &amp; Evaluating — Test table:</strong>
+              Complete all five test cases from the Test Table section. For any test that fails, record the bug type (syntax, logical, or run-time) and exactly what you changed to fix it.
+              <span class="sentence-starter">Sentence starter: "Test case [N] failed because… This was a [type] error. I fixed it by…"</span>
+            </li>
+            <li>
+              <strong>Social Awareness — Age classification:</strong>
+              What age classification would you give your platformer and why? What specific design choices — art style, content, difficulty, controls — led to that classification? Reference Australia's Classification system (G, PG, M, MA15+).
+              <span class="sentence-starter">Sentence starter: "I would classify my game as [rating] because… The specific design choices that led to this include…"</span>
+            </li>
+            <li>
+              <strong>Design decision — class structure:</strong>
+              Explain in your own words why the coin logic, HUD logic, and game state are in separate scripts. What would happen if you put all the logic in one script? What OOP principle supports the separation?
+            </li>
+          </ul>
+          <a href="../../project-notebooks/sd-games-notebook.html#pi-sprint" class="notebook-link">Open SD Games project notebook — Sprint Logs →</a>
+          <a href="../../project-notebooks/sd-games-notebook.html#te-testing" class="notebook-link" style="margin-left: var(--space-3);">Test Log →</a>
+        </aside>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>

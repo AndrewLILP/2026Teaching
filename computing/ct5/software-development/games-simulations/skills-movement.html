@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Moving Things in Unity · Games &amp; Simulations · CT5</title>
+  <meta name="description" content="Write your first C# scripts in Unity 6. Rotate a cube, move a player with WASD, and understand the MonoBehaviour lifecycle. Stage 5 Computing Technology.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <!-- SD: Games & Simulations accent — violet -->
+  <style>
+    :root {
+      --accent:         #8b5cf6;
+      --accent-dim:     #6d28d9;
+      --accent-bright:  #a78bfa;
+      --accent-surface: rgba(139, 92, 246, 0.10);
+      --accent-border:  rgba(139, 92, 246, 0.28);
+    }
+
+    /* ── Page-specific components ─────────────────────────────────── */
+
+    /* MonoBehaviour lifecycle diagram */
+    .lifecycle-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin: var(--space-6) 0;
+      position: relative;
+    }
+    .lifecycle-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      width: 100%;
+      max-width: 480px;
+    }
+    .lifecycle-node {
+      flex: 1;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      text-align: center;
+    }
+    .lifecycle-node.highlight {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+    }
+    .lifecycle-node .ln-label {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--accent-bright);
+      display: block;
+    }
+    .lifecycle-node.highlight .ln-label { color: var(--accent-bright); }
+    .lifecycle-node .ln-desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+      display: block;
+      line-height: 1.4;
+    }
+    .lifecycle-arrow {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 1.2rem;
+      margin: var(--space-1) 0;
+      width: 100%;
+      max-width: 480px;
+    }
+    .lifecycle-loop {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      justify-content: center;
+      font-size: var(--text-xs);
+      color: var(--accent-bright);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: var(--space-2);
+    }
+
+    /* Concept pair — pseudocode side-by-side with C# */
+    .pair-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+    @media (max-width: 680px) { .pair-block { grid-template-columns: 1fr; } }
+
+    .pair-col-label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+    .pair-col-label.pseudo { color: var(--accent-bright); }
+    .pair-col-label.csharp { color: #34d399; }
+
+    /* Sprint milestone card */
+    .sprint-goal {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-left: 4px solid var(--color-phase-produce);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-3);
+    }
+    .sprint-goal__label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--color-phase-produce);
+      margin-bottom: var(--space-1);
+    }
+    .sprint-goal h4 {
+      font-size: var(--text-base);
+      margin-bottom: var(--space-2);
+    }
+    .sprint-goal p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+      line-height: 1.6;
+    }
+
+    /* Data type table */
+    .dt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0 var(--space-6);
+    }
+    .dt-table th, .dt-table td {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .dt-table th {
+      background: var(--color-surface-3);
+      color: var(--accent-bright);
+      font-weight: 700;
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .dt-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .dt-table td:first-child {
+      font-family: var(--font-mono);
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    /* MCQ set wrapper spacing (ct-interactive.js styles individual cards) */
+    .mcq-set { display: flex; flex-direction: column; gap: var(--space-4); margin: var(--space-6) 0; }
+
+    /* Section scroll margin */
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    @media (max-width: 768px) {
+      .tier-grid { grid-template-columns: 1fr; }
+      .pair-block { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Games &amp; Simulations</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Skills: Movement</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="theory.html" class="ct-nav-btn">← Theory</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Games &amp; Simulations</a></li>
+      <li aria-current="page">Skills: Movement</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <!-- Sidebar -->
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#vocabulary">Key Vocabulary</a>
+          <a href="#concepts">How Unity Works</a>
+          <a href="#pseudo-rotate">Algorithm 1: Rotate</a>
+          <a href="#walkthrough-rotate">Code: RotateCube</a>
+          <a href="#pseudo-move">Algorithm 2: Move Player</a>
+          <a href="#walkthrough-move">Code: PlayerMovement</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#bug">Bug Detective</a>
+          <a href="#tasks">Tiered Tasks</a>
+          <a href="#cpd">Grade Descriptors</a>
+          <a href="#notebook">Notebook Prompts</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-COL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phase</div>
+        <div class="phase-pills" style="flex-direction: column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Main content -->
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- ── Page Hero ─────────────────────────────────────────────── -->
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Stage 5 · Skills Page 1 of 5</div>
+        <h1>Moving Things in Unity</h1>
+        <p class="page-intro">
+          This is your first C# page. You'll write scripts that rotate a cube every frame
+          and move a player with keyboard input. Every concept is explained before the code — and every
+          step shows the complete file so you always know where you are.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ── 1. Key Vocabulary ──────────────────────────────────────── -->
+      <section id="vocabulary" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Key Vocabulary</h2>
+        <p>These terms appear in the code on this page. Read them first — you'll recognise them when they appear.</p>
+
+        <div class="word-bank">
+          <h3>Word Bank — Moving Things in Unity</h3>
+          <div class="word-bank-grid">
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">MonoBehaviour</div>
+              <div class="word-bank-def">The base class every Unity script inherits from. It gives your script access to Unity's event functions like <code>Start()</code> and <code>Update()</code>.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Start()</div>
+              <div class="word-bank-def">A Unity event function that runs once when the scene loads. Used to set up initial values — runs before the first frame is drawn.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Update()</div>
+              <div class="word-bank-def">A Unity event function that runs once every frame. This is where movement, input, and ongoing game logic live. Could run 60, 120, or 30 times per second depending on the device.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Time.deltaTime</div>
+              <div class="word-bank-def">The time in seconds since the last frame. Multiplying movement by <code>Time.deltaTime</code> makes the game run at the same speed regardless of frame rate — this is called <em>frame-rate independence</em>.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Transform</div>
+              <div class="word-bank-def">A Unity component that stores a GameObject's position, rotation, and scale. Every GameObject has a Transform. In scripts, <code>transform</code> (lowercase) refers to the Transform on the same object as the script.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Vector3</div>
+              <div class="word-bank-def">A data structure that holds three float values: x, y, and z. Used to represent positions, directions, and movement in 3D space. <code>Vector3.zero</code> is (0, 0, 0).</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">float</div>
+              <div class="word-bank-def">A decimal number data type in C#. Speed, time, and positions must be floats (not integers) because they need fractional precision. Write <code>5f</code> to tell C# a number literal is a float.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">Input.GetAxis()</div>
+              <div class="word-bank-def">A Unity method that reads a named input axis and returns a value between –1 and 1. <code>Input.GetAxis("Horizontal")</code> responds to A/D keys and left/right arrows. <code>"Vertical"</code> responds to W/S.</div>
+            </div>
+
+            <div class="word-bank-item">
+              <div class="word-bank-term">SerializeField</div>
+              <div class="word-bank-def">An attribute written as <code>[SerializeField]</code> above a private variable. It makes a private variable visible in the Unity Inspector without making it public — good coding practice.</div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 2. How Unity Works ──────────────────────────────────────── -->
+      <section id="concepts" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>How Unity Works — The MonoBehaviour Lifecycle</h2>
+        <p>Unity runs a continuous loop for as long as your game plays. Your C# scripts plug into that loop at specific points called <strong>event functions</strong>. On this page you'll use two: <code>Start()</code> and <code>Update()</code>.</p>
+
+        <div class="lifecycle-diagram" aria-label="MonoBehaviour lifecycle diagram">
+          <div class="lifecycle-node">
+            <span class="ln-label">Scene loads</span>
+            <span class="ln-desc">Player presses Play in Unity</span>
+          </div>
+          <div class="lifecycle-arrow" aria-hidden="true">↓</div>
+          <div class="lifecycle-node highlight">
+            <span class="ln-label">Start()</span>
+            <span class="ln-desc">Runs once — set up initial values here</span>
+          </div>
+          <div class="lifecycle-arrow" aria-hidden="true">↓</div>
+          <div class="lifecycle-node highlight">
+            <span class="ln-label">Update()</span>
+            <span class="ln-desc">Runs every frame — movement &amp; input go here</span>
+          </div>
+          <div class="lifecycle-loop" aria-label="Update loops until game ends">
+            ↺ repeats until game stops
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Why does this matter?</strong> If you put setup code in <code>Update()</code> it runs every frame — multiplying work and causing bugs. If you put movement code in <code>Start()</code> it only fires once and the object stops. Right method, right job.
+        </div>
+
+        <h3>Frame Rate and Time.deltaTime</h3>
+        <p><code>Update()</code> is called once per frame. On a fast machine that might be 120 times per second; on a slow one, 30. If you write <code>transform.Rotate(0, 45, 0)</code> in <code>Update()</code>, the cube rotates 45° per frame — which means it rotates four times faster on the fast machine.</p>
+        <p>Multiplying by <code>Time.deltaTime</code> converts the value from <em>per frame</em> to <em>per second</em>. The cube rotates at the same real-world speed on every device.</p>
+
+        <div class="pair-block">
+          <div>
+            <div class="pair-col-label pseudo">❌ Frame-rate dependent (broken)</div>
+            <pre><code>// Rotates 45° per FRAME — fast on fast machines
+transform.Rotate(0, 45f, 0);</code></pre>
+          </div>
+          <div>
+            <div class="pair-col-label csharp">✓ Frame-rate independent (correct)</div>
+            <pre><code>// Rotates 45° per SECOND — consistent everywhere
+transform.Rotate(0, 45f * Time.deltaTime, 0);</code></pre>
+          </div>
+        </div>
+
+        <h3>Data Types — float vs int</h3>
+        <p>Movement values need decimal precision. Speed is not "5 metres per second" — it might be 5.75 at the peak of a jump. Unity's position and rotation methods expect <code>float</code>, not <code>int</code>.</p>
+
+        <table class="dt-table" aria-label="Data types used in movement scripts">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Example value</th>
+              <th>Use in this page</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>float</td>
+              <td><code>5f</code>, <code>0.5f</code>, <code>-3.14f</code></td>
+              <td>Speed, rotation angle, axis input (–1.0 to 1.0)</td>
+            </tr>
+            <tr>
+              <td>int</td>
+              <td><code>5</code>, <code>0</code>, <code>-3</code></td>
+              <td>Whole numbers — score, lives, level number</td>
+            </tr>
+            <tr>
+              <td>Vector3</td>
+              <td><code>new Vector3(0, 1, 0)</code></td>
+              <td>Direction and position in 3D space</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </section>
+
+
+      <!-- ── 3. NSW Pseudocode — Rotate ────────────────────────────── -->
+      <section id="pseudo-rotate" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Algorithm 1: Rotating a Cube</h2>
+        <p>Before writing any C#, write the algorithm in NSW pseudocode. This forces you to think about <em>what</em> the code must do before thinking about <em>how</em> to write it.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — RotateCube algorithm</div>
+          <pre>// Rotate a cube around the Y axis every frame
+BEGIN RotateCube
+  WHILE gameIsRunning DO
+    cube.rotation ← cube.rotation + (rotateSpeed × Time.deltaTime)
+  ENDWHILE
+END RotateCube</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Reading the pseudocode</strong>
+          The <code>WHILE gameIsRunning</code> loop represents <code>Update()</code> — it repeats every frame.
+          The left-arrow <code>←</code> is assignment (not equals-comparison). <code>rotateSpeed × Time.deltaTime</code> gives us degrees per second, not degrees per frame.
+        </div>
+
+        <div class="teaching-advice">
+          <h4>📝 Before continuing</h4>
+          <p>Write this pseudocode in your project notebook under Producing &amp; Implementing → Sprint Logs, session 1. Then predict: on which axis will the cube spin? What happens if you change the Y to X? Write your prediction before running the code.</p>
+        </div>
+
+      </section>
+
+
+      <!-- ── 4. Code Walkthrough — RotateCube ─────────────────────── -->
+      <section id="walkthrough-rotate" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Code Walkthrough: RotateCube.cs</h2>
+
+        <div class="concept-recap">
+          <strong>Setup:</strong> In Unity, create a new Cube (GameObject → 3D Object → Cube). In your Project window, right-click → Create → C# Script. Name it exactly <code>RotateCube</code>. Drag the script onto the Cube. Double-click to open it in your editor.
+        </div>
+
+        <!-- Step 1 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">The starter file — what Unity generates for you</span>
+          </div>
+          <div class="code-change-banner">📄 COMPLETE FILE — RotateCube.cs — no changes yet</div>
+          <pre><code>using UnityEngine;
+
+public class RotateCube : MonoBehaviour
+{
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>What you're looking at:</strong> Unity generates this stub automatically. <code>using UnityEngine;</code> imports all of Unity's built-in tools — without it, words like <code>MonoBehaviour</code> and <code>Transform</code> don't exist. <code>public class RotateCube : MonoBehaviour</code> means "this class is named RotateCube and it inherits from MonoBehaviour" — that inheritance is what gives us <code>Start()</code> and <code>Update()</code>.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Add a speed variable with [SerializeField]</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 2 — declare a private float with [SerializeField]</div>
+          <pre><code>using UnityEngine;
+
+public class RotateCube : MonoBehaviour
+{
+<span class="code-new">    [SerializeField] private float rotateSpeed = 90f;   // ── NEW IN STEP 2 ──</span>
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>[SerializeField]</strong> makes a <em>private</em> variable show up in the Unity Inspector. It's private (no other script can reach it) but visible and editable in the editor. <strong>rotateSpeed = 90f</strong> sets a default of 90 degrees per second — the <code>f</code> suffix tells C# this is a float, not a double. You can override this value in the Inspector without touching the code.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 3</span>
+            <span class="step-label">Add the rotation logic in Update()</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 3 — one line inside Update() does all the work</div>
+          <pre><code>using UnityEngine;
+
+public class RotateCube : MonoBehaviour
+{
+    [SerializeField] private float rotateSpeed = 90f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+<span class="code-new">        transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f);   // ── NEW IN STEP 3 ──</span>
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>transform.Rotate(x, y, z)</strong> rotates the GameObject by the given number of degrees on each axis this frame. The arguments are <code>(0, y, 0)</code> — only the Y axis rotates (spinning left/right around the vertical). <strong>rotateSpeed * Time.deltaTime</strong> converts from degrees-per-second to degrees-this-frame. Try changing <code>0f, rotateSpeed…, 0f</code> to <code>rotateSpeed…, 0f, 0f</code> — the cube will tumble forward instead.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Press Play.</strong> Your cube should spin at 90° per second. Select the Cube in the Hierarchy while the game runs and change Rotate Speed in the Inspector — you'll see the change live. This is why <code>[SerializeField]</code> is useful: tweak without stopping and recompiling.
+        </div>
+
+      </section>
+
+
+      <!-- ── 5. NSW Pseudocode — Player Movement ─────────────────── -->
+      <section id="pseudo-move" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Algorithm 2: Moving a Player</h2>
+        <p>Player movement adds a new idea: reading <strong>input</strong>. The algorithm reads the player's key presses, converts them into a direction, and then applies movement — but only if the player is actually pressing something.</p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — MovePlayer algorithm</div>
+          <pre>BEGIN MovePlayer
+  WHILE gameIsRunning DO
+    horizontal ← INPUT("Horizontal")   // A/D or ←/→ keys: returns –1 to 1
+    vertical   ← INPUT("Vertical")     // W/S or ↑/↓ keys: returns –1 to 1
+    moveDir    ← Vector3(horizontal, 0, vertical)
+    IF moveDir.magnitude > 0.1 THEN
+      player.position ← player.position + (moveDir × speed × deltaTime)
+    ENDIF
+  ENDWHILE
+END MovePlayer</pre>
+        </div>
+
+        <div class="example-box">
+          <strong>Reading the pseudocode — two things to notice</strong>
+          The <code>IF moveDir.magnitude > 0.1</code> guard prevents tiny floating-point drifts from moving the player when no key is pressed (joystick dead zone). The Y component is <code>0</code> because we're moving on a flat plane — gravity is handled by Unity's physics, not this script.
+        </div>
+
+      </section>
+
+
+      <!-- ── 6. Code Walkthrough — PlayerMovement ──────────────────── -->
+      <section id="walkthrough-move" class="content-section">
+
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+
+        <h2>Code Walkthrough: PlayerMovement.cs</h2>
+
+        <div class="concept-recap">
+          <strong>Setup:</strong> Create a Capsule (GameObject → 3D Object → Capsule) in your scene — this is your player. Right-click in Project → Create → C# Script → name it <code>PlayerMovement</code>. Drag it onto the Capsule. Remove or disable the RotateCube script from this object.
+        </div>
+
+        <!-- Step 1 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">Starter stub — same structure as before</span>
+          </div>
+          <div class="code-change-banner">📄 COMPLETE FILE — PlayerMovement.cs — starting point</div>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            Same structure as <code>RotateCube</code>. The class name matches the filename — C# requires this.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Declare the speed variable</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 2 — speed variable, same [SerializeField] pattern</div>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+<span class="code-new">    [SerializeField] private float speed = 5f;   // ── NEW IN STEP 2 ──</span>
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+
+    }
+}</code></pre>
+          <div class="step-explain">
+            <code>speed = 5f</code> means 5 metres per second. This matches the pseudocode variable <code>speed</code>. You'll multiply it by <code>Time.deltaTime</code> when you apply movement in Step 4.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 3</span>
+            <span class="step-label">Read the input axes</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 3 — reading horizontal and vertical input</div>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+<span class="code-new">        float horizontal = Input.GetAxis("Horizontal");   // ── NEW IN STEP 3 ──</span>
+<span class="code-new">        float vertical   = Input.GetAxis("Vertical");     // ── NEW IN STEP 3 ──</span>
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>Input.GetAxis("Horizontal")</strong> returns a float from –1 (A key / left arrow) to 1 (D key / right arrow). Zero when no key is pressed. "Horizontal" and "Vertical" are Unity's default axis names — you can see them in Edit → Project Settings → Input Manager. These are the C# equivalent of <code>INPUT("Horizontal")</code> in the pseudocode.
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 4</span>
+            <span class="step-label">Build the direction Vector3 and apply movement</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 4 — combine input into a direction and move the player</div>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical   = Input.GetAxis("Vertical");
+<span class="code-new">        Vector3 moveDir = new Vector3(horizontal, 0f, vertical);   // ── NEW IN STEP 4 ──</span>
+<span class="code-new">        transform.Translate(moveDir * speed * Time.deltaTime);      // ── NEW IN STEP 4 ──</span>
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>new Vector3(horizontal, 0f, vertical)</strong> puts our input values into the X and Z axes — Y stays zero so the player doesn't float up or sink. <strong>transform.Translate()</strong> moves the object by the given vector this frame. <strong>moveDir * speed * Time.deltaTime</strong> scales the direction by how fast we want to move (speed) and how much time has passed since last frame (deltaTime) — exactly as in the pseudocode: <code>moveDir × speed × deltaTime</code>.
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 5</span>
+            <span class="step-label">Add the dead zone guard — final version</span>
+          </div>
+          <div class="code-change-banner">✦ NEW IN STEP 5 — IF guard prevents drift when no key is pressed</div>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical   = Input.GetAxis("Vertical");
+        Vector3 moveDir  = new Vector3(horizontal, 0f, vertical);
+
+<span class="code-new">        if (moveDir.magnitude > 0.1f)                                // ── NEW IN STEP 5 ──</span>
+<span class="code-new">        {                                                            // ── NEW IN STEP 5 ──</span>
+            transform.Translate(moveDir * speed * Time.deltaTime);
+<span class="code-new">        }                                                            // ── NEW IN STEP 5 ──</span>
+    }
+}</code></pre>
+          <div class="step-explain">
+            <strong>moveDir.magnitude</strong> is the length of the vector — roughly how fast we're pressing. When no key is held, <code>Input.GetAxis</code> returns near-zero values but not always exactly zero (especially on gamepads). The <code>&gt; 0.1f</code> check creates a dead zone. This matches the <code>IF moveDir.magnitude > 0.1 THEN</code> in the pseudocode. Press Play — WASD or arrow keys should now move the capsule across the scene.
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Experiment:</strong> In the Inspector, change <code>Speed</code> while the game plays. Try 2f (slow) and 20f (fast). Then change <code>moveDir</code> to <code>new Vector3(horizontal, vertical, 0f)</code> — what happens? Record the difference in your sprint log.
+        </div>
+
+      </section>
+
+
+      <!-- ── 7. Check Your Understanding ───────────────────────────── -->
+      <section id="check" class="content-section">
+        <h2>Check Your Understanding</h2>
+        <p>Select your answer — feedback appears immediately. Use the ↩ button to try again.</p>
+
+        <div class="mcq-set">
+
+          <!-- Q1 -->
+          <div class="mcq-card"
+               data-q="1"
+               data-correct="C"
+               data-feedback-a="Incorrect — Start() and Update() are different. Start() runs once; Update() runs every frame."
+               data-feedback-b="Incorrect — Start() runs once when the scene loads, not every frame. That's Update()'s job."
+               data-feedback-c="✓ Correct — Start() runs once. Movement applied there fires in a single frame then stops. Movement belongs in Update()."
+               data-feedback-d="Incorrect — C# has no rule against movement code in Start(). It will compile fine — but the result will be wrong.">
+            <div class="mcq-question">1. You put your player movement code inside <code>Start()</code> instead of <code>Update()</code>. What will happen?</div>
+            <div class="mcq-options" role="group" aria-label="Question 1 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The player will move correctly — <code>Start()</code> and <code>Update()</code> do the same thing</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The player will move continuously because <code>Start()</code> runs every frame</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The player will move once at the start of the scene and then stop</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Unity will show a compile error because movement code is not allowed in <code>Start()</code></button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-1"></div>
+            <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+          </div>
+
+          <!-- Q2 -->
+          <div class="mcq-card"
+               data-q="2"
+               data-correct="B"
+               data-feedback-a="Incorrect — Time.deltaTime doesn't change the speed variable; it scales the applied movement for the current frame."
+               data-feedback-b="✓ Correct — Without Time.deltaTime, movement is per-frame. 120fps = 4× faster than 30fps. Multiplying by deltaTime makes it per-second, consistent on all devices."
+               data-feedback-c="Incorrect — Time.deltaTime has nothing to do with coordinate dimensions. It's a timing value."
+               data-feedback-d="Incorrect — Stopping movement when no key is pressed is handled by the dead-zone magnitude check, not by Time.deltaTime.">
+            <div class="mcq-question">2. Why do we multiply movement values by <code>Time.deltaTime</code>?</div>
+            <div class="mcq-options" role="group" aria-label="Question 2 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> To make movement faster by increasing the speed variable automatically</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To make movement frame-rate independent — so the game runs at the same speed on all devices</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To convert the movement from 3D to 2D coordinates</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> To stop the object moving when no key is pressed</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-2"></div>
+            <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+          </div>
+
+          <!-- Q3 -->
+          <div class="mcq-card"
+               data-q="3"
+               data-correct="C"
+               data-feedback-a="Incorrect — making a variable public allows any other script to access it. [SerializeField] keeps it private."
+               data-feedback-b="Incorrect — [SerializeField] has nothing to do with saving to disk. That's Unity's serialization system for scenes and prefabs."
+               data-feedback-c="✓ Correct — [SerializeField] exposes the variable in the Inspector while keeping it private. Other scripts can't touch it directly — good OOP practice."
+               data-feedback-d="Incorrect — [SerializeField] doesn't lock the value at runtime. You can still change it in the Inspector while the game plays.">
+            <div class="mcq-question">3. What does <code>[SerializeField]</code> do in a Unity script?</div>
+            <div class="mcq-options" role="group" aria-label="Question 3 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It makes a variable public so any other script can read and change it</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It saves the variable's value to a file on disk when the game stops</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It makes a private variable visible and editable in the Unity Inspector without making it public</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It prevents the variable from being changed at runtime</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-3"></div>
+            <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+          </div>
+
+          <!-- Q4 -->
+          <div class="mcq-card"
+               data-q="4"
+               data-correct="C"
+               data-feedback-a="Incorrect — the range includes negative values. Negative means left or backward; positive means right or forward."
+               data-feedback-b="Incorrect — GetAxis() returns a float that smoothly ramps between –1 and 1, not a binary on/off value. Use GetKeyDown() for binary detection."
+               data-feedback-c="✓ Correct — GetAxis() returns –1 to 1. Left/back = –1, right/forward = 1, no input ≈ 0. This is why we can build a direction vector directly from the two axis values."
+               data-feedback-d="Incorrect — GetAxis() always returns a float in the –1 to 1 range, regardless of how long the key is held.">
+            <div class="mcq-question">4. <code>Input.GetAxis("Horizontal")</code> returns a value. What is the range of that value?</div>
+            <div class="mcq-options" role="group" aria-label="Question 4 options">
+              <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> 0 to 1 (positive only)</button>
+              <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> 0 or 1 only (no key = 0, key pressed = 1)</button>
+              <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> –1 to 1 (negative for left, positive for right, zero for no input)</button>
+              <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Any integer value depending on how long the key is held</button>
+            </div>
+            <div class="mcq-feedback" id="mcq-feedback-4"></div>
+            <button class="mcq-reset" id="mcq-reset-4">↩ Try again</button>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 8. Bug Detective ──────────────────────────────────────── -->
+      <section id="bug" class="content-section">
+
+        <h2>Bug Detective</h2>
+        <p>The script below has <strong>three bugs</strong> — one of each type. Find them before revealing the answers. Write your findings in your project notebook.</p>
+
+        <div class="example-box">
+          <strong>Bug types — quick reference</strong>
+          <strong>Syntax</strong>: code that breaks the rules of C# — won't compile. ·
+          <strong>Logical</strong>: code that compiles and runs but produces wrong behaviour. ·
+          <strong>Run-time</strong>: code that compiles but crashes during Play mode.
+        </div>
+
+        <!-- Bug 1 — Syntax -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 1 — Syntax Error</div>
+          <h3>RotateCube.cs — missing semicolon</h3>
+          <p>This script will not compile. Find the syntax error on the highlighted line.</p>
+          <pre><code>using UnityEngine;
+
+public class RotateCube : MonoBehaviour
+{
+    [SerializeField] private float rotateSpeed = 90f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+<span class="bug-line">        transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f)   // ← broken line</span>
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> Missing semicolon at the end of the <code>transform.Rotate()</code> call. C# statements must end with <code>;</code>. The fix: <code>transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f);</code>
+          </div>
+        </div>
+
+        <!-- Bug 2 — Logical -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 2 — Logical Error</div>
+          <h3>RotateCube.cs — wrong axis, cube spins into ground</h3>
+          <p>This script compiles and runs, but the cube tumbles forward and disappears into the floor instead of spinning left/right. Which argument is wrong?</p>
+          <pre><code>using UnityEngine;
+
+public class RotateCube : MonoBehaviour
+{
+    [SerializeField] private float rotateSpeed = 90f;
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+<span class="bug-line">        transform.Rotate(rotateSpeed * Time.deltaTime, 0f, 0f);   // ← wrong axis order</span>
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> The rotation is applied to the <strong>X axis</strong> (first argument) instead of the <strong>Y axis</strong> (second argument). X rotation tilts the object forward/backward; Y rotation spins it left/right. Fix: <code>transform.Rotate(0f, rotateSpeed * Time.deltaTime, 0f);</code>
+          </div>
+        </div>
+
+        <!-- Bug 3 — Run-time -->
+        <div class="bug-detective">
+          <div class="bug-detective__eyebrow">🔍 Bug 3 — Run-time Error</div>
+          <h3>PlayerMovement.cs — NullReferenceException</h3>
+          <p>This script compiles. When you press Play, Unity crashes with: <code>NullReferenceException: Object reference not set to an instance of an object</code>. The script references a separate Transform variable that was never assigned.</p>
+          <pre><code>using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    [SerializeField] private float speed = 5f;
+<span class="bug-line">    [SerializeField] private Transform playerTransform;   // ← never assigned in Inspector</span>
+
+    void Start()
+    {
+
+    }
+
+    void Update()
+    {
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical   = Input.GetAxis("Vertical");
+        Vector3 moveDir  = new Vector3(horizontal, 0f, vertical);
+
+        if (moveDir.magnitude > 0.1f)
+        {
+<span class="bug-line">            playerTransform.Translate(moveDir * speed * Time.deltaTime);   // ← crashes here</span>
+        }
+    }
+}</code></pre>
+          <button class="bug-reveal-btn">🔍 Reveal answer</button>
+          <div class="bug-detective__reveal">
+            <strong>Bug found:</strong> <code>playerTransform</code> is declared as a <code>[SerializeField]</code> but was never dragged into the Inspector slot — it's <code>null</code>. Calling <code>.Translate()</code> on a null reference crashes Unity at runtime. Two fixes: (a) drag the Capsule's Transform into the Inspector field before pressing Play, or (b) simplify the script — since the script <em>is</em> on the player, use <code>transform.Translate()</code> (the built-in shortcut to this object's own Transform) and remove the extra variable entirely.
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ── 9. Tiered Tasks ──────────────────────────────────────── -->
+      <section id="tasks" class="content-section">
+        <h2>Tiered Tasks</h2>
+        <p>Choose the tier that matches where you are right now. All tasks go in your project notebook and sprint log.</p>
+
+        <div class="tier-tasks">
+          <div class="tier-grid">
+
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade D–E</span>
+              <h4>Modify and Record</h4>
+              <p>You are given the complete <code>RotateCube.cs</code> from Step 3. Make these changes one at a time:</p>
+              <ul>
+                <li>Change <code>rotateSpeed</code> from <code>90f</code> to <code>30f</code>. What happens?</li>
+                <li>Change the Y argument in <code>transform.Rotate()</code> to the X argument. What happens?</li>
+                <li>Remove <code>* Time.deltaTime</code>. What happens? Put it back.</li>
+              </ul>
+              <p>For each change: record what you changed, what you expected, and what actually happened in your sprint log.</p>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade C</span>
+              <h4>Add a Jump Function</h4>
+              <p>Add a <code>Jump()</code> function to <code>PlayerMovement.cs</code>. The player should move upward when the Space key is pressed.</p>
+              <p><strong>Write the NSW pseudocode first</strong>, then implement in C#. Use <code>Input.GetKeyDown(KeyCode.Space)</code> to detect the Space key. Apply an upward force using <code>transform.Translate(0f, jumpForce * Time.deltaTime, 0f)</code>.</p>
+              <p>Record your pseudocode and C# in your notebook side by side. Where did the implementation differ from your plan, and why?</p>
+            </div>
+
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension</span>
+              <span style="font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 600;">Grade B–A</span>
+              <h4>Third-Person Camera Follow</h4>
+              <p>Design and implement a camera that smoothly follows the player using <code>Vector3.Lerp</code>. No starter code is provided — design the algorithm in NSW pseudocode first.</p>
+              <p>Your solution should: (a) maintain a fixed offset from the player, (b) use <code>Vector3.Lerp</code> with a smoothing factor so the camera never teleports, and (c) be on a separate <code>CameraFollow.cs</code> script — not inside <code>PlayerMovement.cs</code>.</p>
+              <p>In your notebook: justify why the camera script is separate from the player script. What OOP principle does this follow?</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── 10. Next sprint milestone ─────────────────────────────── -->
+      <section id="sprint" class="content-section">
+        <h2>Sprint Progress</h2>
+        <p>By the end of this session, your sprint log should record all three of the following milestones. If you're missing one, complete it before the next lesson.</p>
+
+        <div class="sprint-goal">
+          <div class="sprint-goal__label">Milestone 1</div>
+          <h4>Cube rotates at a consistent speed</h4>
+          <p>RotateCube.cs is on a Cube GameObject. The cube spins around the Y axis at 90°/second using <code>Time.deltaTime</code>. You have changed the speed and axis in the Inspector and recorded the result.</p>
+        </div>
+
+        <div class="sprint-goal">
+          <div class="sprint-goal__label">Milestone 2</div>
+          <h4>Player moves with WASD and arrow keys</h4>
+          <p>PlayerMovement.cs is on a Capsule or Cube. The object moves on the XZ plane using input axes. The dead-zone guard is in place. You have recorded the effect of removing <code>Time.deltaTime</code>.</p>
+        </div>
+
+        <div class="sprint-goal">
+          <div class="sprint-goal__label">Milestone 3</div>
+          <h4>Bugs found and explained</h4>
+          <p>All three Bug Detective bugs are identified in your notebook — labelled Syntax, Logical, and Run-time. For each: what was wrong, what the symptom was, and how it was fixed.</p>
+        </div>
+
+      </section>
+
+
+      <!-- ── 11. CPD Strip ──────────────────────────────────────────── -->
+      <section id="cpd" class="cpd-section">
+        <h2>Where Are You?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. Use this to reflect on your skills progress before moving to the next page.</p>
+
+        <div class="cpd-strip" role="group" aria-label="Course performance descriptors">
+
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully develops, tests and implements technically concise, modular C# scripts — including frame-rate independent movement and structured input handling — using appropriate OOP principles. Demonstrates creativity and innovation in the design of player controls and camera systems. Systematically validates code against functional and non-functional requirements.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Develops, tests and implements functional C# movement scripts using correct data types, <code>Time.deltaTime</code>, and event functions. Demonstrates creativity in extending movement with additional features such as jumping or camera follow. Applies appropriate iterative processes and records progress in sprint logs.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Develops common movement algorithms and implements them in C# using correct data types, float arithmetic, and input axes. Correctly uses <code>Start()</code> and <code>Update()</code>. Records iteration and changes in sprint logs and identifies bug types with explanation.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Modifies provided C# movement scripts with support. Implements basic movement using <code>transform.Rotate()</code> and <code>transform.Translate()</code>. Records some progress in the sprint log and identifies at least one type of code error.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Follows provided C# movement scripts with guidance, making basic variable changes. Identifies elements of Unity scripts that contribute to player movement — such as <code>Update()</code> and <code>transform</code>. Records minimal project progress with support.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ── 12. Notebook Prompts ──────────────────────────────────── -->
+      <section id="notebook">
+        <aside class="notebook-prompt" aria-label="Project notebook prompts">
+          <div class="notebook-prompt__label">📓 Project Notebook — Skills Page 1 Prompts</div>
+          <ul>
+            <li>
+              <strong>Producing &amp; Implementing — Pseudocode &amp; Implementation:</strong>
+              Write the NSW pseudocode for your player's movement algorithm. Then paste your C# implementation alongside it. Where did the code differ from the plan, and why?
+              <span class="sentence-starter">Sentence starter: "My pseudocode planned… but in C# I had to… because…"</span>
+            </li>
+            <li>
+              <strong>Testing &amp; Evaluating — Frame-rate independence:</strong>
+              What happened when you changed <code>speed</code> in the Inspector? What happened when you removed <code>Time.deltaTime</code> from the movement calculation? What does this tell you about why it matters?
+              <span class="sentence-starter">Sentence starter: "When I removed Time.deltaTime, the player… This tells me that without it…"</span>
+            </li>
+            <li>
+              <strong>Bug log — three entries required:</strong>
+              For each Bug Detective bug, record: (a) the bug type, (b) what the symptom was, (c) what line was wrong, and (d) how you fixed it. Label each entry Syntax, Logical, or Run-time.
+              <span class="sentence-starter">Sentence starter: "Bug 1 was a [type] error. The symptom was… The fix was…"</span>
+            </li>
+            <li>
+              <strong>Sprint log — one entry per session:</strong>
+              Date, what you planned, what you actually completed, any problems encountered and how you solved them, and what you plan to do next.
+            </li>
+          </ul>
+          <a href="../../project-notebooks/sd-games-notebook.html#pi-sprint" class="notebook-link">Open SD Games project notebook — Sprint Logs →</a>
+        </aside>
+      </section>
+
+
+    </main>
+  </div>
+
+  <!-- Scripts — ct-core.js always first; ct-interactive.js for Bug Detective -->
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>
