@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unity Timeline — Simple Cutscene Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #131720;
+    --surface2:  #1a2030;
+    --border:    #252d40;
+    --cyan:      #22d3ee;
+    --cyan-dim:  #164e63;
+    --magenta:   #e879f9;
+    --mag-dim:   #4a1265;
+    --gold:      #fbbf24;
+    --green:     #4ade80;
+    --green-dim: #14532d;
+    --text:      #e2e8f0;
+    --text-soft: #94a3b8;
+    --text-dim:  #475569;
+    --violet:    #a78bfa;
+    --step-w:    640px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .logo-mark {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #AFA9EC;
+    white-space: nowrap;
+    padding-top: 3px;
+    letter-spacing: 0.02em;
+  }
+  .header-text h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .header-text h1 span { color: var(--cyan); }
+  .header-meta {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .pill {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    background: var(--surface2);
+  }
+  .pill.cyan  { color: var(--cyan);    border-color: var(--cyan-dim);  background: rgba(34,211,238,.08); }
+  .pill.mag   { color: var(--magenta); border-color: var(--mag-dim);   background: rgba(232,121,249,.08); }
+  .pill.gold  { color: var(--gold);    border-color: #78350f;          background: rgba(251,191,36,.08); }
+  .pill.green { color: var(--green);   border-color: var(--green-dim); background: rgba(74,222,128,.08); }
+
+  /* ── LAYOUT ── */
+  .page-body {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: calc(100vh - 80px);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 28px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 20px 8px;
+  }
+  .sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-soft);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: color .15s, border-color .15s, background .15s;
+  }
+  .sidebar nav a:hover {
+    color: var(--text);
+    background: var(--surface2);
+  }
+  .sidebar nav a.active {
+    color: var(--cyan);
+    border-left-color: var(--cyan);
+    background: rgba(34,211,238,.06);
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .sidebar nav a.active .step-num {
+    background: var(--cyan-dim);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  .sidebar-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 12px 20px;
+  }
+  .outcome-tags {
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .outcome-tags span {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--violet);
+    border: 1px solid #312e81;
+    background: rgba(167,139,250,.08);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    padding: 40px 48px 80px;
+    max-width: 760px;
+  }
+
+  /* ── INTRO ── */
+  .intro-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 40px;
+  }
+  .intro-card h2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .intro-card p { color: var(--text-soft); font-size: 14px; }
+  .intro-card p + p { margin-top: 8px; }
+
+  .goal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .goal-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .goal-item .gi-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+  .goal-item .gi-val { color: var(--text); font-weight: 600; }
+
+  /* ── CONCEPT BOX ── */
+  .concept-box {
+    background: rgba(34,211,238,.04);
+    border: 1px solid var(--cyan-dim);
+    border-left: 3px solid var(--cyan);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    font-size: 13.5px;
+  }
+  .concept-box strong { color: var(--cyan); }
+
+  /* ── ANALOGY RAIL ── */
+  .analogy-rail {
+    display: flex;
+    gap: 0;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .ar-item {
+    flex: 1;
+    padding: 14px 16px;
+    background: var(--surface);
+    text-align: center;
+    font-size: 12.5px;
+  }
+  .ar-item:not(:last-child) { border-right: 1px solid var(--border); }
+  .ar-emoji { font-size: 22px; display: block; margin-bottom: 4px; }
+  .ar-label { font-weight: 700; color: #fff; display: block; margin-bottom: 2px; }
+  .ar-desc { color: var(--text-soft); font-size: 11.5px; }
+
+  /* ── STEP SECTION ── */
+  .step-section {
+    margin-bottom: 48px;
+    scroll-margin-top: 24px;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--cyan-dim);
+    border: 2px solid var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--cyan);
+    flex-shrink: 0;
+  }
+  .step-title-group h2 {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .step-title-group p {
+    font-size: 12px;
+    color: var(--text-soft);
+    margin-top: 2px;
+  }
+
+  /* ── ACTION STEPS ── */
+  .action-list {
+    list-style: none;
+    counter-reset: ac;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .action-list li {
+    counter-increment: ac;
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 14px;
+  }
+  .action-list li::before {
+    content: counter(ac);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── MENU PATH ── */
+  .menu-path {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin: 6px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .menu-path .sep {
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .menu-path .hl { color: var(--cyan); }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    margin: 10px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .callout .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .callout.tip   { background: rgba(34,211,238,.06);  border: 1px solid var(--cyan-dim); }
+  .callout.warn  { background: rgba(251,191,36,.06);  border: 1px solid #78350f; }
+  .callout.goal  { background: rgba(74,222,128,.06);  border: 1px solid var(--green-dim); }
+  .callout.tip  .icon  { color: var(--cyan); }
+  .callout.warn .icon  { color: var(--gold); }
+  .callout.goal .icon  { color: var(--green); }
+
+  /* ── WINDOW DIAGRAM ── */
+  .window-diagram {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .wd-titlebar {
+    background: #0f1621;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-soft);
+    font-size: 11px;
+  }
+  .wd-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .wd-body { padding: 14px 16px; line-height: 2; }
+  .wd-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 3px 0;
+  }
+  .wd-track-label {
+    width: 130px;
+    flex-shrink: 0;
+    color: var(--text-soft);
+    font-size: 11px;
+    padding-right: 10px;
+  }
+  .wd-track-bar {
+    height: 18px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .bar-cyan    { background: var(--cyan-dim);  color: var(--cyan);    border: 1px solid rgba(34,211,238,.3);  }
+  .bar-magenta { background: var(--mag-dim);   color: var(--magenta); border: 1px solid rgba(232,121,249,.3); }
+  .bar-green   { background: var(--green-dim); color: var(--green);   border: 1px solid rgba(74,222,128,.3);  }
+
+  .wd-ruler {
+    display: flex;
+    padding: 4px 0 0 130px;
+    margin-bottom: 6px;
+  }
+  .wd-ruler span {
+    flex: 1;
+    color: var(--text-dim);
+    font-size: 9px;
+    text-align: left;
+  }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: #080a0f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin: 10px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #cbd5e1;
+  }
+  .code-block .kw  { color: var(--magenta); }
+  .code-block .ty  { color: var(--cyan); }
+  .code-block .fn  { color: var(--gold); }
+  .code-block .cm  { color: var(--text-dim); font-style: italic; }
+  .code-block .st  { color: var(--green); }
+  .code-block .nm  { color: #f97316; }
+
+  /* ── CPD STRIP ── */
+  .cpd-strip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 48px;
+  }
+  .cpd-strip-header {
+    background: var(--surface2);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .cpd-row {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .cpd-row:last-child { border-bottom: none; }
+  .cpd-grade {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    border-right: 1px solid var(--border);
+  }
+  .cpd-grade.a { color: #fbbf24; background: rgba(251,191,36,.08); }
+  .cpd-grade.b { color: #a78bfa; background: rgba(167,139,250,.08); }
+  .cpd-grade.c { color: var(--cyan); background: rgba(34,211,238,.05); }
+  .cpd-grade.d { color: #94a3b8; background: rgba(148,163,184,.05); }
+  .cpd-grade.e { color: #64748b; background: rgba(100,116,139,.05); }
+  .cpd-desc {
+    padding: 11px 16px;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+
+  /* ── TIERED TASKS ── */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 14px 0;
+  }
+  .tier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 14px 16px;
+  }
+  .tier-card .tc-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tier-card.basic    .tc-label { color: var(--green); }
+  .tier-card.inter    .tc-label { color: var(--cyan); }
+  .tier-card.advanced .tc-label { color: var(--magenta); }
+  .tier-card h4 {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .tier-card p { font-size: 12.5px; color: var(--text-soft); }
+
+  /* ── NOTEBOOK ── */
+  .notebook-prompts {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--magenta);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-top: 12px;
+  }
+  .notebook-prompts h3 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--magenta);
+    margin-bottom: 10px;
+  }
+  .notebook-prompts ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .notebook-prompts li {
+    font-size: 13px;
+    color: var(--text-soft);
+    padding-left: 18px;
+    position: relative;
+  }
+  .notebook-prompts li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--magenta);
+  }
+
+  /* ── KEY TERMS ── */
+  .key-terms {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .kt-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  .kt-item dt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin-bottom: 3px;
+  }
+  .kt-item dd {
+    font-size: 12.5px;
+    color: var(--text-soft);
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 780px) {
+    .page-body { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    main { padding: 24px 20px 60px; }
+    .tier-grid { grid-template-columns: 1fr; }
+    .goal-grid { grid-template-columns: 1fr; }
+    .key-terms { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="page-header">
+  <div class="logo-mark">&lt;CT/&gt;</div>
+  <div class="header-text">
+    <h1>Unity 6 — <span>Simple Cutscene</span> with Timeline</h1>
+    <div class="header-meta">
+      <span class="pill cyan">Game Development</span>
+      <span class="pill gold">Year 10 · Stage 5</span>
+      <span class="pill">Unity 6 · URP</span>
+      <span class="pill green">Beginner</span>
+      <span class="pill mag">CT5-OPL-01 · CT5-DES-01 · CT5-THI-01</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── BODY ── -->
+<div class="page-body">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-label">Steps</div>
+    <nav id="sidenav">
+      <a href="#concepts" class="active"><span class="step-num">0</span> Core Concepts</a>
+      <a href="#step1"><span class="step-num">1</span> Scene Setup</a>
+      <a href="#step2"><span class="step-num">2</span> Create Timeline</a>
+      <a href="#step3"><span class="step-num">3</span> Camera Track</a>
+      <a href="#step4"><span class="step-num">4</span> Object Animation</a>
+      <a href="#step5"><span class="step-num">5</span> Play &amp; Refine</a>
+      <a href="#tasks"><span class="step-num">✓</span> Tasks</a>
+    </nav>
+    <hr class="sidebar-divider">
+    <div class="sidebar-label">Outcomes</div>
+    <div class="outcome-tags">
+      <span>CT5-OPL-01</span>
+      <span>CT5-DES-01</span>
+      <span>CT5-THI-01</span>
+      <span>CT5-EVL-01</span>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-label">D&amp;P Phase</div>
+    <div class="outcome-tags">
+      <span style="color:var(--gold); border-color:#78350f; background:rgba(251,191,36,.08)">Producing</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- INTRO -->
+    <div class="intro-card">
+      <h2>What you'll build</h2>
+      <p>A short automated cutscene that plays when your game starts. The camera glides from one position to another while a 3D object rotates and scales into view — all without writing a single line of C#.</p>
+      <p>Timeline is Unity's built-in cinematic sequencer. Once you know how it works, you can use it for game intros, boss reveals, dialogue sequences, and ending screens.</p>
+      <div class="goal-grid">
+        <div class="goal-item">
+          <div class="gi-label">Duration</div>
+          <div class="gi-val">~60 minutes</div>
+        </div>
+        <div class="goal-item">
+          <div class="gi-label">Engine</div>
+          <div class="gi-val">Unity 6 (URP)</div>
+        </div>
+        <div class="goal-item">
+          <div class="gi-label">Prerequisites</div>
+          <div class="gi-val">Basic scene navigation</div>
+        </div>
+        <div class="goal-item">
+          <div class="gi-label">Code required</div>
+          <div class="gi-val">None for core task</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 0: CONCEPTS ── -->
+    <section class="step-section" id="concepts">
+      <div class="step-header">
+        <div class="step-badge">0</div>
+        <div class="step-title-group">
+          <h2>Core Concepts — What is a Timeline?</h2>
+          <p>Read before you open Unity</p>
+        </div>
+      </div>
+
+      <div class="concept-box">
+        <strong>Timeline</strong> is like a video editor built into Unity. Instead of cutting clips together, you drag <em>keyframes</em> that tell your GameObjects where to be, what rotation to have, and what properties to hold — at every moment in time.
+      </div>
+
+      <div class="analogy-rail">
+        <div class="ar-item">
+          <span class="ar-emoji">🎬</span>
+          <span class="ar-label">Playable Director</span>
+          <span class="ar-desc">The "projector" — plays the whole sequence on command</span>
+        </div>
+        <div class="ar-item">
+          <span class="ar-emoji">🎞️</span>
+          <span class="ar-label">Track</span>
+          <span class="ar-desc">A row in the timeline — one track per object or property</span>
+        </div>
+        <div class="ar-item">
+          <span class="ar-emoji">🟦</span>
+          <span class="ar-label">Clip / Keyframe</span>
+          <span class="ar-desc">A block on a track that records a change over time</span>
+        </div>
+      </div>
+
+      <dl class="key-terms">
+        <div class="kt-item"><dt>Playable Director</dt><dd>Component on a GameObject that controls when a Timeline plays</dd></div>
+        <div class="kt-item"><dt>Animation Track</dt><dd>Records position, rotation, scale changes for one object</dd></div>
+        <div class="kt-item"><dt>Keyframe</dt><dd>A snapshot of a value at a specific time; Unity interpolates between them</dd></div>
+        <div class="kt-item"><dt>Interpolation</dt><dd>The automatic in-between frames Unity calculates from your keyframes</dd></div>
+        <div class="kt-item"><dt>Cinemachine</dt><dd>Advanced camera system; not required here but extends Timeline later</dd></div>
+        <div class="kt-item"><dt>Play on Awake</dt><dd>Setting that makes the Timeline run as soon as the scene loads</dd></div>
+      </dl>
+
+      <div class="window-diagram">
+        <div class="wd-titlebar">
+          <div class="wd-dot" style="background:#ff5f56"></div>
+          <div class="wd-dot" style="background:#febc2e"></div>
+          <div class="wd-dot" style="background:#27c840"></div>
+          <span>Timeline — CutsceneDirector (Preview)</span>
+        </div>
+        <div class="wd-body">
+          <div class="wd-ruler">
+            <span>0s</span><span>1s</span><span>2s</span><span>3s</span><span>4s</span>
+          </div>
+          <div class="wd-track">
+            <div class="wd-track-label">📷 Main Camera</div>
+            <div class="wd-track-bar bar-cyan" style="width:300px">Camera Move ▶ 0:00 – 3:00</div>
+          </div>
+          <div class="wd-track">
+            <div class="wd-track-label">🟦 Prop (Cube)</div>
+            <div class="wd-track-bar bar-magenta" style="width:200px; margin-left:50px">Scale &amp; Rotate ▶ 0:30 – 2:30</div>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:var(--text-dim); margin-top:4px;">↑ A simple two-track cutscene. The camera moves throughout; the prop animates after a half-second delay.</p>
+    </section>
+
+    <!-- ── STEP 1 ── -->
+    <section class="step-section" id="step1">
+      <div class="step-header">
+        <div class="step-badge">1</div>
+        <div class="step-title-group">
+          <h2>Set Up Your Scene</h2>
+          <p>Create the objects the cutscene will animate</p>
+        </div>
+      </div>
+
+      <div class="callout tip"><span class="icon">💡</span><span>If you already have a game scene open, you can skip 1a–1c and use your existing camera and a prop from your scene instead.</span></div>
+
+      <ul class="action-list">
+        <li>Create a new scene: <span class="menu-path"><span class="hl">File</span><span class="sep"> › </span><span class="hl">New Scene</span><span class="sep"> › </span><span class="hl">Basic (URP)</span></span></li>
+        <li>Add a subject for the camera to film. In the Hierarchy right-click: <span class="menu-path"><span class="hl">3D Object</span><span class="sep"> › </span><span class="hl">Cube</span></span> — rename it <code style="font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:12px">CutsceneProp</code></li>
+        <li>Move the Cube to roughly <strong>Position (0, 0, 5)</strong> in the Inspector Transform so the camera can see it.</li>
+        <li>Select <strong>Main Camera</strong> in the Hierarchy. Note its starting position — you'll return to it in Step 3.</li>
+      </ul>
+
+      <div class="callout warn"><span class="icon">⚠️</span><span>Make sure the camera's <strong>Clear Flags</strong> is set to <em>Skybox</em> so you get a visible background in the cutscene.</span></div>
+    </section>
+
+    <!-- ── STEP 2 ── -->
+    <section class="step-section" id="step2">
+      <div class="step-header">
+        <div class="step-badge">2</div>
+        <div class="step-title-group">
+          <h2>Create the Timeline Asset</h2>
+          <p>Open the Timeline window and create a Playable Director</p>
+        </div>
+      </div>
+
+      <ul class="action-list">
+        <li>Open the Timeline window: <span class="menu-path"><span class="hl">Window</span><span class="sep"> › </span><span class="hl">Sequencing</span><span class="sep"> › </span><span class="hl">Timeline</span></span></li>
+        <li>In the <strong>Hierarchy</strong>, create an empty GameObject: right-click → <span class="menu-path"><span class="hl">Create Empty</span></span>. Name it <code style="font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:12px">CutsceneDirector</code>.</li>
+        <li>Select <strong>CutsceneDirector</strong> in the Hierarchy. In the Timeline window you'll see a prompt — click <strong>Create</strong>.</li>
+        <li>A save dialog appears. Save the Timeline asset as <code style="font-family:'JetBrains Mono',monospace;color:var(--cyan);font-size:12px">IntroCutscene.playable</code> inside your <strong>Assets</strong> folder.</li>
+      </ul>
+
+      <div class="concept-box">
+        Unity has now added a <strong>Playable Director</strong> component to your <em>CutsceneDirector</em> GameObject, and linked it to the <em>IntroCutscene.playable</em> asset. The Timeline window is now showing that asset — this is where all your tracks will live.
+      </div>
+
+      <ul class="action-list" style="counter-reset:ac 4">
+        <li>In the Inspector on <strong>CutsceneDirector</strong>, make sure <strong>Play On Awake</strong> is ticked — this makes the cutscene play automatically when you press Play.</li>
+      </ul>
+    </section>
+
+    <!-- ── STEP 3 ── -->
+    <section class="step-section" id="step3">
+      <div class="step-header">
+        <div class="step-badge">3</div>
+        <div class="step-title-group">
+          <h2>Animate the Camera</h2>
+          <p>Create an Animation Track and record two keyframes</p>
+        </div>
+      </div>
+
+      <ul class="action-list">
+        <li>In the <strong>Timeline window</strong>, click the <strong>+ (Add)</strong> button on the left side and choose <span class="menu-path"><span class="hl">Animation Track</span></span>.</li>
+        <li>A track row appears. Drag <strong>Main Camera</strong> from the Hierarchy into the track's object slot (the empty field on the left of the track).</li>
+        <li>Click the <strong>red record button</strong> (●) on the track — the Timeline enters record mode and the Scene View gets a red border.</li>
+      </ul>
+
+      <div class="callout warn"><span class="icon">⚠️</span><span>While the red record button is active, any Transform changes you make in the Inspector or Scene are automatically saved as keyframes. Don't move the camera outside of recording mode by accident!</span></div>
+
+      <ul class="action-list" style="counter-reset:ac 3">
+        <li>Make sure the <strong>playhead</strong> (the white vertical line) is at <strong>0:00</strong>. In the Inspector, set Camera Position to your desired <em>start</em> position, e.g. <strong>(-3, 2, -1)</strong>. A keyframe diamond appears on the track at time 0.</li>
+        <li>Drag the playhead to <strong>3:00</strong> (3 seconds). In the Inspector, change Camera Position to your desired <em>end</em> position, e.g. <strong>(0, 1, -5)</strong>. Another keyframe is added.</li>
+        <li>Click the <strong>red record button</strong> again to exit record mode.</li>
+      </ul>
+
+      <div class="concept-box">
+        Unity will now <strong>interpolate</strong> (automatically calculate) all the in-between frames, creating a smooth camera glide from position A to position B over 3 seconds.
+      </div>
+
+      <div class="callout tip"><span class="icon">💡</span><span><strong>Test it:</strong> press the play button <em>inside the Timeline window</em> (not the main Play button) to preview just the camera move in the Scene View without entering Play mode.</span></div>
+    </section>
+
+    <!-- ── STEP 4 ── -->
+    <section class="step-section" id="step4">
+      <div class="step-header">
+        <div class="step-badge">4</div>
+        <div class="step-title-group">
+          <h2>Animate the Prop</h2>
+          <p>Add a second track to rotate and scale the CutsceneProp</p>
+        </div>
+      </div>
+
+      <ul class="action-list">
+        <li>Click <strong>+</strong> in the Timeline window again and add another <span class="menu-path"><span class="hl">Animation Track</span></span>. Drag <strong>CutsceneProp</strong> from the Hierarchy into its object slot.</li>
+        <li>Click the <strong>red record button</strong> on the new track.</li>
+        <li>Move the playhead to <strong>0:15</strong> (15 frames / 0.5 seconds). In the Inspector, set the Prop's <strong>Scale to (0, 0, 0)</strong> and <strong>Rotation to (0, 0, 0)</strong>. Keyframe saved.</li>
+        <li>Move the playhead to <strong>1:15</strong> (1.5 seconds). Set <strong>Scale to (1, 1, 1)</strong> and <strong>Rotation Y to 180</strong>. This creates a spin-in effect.</li>
+        <li>Click the <strong>red record button</strong> to exit record mode.</li>
+      </ul>
+
+      <div class="concept-box">
+        Your Timeline now has two tracks running simultaneously. The camera glides over 3 seconds while the prop spins into view half a second after the cutscene starts.
+      </div>
+
+      <div class="callout tip"><span class="icon">💡</span><span><strong>Easing curves:</strong> right-click any keyframe diamond → <em>Edit Keys</em> to open the Animation Curve editor. Switch from <em>Linear</em> to <em>Ease In/Out</em> for smoother, more cinematic movement.</span></div>
+    </section>
+
+    <!-- ── STEP 5 ── -->
+    <section class="step-section" id="step5">
+      <div class="step-header">
+        <div class="step-badge">5</div>
+        <div class="step-title-group">
+          <h2>Play &amp; Refine</h2>
+          <p>Test the full cutscene in Play mode and polish</p>
+        </div>
+      </div>
+
+      <ul class="action-list">
+        <li>Press the main <strong>▶ Play</strong> button. The cutscene should begin automatically because <em>Play on Awake</em> is enabled.</li>
+        <li>Watch the Game View. Does the camera move feel too fast? Too slow? Too jerky?</li>
+        <li>Exit Play mode and adjust: drag keyframes left/right on the track to change timing, or right-click keyframes to adjust easing curves.</li>
+        <li>If the camera snaps back to its original position <em>after</em> the cutscene ends, you need to decide what happens next — see the Advanced task below.</li>
+      </ul>
+
+      <div class="callout goal">
+        <span class="icon">✅</span>
+        <span><strong>Working cutscene checklist:</strong> camera starts at position A and glides to position B · prop starts invisible (scale 0) and spins into view · both animations complete before the Timeline ends · no jerky jumps between keyframes.</span>
+      </div>
+
+      <div class="callout tip"><span class="icon">💡</span><span><strong>Stop the cutscene with code (optional, Advanced):</strong> if you want to trigger game logic after the cutscene finishes, attach this tiny script to your CutsceneDirector GameObject:</span></div>
+
+      <div class="code-block">
+<span class="kw">using</span> UnityEngine;
+<span class="kw">using</span> UnityEngine.Playables;
+
+<span class="kw">public class</span> <span class="ty">CutsceneEnd</span> : <span class="ty">MonoBehaviour</span>
+{
+    <span class="kw">private</span> <span class="ty">PlayableDirector</span> director;
+
+    <span class="kw">void</span> <span class="fn">Start</span>()
+    {
+        director = <span class="fn">GetComponent</span>&lt;<span class="ty">PlayableDirector</span>&gt;();
+        director.stopped += <span class="fn">OnCutsceneEnd</span>;   <span class="cm">// subscribe to event</span>
+    }
+
+    <span class="kw">void</span> <span class="fn">OnCutsceneEnd</span>(<span class="ty">PlayableDirector</span> pd)
+    {
+        Debug.<span class="fn">Log</span>(<span class="st">"Cutscene finished — start game logic here"</span>);
+        <span class="cm">// e.g. SceneManager.LoadScene("Level1");</span>
+    }
+}
+      </div>
+    </section>
+
+    <!-- ── TASKS ── -->
+    <section class="step-section" id="tasks">
+      <div class="step-header">
+        <div class="step-badge">✓</div>
+        <div class="step-title-group">
+          <h2>Your Tasks</h2>
+          <p>Choose the level that matches where you are</p>
+        </div>
+      </div>
+
+      <div class="tier-grid">
+        <div class="tier-card basic">
+          <div class="tc-label">Basic</div>
+          <h4>It moves!</h4>
+          <p>Complete all 5 steps. Your cutscene has a camera glide and a prop that scales in. Press Play and it runs automatically. Take a screenshot of your Timeline window showing two tracks with keyframes.</p>
+        </div>
+        <div class="tier-card inter">
+          <div class="tc-label">Intermediate</div>
+          <h4>Polish the feel</h4>
+          <p>Apply <em>Ease In/Out</em> curves to at least two keyframes. Add a third track animating a <em>second</em> prop (e.g. a Sphere that drops from above). Record a short screen capture of your cutscene playing.</p>
+        </div>
+        <div class="tier-card advanced">
+          <div class="tc-label">Advanced</div>
+          <h4>Trigger the game</h4>
+          <p>Add the <code style="font-family:'JetBrains Mono',monospace;font-size:11px">CutsceneEnd</code> script. When the cutscene finishes, load a new scene or activate a previously disabled HUD Canvas. Document what event is being used and why events are better than checking state in Update().</p>
+        </div>
+      </div>
+
+      <!-- Notebook prompts -->
+      <div class="notebook-prompts">
+        <h3>📓 Project Notebook Prompts</h3>
+        <ul>
+          <li>What is the difference between a <em>keyframe</em> and an <em>animation clip</em>? Use an analogy from outside computing.</li>
+          <li>How does Unity's Timeline change the <em>sequence</em> of what the player sees? Link this to the D&amp;P Producing &amp; Implementing phase.</li>
+          <li>What decisions did you make about timing and easing? What effect were you trying to create, and how did you test whether it worked?</li>
+          <li>How could a cutscene affect a player's experience of your game? Consider engagement, context-setting, and accessibility.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ── CPD STRIP ── -->
+    <div class="cpd-strip">
+      <div class="cpd-strip-header">Course Performance Descriptors — Timeline &amp; Animation</div>
+      <div class="cpd-row">
+        <div class="cpd-grade a">A</div>
+        <div class="cpd-desc">Designs and implements a technically concise multi-track cutscene with eased interpolation; uses event-driven code to trigger game logic after the sequence; evaluates timing decisions against intended player experience.</div>
+      </div>
+      <div class="cpd-row">
+        <div class="cpd-grade b">B</div>
+        <div class="cpd-desc">Produces a functional cutscene with smooth camera and object animation; applies animation curves and can articulate the difference between linear and eased interpolation.</div>
+      </div>
+      <div class="cpd-row">
+        <div class="cpd-grade c">C</div>
+        <div class="cpd-desc">Creates a working Timeline with at least two tracks; records keyframes that produce visible movement; tests playback and identifies what is and isn't working.</div>
+      </div>
+      <div class="cpd-row">
+        <div class="cpd-grade d">D</div>
+        <div class="cpd-desc">Sets up a Timeline asset and records at least one keyframe on one track with teacher support; can play back the sequence.</div>
+      </div>
+      <div class="cpd-row">
+        <div class="cpd-grade e">E</div>
+        <div class="cpd-desc">Identifies that Timeline is used to sequence animations in Unity; with guidance, locates the Timeline window and creates a Director object.</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Sidebar active-link tracking via IntersectionObserver
+  const sections = document.querySelectorAll('.step-section');
+  const navLinks  = document.querySelectorAll('#sidenav a');
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const id = entry.target.id;
+        const active = document.querySelector(`#sidenav a[href="#${id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => obs.observe(s));
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
