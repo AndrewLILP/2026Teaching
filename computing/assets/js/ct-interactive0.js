@@ -83,9 +83,8 @@
           });
 
           // Show feedback text
-          // Note: data-feedback-a → dataset.feedbackA (browser camelCases hyphenated keys)
           if (feedback) {
-            var msg = card.dataset['feedback' + chosen.toUpperCase()] || '';
+            var msg = card.dataset['feedback' + chosen.toUpperCase()]  // → 'feedbackA' ✓
             feedback.innerHTML = msg;
             feedback.className = 'mcq-feedback visible ' + (isCorrect ? 'correct' : 'incorrect');
           }
@@ -322,85 +321,4 @@
   ].join('\n');
 
   document.head.appendChild(style);
-}());
-
-
-/* ─────────────────────────────────────────────────────────────
-   LANGUAGE TAB SWITCHER
-   .lang-tabs > .lang-tab[data-lang="py|js|combo"]
-   .lang-panel[data-lang="py|js|combo"]
-───────────────────────────────────────────────────────────── */
-
-(function initLangTabs() {
-  var tabGroups = document.querySelectorAll('.lang-tabs');
-  if (!tabGroups.length) return;
-
-  tabGroups.forEach(function (tabBar) {
-    var tabs   = tabBar.querySelectorAll('.lang-tab');
-    // panels are siblings of the tabBar's parent section
-    var section = tabBar.closest('.content-section') || tabBar.parentElement;
-    var panels  = section.querySelectorAll('.lang-panel');
-
-    function activateTab(targetLang) {
-      tabs.forEach(function (t) {
-        var active = t.dataset.lang === targetLang;
-        t.classList.toggle('is-active', active);
-        t.setAttribute('aria-selected', String(active));
-      });
-      panels.forEach(function (p) {
-        p.classList.toggle('is-active', p.dataset.lang === targetLang);
-      });
-      // Persist choice
-      try { localStorage.setItem('ct-lang-pref', targetLang); } catch (e) {}
-    }
-
-    tabs.forEach(function (tab) {
-      tab.setAttribute('role', 'tab');
-      tab.addEventListener('click', function () { activateTab(tab.dataset.lang); });
-      tab.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateTab(tab.dataset.lang); }
-        // Arrow key navigation between tabs
-        var idx = Array.from(tabs).indexOf(tab);
-        if (e.key === 'ArrowRight' && idx < tabs.length - 1) { tabs[idx + 1].focus(); tabs[idx + 1].click(); }
-        if (e.key === 'ArrowLeft'  && idx > 0)               { tabs[idx - 1].focus(); tabs[idx - 1].click(); }
-      });
-    });
-
-    // Restore saved preference or activate first tab
-    var saved = 'py';
-    try { saved = localStorage.getItem('ct-lang-pref') || 'py'; } catch (e) {}
-    var hasSaved = Array.from(tabs).some(function (t) { return t.dataset.lang === saved; });
-    activateTab(hasSaved ? saved : (tabs[0] ? tabs[0].dataset.lang : 'py'));
-  });
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLangTabs);
-  }
-}());
-
-
-/* ─────────────────────────────────────────────────────────────
-   BUG DETECTIVE — reveal answer on button click
-   .bug-reveal-btn reveals .bug-detective__reveal in same .bug-detective
-───────────────────────────────────────────────────────────── */
-
-(function initBugDetective() {
-  function setup() {
-    document.querySelectorAll('.bug-reveal-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var card   = btn.closest('.bug-detective');
-        var reveal = card && card.querySelector('.bug-detective__reveal');
-        if (!reveal) return;
-        reveal.classList.add('visible');
-        btn.disabled = true;
-        btn.textContent = '✓ Answer revealed';
-        btn.style.opacity = '0.5';
-      });
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setup);
-  } else {
-    setup();
-  }
 }());
