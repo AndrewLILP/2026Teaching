@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notebook — SD: Building Mechatronic &amp; Automated Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #13161e;
+    --surface2:  #1a1e2a;
+    --border:    #252836;
+    --border2:   #2e3347;
+
+    --accent:    #8b5cf6;
+    --accent2:   #a78bfa;
+    --accent3:   #c4b5fd;
+
+    /* Phase colours — same as other notebooks */
+    --id-col:   #06b6d4;
+    --rp-col:   #8b5cf6;
+    --pi-col:   #10b981;
+    --te-col:   #f59e0b;
+
+    /* Mechatronics-specific component colours */
+    --sensor-col:   #06b6d4;   /* cyan — sensors/inputs */
+    --actuator-col: #f59e0b;   /* amber — actuators/outputs */
+    --logic-col:    #10b981;   /* emerald — control logic */
+
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --faint:     #475569;
+    --y9:        #06b6d4;
+    --y10:       #8b5cf6;
+
+    --font-body: 'Nunito', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius:    10px;
+    --sidebar-w: 230px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .ct-mark { font-family: var(--font-mono); font-size: 13px; color: #8b7cf6; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+  .sidebar-logo .unit-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .sidebar-logo .unit-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; margin-top: 3px; }
+
+  .year-toggle { display: flex; margin: 14px 14px 0; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; }
+  .year-btn { flex: 1; padding: 6px 0; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.18s; background: transparent; color: var(--muted); letter-spacing: 0.04em; }
+  .year-btn.active-y9  { background: var(--y9);  color: #0b0d12; }
+  .year-btn.active-y10 { background: var(--y10); color: #fff; }
+
+  .nav-section { margin-top: 16px; }
+  .nav-phase-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 0 16px 6px; display: flex; align-items: center; gap: 7px; }
+  .nav-phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; font-size: 13px; font-weight: 600; color: var(--muted); border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); border-left-color: var(--phase-col, var(--accent)); background: rgba(139,92,246,0.08); }
+  .nav-item .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--phase-col, var(--faint)); flex-shrink: 0; transition: opacity 0.2s; }
+  .nav-item:not(.active) .nav-dot { opacity: 0.35; }
+  .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.05em; margin-left: auto; }
+  .badge-y9   { background: rgba(6,182,212,0.18);  color: var(--y9); }
+  .badge-y10  { background: rgba(139,92,246,0.18); color: var(--y10); }
+  .badge-both { background: rgba(139,92,246,0.1);  color: var(--accent3); }
+
+  .sidebar-cpd { margin: auto 14px 14px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); }
+  .sidebar-cpd .cpd-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .cpd-bar-track { display: flex; gap: 3px; margin-bottom: 8px; }
+  .cpd-bar-seg { flex: 1; height: 6px; border-radius: 3px; background: var(--border2); cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .cpd-bar-seg:hover { transform: scaleY(1.4); }
+  .cpd-bar-seg[data-grade="E"].lit { background: #64748b; }
+  .cpd-bar-seg[data-grade="D"].lit { background: #f59e0b; }
+  .cpd-bar-seg[data-grade="C"].lit { background: #10b981; }
+  .cpd-bar-seg[data-grade="B"].lit { background: #06b6d4; }
+  .cpd-bar-seg[data-grade="A"].lit { background: #8b5cf6; }
+  .cpd-grade-display { text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--muted); transition: color 0.2s; }
+  .cpd-desc { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; min-height: 42px; }
+
+  /* ── MAIN ── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .topbar-phase-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.06em; }
+  .topbar-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .outcome-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: var(--accent3); }
+  .content { padding: 32px 36px 60px; max-width: 860px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-header { margin-bottom: 28px; }
+  .section-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px; }
+  .section-title { font-size: 26px; font-weight: 900; line-height: 1.15; color: var(--text); margin-bottom: 8px; }
+  .section-subtitle { font-size: 14px; color: var(--muted); max-width: 640px; line-height: 1.6; }
+
+  .year-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 24px; border-left: 4px solid; }
+  .year-banner.y9  { background: rgba(6,182,212,0.08);  border-color: var(--y9);  color: var(--y9); }
+  .year-banner.y10 { background: rgba(139,92,246,0.08); border-color: var(--y10); color: var(--y10); }
+  .year-banner .banner-note { color: var(--muted); font-weight: 600; margin-left: 4px; }
+
+  .prompt-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); margin-bottom: 18px; overflow: hidden; }
+  .prompt-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; gap: 12px; }
+  .prompt-card-header:hover { background: rgba(255,255,255,0.02); }
+  .prompt-card-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .prompt-card-title .card-icon { font-size: 16px; width: 28px; text-align: center; }
+  .prompt-card-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chevron { width: 18px; height: 18px; color: var(--faint); transition: transform 0.2s; flex-shrink: 0; }
+  .prompt-card.open .chevron { transform: rotate(180deg); }
+  .prompt-card-body { display: none; padding: 18px 18px 20px; }
+  .prompt-card.open .prompt-card-body { display: block; }
+
+  .prompts-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .prompts-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .prompt-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--faint); min-width: 22px; padding-top: 1px; }
+  .prompt-text { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .prompt-text strong { color: var(--text); font-weight: 700; }
+  .prompt-text code { font-family: var(--font-mono); font-size: 12px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--accent3); }
+
+  .cpd-lift { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(139,92,246,0.07); border: 1px solid rgba(139,92,246,0.2); border-radius: 7px; margin-top: 14px; font-size: 12.5px; color: var(--accent3); line-height: 1.5; }
+  .cpd-lift-icon { flex-shrink: 0; font-size: 14px; padding-top: 1px; }
+
+  .response-hint { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 14px; font-family: var(--font-mono); }
+  .response-hint::before, .response-hint::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .seqta-note { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent); border-radius: 7px; font-size: 13px; color: var(--muted); margin-top: 18px; }
+  .seqta-note strong { color: var(--text); }
+
+  .info-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .info-box-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .info-box p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  .sprint-log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .sprint-log-grid .full-width { grid-column: 1 / -1; }
+  .log-field { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; }
+  .log-field-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faint); margin-bottom: 6px; }
+  .log-field-prompt { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .code-hint { background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
+  .code-hint-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .code-hint pre { font-family: var(--font-mono); font-size: 12.5px; color: #64748b; line-height: 1.7; white-space: pre; }
+  .code-hint pre .kw  { color: var(--accent2); }
+  .code-hint pre .cm  { color: #475569; font-style: italic; }
+  .code-hint pre .str { color: #10b981; }
+  .code-hint pre .num { color: #f59e0b; }
+
+  /* Test table */
+  .test-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  .test-table th { text-align: left; padding: 10px 12px; background: var(--surface2); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); border-bottom: 1px solid var(--border2); }
+  .test-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .test-table tr:last-child td { border-bottom: none; }
+  .test-table .pass { color: #10b981; font-weight: 700; }
+  .test-table .fail { color: #f87171; font-weight: 700; }
+  .test-table .partial { color: #f59e0b; font-weight: 700; }
+
+  /* Mechatronics-specific: component pill tags */
+  .component-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; }
+  .pill-sensor   { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.3);  color: #06b6d4; }
+  .pill-actuator { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+  .pill-logic    { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
+
+  /* Block diagram visual hint */
+  .block-diagram {
+    background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 20px; margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 0; overflow-x: auto;
+  }
+  .bd-block { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 90px; }
+  .bd-box { border-radius: 6px; padding: 8px 12px; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 0.04em; min-width: 80px; }
+  .bd-box.sensor-box   { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.4);  color: #06b6d4; }
+  .bd-box.logic-box    { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.4); color: var(--accent2); }
+  .bd-box.actuator-box { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: #f59e0b; }
+  .bd-label { font-size: 10px; color: var(--faint); text-align: center; font-family: var(--font-mono); }
+  .bd-arrow { font-size: 20px; color: var(--faint); padding: 0 8px; padding-bottom: 12px; }
+
+  /* I/O table */
+  .io-table-hint { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-top: 14px; }
+  .io-table-hint table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .io-table-hint th { padding: 9px 14px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); border-bottom: 1px solid var(--border2); text-align: left; }
+  .io-table-hint td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .io-table-hint tr:last-child td { border-bottom: none; }
+  .io-type-sensor   { color: #06b6d4; font-weight: 700; }
+  .io-type-actuator { color: #f59e0b; font-weight: 700; }
+  .io-type-logic    { color: #10b981; font-weight: 700; }
+
+  /* Intro */
+  .intro-hero { padding: 40px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .intro-hero .hero-eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .intro-hero h1 { font-size: 32px; font-weight: 900; line-height: 1.1; color: var(--text); margin-bottom: 14px; }
+  .intro-hero h1 span { color: var(--accent2); }
+  .intro-hero p { font-size: 15px; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+  .phase-overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .phase-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: transform 0.15s, border-color 0.15s; border-top: 3px solid var(--phase-col); }
+  .phase-card:hover { transform: translateY(-2px); border-color: var(--phase-col); }
+  .phase-card .phase-name { font-size: 12px; font-weight: 800; color: var(--phase-col); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .phase-card .phase-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+  .year-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+  .year-info-card { padding: 16px 18px; border-radius: var(--radius); border: 1px solid; }
+  .year-info-card.y9  { background: rgba(6,182,212,0.06);  border-color: rgba(6,182,212,0.3); }
+  .year-info-card.y10 { background: rgba(139,92,246,0.06); border-color: rgba(139,92,246,0.3); }
+  .year-info-card .yic-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .y9 .yic-label  { color: var(--y9); }
+  .y10 .yic-label { color: var(--y10); }
+  .year-info-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* component legend */
+  .component-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  /* CPD full */
+  .cpd-full-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+  .cpd-full-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; border-top: 3px solid var(--border2); }
+  .cpd-full-card:hover { transform: translateY(-2px); }
+  .cpd-full-card[data-grade="E"] { border-top-color: #64748b; }
+  .cpd-full-card[data-grade="D"] { border-top-color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] { border-top-color: #10b981; }
+  .cpd-full-card[data-grade="B"] { border-top-color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] { border-top-color: #8b5cf6; }
+  .cpd-full-card.selected { border-color: var(--accent2); background: rgba(139,92,246,0.1); }
+  .cpd-grade-letter { font-family: var(--font-mono); font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .cpd-full-card[data-grade="E"] .cpd-grade-letter { color: #64748b; }
+  .cpd-full-card[data-grade="D"] .cpd-grade-letter { color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] .cpd-grade-letter { color: #10b981; }
+  .cpd-full-card[data-grade="B"] .cpd-grade-letter { color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] .cpd-grade-letter { color: #8b5cf6; }
+  .cpd-descriptor-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .cpd-descriptor-list li { font-size: 11.5px; color: var(--muted); line-height: 1.4; padding-left: 10px; position: relative; }
+  .cpd-descriptor-list li::before { content: '›'; position: absolute; left: 0; color: var(--faint); }
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 200px; } .main { margin-left: 200px; }
+    .content { padding: 20px 18px 40px; }
+    .cpd-full-grid { grid-template-columns: repeat(3,1fr); }
+    .phase-overview-grid { grid-template-columns: 1fr 1fr; }
+    .sprint-log-grid { grid-template-columns: 1fr; }
+    .block-diagram { flex-direction: column; }
+    .bd-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <span class="ct-mark">&lt;CT/&gt;</span>
+      <div class="unit-label">Year 9 / 10 · Stage 5</div>
+      <div class="unit-name">SD: Mechatronic &amp;<br>Automated Systems<br>Project Notebook</div>
+    </div>
+
+    <div class="year-toggle">
+      <button class="year-btn active-y9" id="btn-y9" onclick="setYear(9)">Year 9</button>
+      <button class="year-btn" id="btn-y10" onclick="setYear(10)">Year 10</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item active" data-panel="intro" style="--phase-col:#8b5cf6" onclick="showPanel('intro')">
+        <span class="nav-dot"></span> Overview
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--id-col)">Identifying &amp; Defining</div>
+      <div class="nav-item" data-panel="id-problem" style="--phase-col:var(--id-col)" onclick="showPanel('id-problem')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Problem &amp; Purpose
+      </div>
+      <div class="nav-item" data-panel="id-system" style="--phase-col:var(--id-col)" onclick="showPanel('id-system')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> System Design
+      </div>
+      <div class="nav-item" data-panel="id-requirements" style="--phase-col:var(--id-col)" onclick="showPanel('id-requirements')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Requirements &amp; Constraints
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--rp-col)">Researching &amp; Planning</div>
+      <div class="nav-item" data-panel="rp-analysis" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-analysis')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Existing Systems Analysis
+      </div>
+      <div class="nav-item" data-panel="rp-components" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-components')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Component Planning
+      </div>
+      <div class="nav-item" data-panel="rp-algorithms" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-algorithms')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Pseudocode &amp; Flowcharts
+      </div>
+      <div class="nav-item" data-panel="rp-plan" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-plan')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Project Plan
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+      <div class="nav-item nav-y9-only" data-panel="pi-tutorials" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-tutorials')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Tutorials &amp; Prototyping
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y9-only" data-panel="pi-pm" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-pm')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Project Management
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-sprint" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-sprint')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Build Logs
+        <span class="badge badge-y10">Y10</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-code" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-code')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Code &amp; Wiring
+        <span class="badge badge-y10">Y10</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+      <div class="nav-item" data-panel="te-physical" style="--phase-col:var(--te-col)" onclick="showPanel('te-physical')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Physical Test Log
+      </div>
+      <div class="nav-item" data-panel="te-eval" style="--phase-col:var(--te-col)" onclick="showPanel('te-eval')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Evaluation
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" data-panel="cpd" style="--phase-col:var(--accent)" onclick="showPanel('cpd')">
+        <span class="nav-dot"></span> Grade Self-Assessment
+      </div>
+    </div>
+
+    <div class="sidebar-cpd" style="margin-top:16px">
+      <div class="cpd-label">Current target grade</div>
+      <div class="cpd-bar-track">
+        <div class="cpd-bar-seg" data-grade="E" onclick="setCPD('E')"></div>
+        <div class="cpd-bar-seg" data-grade="D" onclick="setCPD('D')"></div>
+        <div class="cpd-bar-seg" data-grade="C" onclick="setCPD('C')"></div>
+        <div class="cpd-bar-seg" data-grade="B" onclick="setCPD('B')"></div>
+        <div class="cpd-bar-seg" data-grade="A" onclick="setCPD('A')"></div>
+      </div>
+      <div class="cpd-grade-display" id="cpd-display">—</div>
+      <div class="cpd-desc" id="cpd-sidebar-desc">Click a segment above to set your target grade.</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <span id="topbar-phase-pill" class="topbar-phase-pill" style="background:rgba(139,92,246,0.15);color:var(--accent2)">Overview</span>
+        <span id="topbar-section-name" style="color:var(--muted);font-weight:600;font-size:13px">Project Notebook</span>
+      </div>
+      <div class="topbar-outcomes">
+        <span class="outcome-tag">CT5-OPL-01</span>
+        <span class="outcome-tag">CT5-THI-01</span>
+        <span class="outcome-tag">CT5-DPM-01</span>
+        <span class="outcome-tag">CT5-EVL-01</span>
+        <span class="outcome-tag">CT5-SAF-01</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div class="panel active" id="panel-intro">
+        <div class="intro-hero">
+          <div class="hero-eyebrow">// SD: Building Mechatronic &amp; Automated Systems · Stage 5</div>
+          <h1>Your Project<br><span>Notebook</span></h1>
+          <p>This notebook documents how your mechatronic or automated system was designed, built, and tested. It captures the thinking behind every sensor, actuator, and line of control code — not just the finished product.</p>
+        </div>
+
+        <div class="component-legend">
+          <span class="component-pill pill-sensor">⬤ Sensors / Inputs</span>
+          <span class="component-pill pill-logic">⬤ Control Logic</span>
+          <span class="component-pill pill-actuator">⬤ Actuators / Outputs</span>
+        </div>
+
+        <div class="year-info-row">
+          <div class="year-info-card y9">
+            <div class="yic-label">Year 9 — Proposal</div>
+            <p>You are designing a mechatronic or automated system you <em>could</em> build. Your notebook covers all four D&amp;P phases — but Producing &amp; Implementing means completing skills tutorials on SEQTA and building a detailed project management plan, not constructing the final system.</p>
+          </div>
+          <div class="year-info-card y10">
+            <div class="yic-label">Year 10 — Major Project</div>
+            <p>You are building your mechatronic system. Use build logs every session to record your physical construction, wiring, code, and test results. The integration of sensors, control logic, and actuators is what your evidence needs to show.</p>
+          </div>
+        </div>
+
+        <div class="phase-overview-grid">
+          <div class="phase-card" style="--phase-col:var(--id-col)" onclick="showPanel('id-problem')">
+            <div class="phase-name">Identifying &amp; Defining</div>
+            <div class="phase-desc">Define the real-world problem, map the system with a block diagram, and specify I/O requirements.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-analysis')">
+            <div class="phase-name">Researching &amp; Planning</div>
+            <div class="phase-desc">Analyse existing systems, plan your components, write pseudocode, and flowchart your control logic.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--pi-col)" onclick="showPanel(currentYear === 9 ? 'pi-tutorials' : 'pi-sprint')">
+            <div class="phase-name">Producing &amp; Implementing</div>
+            <div class="phase-desc">Build iteratively, log every session, and document wiring and code alongside each other.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--te-col)" onclick="showPanel('te-physical')">
+            <div class="phase-name">Testing &amp; Evaluating</div>
+            <div class="phase-desc">Run physical tests against each requirement and evaluate your system's behaviour honestly.</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this notebook</div>
+          <p>Navigate using the sidebar. Toggle between <strong>Year 9</strong> and <strong>Year 10</strong> to show the sections relevant to you. Use the colour coding throughout: <strong style="color:#06b6d4">cyan = sensors/inputs</strong>, <strong style="color:#10b981">green = control logic</strong>, <strong style="color:#f59e0b">amber = actuators/outputs</strong>. Check SEQTA for tutorials, wiring diagrams, and code resources.</p>
+        </div>
+
+        <div class="seqta-note">
+          <span>📚</span>
+          <span><strong>Tutorials, wiring guides, and sample code</strong> are on <strong>SEQTA</strong>. Check your class page — resources are added as the unit progresses.</span>
+        </div>
+      </div>
+
+      <!-- ══ I&D: PROBLEM ══ -->
+      <div class="panel" id="panel-id-problem">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Problem &amp; Purpose</div>
+          <div class="section-subtitle">Mechatronic systems exist to solve real-world problems. Before choosing any components, be precise about what problem your system is responding to — and who it affects.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-id-p1">
+          <div class="prompt-card-header" onclick="toggleCard('card-id-p1')">
+            <div class="prompt-card-title"><span class="card-icon">🎯</span> The real-world problem</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What real-world problem or need does your system address?</strong> Describe it clearly — name the situation, who experiences it, and what currently happens without your system.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Is your solution a robot, a device, or an automated system?</strong> Explain the distinction and justify your choice.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Is it human-controlled, fully automated, or a mix?</strong> When does the system act on its own, and when does it wait for human input?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What does success look like?</strong> Describe in one sentence what your system should be able to do reliably when it's working correctly.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your problem statement should reference a real context — not "a robot that moves" but "a system that detects when a plant's soil is dry and alerts the user, reducing the risk of plants dying during school holidays."</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-id-p2">
+          <div class="prompt-card-header" onclick="toggleCard('card-id-p2')">
+            <div class="prompt-card-title"><span class="card-icon">🌍</span> Social, ethical &amp; safety considerations</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Who benefits from your system?</strong> Consider diverse groups — people of different ages, abilities, and backgrounds. Does your solution serve all of them equally?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Are there any risks your system could pose?</strong> Think about physical safety (moving parts, electrical components), data privacy (if your system collects sensor data), and unintended behaviours.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How does automation affect people?</strong> Does your system replace a task humans currently do? Is that a benefit, a risk, or both?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What safety measures will you build in?</strong> How does your system behave if a sensor fails, a motor jams, or it encounters an unexpected situation?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: the ethics of automation is a core part of this focus area. Show you've considered both the benefits and the risks of replacing human judgement with automated decision-making.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-id-p3">
+          <div class="prompt-card-header" onclick="toggleCard('card-id-p3')">
+            <div class="prompt-card-title"><span class="card-icon">📡</span> Evolution of mechatronic systems</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>How has the type of system you're building evolved over time?</strong> Identify at least two key milestones in its development — from simple mechanical automation to modern sensor-driven systems.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What innovations in computing, electronics, or manufacturing made your system possible?</strong> (e.g. affordable microcontrollers, miniaturised sensors, wireless communication)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Where do you see this technology heading?</strong> How might a system like yours evolve in the next 10 years?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connect the evolution to your design. "Early versions of this system required manual calibration — modern sensors like the one I'm using make that unnecessary" is stronger than a general history summary.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: SYSTEM DESIGN ══ -->
+      <div class="panel" id="panel-id-system">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">System Design</div>
+          <div class="section-subtitle">Before choosing any components or writing any code, map your system. A block diagram forces you to think about how sensors, logic, and actuators connect — before you commit to a design.</div>
+        </div>
+
+        <div class="component-legend">
+          <span class="component-pill pill-sensor">⬤ Sensors / Inputs</span>
+          <span class="component-pill pill-logic">⬤ Controller / Logic</span>
+          <span class="component-pill pill-actuator">⬤ Actuators / Outputs</span>
+        </div>
+
+        <div class="prompt-card open" id="card-sys-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-sys-1')">
+            <div class="prompt-card-title"><span class="card-icon">📦</span> Block diagram</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">A block diagram shows the high-level structure of your system — what goes in, how it's processed, and what comes out. Each block represents a component or function; arrows show the direction data or signals flow.</p>
+            <div class="block-diagram">
+              <div class="bd-block">
+                <div class="bd-box sensor-box">SENSOR(S)</div>
+                <div class="bd-label">detects environment</div>
+              </div>
+              <div class="bd-arrow">→</div>
+              <div class="bd-block">
+                <div class="bd-box logic-box">CONTROLLER</div>
+                <div class="bd-label">processes signal<br>makes decision</div>
+              </div>
+              <div class="bd-arrow">→</div>
+              <div class="bd-block">
+                <div class="bd-box actuator-box">ACTUATOR(S)</div>
+                <div class="bd-label">acts on world</div>
+              </div>
+            </div>
+            <ul class="prompts-list" style="margin-top:16px">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Draw a block diagram of your system.</strong> Label every block with its function and every arrow with what signal or data it carries. Include it as an image in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Does your system have feedback?</strong> Does any output feed back into the system as a new input? (e.g. a motor that adjusts speed based on a distance sensor reading.) Show this as a feedback arrow in your diagram.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Does your system have multiple operating modes or states?</strong> (e.g. idle / active / alert) Show these in your diagram if so.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: a block diagram that shows feedback loops, multiple states, or layered decision-making demonstrates systems thinking — not just a list of components connected in a line.</span>
+            </div>
+            <div class="response-hint">include your block diagram as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-sys-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-sys-2')">
+            <div class="prompt-card-title"><span class="card-icon">📋</span> I/O table</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">List every input and output in your system. This table becomes your reference for component selection and testing.</p>
+            <div class="io-table-hint">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Type</th>
+                    <th>Signal / Data</th>
+                    <th>Connected to</th>
+                    <th>Why needed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Distance sensor</td>
+                    <td><span class="io-type-sensor">Input</span></td>
+                    <td>Distance in cm</td>
+                    <td>Controller port 1</td>
+                    <td>Detects obstacle presence</td>
+                  </tr>
+                  <tr>
+                    <td>Drive motors (×2)</td>
+                    <td><span class="io-type-actuator">Output</span></td>
+                    <td>Speed &amp; direction</td>
+                    <td>Motor ports A, B</td>
+                    <td>Moves the robot</td>
+                  </tr>
+                  <tr>
+                    <td>Decision logic</td>
+                    <td><span class="io-type-logic">Logic</span></td>
+                    <td>If dist &lt; 20cm → stop</td>
+                    <td>—</td>
+                    <td>Core control algorithm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ul class="prompts-list" style="margin-top:16px">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Complete an I/O table for your system.</strong> Copy the format above into your notebook document and fill in every row.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Are there any signals you're unsure how to read or produce?</strong> Note these — they become your skills gap for tutorials.</span></li>
+            </ul>
+            <div class="response-hint">include your I/O table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-sys-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-sys-3')">
+            <div class="prompt-card-title"><span class="card-icon">🤖</span> Human control vs automation</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each decision your system makes</strong> — stopping when something is detected, turning, activating an output — is that decision made automatically by code, or does it require human input?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Mark your block diagram</strong> to show which parts are automated and which require a human operator.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Could your system be made more or less automated?</strong> What would be the trade-off?</span></li>
+            </ul>
+            <div class="response-hint">annotate your block diagram and write a short response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: REQUIREMENTS ══ -->
+      <div class="panel" id="panel-id-requirements">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Requirements &amp; Constraints</div>
+          <div class="section-subtitle">A requirement says what the system must do. A constraint says what it must do it within. Both must be established before you start building.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-req-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-req-1')">
+            <div class="prompt-card-title"><span class="card-icon">📋</span> Functional requirements</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List what your system must be able to do.</strong> Use "shall" language: "The system shall detect obstacles within 30 cm and stop." These become your test cases.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Separate MVP requirements from stretch requirements.</strong> What is the minimum working version? What gets added if time allows?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Write 4–6 success criteria</strong> — specific, observable statements you can check by physically testing the built system.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade C and above</strong>: requirements must be testable. "The robot works" is not a requirement. "The robot stops within 5 cm of an obstacle detected by the front sensor" is.</span>
+            </div>
+            <div class="response-hint">write your requirements in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-req-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-req-2')">
+            <div class="prompt-card-title"><span class="card-icon">🔒</span> Constraints &amp; non-functional requirements</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What physical constraints does your build have?</strong> (Size, weight, battery life, available ports on your controller, materials you can use.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What safety constraints apply?</strong> (Maximum motor speed, safe operating range for sensors, keeping moving parts away from people.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What environmental constraints must you design for?</strong> (Will your system operate indoors or outdoors? On flat ground or rough terrain? In bright or dim light?)</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What are the constraints of your chosen platform?</strong> Name one thing your hardware cannot do that you had to design around.</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: ANALYSIS ══ -->
+      <div class="panel" id="panel-rp-analysis">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Existing Systems Analysis</div>
+          <div class="section-subtitle">Every automated system you can find in the real world is a case study in design decisions. Analyse systems that already exist before designing your own.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-ana-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ana-1')">
+            <div class="prompt-card-title"><span class="card-icon">🔍</span> Analyse an existing mechatronic system</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Choose a real-world mechatronic or automated system</strong> similar to what you are building. (e.g. an automatic door, a robotic vacuum, a traffic light system, a drone, an irrigation controller.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Identify its sensors, controller, and actuators.</strong> What does each component detect or do? How does the system decide what action to take?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How does it handle failure?</strong> What happens when a sensor is blocked, power is lost, or the system encounters an unexpected situation?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What design decisions from this system will you apply, improve, or deliberately avoid</strong> in your own design? Be specific.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your analysis should connect what you observe to your own design. "This system uses a timeout to reset if no movement is detected — I'll use the same pattern in my idle state" is analysis. "Automatic doors have sensors" is description.</span>
+            </div>
+            <div class="response-hint">write your analysis and include images or diagrams in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ana-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ana-2')">
+            <div class="prompt-card-title"><span class="card-icon">🫂</span> Prototype observation</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y10">Year 10 only <span class="banner-note">— document what you observed when someone else tested your prototype.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Have a classmate interact with or observe your prototype.</strong> What did they notice that you didn't? What confused them about its behaviour?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What did you change as a result?</strong> Explain your reasoning — why was this feedback worth acting on?</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for the peer observation form template.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: COMPONENTS ══ -->
+      <div class="panel" id="panel-rp-components">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Component Planning</div>
+          <div class="section-subtitle">The right component for the right job. Plan your sensors, actuators, and controller before you start building — changes to your component choices mid-build are expensive in time.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-comp-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-comp-1')">
+            <div class="prompt-card-title"><span class="card-icon" style="color:#06b6d4">📡</span> Sensor selection</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each input in your I/O table, identify the sensor you will use.</strong> Name it, describe what it measures and how (analogue vs digital signal), and explain why it suits your requirements.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What are the limits of each sensor?</strong> What range does it operate in? What conditions might give false or unreliable readings?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Did you consider alternative sensors?</strong> Briefly explain why you chose this sensor over alternatives that could have done a similar job.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: understanding sensor limitations is essential. A distance sensor that gives unreliable readings on dark surfaces, or a light sensor that saturates in direct sunlight, will undermine your whole system if you haven't planned for it.</span>
+            </div>
+            <div class="response-hint">write your sensor selection justification in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-comp-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-comp-2')">
+            <div class="prompt-card-title"><span class="card-icon" style="color:#f59e0b">⚙️</span> Actuator selection</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each output in your I/O table, identify the actuator you will use.</strong> Name it, describe what physical action it performs, and explain why it suits your requirements.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What control signal does each actuator need?</strong> (e.g. PWM for variable motor speed, digital on/off for a buzzer, servo angle for a gripper.) Does your controller support this?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Are there any safety considerations</strong> specific to your actuators? (Motor torque, pinch points, heat, current draw.)</span></li>
+            </ul>
+            <div class="response-hint">write your actuator selection justification in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-comp-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-comp-3')">
+            <div class="prompt-card-title"><span class="card-icon" style="color:#10b981">🖥️</span> Controller &amp; platform</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Name your controller and programming platform.</strong> What are its key capabilities — number of ports, supported sensors, programming language?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Does your platform have enough ports for all your sensors and actuators?</strong> Draw a port allocation diagram — which physical port connects to what component?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What are the limits of your platform?</strong> Name one thing it can't do (or does poorly) that you had to design around.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for platform-specific wiring guides and port reference sheets for your controller.</span>
+            </div>
+            <div class="response-hint">write your response and include a port diagram in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: ALGORITHMS ══ -->
+      <div class="panel" id="panel-rp-algorithms">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Pseudocode &amp; Flowcharts</div>
+          <div class="section-subtitle">Control logic is the brain of your system. Write and diagram it before you code it — catching logical errors on paper is much faster than debugging a physical robot.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-alg-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-alg-1')">
+            <div class="prompt-card-title"><span class="card-icon">📝</span> Main control loop pseudocode</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write NSW pseudocode for your main control loop</strong> — the code that runs continuously and makes decisions based on sensor readings.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Trace through your pseudocode</strong> with two specific examples: what happens in a normal scenario, and what happens when a sensor detects something unexpected.</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">NSW Pseudocode — example: obstacle-avoiding robot</div>
+              <pre><span class="cm">// Main control loop — runs continuously</span>
+<span class="kw">BEGIN</span> ControlLoop
+  <span class="kw">WHILE</span> running = true
+    distance ← readSensor(frontSensor)
+
+    <span class="kw">IF</span> distance &lt; <span class="num">20</span> <span class="kw">THEN</span>
+      stopMotors()
+      turnLeft(<span class="num">90</span>)           <span class="cm">// avoid obstacle</span>
+    <span class="kw">ELSE IF</span> distance &lt; <span class="num">50</span> <span class="kw">THEN</span>
+      setSpeed(motors, <span class="num">30</span>)    <span class="cm">// slow approach</span>
+    <span class="kw">ELSE</span>
+      setSpeed(motors, <span class="num">80</span>)    <span class="cm">// full speed ahead</span>
+    <span class="kw">END IF</span>
+  <span class="kw">END WHILE</span>
+<span class="kw">END</span> ControlLoop</pre>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your pseudocode should reflect the layered decision-making of a real system. Threshold values, multiple conditions, and graceful handling of edge cases are all marks of technically concise algorithm design.</span>
+            </div>
+            <div class="response-hint">write pseudocode in your notebook document using NSW conventions</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-alg-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-alg-2')">
+            <div class="prompt-card-title"><span class="card-icon">🔀</span> Flowchart</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">A flowchart makes branching logic visible. For a physical system that must respond to unpredictable environments, seeing all the decision paths laid out is essential.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Draw a flowchart for your main control algorithm.</strong> Use standard symbols: rectangles for processes, diamonds for decisions, ovals for start/end. Include every branch, including what happens when a condition is not met.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Does your flowchart include a loop?</strong> Most control systems run continuously — show where the loop starts and what condition (if any) ends it.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Trace through your flowchart</strong> using a desk-check table. For at least two scenarios (normal operation and an edge case), follow each step and record what happens.</span></li>
+            </ul>
+            <div class="response-hint">include your flowchart as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-alg-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-alg-3')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Sub-routine planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Break your control logic into named sub-routines or functions.</strong> (e.g. <code>turnLeft()</code>, <code>readDistance()</code>, <code>triggerAlert()</code>.) Write pseudocode for each one.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which sub-routines can you test independently?</strong> Identifying these makes your build-and-test process much more manageable.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for tutorial resources on functions and sub-routines in your chosen programming platform.</span>
+            </div>
+            <div class="response-hint">write your sub-routine pseudocode in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: PLAN ══ -->
+      <div class="panel" id="panel-rp-plan">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Project Plan</div>
+          <div class="section-subtitle">Mechatronic projects have physical and software components that must be developed in the right order. A plan that ignores dependencies will stall your build.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-plan-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan-1')">
+            <div class="prompt-card-title"><span class="card-icon">📅</span> Build sequence &amp; sprints</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Break your project into 3–5 build sprints.</strong> Each sprint should end with something you can physically test — not just code that compiles.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Order your sprints by dependency.</strong> What must be wired and working before you can test anything else? (e.g. controller + one motor working before adding sensors; sensors reading correctly before writing decision logic.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which sprint carries the most risk?</strong> What will you do if the hardware doesn't behave as expected?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the order of your sprints reveals your systems thinking. Starting with "wire everything and run the full program" is a red flag. Starting with "get one sensor reading reliably, then add one actuator, then add decision logic" shows iterative, testable thinking.</span>
+            </div>
+            <div class="response-hint">include your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-plan-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan-2')">
+            <div class="prompt-card-title"><span class="card-icon">🛠️</span> Tools, materials &amp; safety</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List all components, tools, and materials you will need.</strong> Note which are available in the classroom and which you need to source.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Identify any safe use considerations</strong> for your tools and components. How will you work safely with motors, power supplies, and wiring?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How will you back up your code?</strong> Describe your strategy — what happens if your controller resets or your code file is corrupted?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: TUTORIALS (Y9) ══ -->
+      <div class="panel" id="panel-pi-tutorials">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Tutorials &amp; Prototyping</div>
+          <div class="section-subtitle">Year 9 Producing &amp; Implementing builds the skills you'll need to construct your system next year. Document what you learn and prove your proposed design is feasible.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— complete tutorials on SEQTA and document your learning here.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— see Build Logs and Code &amp; Wiring instead.</span></div>
+
+        <div class="prompt-card open" id="card-tut-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut-1')">
+            <div class="prompt-card-title"><span class="card-icon">🎓</span> Tutorial completion log</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:16px">For each tutorial you complete on SEQTA, add an entry to your log. Prioritise tutorials covering components you need for your proposed system.</p>
+            <div class="sprint-log-grid">
+              <div class="log-field">
+                <div class="log-field-label">Tutorial name</div>
+                <div class="log-field-prompt">The name as it appears on SEQTA.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Date completed</div>
+                <div class="log-field-prompt">When did you finish it?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">What I built / programmed</div>
+                <div class="log-field-prompt">Describe the outcome. Include a photo or screenshot.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Key skill learned</div>
+                <div class="log-field-prompt">Name the sensor, actuator, or programming technique you can now use.</div>
+              </div>
+              <div class="log-field full-width">
+                <div class="log-field-label">How this applies to my proposed system</div>
+                <div class="log-field-prompt">Which component or behaviour in your proposed system would use this skill? Be specific — name the sensor, actuator, or algorithm.</div>
+              </div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the "how this applies" field is what separates a completion tick from genuine evidence. Connecting a distance sensor tutorial to your obstacle avoidance requirement shows you understand both the technique and your system.</span>
+            </div>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Tutorials are on <strong>SEQTA</strong>. Complete the ones covering the sensors and actuators in your proposed system first.</span>
+            </div>
+            <div class="response-hint">add a new row to your tutorial log for each tutorial completed</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut-2')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Proof-of-concept build</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Use your tutorial skills to build one working component of your proposed system — a single sensor reading correctly, one actuator responding to a trigger, or one decision branch working in isolation.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which component or behaviour did you prototype?</strong> Explain why you chose this one — is it the riskiest part, the most technically uncertain, or the core of your design?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Include a photo of the physical build</strong> and a screenshot or listing of the code you wrote.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Did it work as expected?</strong> What did you have to troubleshoot? What surprised you?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What does this tell you about your proposed system's feasibility?</strong> Does anything in your design need to change?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: a proof-of-concept that reveals a problem — and documents how you'd solve it — is stronger evidence than one that works perfectly on the first try with no reflection.</span>
+            </div>
+            <div class="response-hint">write your response and include photos in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut-3')">
+            <div class="prompt-card-title"><span class="card-icon">🔬</span> Skills gap analysis</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List the technical skills your proposed system will require.</strong> (e.g. reading sensor values, PWM motor control, conditional branching, functions/sub-routines, calibrating a sensor, wiring to a specific port type.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Rate your current confidence for each:</strong> ✅ Can do it now / 📚 Need a tutorial / ❓ Not sure how yet.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which tutorials on SEQTA</strong> will help you close the gaps?</span></li>
+            </ul>
+            <div class="response-hint">write your skills gap table in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: PROJECT MANAGEMENT (Y9) ══ -->
+      <div class="panel" id="panel-pi-pm">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Project Management</div>
+          <div class="section-subtitle">Mechatronic builds have physical dependencies that make planning especially important. Use project management tools to show your proposed build is realistic and sequenced correctly.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— plan your build as if you're about to start construction next term.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— use Build Logs for active project tracking.</span></div>
+
+        <div class="prompt-card open" id="card-pm-us">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-us')">
+            <div class="prompt-card-title"><span class="card-icon">🗺️</span> User story map</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">For a mechatronic system, user stories describe what the system should do from the perspective of the person or environment it serves — not the builder.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write 6–10 user stories</strong> using the format: <em>As a [user/operator], I want [the system to do something] so that [some outcome occurs].</em></span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Group stories into functional areas</strong> (e.g. "movement", "sensing", "alerts", "safety") and arrange them across the top of your map.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Draw the MVP line.</strong> What is the minimum set of behaviours that makes a working, testable system?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: write stories from the system's operational context. "As an operator, I want the robot to stop automatically when it detects an obstacle so that it doesn't damage itself or surrounding objects" is stronger than "add obstacle detection."</span>
+            </div>
+            <div class="response-hint">include your user story map as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-kanban">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-kanban')">
+            <div class="prompt-card-title"><span class="card-icon">📌</span> Kanban board</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">A Kanban board helps you track the physical <em>and</em> software tasks of your build side by side — both need to progress, and neither can get too far ahead of the other.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Kanban board</strong> with columns: <em>Backlog / To Do / In Progress / Done</em>. Include both hardware tasks (wiring, assembly) and software tasks (code, testing) as separate cards.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Colour-code your cards</strong> by component type: sensors, actuators, control logic, physical assembly. This makes dependencies visible at a glance.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a screenshot</strong> and note the tool you used.</span></li>
+            </ul>
+            <div class="info-box" style="margin-top:14px">
+              <div class="info-box-title">Tools you could use</div>
+              <p>Trello, GitHub Projects, Notion, physical sticky notes, or a table in your notebook document.</p>
+            </div>
+            <div class="response-hint">include a screenshot of your board in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-scrum">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-scrum')">
+            <div class="prompt-card-title"><span class="card-icon">🏃</span> Scrum sprint planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Plan three build sprints.</strong> For each sprint, define: the goal (what physical behaviour should work at the end?), the committed tasks (both hardware and software), and the definition of done.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Ensure each sprint ends with something you can physically test.</strong> "Motor spins when a button is pressed" is testable. "Motor code written but not tested" is not a sprint goal.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What would you demonstrate in a sprint review?</strong> Who would you show it to, and what feedback would you want?</span></li>
+            </ul>
+            <div class="response-hint">write your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-gantt">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-gantt')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Gantt chart</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Gantt chart</strong> for the full production term. Show hardware and software tasks on parallel tracks — they often happen simultaneously but must be coordinated.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Mark physical dependencies.</strong> (e.g. "Sensor wiring" must complete before "Sensor calibration"; "Motor control code" depends on "Motor wiring".)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Mark sprint milestones</strong> and the final demonstration date. Include a buffer period.</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Reflect:</strong> What is the most time-critical part of your build? What is the consequence if wiring takes longer than planned?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: a Gantt chart that shows hardware and software on parallel tracks with clear dependencies demonstrates systems thinking — you understand that a mechatronic project is not just code, and not just hardware.</span>
+            </div>
+            <div class="response-hint">include your Gantt chart as an image or table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-compare">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-compare')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Comparing project management tools</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which tool was most useful for planning a mechatronic build?</strong> Why — and does your answer differ from what would be useful for a software-only project?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which tool would be most useful during active construction?</strong> Would you track hardware and software tasks differently?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What do these tools miss</strong> for a physical build — where components can arrive late, parts can break, or a wiring error can set you back a whole session?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: compare tools with reference to the specific challenges of a mechatronic project — not just general project management theory.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: BUILD LOGS ══ -->
+      <div class="panel" id="panel-pi-sprint">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Build Logs</div>
+          <div class="section-subtitle">A build log captures what you constructed, what you coded, what broke, and what you did about it — every session. It is the primary evidence of your iterative build process.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— complete a build log for every working session.</span></div>
+
+        <div class="prompt-card open" id="card-build-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-build-1')">
+            <div class="prompt-card-title"><span class="card-icon">🗂️</span> Build log — what to record each session</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field">
+                <div class="log-field-label">Session / Sprint</div>
+                <div class="log-field-prompt">Date and sprint number. What milestone are you working toward?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Planned this session</div>
+                <div class="log-field-prompt">What hardware and/or software did you intend to complete? (Written at the start of class.)</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">What I actually built / coded</div>
+                <div class="log-field-prompt">What was completed? Be specific — name the sensor, actuator, or code function you worked on.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Photo of physical progress</div>
+                <div class="log-field-prompt">A photo of your build at the end of the session. Show wiring and assembly clearly.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Problem encountered</div>
+                <div class="log-field-prompt">Describe a physical or code problem: a sensor giving wrong readings, a motor not responding, a wiring error, a logic bug.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">How I diagnosed &amp; fixed it</div>
+                <div class="log-field-prompt">What did you try? What did you measure or check? What was the root cause? What fixed it?</div>
+              </div>
+              <div class="log-field full-width">
+                <div class="log-field-label">What's next</div>
+                <div class="log-field-prompt">What is the priority for next session? Does your plan need to change?</div>
+              </div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most valuable build log entries describe physical troubleshooting — "the sensor read 0 in all conditions, I checked the wiring and found the signal wire was in the wrong port, moved it and readings became consistent." This is the evidence of iterative, systematic engineering.</span>
+            </div>
+            <div class="response-hint">add a new build log entry to your notebook document every session</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-build-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-build-2')">
+            <div class="prompt-card-title"><span class="card-icon">🔁</span> Mid-project review</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y10">Year 10 <span class="banner-note">— complete at the midpoint of your build.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What is built and working?</strong> What is behind schedule, and why?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Has your design changed from the original plan?</strong> Name any components you swapped, behaviours you simplified, or features you cut — and justify each decision.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What must you prioritise</strong> to have a demonstrable system by the deadline?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: CODE & WIRING ══ -->
+      <div class="panel" id="panel-pi-code">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Code &amp; Wiring</div>
+          <div class="section-subtitle">In mechatronics, code and wiring are inseparable. Document both together — a wiring diagram without annotations, and annotated code without a wiring diagram, both tell an incomplete story.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— keep this section updated as you complete each component.</span></div>
+
+        <div class="prompt-card open" id="card-code-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-code-1')">
+            <div class="prompt-card-title"><span class="card-icon">🔌</span> Wiring diagram</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Draw or photograph your wiring diagram.</strong> Label every port, wire, sensor, and actuator. Include the port numbers or pin names used in your code.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Update your wiring diagram</strong> whenever you change the physical configuration. Keep a version history — include the date of each change and why you made it.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Does your final wiring match your planned port allocation diagram</strong> from the Component Planning section? Note any changes and explain them.</span></li>
+            </ul>
+            <div class="response-hint">include wiring diagrams as images in your notebook document — update them as your build evolves</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-code-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-code-2')">
+            <div class="prompt-card-title"><span class="card-icon">💻</span> Pseudocode → code comparison</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each key algorithm</strong> from your pseudocode, paste the implemented code alongside it in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Annotate your code</strong> with comments that explain <em>why</em> values were chosen (e.g. why 20 cm as the stop threshold, why a 500 ms delay between sensor reads).</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Note any differences</strong> between your pseudocode and your final code. What changed during implementation, and why?</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">Example — annotated control code</div>
+              <pre><span class="cm">// Read front distance sensor — port 1</span>
+<span class="kw">float</span> distance = distSensor.objectDistance(mm);
+
+<span class="cm">// 200mm threshold — tested empirically; below this</span>
+<span class="cm">// the robot doesn't have enough room to stop cleanly</span>
+<span class="kw">if</span> (distance &lt; <span class="num">200</span>) {
+  leftMotor.stop();
+  rightMotor.stop();
+  <span class="cm">// brief pause before turning to avoid sensor bounce</span>
+  wait(<span class="num">0.3</span>, seconds);
+  leftMotor.spin(reverse, <span class="num">40</span>, pct);
+  rightMotor.spin(forward, <span class="num">40</span>, pct);
+  wait(<span class="num">0.8</span>, seconds);   <span class="cm">// approx 90° turn at this speed</span>
+}</pre>
+            </div>
+            <div class="response-hint">paste annotated code into your notebook document for each major feature</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-code-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-code-3')">
+            <div class="prompt-card-title"><span class="card-icon">🗃️</span> Version history</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Keep a version log</strong> — a table with date, version label, and one sentence describing what changed in the code or the physical build.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Back up your code at the end of every session.</strong> Note where you saved it.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for code backup conventions and version control guidance for your platform.</span>
+            </div>
+            <div class="response-hint">maintain your version table in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: PHYSICAL TESTING ══ -->
+      <div class="panel" id="panel-te-physical">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Physical Test Log</div>
+          <div class="section-subtitle">Testing a mechatronic system is different from testing software. The real world is messy — surfaces vary, sensors drift, motors behave differently under load. Your test log must capture this physical reality.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-test-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-test-1')">
+            <div class="prompt-card-title"><span class="card-icon">🧪</span> Functional test table</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Test each requirement from your Identifying &amp; Defining section. Run each test at least three times — physical systems rarely give the same result every time.</p>
+            <table class="test-table">
+              <thead>
+                <tr>
+                  <th>Requirement</th>
+                  <th>Test procedure</th>
+                  <th>Expected result</th>
+                  <th>Actual result (3× runs)</th>
+                  <th>Pass / Partial / Fail</th>
+                  <th>Change made</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Stop within 5 cm of obstacle</td>
+                  <td>Drive toward flat wall, measure stop distance</td>
+                  <td>Stops ≤ 5 cm from surface</td>
+                  <td style="color:var(--faint);font-style:italic">Run 1: __ cm<br>Run 2: __ cm<br>Run 3: __ cm</td>
+                  <td><span class="partial">Partial</span></td>
+                  <td style="color:var(--faint);font-style:italic">Adjusted threshold from 20 → 25 cm</td>
+                </tr>
+                <tr>
+                  <td>Turn 90° when obstacle detected</td>
+                  <td>Place obstacle, measure turn angle with protractor</td>
+                  <td>80–100° turn</td>
+                  <td style="color:var(--faint);font-style:italic">Record runs</td>
+                  <td><span class="pass">Pass</span></td>
+                  <td style="color:var(--faint);font-style:italic">—</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: run every test multiple times and record variance. A result that passes once but fails twice is a <strong>Partial</strong>, not a Pass. Physical systems need consistent results — document the inconsistency and explain what causes it.</span>
+            </div>
+            <div class="response-hint">copy this table into your notebook document and fill it in for every requirement</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-test-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-test-2')">
+            <div class="prompt-card-title"><span class="card-icon">🌡️</span> Environmental &amp; edge case testing</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Test your system under different conditions.</strong> Does it behave consistently on different floor surfaces? In different lighting? With a low battery? When multiple events happen simultaneously?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What happens when a sensor is blocked or gives an unexpected reading?</strong> Does your system fail gracefully, or does it behave dangerously?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Identify your system's operating limits.</strong> Under what conditions does it stop working reliably? Document this honestly.</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document — include photos of testing conditions</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-test-3">
+          <div class="prompt-card-header" onclick="toggleCard('card-test-3')">
+            <div class="prompt-card-title"><span class="card-icon">🫂</span> Peer observation</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y9">Year 9 note <span class="banner-note">— have a classmate review your proof-of-concept and proposal.</span></div>
+            <div class="year-banner y10">Year 10 <span class="banner-note">— demonstrate your built system to at least one other person.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Record what your observer noticed</strong> — behaviours that surprised them, situations where the system didn't perform as expected, and any safety concerns they raised.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What will you change as a result?</strong> For each piece of feedback, decide whether to act, defer, or reject — and explain why.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for the peer observation form template.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: EVALUATION ══ -->
+      <div class="panel" id="panel-te-eval">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Final Evaluation</div>
+          <div class="section-subtitle">A good evaluation of a mechatronic system is grounded in test results and physical evidence. It doesn't say the system is good or bad — it says what the data shows, and what it would take to improve.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eval-1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval-1')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Against requirements</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Return to your success criteria.</strong> For each one, state whether your system meets it — and cite the specific test result (pass rate, measured values) as evidence.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How reliably does your system perform?</strong> A system that works 8/10 times is not the same as one that works 10/10 times. Be honest about consistency.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Were safety and ethical responsibilities met?</strong> Does the system behave safely in all tested conditions? Are there any conditions you didn't test that could be dangerous?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: every evaluative claim needs physical evidence. "My system detects obstacles reliably" needs test data — measured distances across multiple runs, across multiple surfaces. Assertions without data are Grade D evidence.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eval-2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval-2')">
+            <div class="prompt-card-title"><span class="card-icon">🔮</span> Reflection &amp; next version</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What would you do differently</strong> if starting this build again? Name a specific wiring decision, component choice, or algorithm design you would change.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would version 2 of your system include?</strong> Describe one meaningful hardware or software improvement and explain how you would implement it.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did you learn about how mechatronic systems work</strong> — not just about your specific platform, but about the integration of sensing, decision-making, and actuation as a system?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CPD ══ -->
+      <div class="panel" id="panel-cpd">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--accent2)">Grade Self-Assessment</div>
+          <div class="section-title">Course Performance Descriptors</div>
+          <div class="section-subtitle">These descriptors describe what achievement at each grade level looks like. Use them to set your target and check what your notebook needs to demonstrate.</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this page</div>
+          <p>Read each grade card and identify which best describes your current work. Click a card to set it as your target. Then check your notebook — can you point to specific evidence for each descriptor? For mechatronics, your strongest evidence lives in your <strong>block diagram</strong>, <strong>physical test log</strong>, and <strong>build logs</strong>. Remember: <strong>ambitious builds with documented reasoning and honest failure analysis can merit high achievement.</strong></p>
+        </div>
+
+        <div class="cpd-full-grid">
+          <div class="cpd-full-card" data-grade="E" onclick="selectCPDCard('E')">
+            <div class="cpd-grade-letter">E</div>
+            <ul class="cpd-descriptor-list">
+              <li>Identifies innovations in computing technology</li>
+              <li>Identifies processes that may produce a solution</li>
+              <li>Works safely with data</li>
+              <li>Follows algorithms and/or partially implements them</li>
+              <li>Identifies elements of UI that contribute to user experiences</li>
+              <li>Uses data to communicate in a very limited way</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="D" onclick="selectCPDCard('D')">
+            <div class="cpd-grade-letter">D</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a basic understanding of enterprise and innovation</li>
+              <li>Uses processes to produce computing solutions</li>
+              <li>Develops basic solutions using computational or design or systems thinking</li>
+              <li>Uses data safely and responsibly</li>
+              <li>Develops basic algorithms and/or implements them</li>
+              <li>Implements basic elements of UI design</li>
+              <li>Uses data to communicate basic information</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="C" onclick="selectCPDCard('C')">
+            <div class="cpd-grade-letter">C</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a sound understanding of enterprise, innovation and automation</li>
+              <li>Applies iterative processes to produce computing solutions</li>
+              <li>Develops sound solutions using computational, design and systems thinking</li>
+              <li>Applies safe, secure and ethical practices</li>
+              <li>Develops common algorithms and implements them</li>
+              <li>Designs and implements UI to create user experiences</li>
+              <li>Selects appropriate data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="B" onclick="selectCPDCard('B')">
+            <div class="cpd-grade-letter">B</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a thorough understanding of enterprise, innovation and automation</li>
+              <li>Applies appropriate iterative processes</li>
+              <li>Develops effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Develops, tests and implements functional algorithms</li>
+              <li>Demonstrates creativity in design to create engaging experiences</li>
+              <li>Selects relevant data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="A" onclick="selectCPDCard('A')">
+            <div class="cpd-grade-letter">A</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates an extensive understanding of enterprise, innovation and automation</li>
+              <li>Skilfully applies appropriate iterative processes</li>
+              <li>Develops highly effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Skilfully develops, tests and implements technically concise algorithms</li>
+              <li>Demonstrates creativity and innovation in design</li>
+              <li>Selects relevant data, media and processes to effectively communicate</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="prompt-card open" id="card-cpd-check">
+          <div class="prompt-card-header" onclick="toggleCard('card-cpd-check')">
+            <div class="prompt-card-title"><span class="card-icon">✅</span> What does your notebook need to show?</div>
+            <div class="prompt-card-meta">
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each descriptor at your target grade,</strong> identify where in your notebook the evidence sits. If a section is empty or thin, note what you still need to add.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Check the verb.</strong> Grade E: <em>identifies.</em> Grade C: <em>applies.</em> Grade A: <em>skilfully develops.</em> Does your notebook language match your target?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Systems thinking is specifically assessed here.</strong> Your block diagram, I/O table, and feedback loops are your evidence for this. Is it there?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>Physical test data is your strongest evaluative evidence.</strong> Assertions about performance without measured results will not reach Grade B or above.</span></li>
+              <li><span class="prompt-num">05</span><span class="prompt-text"><strong>Ambitious builds count.</strong> A complex system that partially works — with thorough documentation of what failed and why — can merit high achievement.</span></div></li>
+            </ul>
+            <div class="response-hint">complete this reflection at the end of the project</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentYear = 9;
+  const CPD_COLORS = { E:'#64748b', D:'#f59e0b', C:'#10b981', B:'#06b6d4', A:'#8b5cf6' };
+  const CPD_LABELS = {
+    E: 'Identifies processes and elements — working safely with data.',
+    D: 'Uses processes — basic algorithms, basic solutions.',
+    C: 'Applies iterative processes — sound solutions using computational, design and systems thinking.',
+    B: 'Applies appropriate iterative processes — effective solutions, functional algorithms.',
+    A: 'Skilfully applies iterative processes — highly effective solutions, technically concise algorithms.'
+  };
+  const PANEL_META = {
+    intro:            { phase: 'Overview',                 col: '#8b5cf6' },
+    'id-problem':     { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-system':      { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-requirements':{ phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'rp-analysis':    { phase: 'Researching & Planning',   col: '#8b5cf6' },
+    'rp-components':  { phase: 'Researching & Planning',   col: '#8b5cf6' },
+    'rp-algorithms':  { phase: 'Researching & Planning',   col: '#8b5cf6' },
+    'rp-plan':        { phase: 'Researching & Planning',   col: '#8b5cf6' },
+    'pi-tutorials':   { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-pm':          { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-sprint':      { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-code':        { phase: 'Producing & Implementing', col: '#10b981' },
+    'te-physical':    { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    'te-eval':        { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    cpd:              { phase: 'Grade Self-Assessment',    col: '#8b5cf6' },
+  };
+  const PANEL_NAMES = {
+    intro: 'Project Notebook',
+    'id-problem': 'Problem & Purpose',
+    'id-system': 'System Design',
+    'id-requirements': 'Requirements & Constraints',
+    'rp-analysis': 'Existing Systems Analysis',
+    'rp-components': 'Component Planning',
+    'rp-algorithms': 'Pseudocode & Flowcharts',
+    'rp-plan': 'Project Plan',
+    'pi-tutorials': 'Tutorials & Prototyping',
+    'pi-pm': 'Project Management',
+    'pi-sprint': 'Build Logs',
+    'pi-code': 'Code & Wiring',
+    'te-physical': 'Physical Test Log',
+    'te-eval': 'Final Evaluation',
+    cpd: 'Grade Self-Assessment'
+  };
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) panel.classList.add('active');
+    const nav = document.querySelector(`.nav-item[data-panel="${id}"]`);
+    if (nav) nav.classList.add('active');
+    const meta = PANEL_META[id] || { phase: '', col: '#8b5cf6' };
+    const pill = document.getElementById('topbar-phase-pill');
+    pill.textContent = meta.phase;
+    pill.style.background = meta.col + '22';
+    pill.style.color = meta.col;
+    document.getElementById('topbar-section-name').textContent = PANEL_NAMES[id] || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setYear(year) {
+    currentYear = year;
+    document.getElementById('btn-y9').className  = 'year-btn' + (year === 9  ? ' active-y9'  : '');
+    document.getElementById('btn-y10').className = 'year-btn' + (year === 10 ? ' active-y10' : '');
+    document.querySelectorAll('.year-banner.y9').forEach(el => { el.style.display = year === 9 ? 'flex' : 'none'; });
+    document.querySelectorAll('.year-banner.y10').forEach(el => { el.style.display = year === 10 ? 'flex' : 'none'; });
+    document.querySelectorAll('.nav-y9-only').forEach(el => {
+      el.style.opacity = year === 9 ? '1' : '0.35';
+      el.style.pointerEvents = year === 9 ? 'auto' : 'none';
+    });
+    document.querySelectorAll('.nav-y10-only').forEach(el => {
+      el.style.opacity = year === 10 ? '1' : '0.35';
+      el.style.pointerEvents = year === 10 ? 'auto' : 'none';
+    });
+    ['pi-sprint','pi-code'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 9) {
+        if (!p.querySelector('.y9-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y9-lock';
+          lock.style.cssText = 'background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:800;color:var(--accent2);margin-bottom:6px">Year 10 only</div><div style="font-size:13px;color:var(--muted)">This section is for students building their system in Year 10.<br>Year 9 — head to <strong>Tutorials &amp; Prototyping</strong> and <strong>Project Management</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y9-lock');
+        if (lock) lock.remove();
+      }
+    });
+    ['pi-tutorials','pi-pm'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 10) {
+        if (!p.querySelector('.y10-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y10-lock';
+          lock.style.cssText = 'background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🏗️</div><div style="font-weight:800;color:#6ee7b7;margin-bottom:6px">Year 9 section</div><div style="font-size:13px;color:var(--muted)">You\'re building the real system — head to <strong>Build Logs</strong> and <strong>Code &amp; Wiring</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y10-lock');
+        if (lock) lock.remove();
+      }
+    });
+  }
+
+  function toggleCard(id) {
+    const card = document.getElementById(id);
+    if (card) card.classList.toggle('open');
+  }
+
+  function setCPD(grade) {
+    const order = ['E','D','C','B','A'];
+    const idx = order.indexOf(grade);
+    document.querySelectorAll('.cpd-bar-seg').forEach((seg, i) => { seg.classList.toggle('lit', i <= idx); });
+    const display = document.getElementById('cpd-display');
+    display.textContent = grade;
+    display.style.color = CPD_COLORS[grade];
+    document.getElementById('cpd-sidebar-desc').textContent = CPD_LABELS[grade];
+  }
+
+  function selectCPDCard(grade) {
+    document.querySelectorAll('.cpd-full-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.cpd-full-card[data-grade="${grade}"]`);
+    if (card) card.classList.add('selected');
+    setCPD(grade);
+  }
+
+  setYear(9);
+  showPanel('intro');
+</script>
+</body>
+</html>

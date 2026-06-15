@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Notebook — EIS: Analysing Data</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0d12;
+    --surface:   #13161e;
+    --surface2:  #1a1e2a;
+    --border:    #252836;
+    --border2:   #2e3347;
+
+    /* EIS strand — teal */
+    --accent:    #0d9488;
+    --accent2:   #2dd4bf;
+    --accent3:   #99f6e4;
+    --accent-dim:#134e4a;
+
+    /* D&P phase colours */
+    --id-col:   #06b6d4;
+    --rp-col:   #0d9488;
+    --pi-col:   #10b981;
+    --te-col:   #f59e0b;
+
+    /* Data layer colours — used throughout for data concepts */
+    --data-raw:     #06b6d4;   /* cyan    — raw data / collection */
+    --data-process: #0d9488;   /* teal    — processing / queries */
+    --data-insight: #2dd4bf;   /* light teal — insights / findings */
+    --data-viz:     #f59e0b;   /* amber   — visualisation */
+
+    --text:      #e2e8f0;
+    --muted:     #94a3b8;
+    --faint:     #475569;
+    --y9:        #06b6d4;
+    --y10:       #0d9488;
+
+    --font-body: 'Nunito', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius:    10px;
+    --sidebar-w: 230px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo .ct-mark { font-family: var(--font-mono); font-size: 13px; color: var(--accent2); letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+  .sidebar-logo .unit-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .sidebar-logo .unit-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; margin-top: 3px; }
+
+  .year-toggle { display: flex; margin: 14px 14px 0; background: var(--surface2); border-radius: 8px; padding: 3px; gap: 3px; }
+  .year-btn { flex: 1; padding: 6px 0; border: none; border-radius: 6px; font-family: var(--font-body); font-size: 12px; font-weight: 800; cursor: pointer; transition: all 0.18s; background: transparent; color: var(--muted); letter-spacing: 0.04em; }
+  .year-btn.active-y9  { background: var(--y9);  color: #0b0d12; }
+  .year-btn.active-y10 { background: var(--y10); color: #fff; }
+
+  .nav-section { margin-top: 16px; }
+  .nav-phase-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 0 16px 6px; display: flex; align-items: center; gap: 7px; }
+  .nav-phase-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 16px; cursor: pointer; transition: background 0.15s; font-size: 13px; font-weight: 600; color: var(--muted); border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { color: var(--text); border-left-color: var(--phase-col, var(--accent)); background: rgba(13,148,136,0.08); }
+  .nav-item .nav-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--phase-col, var(--faint)); flex-shrink: 0; transition: opacity 0.2s; }
+  .nav-item:not(.active) .nav-dot { opacity: 0.35; }
+
+  .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; letter-spacing: 0.05em; margin-left: auto; }
+  .badge-y9   { background: rgba(6,182,212,0.18);  color: var(--y9); }
+  .badge-y10  { background: rgba(13,148,136,0.18); color: var(--accent2); }
+  .badge-both { background: rgba(13,148,136,0.1);  color: var(--accent3); }
+
+  /* CPD bar */
+  .sidebar-cpd { margin: auto 14px 14px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); }
+  .sidebar-cpd .cpd-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .cpd-bar-track { display: flex; gap: 3px; margin-bottom: 8px; }
+  .cpd-bar-seg { flex: 1; height: 6px; border-radius: 3px; background: var(--border2); cursor: pointer; transition: background 0.2s, transform 0.15s; }
+  .cpd-bar-seg:hover { transform: scaleY(1.4); }
+  .cpd-bar-seg[data-grade="E"].lit { background: #64748b; }
+  .cpd-bar-seg[data-grade="D"].lit { background: #f59e0b; }
+  .cpd-bar-seg[data-grade="C"].lit { background: #10b981; }
+  .cpd-bar-seg[data-grade="B"].lit { background: #06b6d4; }
+  .cpd-bar-seg[data-grade="A"].lit { background: #0d9488; }
+  .cpd-grade-display { text-align: center; font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--muted); transition: color 0.2s; }
+  .cpd-desc { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; min-height: 42px; }
+
+  /* ── MAIN ── */
+  .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .topbar-phase-pill { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.06em; }
+  .topbar-outcomes { display: flex; gap: 6px; flex-wrap: wrap; }
+  .outcome-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 5px; background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.3); color: var(--accent3); }
+
+  .content { padding: 32px 36px 60px; max-width: 860px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .section-header { margin-bottom: 28px; }
+  .section-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 6px; }
+  .section-title { font-size: 26px; font-weight: 900; line-height: 1.15; color: var(--text); margin-bottom: 8px; }
+  .section-subtitle { font-size: 14px; color: var(--muted); max-width: 640px; line-height: 1.6; }
+
+  .year-banner { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-bottom: 24px; border-left: 4px solid; }
+  .year-banner.y9  { background: rgba(6,182,212,0.08);  border-color: var(--y9);  color: var(--y9); }
+  .year-banner.y10 { background: rgba(13,148,136,0.08); border-color: var(--y10); color: var(--accent2); }
+  .year-banner .banner-note { color: var(--muted); font-weight: 600; margin-left: 4px; }
+
+  .prompt-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); margin-bottom: 18px; overflow: hidden; }
+  .prompt-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; gap: 12px; }
+  .prompt-card-header:hover { background: rgba(255,255,255,0.02); }
+  .prompt-card-title { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .prompt-card-title .card-icon { font-size: 16px; width: 28px; text-align: center; }
+  .prompt-card-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .chevron { width: 18px; height: 18px; color: var(--faint); transition: transform 0.2s; flex-shrink: 0; }
+  .prompt-card.open .chevron { transform: rotate(180deg); }
+  .prompt-card-body { display: none; padding: 18px 18px 20px; }
+  .prompt-card.open .prompt-card-body { display: block; }
+
+  .prompts-list { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+  .prompts-list li { display: flex; gap: 12px; align-items: flex-start; }
+  .prompt-num { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--faint); min-width: 22px; padding-top: 1px; }
+  .prompt-text { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .prompt-text strong { color: var(--text); font-weight: 700; }
+  .prompt-text code { font-family: var(--font-mono); font-size: 12px; background: var(--surface2); padding: 1px 5px; border-radius: 4px; color: var(--accent3); }
+
+  .cpd-lift { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: rgba(13,148,136,0.07); border: 1px solid rgba(13,148,136,0.22); border-radius: 7px; margin-top: 14px; font-size: 12.5px; color: var(--accent3); line-height: 1.5; }
+  .cpd-lift-icon { flex-shrink: 0; font-size: 14px; padding-top: 1px; }
+
+  .response-hint { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--faint); margin-top: 14px; font-family: var(--font-mono); }
+  .response-hint::before, .response-hint::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .seqta-note { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent); border-radius: 7px; font-size: 13px; color: var(--muted); margin-top: 18px; }
+  .seqta-note strong { color: var(--text); }
+
+  /* Pathway card — the consultant pathway callout */
+  .pathway-card { background: rgba(13,148,136,0.06); border: 1px solid rgba(13,148,136,0.3); border-left: 4px solid var(--accent); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 22px; }
+  .pathway-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .pathway-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; padding: 3px 9px; border-radius: 20px; background: rgba(13,148,136,0.2); color: var(--accent2); }
+  .pathway-card-title { font-size: 14px; font-weight: 800; color: var(--accent2); }
+  .pathway-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .pathway-card p + p { margin-top: 8px; }
+
+  .info-box { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .info-box-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 8px; }
+  .info-box p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  .sprint-log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .sprint-log-grid .full-width { grid-column: 1 / -1; }
+  .log-field { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; }
+  .log-field-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faint); margin-bottom: 6px; }
+  .log-field-prompt { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .code-hint { background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
+  .code-hint-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .code-hint pre { font-family: var(--font-mono); font-size: 12.5px; color: #64748b; line-height: 1.7; white-space: pre; }
+  .code-hint pre .kw  { color: var(--accent2); }
+  .code-hint pre .cm  { color: #475569; font-style: italic; }
+  .code-hint pre .str { color: #10b981; }
+  .code-hint pre .num { color: #f59e0b; }
+
+  /* Data pipeline visual */
+  .data-pipeline { display: flex; align-items: stretch; gap: 0; background: #0d1117; border: 1px solid var(--border2); border-radius: 8px; padding: 16px; margin-top: 14px; overflow-x: auto; }
+  .dp-stage { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 100px; padding: 0 8px; }
+  .dp-box { border-radius: 6px; padding: 8px 12px; font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 0.04em; width: 100%; }
+  .dp-box.collect  { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.35);  color: #06b6d4; }
+  .dp-box.clean    { background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.35); color: var(--accent2); }
+  .dp-box.query    { background: rgba(45,212,191,0.1);  border: 1px solid rgba(45,212,191,0.3);  color: var(--accent3); }
+  .dp-box.visualise{ background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: #f59e0b; }
+  .dp-box.insight  { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #10b981; }
+  .dp-label { font-size: 10px; color: var(--faint); text-align: center; font-family: var(--font-mono); line-height: 1.3; }
+  .dp-arrow { color: var(--faint); font-size: 18px; padding: 0 4px; display: flex; align-items: center; padding-bottom: 18px; }
+
+  /* Test / query table */
+  .test-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+  .test-table th { text-align: left; padding: 10px 12px; background: var(--surface2); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); border-bottom: 1px solid var(--border2); }
+  .test-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .test-table tr:last-child td { border-bottom: none; }
+  .test-table .pass { color: #10b981; font-weight: 700; }
+  .test-table .fail { color: #f87171; font-weight: 700; }
+
+  /* viz type chips */
+  .viz-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.04em; margin: 2px; }
+  .chip-bar    { background: rgba(6,182,212,0.12);  border: 1px solid rgba(6,182,212,0.3);  color: #06b6d4; }
+  .chip-line   { background: rgba(13,148,136,0.12); border: 1px solid rgba(13,148,136,0.3); color: var(--accent2); }
+  .chip-scatter{ background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; }
+  .chip-pie    { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: #a78bfa; }
+  .chip-table  { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #10b981; }
+
+  /* Intro */
+  .intro-hero { padding: 40px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .intro-hero .hero-eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .intro-hero h1 { font-size: 32px; font-weight: 900; line-height: 1.1; color: var(--text); margin-bottom: 14px; }
+  .intro-hero h1 span { color: var(--accent2); }
+  .intro-hero p { font-size: 15px; color: var(--muted); max-width: 600px; line-height: 1.65; }
+
+  .phase-overview-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 28px 0; }
+  .phase-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: transform 0.15s, border-color 0.15s; border-top: 3px solid var(--phase-col); }
+  .phase-card:hover { transform: translateY(-2px); border-color: var(--phase-col); }
+  .phase-card .phase-name { font-size: 12px; font-weight: 800; color: var(--phase-col); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .phase-card .phase-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+  .year-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0; }
+  .year-info-card { padding: 16px 18px; border-radius: var(--radius); border: 1px solid; }
+  .year-info-card.y9  { background: rgba(6,182,212,0.06);  border-color: rgba(6,182,212,0.3); }
+  .year-info-card.y10 { background: rgba(13,148,136,0.06); border-color: rgba(13,148,136,0.3); }
+  .year-info-card .yic-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
+  .y9 .yic-label  { color: var(--y9); }
+  .y10 .yic-label { color: var(--accent2); }
+  .year-info-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* CPD full */
+  .cpd-full-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 24px; }
+  .cpd-full-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 16px 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; border-top: 3px solid var(--border2); }
+  .cpd-full-card:hover { transform: translateY(-2px); }
+  .cpd-full-card[data-grade="E"] { border-top-color: #64748b; }
+  .cpd-full-card[data-grade="D"] { border-top-color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] { border-top-color: #10b981; }
+  .cpd-full-card[data-grade="B"] { border-top-color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] { border-top-color: #0d9488; }
+  .cpd-full-card.selected { border-color: var(--accent2); background: rgba(13,148,136,0.1); }
+  .cpd-grade-letter { font-family: var(--font-mono); font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .cpd-full-card[data-grade="E"] .cpd-grade-letter { color: #64748b; }
+  .cpd-full-card[data-grade="D"] .cpd-grade-letter { color: #f59e0b; }
+  .cpd-full-card[data-grade="C"] .cpd-grade-letter { color: #10b981; }
+  .cpd-full-card[data-grade="B"] .cpd-grade-letter { color: #06b6d4; }
+  .cpd-full-card[data-grade="A"] .cpd-grade-letter { color: #0d9488; }
+  .cpd-descriptor-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .cpd-descriptor-list li { font-size: 11.5px; color: var(--muted); line-height: 1.4; padding-left: 10px; position: relative; }
+  .cpd-descriptor-list li::before { content: '›'; position: absolute; left: 0; color: var(--faint); }
+  .divider { height: 1px; background: var(--border); margin: 28px 0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 200px; } .main { margin-left: 200px; }
+    .content { padding: 20px 18px 40px; }
+    .cpd-full-grid { grid-template-columns: repeat(3,1fr); }
+    .phase-overview-grid { grid-template-columns: 1fr 1fr; }
+    .sprint-log-grid { grid-template-columns: 1fr; }
+    .data-pipeline { flex-direction: column; }
+    .dp-arrow { transform: rotate(90deg); padding: 4px 0; padding-right: 50px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <span class="ct-mark">&lt;CT/&gt;</span>
+      <div class="unit-label">Year 9 / 10 · Stage 5</div>
+      <div class="unit-name">EIS: Analysing Data<br>Project Notebook</div>
+    </div>
+
+    <div class="year-toggle">
+      <button class="year-btn active-y9" id="btn-y9" onclick="setYear(9)">Year 9</button>
+      <button class="year-btn" id="btn-y10" onclick="setYear(10)">Year 10</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item active" data-panel="intro" style="--phase-col:var(--accent)" onclick="showPanel('intro')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Overview
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--id-col)">Identifying &amp; Defining</div>
+      <div class="nav-item" data-panel="id-question" style="--phase-col:var(--id-col)" onclick="showPanel('id-question')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Question &amp; Purpose
+      </div>
+      <div class="nav-item" data-panel="id-data" style="--phase-col:var(--id-col)" onclick="showPanel('id-data')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Data Sources &amp; Collection
+      </div>
+      <div class="nav-item" data-panel="id-ethics" style="--phase-col:var(--id-col)" onclick="showPanel('id-ethics')">
+        <span class="nav-dot" style="background:var(--id-col)"></span> Ethics, Privacy &amp; Bias
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--rp-col)">Researching &amp; Planning</div>
+      <div class="nav-item" data-panel="rp-existing" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Existing Systems Analysis
+      </div>
+      <div class="nav-item" data-panel="rp-pipeline" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-pipeline')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Data Pipeline Design
+      </div>
+      <div class="nav-item" data-panel="rp-viz" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-viz')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Visualisation Planning
+      </div>
+      <div class="nav-item" data-panel="rp-plan" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-plan')">
+        <span class="nav-dot" style="background:var(--rp-col)"></span> Project Plan
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+      <div class="nav-item nav-y9-only" data-panel="pi-tutorials" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-tutorials')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Tutorials &amp; Prototyping
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y9-only" data-panel="pi-pm" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-pm')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Project Management
+        <span class="badge badge-y9">Y9</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-build" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-build')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Build Logs
+        <span class="badge badge-y10">Y10</span>
+      </div>
+      <div class="nav-item nav-y10-only" data-panel="pi-analysis" style="--phase-col:var(--pi-col)" onclick="showPanel('pi-analysis')">
+        <span class="nav-dot" style="background:var(--pi-col)"></span> Analysis &amp; Findings
+        <span class="badge badge-y10">Y10</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-phase-label" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+      <div class="nav-item" data-panel="te-testing" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Data Quality &amp; Testing
+      </div>
+      <div class="nav-item" data-panel="te-eval" style="--phase-col:var(--te-col)" onclick="showPanel('te-eval')">
+        <span class="nav-dot" style="background:var(--te-col)"></span> Evaluation
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" data-panel="cpd" style="--phase-col:var(--accent)" onclick="showPanel('cpd')">
+        <span class="nav-dot" style="background:var(--accent)"></span> Grade Self-Assessment
+      </div>
+    </div>
+
+    <div class="sidebar-cpd" style="margin-top:16px">
+      <div class="cpd-label">Current target grade</div>
+      <div class="cpd-bar-track">
+        <div class="cpd-bar-seg" data-grade="E" onclick="setCPD('E')"></div>
+        <div class="cpd-bar-seg" data-grade="D" onclick="setCPD('D')"></div>
+        <div class="cpd-bar-seg" data-grade="C" onclick="setCPD('C')"></div>
+        <div class="cpd-bar-seg" data-grade="B" onclick="setCPD('B')"></div>
+        <div class="cpd-bar-seg" data-grade="A" onclick="setCPD('A')"></div>
+      </div>
+      <div class="cpd-grade-display" id="cpd-display">—</div>
+      <div class="cpd-desc" id="cpd-sidebar-desc">Click a segment above to set your target grade.</div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        <span id="topbar-phase-pill" class="topbar-phase-pill" style="background:rgba(13,148,136,0.15);color:var(--accent2)">Overview</span>
+        <span id="topbar-section-name" style="color:var(--muted);font-weight:600;font-size:13px">Project Notebook</span>
+      </div>
+      <div class="topbar-outcomes">
+        <span class="outcome-tag">CT5-DAT-01</span>
+        <span class="outcome-tag">CT5-DAT-02</span>
+        <span class="outcome-tag">CT5-THI-01</span>
+        <span class="outcome-tag">CT5-EVL-01</span>
+        <span class="outcome-tag">CT5-COM-01</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ OVERVIEW ══ -->
+      <div class="panel active" id="panel-intro">
+        <div class="intro-hero">
+          <div class="hero-eyebrow">// EIS: Analysing Data · Stage 5</div>
+          <h1>Your Project<br><span>Notebook</span></h1>
+          <p>This notebook documents how you turned a real-world question into an evidence-based answer. It captures your data decisions — what you collected, how you cleaned and queried it, what your visualisations revealed, and what you concluded.</p>
+        </div>
+
+        <div class="pathway-card">
+          <div class="pathway-card-header">
+            <span class="pathway-tag">Suggested pathway</span>
+            <span class="pathway-card-title">The Evaluation Consultant</span>
+          </div>
+          <p>One strong direction for this project: build a system that collects, stores, and visualises project evaluation data from student work across Year 7–12 — including Year 10 major projects. Students and teachers bring their projects to you. You gather ratings, rubric scores, and qualitative feedback, then use your system to find patterns: what makes a strong project? where do students consistently lose marks? what do high-scoring projects have in common?</p>
+          <p>If you follow this path, you become a <strong style="color:var(--accent2)">data consultant for your school</strong> — your findings have genuine value for the students who come after you, and for Year 11/12 where data analysis sits at the core of Enterprise Computing. The prompts in this notebook work for both this pathway and an open dataset investigation — use whichever fits your project.</p>
+        </div>
+
+        <div class="year-info-row">
+          <div class="year-info-card y9">
+            <div class="yic-label">Year 9 — Proposal</div>
+            <p>You are designing a data analysis project you <em>could</em> build. Your notebook covers all four D&amp;P phases. In Producing &amp; Implementing, you will complete data skills tutorials on SEQTA, build a project management plan, and prototype your data pipeline with a sample dataset.</p>
+          </div>
+          <div class="year-info-card y10">
+            <div class="yic-label">Year 10 — Major Project</div>
+            <p>You are building and running your data analysis project. Use build logs every session to record your data collection, cleaning, querying, and visualisation decisions. Your Analysis &amp; Findings section is where your real insights live — this is the heart of the EIS assessment.</p>
+          </div>
+        </div>
+
+        <div class="phase-overview-grid">
+          <div class="phase-card" style="--phase-col:var(--id-col)" onclick="showPanel('id-question')">
+            <div class="phase-name">Identifying &amp; Defining</div>
+            <div class="phase-desc">Frame your research question, identify your data sources, and address data ethics up front.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--rp-col)" onclick="showPanel('rp-existing')">
+            <div class="phase-name">Researching &amp; Planning</div>
+            <div class="phase-desc">Analyse existing approaches, design your data pipeline, plan your visualisations.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--pi-col)" onclick="showPanel(currentYear === 9 ? 'pi-tutorials' : 'pi-build')">
+            <div class="phase-name">Producing &amp; Implementing</div>
+            <div class="phase-desc">Collect, clean, query, and visualise your data. Document every session and every decision.</div>
+          </div>
+          <div class="phase-card" style="--phase-col:var(--te-col)" onclick="showPanel('te-testing')">
+            <div class="phase-name">Testing &amp; Evaluating</div>
+            <div class="phase-desc">Test data quality, verify findings, and evaluate your system against your original question.</div>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this notebook</div>
+          <p>Navigate using the sidebar. Toggle between <strong>Year 9</strong> and <strong>Year 10</strong> to show your relevant sections. The prompts work for both the Evaluation Consultant pathway and an open dataset investigation — adapt them to your context. Check SEQTA for tutorials, dataset resources, and tool guidance throughout.</p>
+        </div>
+
+        <div class="seqta-note">
+          <span>📊</span>
+          <span><strong>Tutorials, sample datasets, and tool resources</strong> are on <strong>SEQTA</strong>. Check your class page — resources are added as the unit progresses.</span>
+        </div>
+      </div>
+
+      <!-- ══ I&D: QUESTION ══ -->
+      <div class="panel" id="panel-id-question">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Question &amp; Purpose</div>
+          <div class="section-subtitle">Data analysis without a clear question is just data shuffling. Your question shapes every decision that follows — what data you need, how you clean it, what visualisations you choose, and what counts as a finding.</div>
+        </div>
+
+        <div class="pathway-card">
+          <div class="pathway-card-header"><span class="pathway-tag">Consultant pathway</span></div>
+          <p>Your question might be: <em>"What patterns exist in project evaluation scores across Year 7–10, and what characteristics distinguish high-achieving projects from low-achieving ones?"</em> Or more specific: <em>"Do students who document their design process more thoroughly achieve higher evaluation scores?"</em> A focused, answerable question is always stronger than a broad one.</p>
+        </div>
+
+        <div class="prompt-card open" id="card-q1">
+          <div class="prompt-card-header" onclick="toggleCard('card-q1')">
+            <div class="prompt-card-title"><span class="card-icon">❓</span> The research question</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>State your research question clearly.</strong> It should be specific enough to answer with data, and open enough to yield interesting findings — not just a yes/no.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Break it into sub-questions.</strong> What smaller questions, if answered, would together answer your main question?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Who are the users of your analysis?</strong> Who will act on your findings? How will they use them? (e.g. a teacher adjusting their feedback approach; a student deciding how to allocate time; a school identifying curriculum gaps.)</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What decisions could your analysis inform?</strong> A good research question is connected to a real decision someone needs to make.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your question should be genuinely investigative — it should be possible to be surprised by the answer. "How many students completed the project?" is descriptive. "Is there a relationship between project planning thoroughness and final score?" is analytical.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-q2">
+          <div class="prompt-card-header" onclick="toggleCard('card-q2')">
+            <div class="prompt-card-title"><span class="card-icon">🌍</span> Evolution of data analysis</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>How has data analysis in your domain evolved over time?</strong> How was the kind of question you're investigating handled before digital tools existed?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What tools, technologies, or innovations made your project possible?</strong> (e.g. affordable cloud databases, open data policies, visualisation libraries, spreadsheet software.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How might this type of analysis evolve in the next 10 years?</strong> What would AI, real-time data, or larger datasets make possible that your current project can't do?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connect the evolution narrative to your own project. "Before digital tools, teachers had to manually review all student work to spot patterns — my system automates this and makes patterns visible across hundreds of submissions" is stronger than a general history of computing.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-q3">
+          <div class="prompt-card-header" onclick="toggleCard('card-q3')">
+            <div class="prompt-card-title"><span class="card-icon">👥</span> Diverse perspectives</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Who is represented in your data — and who might not be?</strong> Consider students from different cultural backgrounds, those with disability, EAL/D learners, and students of different genders. Does your dataset reflect the diversity of your school community?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Could your analysis disadvantage any group?</strong> If you find that one group consistently scores lower, what are the alternative explanations beyond ability? How should this shape how you present your findings?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Who should have access to your findings?</strong> Are there results that should be shared with everyone, and others that should only go to specific people?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: Grade A analysis is aware of its own limitations and potential harms. Acknowledging who is underrepresented in your data, or how a finding could be misused, is not a weakness — it is a mark of analytical maturity.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: DATA ══ -->
+      <div class="panel" id="panel-id-data">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Data Sources &amp; Collection</div>
+          <div class="section-subtitle">You can only answer questions your data can support. Before collecting anything, understand what data you need, where it comes from, and what form it takes.</div>
+        </div>
+
+        <div class="pathway-card">
+          <div class="pathway-card-header"><span class="pathway-tag">Consultant pathway</span></div>
+          <p>Your data comes from students and teachers. You might collect: rubric scores per criterion, overall grades, teacher comments, self-assessment ratings, time spent per D&amp;P phase, project type (game / app / mechatronics / data), and year level. Each of these is a field in your database — plan them before collecting a single response.</p>
+        </div>
+
+        <div class="prompt-card open" id="card-ds1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ds1')">
+            <div class="prompt-card-title"><span class="card-icon">📦</span> Data identification</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What data do you need to answer your research question?</strong> List every field/variable, its data type (numerical, categorical, text, date), and what it represents.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Where will this data come from?</strong> (A public dataset, a survey you design, existing records, an API, manual observation?) For each source, note how reliable and complete it is likely to be.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What data is not available to you?</strong> Every dataset has gaps. Acknowledging them shapes how confident you can be in your conclusions.</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What is the minimum dataset</strong> that would still let you answer your research question? This is your MVP — what you need before you can produce any meaningful analysis.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: justify your field choices. "I'm collecting overall grade" is weaker than "I'm collecting scores per rubric criterion because overall grade alone doesn't show <em>where</em> students lose marks."</span>
+            </div>
+            <div class="response-hint">write your data identification table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ds2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ds2')">
+            <div class="prompt-card-title"><span class="card-icon">🗃️</span> Database structure</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Sketch the structure of your database.</strong> What are the tables (or sheets/collections)? What fields does each contain? What is the primary key — the unique identifier for each record?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Are there relationships between tables?</strong> (e.g. a "projects" table linked to a "students" table; a "criteria" table linked to "scores".) Show these relationships.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What data types will you use for each field?</strong> (Integer, float, text, boolean, date.) Why does this matter for querying and sorting later?</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">Example — database schema sketch</div>
+              <pre><span class="cm">// Table: projects</span>
+project_id   INTEGER   <span class="cm">PRIMARY KEY</span>
+student_id   INTEGER   <span class="cm">FOREIGN KEY → students</span>
+year_level   INTEGER
+project_type TEXT      <span class="cm">('game','app','mechatronics','data')</span>
+term         TEXT
+total_score  FLOAT
+
+<span class="cm">// Table: criterion_scores</span>
+score_id     INTEGER   <span class="cm">PRIMARY KEY</span>
+project_id   INTEGER   <span class="cm">FOREIGN KEY → projects</span>
+criterion    TEXT      <span class="cm">('design','code','testing','eval')</span>
+score        FLOAT
+max_score    FLOAT</pre>
+            </div>
+            <div class="response-hint">include your database schema in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ds3">
+          <div class="prompt-card-header" onclick="toggleCard('card-ds3')">
+            <div class="prompt-card-title"><span class="card-icon">🧹</span> Data cleaning plan</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What cleaning will your data need before analysis?</strong> Consider: missing values, inconsistent formatting (e.g. "Year 10" vs "Yr10" vs "10"), duplicate records, out-of-range values, and data entered in the wrong field.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How will you handle missing data?</strong> Will you exclude incomplete records, substitute a default value, or note the gap in your findings? Justify your approach.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What does a cleaned, import-ready dataset look like?</strong> Describe the format your database will expect.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade C and above</strong>: data cleaning is not optional — it's part of applying iterative processes. Raw data is almost never analysis-ready. Documenting your cleaning decisions is evidence of systematic thinking.</span>
+            </div>
+            <div class="response-hint">write your data cleaning plan in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ I&D: ETHICS ══ -->
+      <div class="panel" id="panel-id-ethics">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--id-col)">Identifying &amp; Defining</div>
+          <div class="section-title">Ethics, Privacy &amp; Bias</div>
+          <div class="section-subtitle">Data about people carries responsibilities. Every decision about what data to collect, how to store it, and how to present findings has an ethical dimension — and the syllabus requires you to address it directly.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eth1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth1')">
+            <div class="prompt-card-title"><span class="card-icon">🔐</span> Privacy, security &amp; data ownership</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Does your data contain personally identifiable information (PII)?</strong> Name, student ID, year level, and scores can all identify individuals. How will you protect this — anonymisation, aggregation, access controls?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Who owns the data you are collecting?</strong> If you're collecting scores from student projects, do those students have the right to know their data is being used? Do they have the right to opt out?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Where will the data be stored?</strong> Who can access it? What happens to it at the end of the project?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What would a data breach mean</strong> for the people in your dataset? What steps have you taken to minimise the risk?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: data ethics is not a checkbox — it's a design decision. Show that your privacy protections are built into your system from the start, not added as an afterthought. "I will anonymise all data before analysis" should appear in your schema, not just in your ethics section.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eth2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eth2')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Bias in data &amp; visualisation</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Where could bias enter your dataset?</strong> Consider: who chooses to respond to your survey (self-selection bias), whether some groups are systematically underrepresented, whether your scoring criteria disadvantage certain types of projects.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How could your visualisation choices create a misleading impression?</strong> (e.g. a truncated y-axis exaggerates differences; cherry-picking the date range of a trend; choosing a chart type that hides outliers.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What is the data trail for your analysis?</strong> If someone wanted to verify your findings, what would they need to access? How have you documented your process so it could be audited?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: the best data analysts are sceptical of their own findings. Proactively identifying where your visualisations could mislead — and showing how you've designed against it — is Grade A systems thinking applied to data.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: EXISTING ══ -->
+      <div class="panel" id="panel-rp-existing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Existing Systems Analysis</div>
+          <div class="section-subtitle">Data analysis systems already exist in your domain. Analysing how they work — and how they present findings — will sharpen your own design decisions.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-ex1">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex1')">
+            <div class="prompt-card-title"><span class="card-icon">🔍</span> Analyse an existing data system</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Find an existing data analysis system or dashboard</strong> that addresses a similar type of question to yours. (e.g. a school reporting dashboard, a public government data portal, a sports analytics tool, a financial reporting system.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What data does it collect?</strong> What does it visualise? What questions is it designed to answer?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Evaluate its design.</strong> Are the visualisations clear and honest? Is it easy to find the key insight, or does it bury important information in noise?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>What will you borrow, improve, or avoid</strong> in your own system? Be specific about design and data decisions.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: your analysis should connect to your own design. "This dashboard uses a colour scale that makes small differences look dramatic — I'll use a diverging scale from a neutral midpoint to avoid this" is analysis. "It has lots of charts" is description.</span>
+            </div>
+            <div class="response-hint">write your analysis and include screenshots in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-ex2">
+          <div class="prompt-card-header" onclick="toggleCard('card-ex2')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Visualisation design critique</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Find one good and one misleading data visualisation. Your ability to critique existing visualisations directly shapes your ability to design better ones.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Find a visualisation you consider effective.</strong> What makes it work? What principle of good visualisation does it demonstrate? (Clarity, appropriate chart type, honest axes, meaningful colour, clear labelling.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Find a visualisation you consider misleading or poorly designed.</strong> What specific choices make it misleading? How would you redesign it?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What 3–4 design principles</strong> will guide your own visualisations as a result of this analysis?</span></li>
+            </ul>
+            <div class="response-hint">write your critique and include images in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: PIPELINE ══ -->
+      <div class="panel" id="panel-rp-pipeline">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Data Pipeline Design</div>
+          <div class="section-subtitle">A data pipeline is the full journey from raw data to insight. Design it before building it — every stage has decisions that affect the quality and integrity of your analysis.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-pipe1">
+          <div class="prompt-card-header" onclick="toggleCard('card-pipe1')">
+            <div class="prompt-card-title"><span class="card-icon">🔀</span> Pipeline overview</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="data-pipeline">
+              <div class="dp-stage"><div class="dp-box collect">COLLECT</div><div class="dp-label">survey, import,<br>API, manual entry</div></div>
+              <div class="dp-arrow">→</div>
+              <div class="dp-stage"><div class="dp-box clean">CLEAN</div><div class="dp-label">validate, deduplicate,<br>handle missing</div></div>
+              <div class="dp-arrow">→</div>
+              <div class="dp-stage"><div class="dp-box query">QUERY</div><div class="dp-label">filter, aggregate,<br>join, sort</div></div>
+              <div class="dp-arrow">→</div>
+              <div class="dp-stage"><div class="dp-box visualise">VISUALISE</div><div class="dp-label">chart type,<br>colour, labels</div></div>
+              <div class="dp-arrow">→</div>
+              <div class="dp-stage"><div class="dp-box insight">INSIGHT</div><div class="dp-label">trends, outliers,<br>decisions</div></div>
+            </div>
+            <ul class="prompts-list" style="margin-top:16px">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Map out your pipeline.</strong> For each stage, describe what tool you'll use and what will happen to the data. Include this as a diagram in your notebook document.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Where are the risk points?</strong> Which stage is most likely to introduce errors or data quality problems? What will you do to detect and fix them?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Is your pipeline repeatable?</strong> If you needed to re-run the analysis with new data added, what would you have to redo manually, and what could be automated?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: a Grade A pipeline is designed for integrity — the same input always produces the same output, and changes to the data are tracked. Show that you've thought about <em>reproducibility</em>, not just completion.</span>
+            </div>
+            <div class="response-hint">include your pipeline diagram in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pipe2">
+          <div class="prompt-card-header" onclick="toggleCard('card-pipe2')">
+            <div class="prompt-card-title"><span class="card-icon">🔎</span> Query planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each sub-question in your investigation,</strong> plan the database query or filter you will use to extract the relevant data. What fields will you select? What conditions will you filter on? What aggregation (count, average, sum) will you apply?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Write pseudocode or a plain-language description of each key query</strong> before implementing it. (e.g. "Select all projects where year_level = 10 AND project_type = 'game', group by criterion, calculate average score per criterion.")</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What output does each query produce?</strong> What format will the results be in, and how will they feed into your visualisations?</span></li>
+            </ul>
+            <div class="code-hint">
+              <div class="code-hint-label">Example query pseudocode</div>
+              <pre><span class="cm">// Sub-question: Which criterion do Year 10 students</span>
+<span class="cm">// score lowest on average?</span>
+<span class="kw">SELECT</span> criterion, AVG(score / max_score * <span class="num">100</span>) <span class="kw">AS</span> avg_pct
+<span class="kw">FROM</span> criterion_scores
+<span class="kw">JOIN</span> projects <span class="kw">ON</span> criterion_scores.project_id = projects.project_id
+<span class="kw">WHERE</span> projects.year_level = <span class="num">10</span>
+<span class="kw">GROUP BY</span> criterion
+<span class="kw">ORDER BY</span> avg_pct <span class="kw">ASC</span>
+
+<span class="cm">// Expected output: table of criterion names + avg %</span>
+<span class="cm">// → feeds into a horizontal bar chart</span></pre>
+            </div>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for query tutorials and examples for your chosen database tool.</span>
+            </div>
+            <div class="response-hint">write your query plan in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: VISUALISATION ══ -->
+      <div class="panel" id="panel-rp-viz">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Visualisation Planning</div>
+          <div class="section-subtitle">The right chart type makes a finding obvious. The wrong one buries it. Plan your visualisations against your questions — not against what you happen to know how to make.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-viz1">
+          <div class="prompt-card-header" onclick="toggleCard('card-viz1')">
+            <div class="prompt-card-title"><span class="card-icon">📈</span> Visualisation selection</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:12px">For each sub-question, plan the visualisation you will use:</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+              <span class="viz-chip chip-bar">Bar / Column — compare categories</span>
+              <span class="viz-chip chip-line">Line — change over time</span>
+              <span class="viz-chip chip-scatter">Scatter — correlation between two variables</span>
+              <span class="viz-chip chip-pie">Pie / Donut — part-of-whole (use sparingly)</span>
+              <span class="viz-chip chip-table">Table — precise values, multiple dimensions</span>
+            </div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each visualisation you plan to create,</strong> state: what sub-question it answers, what chart type you will use, and why that type suits the data and the question.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Sketch a rough wireframe of each chart.</strong> What goes on each axis? What data series will you show? What will the title and axis labels say?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How will you highlight trends and outliers</strong> specifically? Describe at least one technique you will use to make a key finding stand out in a chart.</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: plan for at least one visualisation that identifies an outlier and one that shows a trend over a dimension (time, year level, project type). These are the specific analytical outcomes the syllabus requires.</span>
+            </div>
+            <div class="response-hint">include visualisation sketches and justifications in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-viz2">
+          <div class="prompt-card-header" onclick="toggleCard('card-viz2')">
+            <div class="prompt-card-title"><span class="card-icon">🎨</span> Design principles for your charts</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>State 3–5 design principles</strong> you will apply to all your visualisations. (e.g. "Y-axis always starts at zero unless explicitly justified", "Colour is used to encode meaning, not decoration", "Every chart has a title that states the finding, not just the variable.")</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How will you make your visualisations accessible?</strong> Consider colourblind-friendly palettes, alternative text descriptions, and readable font sizes.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What tool will you use</strong> to create your visualisations, and why is it appropriate for your data and audience?</span></li>
+            </ul>
+            <div class="response-hint">write your design principles in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ R&P: PLAN ══ -->
+      <div class="panel" id="panel-rp-plan">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--rp-col)">Researching &amp; Planning</div>
+          <div class="section-title">Project Plan</div>
+          <div class="section-subtitle">Data projects have a different rhythm from build projects — you can't visualise data you haven't collected, and you can't draw conclusions from unclean data. Your plan must respect these dependencies.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-plan1">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan1')">
+            <div class="prompt-card-title"><span class="card-icon">📅</span> Sprint breakdown</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Break your project into 3–5 sprints.</strong> A typical sequence for a data project: (1) Schema design + data collection, (2) Cleaning + import + first queries, (3) Visualisations + initial findings, (4) Refinement + additional analysis, (5) Report + evaluation.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What is the exit condition for each sprint?</strong> (e.g. Sprint 1 done when: 30+ records collected and imported into database without errors.)</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What is your riskiest dependency?</strong> (e.g. If your data collection relies on other students responding to your survey, what happens if you only get 10 responses by the end of Sprint 1?)</span></li>
+            </ul>
+            <div class="response-hint">include your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-plan2">
+          <div class="prompt-card-header" onclick="toggleCard('card-plan2')">
+            <div class="prompt-card-title"><span class="card-icon">🛠️</span> Tools &amp; data management</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Name the tools you will use at each pipeline stage</strong> — collection, storage/database, querying, and visualisation. Justify each choice.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How will you back up your database?</strong> What happens if data is accidentally deleted or corrupted?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How will you version your analysis?</strong> If you change a query or reprocess your data, how will you know what changed and why?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: TUTORIALS (Y9) ══ -->
+      <div class="panel" id="panel-pi-tutorials">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Tutorials &amp; Prototyping</div>
+          <div class="section-subtitle">Year 9 Producing &amp; Implementing builds the technical skills you'll need to run your analysis next year — and proves your proposed pipeline is feasible.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— complete data skills tutorials on SEQTA and document your learning here.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— see Build Logs and Analysis &amp; Findings instead.</span></div>
+
+        <div class="prompt-card open" id="card-tut1">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut1')">
+            <div class="prompt-card-title"><span class="card-icon">🎓</span> Tutorial completion log</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field">
+                <div class="log-field-label">Tutorial name</div>
+                <div class="log-field-prompt">The name as it appears on SEQTA.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Date completed</div>
+                <div class="log-field-prompt">When did you finish it?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Pipeline stage covered</div>
+                <div class="log-field-prompt">Which stage: Collect / Clean / Query / Visualise / Report?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Key technique learned</div>
+                <div class="log-field-prompt">Name the specific skill: a query type, chart function, cleaning method, or data structure.</div>
+              </div>
+              <div class="log-field full-width">
+                <div class="log-field-label">How this applies to my proposed analysis</div>
+                <div class="log-field-prompt">Which query, visualisation, or cleaning step in your proposed project would use this technique? Be specific — name the sub-question it serves.</div>
+              </div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: connecting every tutorial to a specific part of your proposed pipeline — not just "it will be useful" — demonstrates that you understand your own system, not just the tutorial task.</span>
+            </div>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Tutorials are on <strong>SEQTA</strong>. Prioritise the ones covering skills your proposed pipeline needs most — database querying, data cleaning, and your chosen visualisation tool.</span>
+            </div>
+            <div class="response-hint">add a new row to your tutorial log for each tutorial completed</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut2">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut2')">
+            <div class="prompt-card-title"><span class="card-icon">🧩</span> Prototype pipeline</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">Use a small sample dataset (even 10–20 rows) to run your proposed pipeline end-to-end. This proves your schema, queries, and visualisations actually work together before you commit to full data collection.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Describe the sample dataset you used.</strong> Where did it come from? How many records? Was it real or fabricated for testing?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Run at least one query and produce at least one visualisation.</strong> Include screenshots of both in your notebook document.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What did you discover about your pipeline design?</strong> Did anything not work as planned? What do you need to change in your schema, queries, or visualisation approach before you collect real data?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: a prototype that reveals a design problem — and proposes a fix — is stronger evidence than a prototype that works perfectly on the first try with no reflection.</span>
+            </div>
+            <div class="response-hint">write your response and include screenshots in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-tut3">
+          <div class="prompt-card-header" onclick="toggleCard('card-tut3')">
+            <div class="prompt-card-title"><span class="card-icon">🔬</span> Skills gap analysis</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>List the technical skills your proposed analysis will require.</strong> (e.g. designing a relational schema, writing JOIN queries, aggregating data, creating a scatter plot, calculating averages, handling missing values.)</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Rate your confidence:</strong> ✅ Can do now / 📚 Need a tutorial / ❓ Not sure how yet.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Which tutorials on SEQTA</strong> will close the gaps you've identified?</span></li>
+            </ul>
+            <div class="response-hint">write your skills gap table in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: PM (Y9) ══ -->
+      <div class="panel" id="panel-pi-pm">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Project Management</div>
+          <div class="section-subtitle">Data projects depend on decisions made early — schema design, data collection strategy, and cleaning rules all compound over time. A good project management plan makes these decisions explicit before they become problems.</div>
+        </div>
+
+        <div class="year-banner y9">Year 9 <span class="banner-note">— plan your project as if you're about to start collecting and analysing next term.</span></div>
+        <div class="year-banner y10" style="display:none">Year 10 <span class="banner-note">— use Build Logs for active project tracking.</span></div>
+
+        <div class="prompt-card open" id="card-pm-us">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-us')">
+            <div class="prompt-card-title"><span class="card-icon">🗺️</span> User story map</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13.5px;color:var(--muted);margin-bottom:14px">For a data project, your "users" include both the people who contribute data to your system and the people who will read and act on your findings.</p>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Write 6–10 user stories</strong> covering both types of user. Format: <em>As a [data contributor / analyst / reader], I want to [do something] so that [some outcome occurs].</em></span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Group stories by activity</strong> (e.g. "contributing data", "running the analysis", "reading the findings") and arrange them left to right in the order they occur in the project.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Draw the MVP line.</strong> What is the minimum set of stories that makes a useful, shareable analysis?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: writing user stories for people who will <em>read</em> your findings as well as people who <em>build</em> the system shows that you've thought about communication — a core EIS outcome.</span>
+            </div>
+            <div class="response-hint">include your user story map as an image in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-kanban">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-kanban')">
+            <div class="prompt-card-title"><span class="card-icon">📌</span> Kanban board</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Kanban board</strong> with columns: Backlog / To Do / In Progress / Done. Break your user stories into concrete tasks — one task per card.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Colour-code your cards</strong> by pipeline stage: collection, cleaning, querying, visualisation, reporting. This makes pipeline bottlenecks visible at a glance.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a screenshot</strong> and note your tool.</span></li>
+            </ul>
+            <div class="response-hint">include a screenshot of your Kanban board in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-scrum">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-scrum')">
+            <div class="prompt-card-title"><span class="card-icon">🏃</span> Scrum sprint planning</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Plan three sprints.</strong> Each sprint goal should describe what an analyst using your system could do by the end of that sprint — not just what you will have built.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Write the definition of done for each sprint.</strong> (e.g. "Sprint 2 done when: database contains 50+ cleaned records and returns correct results for all planned queries.")</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What would you show in a sprint review?</strong> For a data project, this is typically a working query result or a draft visualisation — not a finished report.</span></li>
+            </ul>
+            <div class="response-hint">write your sprint plan as a table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-gantt">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-gantt')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Gantt chart</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Create a Gantt chart</strong> for the full project term. Data collection must start and end early enough for cleaning and analysis to follow — plan the collection window explicitly.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Mark the data collection window</strong> as a distinct block — this is your most time-critical phase because nothing else can proceed without sufficient data.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Include a contingency week.</strong> What will you do if data collection runs over? What analysis is still possible with a smaller dataset?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: a data project Gantt chart that treats data collection as instantaneous is not credible. Show that you understand the collection→clean→query→visualise dependency chain, and that you've built realistic time for each.</span>
+            </div>
+            <div class="response-hint">include your Gantt chart as an image or table in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-pm-compare">
+          <div class="prompt-card-header" onclick="toggleCard('card-pm-compare')">
+            <div class="prompt-card-title"><span class="card-icon">⚖️</span> Comparing project management tools</div>
+            <div class="prompt-card-meta"><span class="badge badge-y9">Y9</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Which tool was most useful for planning a data analysis project?</strong> Does your answer differ from what would be most useful for a build project?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Which tool would be most useful during active analysis?</strong> When you're running queries and producing charts daily, what helps you stay organised?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What do these tools miss</strong> for a data project — where the main risk is not "running out of time to build" but "not having enough good data to analyse"?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: BUILD LOGS (Y10) ══ -->
+      <div class="panel" id="panel-pi-build">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Build Logs</div>
+          <div class="section-subtitle">A data project build log captures your pipeline decisions — what data you collected and why, how you cleaned it, what queries you ran, and what problems you hit along the way.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— complete a build log for every working session.</span></div>
+
+        <div class="prompt-card open" id="card-build1">
+          <div class="prompt-card-header" onclick="toggleCard('card-build1')">
+            <div class="prompt-card-title"><span class="card-icon">🗂️</span> Build log — what to record each session</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="sprint-log-grid">
+              <div class="log-field">
+                <div class="log-field-label">Session / Sprint</div>
+                <div class="log-field-prompt">Date and sprint number. Which pipeline stage are you in?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Planned this session</div>
+                <div class="log-field-prompt">What data work did you intend to do? (Written at the start of class.)</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">What I actually did</div>
+                <div class="log-field-prompt">What was completed? Name the specific queries run, data cleaned, or charts produced.</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Current record count</div>
+                <div class="log-field-prompt">How many valid records are in your database right now? Is it enough to draw conclusions from?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">Data problem encountered</div>
+                <div class="log-field-prompt">Describe a data quality issue, unexpected result, or query that didn't return what you expected. What was the symptom?</div>
+              </div>
+              <div class="log-field">
+                <div class="log-field-label">How I resolved it</div>
+                <div class="log-field-prompt">What did you try? What was the root cause? What cleaning rule or query fix resolved it?</div>
+              </div>
+              <div class="log-field full-width">
+                <div class="log-field-label">What's next</div>
+                <div class="log-field-prompt">What is the priority for next session? Is your analysis on track to answer your research question?</div>
+              </div>
+            </div>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most valuable build log entries describe data problems — a cleaning issue that introduced errors, a query that returned unexpected nulls, a visualisation that revealed a gap in your dataset. These are the iterative decisions that separate rigorous analysis from lucky guessing.</span>
+            </div>
+            <div class="response-hint">add a new build log entry to your notebook document every session</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-build2">
+          <div class="prompt-card-header" onclick="toggleCard('card-build2')">
+            <div class="prompt-card-title"><span class="card-icon">🔁</span> Mid-project review</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y10">Year 10 <span class="banner-note">— complete at the midpoint of your project.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>How much data have you collected?</strong> Is it sufficient to answer your research question? What is still missing?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Have your research questions or pipeline design changed?</strong> What changed and why was it the right call?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What must you prioritise</strong> to produce a meaningful, honest analysis by the deadline?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ P&I: ANALYSIS (Y10) ══ -->
+      <div class="panel" id="panel-pi-analysis">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--pi-col)">Producing &amp; Implementing</div>
+          <div class="section-title">Analysis &amp; Findings</div>
+          <div class="section-subtitle">This section is the heart of your project. It documents what your data actually shows — the trends, outliers, patterns, and surprises that emerged from your queries and visualisations.</div>
+        </div>
+
+        <div class="year-banner y10">Year 10 only <span class="banner-note">— build this section as your analysis progresses, not all at once at the end.</span></div>
+
+        <div class="prompt-card open" id="card-analysis1">
+          <div class="prompt-card-header" onclick="toggleCard('card-analysis1')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Visualisations &amp; what they show</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each visualisation you produce,</strong> include it as an image and write 2–4 sentences describing what it shows. Don't just say "the bar chart shows scores" — say what the pattern <em>means</em> in the context of your research question.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Identify at least one trend</strong> — a pattern that holds across multiple data points or categories. What does it suggest?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Identify at least one outlier</strong> — a data point or group that doesn't fit the general pattern. Is it a data error, a genuine exception, or the most interesting finding in your dataset?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: findings that challenge your hypothesis are more analytically valuable than findings that confirm it. If your data surprises you, say so — and explore why. "Students who spent the most time on design didn't necessarily score the highest, which suggests..." is Grade A analysis.</span>
+            </div>
+            <div class="response-hint">include each visualisation as an image with analysis in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-analysis2">
+          <div class="prompt-card-header" onclick="toggleCard('card-analysis2')">
+            <div class="prompt-card-title"><span class="card-icon">💡</span> Decisions your analysis supports</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What decisions can someone make based on your findings?</strong> Be specific — name the person who would make this decision and what they would do differently as a result of your analysis.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What do your findings <em>not</em> support?</strong> What conclusions would be overreaching based on the data you have? Being explicit about the limits of your analysis is a mark of analytical integrity.</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How would you communicate these findings</strong> to someone who doesn't have a data background? Write a one-paragraph plain-language summary of your most important finding.</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-analysis3">
+          <div class="prompt-card-header" onclick="toggleCard('card-analysis3')">
+            <div class="prompt-card-title"><span class="card-icon">🗃️</span> Query documentation</div>
+            <div class="prompt-card-meta"><span class="badge badge-y10">Y10</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each key query you ran,</strong> include the query code alongside its output and a note on why you wrote it that way.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Note any queries you tried that didn't work</strong> or returned unexpected results. What did you change and why? This is your strongest evidence of iterative analytical thinking.</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for query reference guides and examples for your chosen database tool.</span>
+            </div>
+            <div class="response-hint">paste annotated queries into your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: TESTING ══ -->
+      <div class="panel" id="panel-te-testing">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Data Quality &amp; Testing</div>
+          <div class="section-subtitle">Data analysis can only be trusted if the data it's built on is accurate and complete. Testing is not just checking that your queries run — it's checking that your answers are correct.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-test1">
+          <div class="prompt-card-header" onclick="toggleCard('card-test1')">
+            <div class="prompt-card-title"><span class="card-icon">🧪</span> Data quality test table</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Test the integrity of your data and the correctness of your queries. Include both a "does it run" test and a "is the result correct" test for each key query.</p>
+            <table class="test-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>What I checked</th>
+                  <th>Expected result</th>
+                  <th>Actual result</th>
+                  <th>Pass / Fail</th>
+                  <th>Fix applied</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Record count</td>
+                  <td>Total rows in projects table</td>
+                  <td>≥ 40 records</td>
+                  <td style="color:var(--faint);font-style:italic">Record count</td>
+                  <td><span class="pass">Pass</span></td>
+                  <td style="color:var(--faint);font-style:italic">—</td>
+                </tr>
+                <tr>
+                  <td>Average query accuracy</td>
+                  <td>Manually check 3 rows against avg result</td>
+                  <td>Result matches manual calc</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td><span class="fail">Fail</span></td>
+                  <td style="color:var(--faint);font-style:italic">Found null values skewing avg — added WHERE score IS NOT NULL</td>
+                </tr>
+                <tr>
+                  <td>No duplicate project IDs</td>
+                  <td>COUNT(DISTINCT project_id) = COUNT(*)</td>
+                  <td>Counts match</td>
+                  <td style="color:var(--faint);font-style:italic">Record result</td>
+                  <td style="color:var(--faint)">—</td>
+                  <td style="color:var(--faint);font-style:italic">—</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade B–A</strong>: the most important tests are correctness tests — manually verifying that a query's result matches what you'd get by hand on a small sample. A query that runs but returns wrong results is worse than a query that fails, because you might not notice the error.</span>
+            </div>
+            <div class="response-hint">copy this table into your notebook document and fill it in for all key queries and data checks</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-test2">
+          <div class="prompt-card-header" onclick="toggleCard('card-test2')">
+            <div class="prompt-card-title"><span class="card-icon">👁️</span> Peer review of findings</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <div class="year-banner y9">Year 9 note <span class="banner-note">— have a classmate review your prototype pipeline and visualisation plan.</span></div>
+            <div class="year-banner y10">Year 10 <span class="banner-note">— present your findings to at least one person and record their response.</span></div>
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Show your visualisations to at least one other person</strong> without explaining what they show. Can they read the key finding from the chart alone? What confused them?</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Did anyone question your conclusions?</strong> Were there alternative interpretations of your findings that you hadn't considered?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>What will you change</strong> in your visualisations or written findings as a result of this feedback?</span></li>
+            </ul>
+            <div class="seqta-note">
+              <span>📚</span>
+              <span>Check <strong>SEQTA</strong> for the peer review form template.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ T&E: EVALUATION ══ -->
+      <div class="panel" id="panel-te-eval">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--te-col)">Testing &amp; Evaluating</div>
+          <div class="section-title">Final Evaluation</div>
+          <div class="section-subtitle">A data project evaluation asks two questions: did your system work? and did your analysis answer your question honestly? Both matter, and both need evidence.</div>
+        </div>
+
+        <div class="prompt-card open" id="card-eval1">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval1')">
+            <div class="prompt-card-title"><span class="card-icon">📊</span> Against requirements</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>Did your analysis answer your research question?</strong> For each sub-question, state whether it was answered, partially answered, or left open — and cite the specific visualisation or query result as evidence.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>How useful are your findings to the people you identified as users?</strong> Can they actually make the decision you described in Identifying &amp; Defining? What would make your findings more actionable?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>Were privacy, security, and ethical responsibilities met?</strong> Was data collected with appropriate consent? Was PII protected? Were findings presented without misleading visualisation choices?</span></li>
+            </ul>
+            <div class="cpd-lift">
+              <span class="cpd-lift-icon">⬆</span>
+              <span>To reach <strong>Grade A</strong>: findings without evidence are opinions. Every evaluative claim about your analysis needs a specific data result, test output, or user feedback quote to support it. "My analysis revealed a significant trend" needs the chart and the numbers.</span>
+            </div>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+
+        <div class="prompt-card" id="card-eval2">
+          <div class="prompt-card-header" onclick="toggleCard('card-eval2')">
+            <div class="prompt-card-title"><span class="card-icon">🔮</span> Reflection &amp; next steps</div>
+            <div class="prompt-card-meta"><span class="badge badge-both">All</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>What would you do differently</strong> if you were starting this project again? Name a specific data collection decision, schema design choice, or query approach you would change.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>What would version 2 of this analysis include?</strong> More data? Additional variables? Longitudinal tracking? More sophisticated queries?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>How does this project connect to what you'd do in Year 11/12?</strong> Enterprise Computing deepens data analysis and enterprise systems — what foundation did this project build for that work?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>If you followed the Evaluation Consultant path:</strong> what would you say to the next cohort of students who will use your system? What should they know about the data, the findings, and the limitations?</span></li>
+            </ul>
+            <div class="response-hint">write your response in your notebook document</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CPD ══ -->
+      <div class="panel" id="panel-cpd">
+        <div class="section-header">
+          <div class="section-eyebrow" style="color:var(--accent2)">Grade Self-Assessment</div>
+          <div class="section-title">Course Performance Descriptors</div>
+          <div class="section-subtitle">These descriptors describe what achievement at each grade level looks like. Use them to set your target and check what your notebook needs to demonstrate.</div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-box-title">How to use this page</div>
+          <p>Read each grade card and identify which best describes your current work. Click a card to select your target. Then check your notebook — for EIS: Analysing Data, your strongest evidence lives in your <strong>database schema</strong>, <strong>query documentation</strong>, <strong>visualisations with analytical commentary</strong>, and <strong>data ethics section</strong>. Remember: <strong>a rigorous analysis of a smaller dataset, with honest limitations acknowledged, can merit high achievement over a large dataset analysed superficially.</strong></p>
+        </div>
+
+        <div class="cpd-full-grid">
+          <div class="cpd-full-card" data-grade="E" onclick="selectCPDCard('E')">
+            <div class="cpd-grade-letter">E</div>
+            <ul class="cpd-descriptor-list">
+              <li>Identifies innovations in computing technology</li>
+              <li>Identifies processes that may produce a computing solution</li>
+              <li>Works safely with data</li>
+              <li>Follows algorithms and/or partially implements them</li>
+              <li>Identifies elements of UI that contribute to user experiences</li>
+              <li>Uses data to communicate in a very limited way</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="D" onclick="selectCPDCard('D')">
+            <div class="cpd-grade-letter">D</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a basic understanding of enterprise and innovation</li>
+              <li>Uses processes to produce computing solutions</li>
+              <li>Develops basic solutions using computational or design or systems thinking</li>
+              <li>Uses data safely and responsibly</li>
+              <li>Develops basic algorithms and/or implements them</li>
+              <li>Implements basic elements of UI design</li>
+              <li>Uses data to communicate basic information</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="C" onclick="selectCPDCard('C')">
+            <div class="cpd-grade-letter">C</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a sound understanding of enterprise, innovation and automation</li>
+              <li>Applies iterative processes to produce computing solutions</li>
+              <li>Develops sound solutions using computational, design and systems thinking</li>
+              <li>Applies safe, secure and ethical practices in the use of data</li>
+              <li>Develops common algorithms and implements them</li>
+              <li>Designs and implements UI to create user experiences</li>
+              <li>Selects appropriate data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="B" onclick="selectCPDCard('B')">
+            <div class="cpd-grade-letter">B</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates a thorough understanding of enterprise, innovation and automation</li>
+              <li>Applies appropriate iterative processes</li>
+              <li>Develops effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Develops, tests and implements functional algorithms</li>
+              <li>Demonstrates creativity in design to create engaging experiences</li>
+              <li>Selects relevant data, media and processes to communicate</li>
+            </ul>
+          </div>
+          <div class="cpd-full-card" data-grade="A" onclick="selectCPDCard('A')">
+            <div class="cpd-grade-letter">A</div>
+            <ul class="cpd-descriptor-list">
+              <li>Demonstrates an extensive understanding of enterprise, innovation and automation</li>
+              <li>Skilfully applies appropriate iterative processes</li>
+              <li>Develops highly effective solutions using computational, design and systems thinking</li>
+              <li>Selects and applies safe, secure and ethical practices</li>
+              <li>Skilfully develops, tests and implements technically concise algorithms</li>
+              <li>Demonstrates creativity and innovation in design</li>
+              <li>Selects relevant data, media and processes to effectively communicate</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="prompt-card open" id="card-cpd-check">
+          <div class="prompt-card-header" onclick="toggleCard('card-cpd-check')">
+            <div class="prompt-card-title"><span class="card-icon">✅</span> What does your notebook need to show?</div>
+            <div class="prompt-card-meta">
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          </div>
+          <div class="prompt-card-body">
+            <ul class="prompts-list">
+              <li><span class="prompt-num">01</span><span class="prompt-text"><strong>For each descriptor at your target grade,</strong> identify where in your notebook the evidence sits. If a section is empty or thin, note what you still need to add.</span></li>
+              <li><span class="prompt-num">02</span><span class="prompt-text"><strong>Check the verb.</strong> Grade E: <em>identifies.</em> Grade C: <em>applies.</em> Grade A: <em>skilfully develops.</em> Does your notebook language match your target?</span></li>
+              <li><span class="prompt-num">03</span><span class="prompt-text"><strong>For EIS specifically:</strong> "selects and applies safe, secure and ethical practices in the use of data" is a CPD requirement from Grade B upward. Is your Ethics section genuinely integrated into your design — not just listed at the end?</span></li>
+              <li><span class="prompt-num">04</span><span class="prompt-text"><strong>"Selects relevant data, media and processes to effectively communicate information"</strong> is the Grade A communication descriptor. Does each of your visualisations have written analysis explaining what it shows and why it matters?</span></li>
+              <li><span class="prompt-num">05</span><span class="prompt-text"><strong>Year 11/12 readiness:</strong> If you're considering Enterprise Computing, your notebook here is a preview of the kind of analytical thinking that subject demands. Strong evidence of systematic data decision-making, honest evaluation, and clear communication of findings is the foundation you need.</span></li>
+            </ul>
+            <div class="response-hint">complete this reflection at the end of the project</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentYear = 9;
+  const CPD_COLORS = { E:'#64748b', D:'#f59e0b', C:'#10b981', B:'#06b6d4', A:'#0d9488' };
+  const CPD_LABELS = {
+    E: 'Identifies processes and elements — working safely with data.',
+    D: 'Uses processes — basic solutions, basic data communication.',
+    C: 'Applies iterative processes — sound solutions, applies ethical data practices.',
+    B: 'Applies appropriate iterative processes — effective solutions, selects ethical practices, communicates relevant findings.',
+    A: 'Skilfully applies iterative processes — highly effective solutions, technically concise algorithms, effectively communicates data insights.'
+  };
+  const PANEL_META = {
+    intro:           { phase: 'Overview',                 col: '#0d9488' },
+    'id-question':   { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-data':       { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'id-ethics':     { phase: 'Identifying & Defining',   col: '#06b6d4' },
+    'rp-existing':   { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-pipeline':   { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-viz':        { phase: 'Researching & Planning',   col: '#0d9488' },
+    'rp-plan':       { phase: 'Researching & Planning',   col: '#0d9488' },
+    'pi-tutorials':  { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-pm':         { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-build':      { phase: 'Producing & Implementing', col: '#10b981' },
+    'pi-analysis':   { phase: 'Producing & Implementing', col: '#10b981' },
+    'te-testing':    { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    'te-eval':       { phase: 'Testing & Evaluating',     col: '#f59e0b' },
+    cpd:             { phase: 'Grade Self-Assessment',    col: '#0d9488' },
+  };
+  const PANEL_NAMES = {
+    intro: 'Project Notebook',
+    'id-question': 'Question & Purpose',
+    'id-data': 'Data Sources & Collection',
+    'id-ethics': 'Ethics, Privacy & Bias',
+    'rp-existing': 'Existing Systems Analysis',
+    'rp-pipeline': 'Data Pipeline Design',
+    'rp-viz': 'Visualisation Planning',
+    'rp-plan': 'Project Plan',
+    'pi-tutorials': 'Tutorials & Prototyping',
+    'pi-pm': 'Project Management',
+    'pi-build': 'Build Logs',
+    'pi-analysis': 'Analysis & Findings',
+    'te-testing': 'Data Quality & Testing',
+    'te-eval': 'Final Evaluation',
+    cpd: 'Grade Self-Assessment'
+  };
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const panel = document.getElementById('panel-' + id);
+    if (panel) panel.classList.add('active');
+    const nav = document.querySelector(`.nav-item[data-panel="${id}"]`);
+    if (nav) nav.classList.add('active');
+    const meta = PANEL_META[id] || { phase: '', col: '#0d9488' };
+    const pill = document.getElementById('topbar-phase-pill');
+    pill.textContent = meta.phase;
+    pill.style.background = meta.col + '22';
+    pill.style.color = meta.col;
+    document.getElementById('topbar-section-name').textContent = PANEL_NAMES[id] || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setYear(year) {
+    currentYear = year;
+    document.getElementById('btn-y9').className  = 'year-btn' + (year === 9  ? ' active-y9'  : '');
+    document.getElementById('btn-y10').className = 'year-btn' + (year === 10 ? ' active-y10' : '');
+    document.querySelectorAll('.year-banner.y9').forEach(el => { el.style.display = year === 9 ? 'flex' : 'none'; });
+    document.querySelectorAll('.year-banner.y10').forEach(el => { el.style.display = year === 10 ? 'flex' : 'none'; });
+    document.querySelectorAll('.nav-y9-only').forEach(el => {
+      el.style.opacity = year === 9 ? '1' : '0.35';
+      el.style.pointerEvents = year === 9 ? 'auto' : 'none';
+    });
+    document.querySelectorAll('.nav-y10-only').forEach(el => {
+      el.style.opacity = year === 10 ? '1' : '0.35';
+      el.style.pointerEvents = year === 10 ? 'auto' : 'none';
+    });
+    ['pi-build','pi-analysis'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 9) {
+        if (!p.querySelector('.y9-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y9-lock';
+          lock.style.cssText = 'background:rgba(13,148,136,0.06);border:1px solid rgba(13,148,136,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">🔒</div><div style="font-weight:800;color:var(--accent2);margin-bottom:6px">Year 10 only</div><div style="font-size:13px;color:var(--muted)">This section is for students running their analysis in Year 10.<br>Year 9 — head to <strong>Tutorials &amp; Prototyping</strong> and <strong>Project Management</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y9-lock');
+        if (lock) lock.remove();
+      }
+    });
+    ['pi-tutorials','pi-pm'].forEach(pid => {
+      const p = document.getElementById('panel-' + pid);
+      if (!p) return;
+      if (year === 10) {
+        if (!p.querySelector('.y10-lock')) {
+          const lock = document.createElement('div');
+          lock.className = 'y10-lock';
+          lock.style.cssText = 'background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:28px 24px;text-align:center;margin-bottom:24px';
+          lock.innerHTML = '<div style="font-size:28px;margin-bottom:10px">📊</div><div style="font-weight:800;color:#6ee7b7;margin-bottom:6px">Year 9 section</div><div style="font-size:13px;color:var(--muted)">You\'re running the real analysis — head to <strong>Build Logs</strong> and <strong>Analysis &amp; Findings</strong> instead.</div>';
+          p.insertBefore(lock, p.firstChild);
+        }
+      } else {
+        const lock = p.querySelector('.y10-lock');
+        if (lock) lock.remove();
+      }
+    });
+  }
+
+  function toggleCard(id) {
+    const card = document.getElementById(id);
+    if (card) card.classList.toggle('open');
+  }
+
+  function setCPD(grade) {
+    const order = ['E','D','C','B','A'];
+    const idx = order.indexOf(grade);
+    document.querySelectorAll('.cpd-bar-seg').forEach((seg, i) => { seg.classList.toggle('lit', i <= idx); });
+    const display = document.getElementById('cpd-display');
+    display.textContent = grade;
+    display.style.color = CPD_COLORS[grade];
+    document.getElementById('cpd-sidebar-desc').textContent = CPD_LABELS[grade];
+  }
+
+  function selectCPDCard(grade) {
+    document.querySelectorAll('.cpd-full-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.cpd-full-card[data-grade="${grade}"]`);
+    if (card) card.classList.add('selected');
+    setCPD(grade);
+  }
+
+  setYear(9);
+  showPanel('intro');
+</script>
+</body>
+</html>
