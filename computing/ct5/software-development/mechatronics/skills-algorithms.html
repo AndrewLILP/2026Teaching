@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skills: Shared Algorithms — Mechatronics · CT5 Stage 5</title>
+  <meta name="description" content="Platform-agnostic algorithm patterns for mechatronic systems — NSW pseudocode, sensor-decision-action loops, state machines, modular design, desk checking and test tables. CT5 Stage 5.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Shared design system -->
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <style>
+    :root {
+      --accent:         #22d3ee;
+      --accent-dim:     #0ea5e9;
+      --accent-bright:  #67e8f9;
+      --accent-surface: rgba(34, 211, 238, 0.10);
+      --accent-border:  rgba(34, 211, 238, 0.25);
+
+      /* Platform colours for three-tab panels */
+      --vex:        #8b5cf6;
+      --vex-bright: #a78bfa;
+      --mm:         #f97316;
+      --mm-bright:  #fb923c;
+    }
+
+    /* ── Page hero ── */
+    .page-hero {
+      padding: var(--space-8) 0;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: var(--space-8);
+    }
+    .page-eyebrow {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-3);
+    }
+    .page-hero h1 { margin-bottom: var(--space-4); }
+    .page-intro {
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: var(--content-max);
+      line-height: 1.7;
+      margin-bottom: var(--space-5);
+    }
+    .phase-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+
+    /* ── Content sections ── */
+    .content-section { margin: 0 0 var(--space-12); }
+    .content-section h2 { margin-bottom: var(--space-4); }
+    .content-section > p { margin-bottom: var(--space-4); }
+
+    /* ── Skills page nav strip ── */
+    .skills-page-nav {
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-8);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+    }
+    .skills-page-nav__label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      align-self: center;
+      margin-right: var(--space-2);
+      white-space: nowrap;
+    }
+    .skills-page-nav a {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+    .skills-page-nav a:hover { border-color: var(--accent-border); color: var(--accent-bright); }
+    .skills-page-nav a.is-current {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+      color: var(--accent-bright);
+    }
+
+    /* ── Info / example boxes ── */
+    .info-box {
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-5) 0;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+    }
+    .info-box strong { color: var(--accent-bright); }
+
+    .example-box {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+    }
+    .example-box strong { display: block; color: var(--color-text-primary); margin-bottom: var(--space-2); }
+
+    /* ── Section phase tag ── */
+    .section-phase-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-3);
+    }
+    .section-phase-tag.research { color: var(--color-phase-research); }
+    .section-phase-tag.produce  { color: var(--color-phase-produce); }
+    .section-phase-tag.test     { color: var(--color-phase-test); }
+    .section-phase-tag .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    /* ── Three-tab lang switcher — extend shared .lang-tab ── */
+    /* Tab badge colours for pseudo/vex/mm */
+    .lang-tab[data-lang="pseudo"] .lang-badge { color: var(--accent-bright); }
+    .lang-tab[data-lang="pseudo"].is-active   { color: var(--accent-bright); border-bottom-color: var(--accent-bright); }
+    .lang-tab[data-lang="pseudo"].is-active .lang-badge {
+      background: var(--accent-surface); border-color: var(--accent-border); color: var(--accent-bright);
+    }
+    .lang-tab[data-lang="vex"].is-active   { color: var(--vex-bright); border-bottom-color: var(--vex-bright); }
+    .lang-tab[data-lang="vex"].is-active .lang-badge {
+      background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.28); color: var(--vex-bright);
+    }
+    .lang-tab[data-lang="mm"].is-active   { color: var(--mm-bright); border-bottom-color: var(--mm-bright); }
+    .lang-tab[data-lang="mm"].is-active .lang-badge {
+      background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.28); color: var(--mm-bright);
+    }
+
+    /* Panel platform tint strips */
+    .lang-panel[data-lang="pseudo"] .walkthrough-step__header { border-left: 3px solid var(--accent); }
+    .lang-panel[data-lang="vex"]    .walkthrough-step__header { border-left: 3px solid var(--vex); }
+    .lang-panel[data-lang="mm"]     .walkthrough-step__header { border-left: 3px solid var(--mm); }
+
+    /* ── Algorithm pattern card ── */
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-6) 0;
+    }
+    .pattern-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      transition: border-color var(--transition-fast);
+    }
+    .pattern-card:hover { border-color: var(--accent-border); }
+    .pattern-card__icon { font-size: 1.4rem; margin-bottom: var(--space-3); }
+    .pattern-card h4 { font-size: var(--text-sm); font-weight: 700; margin-bottom: var(--space-2); }
+    .pattern-card p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; max-width: none; line-height: 1.6; }
+    .pattern-card__tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-2);
+    }
+
+    /* ── Desk check worksheet ── */
+    .deskcheck-wrap {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6) var(--space-8);
+      margin: var(--space-6) 0;
+    }
+    .deskcheck-wrap h3 { margin-bottom: var(--space-3); }
+    .deskcheck-wrap p  { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: var(--space-4); }
+    .deskcheck-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+      counter-reset: desk-step;
+    }
+    .deskcheck-step {
+      display: flex;
+      gap: var(--space-4);
+      align-items: flex-start;
+    }
+    .deskcheck-step::before {
+      counter-increment: desk-step;
+      content: counter(desk-step);
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      color: var(--accent-bright);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .deskcheck-step__body {
+      flex: 1;
+    }
+    .deskcheck-step h4 {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      margin-bottom: var(--space-1);
+      color: var(--color-text-primary);
+    }
+    .deskcheck-step p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0;
+      max-width: none;
+      line-height: 1.6;
+    }
+
+    /* ── Test table builder ── */
+    .test-table-wrap { overflow-x: auto; margin: var(--space-6) 0; }
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+    }
+    .test-table th {
+      background: var(--color-surface-3);
+      color: var(--accent-bright);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border: 1px solid var(--color-border-mid);
+      white-space: nowrap;
+    }
+    .test-table td {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+      vertical-align: top;
+    }
+    .test-table tbody tr:nth-child(even) td { background: var(--color-surface-2); }
+    .test-table .td-id     { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--accent-bright); font-weight: 700; white-space: nowrap; }
+    .test-table .td-input  { font-family: var(--font-mono); font-size: var(--text-xs); color: #fb923c; }
+    .test-table .td-expect { font-family: var(--font-mono); font-size: var(--text-xs); color: #34d399; }
+    .test-table .td-pass   { color: #34d399; font-weight: 700; text-align: center; }
+    .test-table .td-fail   { color: #f87171; font-weight: 700; text-align: center; }
+    .test-table .td-note   { font-size: var(--text-xs); color: var(--color-text-muted); }
+    .test-table .td-req    { font-size: var(--text-xs); color: var(--color-text-primary); font-weight: 600; }
+
+    /* ── Modular design visual ── */
+    .module-diagram {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      margin: var(--space-6) 0;
+    }
+    .module-row {
+      display: flex;
+      align-items: stretch;
+      gap: var(--space-3);
+    }
+    .module-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      flex: 1;
+      text-align: center;
+    }
+    .module-box.is-main {
+      background: var(--accent-surface);
+      border-color: var(--accent-border);
+    }
+    .module-box__label {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-1);
+    }
+    .module-box__name {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-text-primary);
+    }
+    .module-box__desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+    .module-connector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-size: var(--text-lg);
+      font-weight: 700;
+      flex-shrink: 0;
+      width: 24px;
+    }
+
+    /* ── Algorithm comparison table ── */
+    .algo-compare {
+      margin: var(--space-6) 0;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .algo-compare table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+    .algo-compare thead th {
+      background: var(--color-surface-3);
+      padding: var(--space-4) var(--space-5);
+      text-align: left;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--color-border-mid);
+      color: var(--color-text-muted);
+    }
+    .algo-compare thead th:nth-child(2) { color: var(--accent-bright); }
+    .algo-compare thead th:nth-child(3) { color: var(--vex-bright); }
+    .algo-compare thead th:nth-child(4) { color: var(--mm-bright); }
+    .algo-compare tbody td {
+      padding: var(--space-3) var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: top;
+      line-height: 1.5;
+      color: var(--color-text-secondary);
+    }
+    .algo-compare tbody tr:last-child td { border-bottom: none; }
+    .algo-compare tbody tr:nth-child(even) td { background: var(--color-surface); }
+    .algo-compare .td-concept { font-weight: 700; color: var(--color-text-primary); white-space: nowrap; font-size: var(--text-xs); }
+    .algo-compare code { font-size: var(--text-xs); }
+
+    /* ── CPD + notebook ── */
+    .cpd-section { margin: var(--space-12) 0 var(--space-8); }
+    .cpd-section h2 { margin-bottom: var(--space-3); }
+    .cpd-intro { color: var(--color-text-secondary); font-size: var(--text-sm); margin-bottom: var(--space-6); max-width: var(--content-max); }
+    .sentence-starter { display: block; margin-top: var(--space-2); font-style: italic; color: var(--color-text-muted); font-size: var(--text-xs); }
+    .notebook-link {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      font-size: var(--text-sm); font-weight: 600; color: var(--accent-bright);
+      text-decoration: none; padding: var(--space-2) var(--space-4);
+      background: var(--accent-surface); border: 1px solid var(--accent-border);
+      border-radius: var(--radius-md); transition: all var(--transition-fast);
+    }
+    .notebook-link:hover { background: rgba(34, 211, 238, 0.18); color: var(--accent-bright); text-decoration: none; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .pattern-grid { grid-template-columns: 1fr; }
+      .deskcheck-wrap { padding: var(--space-5) var(--space-4); }
+      .algo-compare { overflow-x: auto; }
+      .module-row { flex-direction: column; }
+      .module-connector { transform: rotate(90deg); width: auto; height: 24px; }
+      .skills-page-nav { gap: var(--space-1); }
+    }
+  </style>
+</head>
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Software Development</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Mechatronics</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Shared Algorithms</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills.html" class="ct-nav-btn">← Skills hub</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"  aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Mechatronics</a></li>
+      <li><a href="skills.html">Skills</a></li>
+      <li aria-current="page">Shared Algorithms</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#patterns">Algorithm patterns</a>
+          <a href="#sda-loop">Sensor-Decision-Action loop</a>
+          <a href="#state-machines">State machines</a>
+          <a href="#modular-design">Modular design</a>
+          <a href="#desk-checking">Desk checking</a>
+          <a href="#test-tables">Test tables</a>
+          <a href="#platform-map">Platform translation map</a>
+          <a href="#tasks">Tiered tasks</a>
+          <a href="#cpd">Grade descriptors</a>
+          <a href="#notebook">Project notebook</a>
+        </nav>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-EVL-01</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div>
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Skills pages</div>
+        <nav aria-label="Skills page navigation">
+          <a href="skills-hardware.html" style="display:block;font-size:var(--text-xs);color:var(--color-text-secondary);padding:var(--space-1) 0;text-decoration:none;">① Hardware Concepts</a>
+          <a href="skills-programming.html" style="display:block;font-size:var(--text-xs);color:var(--color-text-secondary);padding:var(--space-1) 0;text-decoration:none;">② Programming Foundations</a>
+          <a href="skills-vex.html" style="display:block;font-size:var(--text-xs);color:var(--color-text-secondary);padding:var(--space-1) 0;text-decoration:none;">③ VEX Skills</a>
+          <a href="skills-micromelon.html" style="display:block;font-size:var(--text-xs);color:var(--color-text-secondary);padding:var(--space-1) 0;text-decoration:none;">④ Micromelon Skills</a>
+          <a href="skills-algorithms.html" style="display:block;font-size:var(--text-xs);font-weight:700;color:var(--accent-bright);padding:var(--space-1) 0;text-decoration:none;">⑤ Shared Algorithms</a>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <div class="page-eyebrow">SD · Mechatronics · Skills 5 of 5</div>
+        <h1>Shared Algorithms</h1>
+        <p class="page-intro">
+          Good algorithms transfer across platforms. The patterns on this page —
+          sensor-decision-action loops, state machines, modular function design,
+          desk checking, and test tables — apply equally to VEX and Micromelon.
+          Master them here and they carry into every project you build.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+      <nav class="skills-page-nav" aria-label="Skills pages">
+        <span class="skills-page-nav__label">Skills pages</span>
+        <a href="skills-hardware.html">① Hardware</a>
+        <a href="skills-programming.html">② Programming</a>
+        <a href="skills-vex.html">③ VEX</a>
+        <a href="skills-micromelon.html">④ Micromelon</a>
+        <a href="skills-algorithms.html" class="is-current" aria-current="page">⑤ Algorithms</a>
+        <a href="skills.html" style="margin-left:auto;">Hub ↗</a>
+      </nav>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: ALGORITHM PATTERNS OVERVIEW
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="patterns">
+        <div class="section-phase-tag research"><span class="dot"></span> Researching &amp; Planning</div>
+        <h2>Algorithm patterns — the reusable toolkit</h2>
+        <p>
+          Most robot programs are combinations of a small number of core patterns.
+          Recognising which pattern to reach for — and knowing how to adapt it —
+          is what separates engineers who solve problems from engineers who google
+          until something works.
+        </p>
+
+        <div class="pattern-grid">
+          <div class="pattern-card">
+            <div class="pattern-card__icon">🔄</div>
+            <div class="pattern-card__tag">Pattern 01</div>
+            <h4>Sensor-Decision-Action loop</h4>
+            <p>The foundation of all autonomous robot control. Read sensor → make decision → command actuator → repeat. Every sprint in this unit is built on this loop.</p>
+          </div>
+          <div class="pattern-card">
+            <div class="pattern-card__icon">🔀</div>
+            <div class="pattern-card__tag">Pattern 02</div>
+            <h4>State machine</h4>
+            <p>The robot has a finite set of behaviours (states). Sensor conditions trigger transitions between states. Only one state is active at a time, making complex behaviour manageable.</p>
+          </div>
+          <div class="pattern-card">
+            <div class="pattern-card__icon">📦</div>
+            <div class="pattern-card__tag">Pattern 03</div>
+            <h4>Modular functions</h4>
+            <p>Each distinct behaviour is a named function. The main loop calls functions — it doesn't contain logic directly. Functions can be tested independently and reused across sprints.</p>
+          </div>
+          <div class="pattern-card">
+            <div class="pattern-card__icon">📋</div>
+            <div class="pattern-card__tag">Pattern 04</div>
+            <h4>Named constants</h4>
+            <p>Threshold values, speeds, and durations are named constants at the top of the file. Change a value once and it updates everywhere. Never scatter raw numbers through code.</p>
+          </div>
+          <div class="pattern-card">
+            <div class="pattern-card__icon">🔍</div>
+            <div class="pattern-card__tag">Pattern 05</div>
+            <h4>Desk checking</h4>
+            <p>Trace pseudocode manually with sample values before writing code. Catch logic errors when they cost nothing to fix — not after the robot has driven into a wall.</p>
+          </div>
+          <div class="pattern-card">
+            <div class="pattern-card__icon">🧪</div>
+            <div class="pattern-card__tag">Pattern 06</div>
+            <h4>Systematic testing</h4>
+            <p>Test cases based on requirements. Every functional requirement generates at least one test. Include boundary values (exactly at threshold), not just comfortable middle values.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: SENSOR-DECISION-ACTION LOOP
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="sda-loop">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Pattern 01 — Sensor-Decision-Action loop</h2>
+        <p>
+          Every autonomous robot repeats the same cycle: sense, decide, act.
+          The only thing that changes between programs is <em>what</em> you're sensing,
+          <em>what decisions</em> you make, and <em>what actions</em> follow.
+          Understanding this pattern lets you design any autonomous behaviour by filling in the blanks.
+        </p>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — Sensor-Decision-Action loop (general form)</div>
+          <pre>
+BEGIN setup
+  ← Initialise variables and constants
+END setup
+
+WHILE True DO           ← run forever
+
+  ← ① SENSE: read all sensors needed this iteration
+  sensorValue ← sensor.read()
+
+  ← ② DECIDE: use sensor data to determine what to do
+  IF sensorValue &lt; THRESHOLD THEN
+    action ← "avoid"
+  ELSE
+    action ← "proceed"
+  ENDIF
+
+  ← ③ ACT: command actuators based on decision
+  IF action = "avoid" THEN
+    avoidObstacle()
+  ELSE
+    driveForward(SPEED)
+  ENDIF
+
+  wait(LOOP_DELAY)      ← always include a loop delay
+ENDWHILE</pre>
+        </div>
+
+        <div class="lang-tabs" role="tablist" aria-label="Platform selector">
+          <button class="lang-tab" data-lang="pseudo" role="tab">
+            <span class="lang-badge">NSW</span> Pseudocode
+          </button>
+          <button class="lang-tab" data-lang="vex" role="tab">
+            <span class="lang-badge">VEX</span> VEX VR Python
+          </button>
+          <button class="lang-tab" data-lang="mm" role="tab">
+            <span class="lang-badge">MM</span> Micromelon Python
+          </button>
+        </div>
+
+        <div class="lang-panel" data-lang="pseudo">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">NSW Pseudocode</span>
+              <span class="step-label">Castle Crasher — SDA pattern applied</span>
+            </div>
+            <pre><code>CONSTANT THRESHOLD ← 30    ← cm
+CONSTANT SPEED     ← 50    ← %
+
+WHILE True DO
+  distance ← sensor.readDistance()   ← ① SENSE
+
+  IF distance &lt; THRESHOLD THEN       ← ② DECIDE
+    action ← "avoid"
+  ELSE
+    action ← "proceed"
+  ENDIF
+
+  IF action = "avoid" THEN            ← ③ ACT
+    avoidObstacle()
+  ELSE
+    driveForward(SPEED)
+  ENDIF
+
+  wait(20ms)
+ENDWHILE</code></pre>
+            <div class="step-explain">
+              The two-step decision (DECIDE then ACT) can be collapsed into one IF block for simple cases. Keeping them separate is good practice for complex programs — it makes the decision logic readable independently of the action logic.
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-panel" data-lang="vex">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">VEX VR Python</span>
+              <span class="step-label">Castle Crasher — SDA pattern</span>
+            </div>
+            <pre><code>THRESHOLD = 30   # cm
+SPEED     = 50   # percent
+
+def avoid_obstacle():
+    drivetrain.stop()
+    wait(200, MSEC)
+    drivetrain.turn(RIGHT)
+    wait(0.6, SECONDS)
+    drivetrain.stop()
+
+drivetrain.set_drive_velocity(SPEED, PERCENT)
+
+while True:
+    # ① SENSE
+    distance = distance_sensor.get_distance(MM) / 10
+
+    # ② DECIDE + ③ ACT (combined for simplicity)
+    if distance < THRESHOLD:
+        avoid_obstacle()
+    else:
+        drivetrain.drive(FORWARD)
+
+    wait(20, MSEC)</code></pre>
+            <div class="step-explain">
+              <strong style="color:var(--vex-bright);">VEX note:</strong> Distance returns in mm — divide by 10 to match your cm threshold. <code>drivetrain.drive()</code> is non-blocking; the loop delay handles timing. Set velocity once before the loop, not inside it.
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-panel" data-lang="mm">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">Micromelon Python</span>
+              <span class="step-label">Colour-based SDA pattern</span>
+            </div>
+            <pre><code>from micromelon import *
+
+COLLECT = "red"     # tile colour to act on
+AVOID   = "black"   # boundary colour
+
+def collect_debris():
+    sleep(1000)
+    rover.setLED("red")
+
+while True:
+    # ① SENSE
+    colour = rover.getColour()
+
+    # ② DECIDE + ③ ACT
+    if colour == COLLECT:
+        collect_debris()         # act: collect
+    elif colour == AVOID:
+        rover.right(90)          # act: turn away
+    else:
+        rover.forward(1)         # act: keep moving</code></pre>
+            <div class="step-explain">
+              <strong style="color:var(--mm-bright);">Micromelon note:</strong> <code>rover.forward(1)</code> is blocking — it completes before the loop repeats. No separate wait() needed after movement. Colour strings are lowercase — always compare with <code>"red"</code>, not <code>"Red"</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" aria-expanded="false" aria-controls="body-sda-variants">
+            SDA loop variants — extending the pattern
+            <svg class="expand-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="expand-card__body" id="body-sda-variants">
+            <p>The basic SDA loop handles one sensor and one decision. Real systems extend this in predictable ways:</p>
+            <ul>
+              <li><strong>Multiple sensors:</strong> Read all sensors at the top of the loop, then combine their values in the decision step — e.g. <code>IF frontDistance &lt; 30 AND leftDistance &lt; 20 THEN emergencyStop()</code></li>
+              <li><strong>Priority ordering:</strong> When multiple conditions can be true simultaneously, the order of IF/ELIF determines which takes priority. Always put emergency conditions first.</li>
+              <li><strong>Hysteresis:</strong> Use different thresholds for entering and leaving a state to prevent the robot from rapidly switching back and forth (e.g. enter avoid at 25cm, resume driving at 40cm).</li>
+              <li><strong>Sensor fusion:</strong> Combine multiple readings to make a better decision — e.g. average the last three distance readings before deciding, to filter out sensor noise.</li>
+            </ul>
+            <div class="pseudo-block">
+              <div class="pseudo-block__label">NSW Pseudocode — hysteresis example</div>
+              <pre>
+CONSTANT ENTER_AVOID ← 25    ← start avoiding closer than 25cm
+CONSTANT EXIT_AVOID  ← 40    ← stop avoiding when clear beyond 40cm
+avoiding ← FALSE
+
+WHILE True DO
+  distance ← sensor.readDistance()
+
+  IF avoiding = FALSE AND distance &lt; ENTER_AVOID THEN
+    avoiding ← TRUE
+    stopMotors()
+  ELSE IF avoiding = TRUE AND distance &gt; EXIT_AVOID THEN
+    avoiding ← FALSE
+  ENDIF
+
+  IF avoiding THEN
+    turnRight(speed: 50)
+  ELSE
+    driveForward(speed: 50)
+  ENDIF
+
+  wait(20ms)
+ENDWHILE</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: STATE MACHINES
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="state-machines">
+        <h2>Pattern 02 — State machines</h2>
+        <p>
+          A state machine gives your robot a memory — it knows not just what it's sensing
+          right now, but what it was doing before. This lets you model complex multi-step
+          behaviours that a simple IF/ELSE chain can't handle cleanly.
+        </p>
+
+        <div class="concept-recap">
+          <strong>Three rules of state machines:</strong>
+          (1) The robot is always in exactly one state.
+          (2) Only one state's logic runs each loop iteration.
+          (3) State transitions happen when a condition is met — the robot doesn't transition partway through an action.
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" aria-expanded="false" aria-controls="body-sm-design">
+            Designing a state machine — step by step
+            <svg class="expand-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="expand-card__body" id="body-sm-design">
+            <ol>
+              <li><strong>List all distinct behaviours</strong> your robot needs. Each major behaviour is a candidate state.</li>
+              <li><strong>Identify the trigger</strong> for entering each state — what sensor condition or event causes the robot to transition into it?</li>
+              <li><strong>Identify the exit condition</strong> — what causes the robot to leave each state and transition to the next?</li>
+              <li><strong>Draw the state diagram</strong> — circles for states, arrows for transitions, label each arrow with its trigger condition.</li>
+              <li><strong>Write pseudocode</strong> — one branch per state in the main IF/ELIF chain, one function per state's logic.</li>
+              <li><strong>Desk check</strong> — trace a realistic scenario through the state machine. Does every state have a way out? Can the robot reach every state?</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — generalised state machine template</div>
+          <pre>
+state ← "initial_state"
+
+FUNCTION stateA()
+  ← behaviours for state A
+  IF exitConditionA THEN
+    state ← "stateB"
+  ENDIF
+ENDFUNCTION
+
+FUNCTION stateB()
+  ← behaviours for state B
+  IF exitConditionB THEN
+    state ← "stateA"
+  ENDIF
+ENDFUNCTION
+
+BEGIN
+  WHILE True DO
+    ← Read all sensors first
+    sensorValue ← sensor.read()
+
+    ← Route to the active state
+    IF state = "stateA" THEN
+      stateA()
+    ELSE IF state = "stateB" THEN
+      stateB()
+    ENDIF
+
+    wait(20ms)
+  ENDWHILE
+END</pre>
+        </div>
+
+        <div class="lang-tabs" role="tablist" aria-label="Platform selector">
+          <button class="lang-tab" data-lang="pseudo" role="tab">
+            <span class="lang-badge">NSW</span> Pseudocode
+          </button>
+          <button class="lang-tab" data-lang="vex" role="tab">
+            <span class="lang-badge">VEX</span> VEX VR Python
+          </button>
+          <button class="lang-tab" data-lang="mm" role="tab">
+            <span class="lang-badge">MM</span> Micromelon Python
+          </button>
+        </div>
+
+        <div class="lang-panel" data-lang="pseudo">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">NSW Pseudocode</span>
+              <span class="step-label">Three-state patrol robot</span>
+            </div>
+            <pre><code>← Robot patrols, collects objects when close, returns to base
+
+CONSTANT COLLECT_RANGE ← 15   ← cm — collect if object this close
+CONSTANT BASE_COLOUR   ← "white"
+
+state ← "patrolling"
+
+WHILE True DO
+  distance ← sensor.readDistance()
+  colour   ← sensor.readColour()
+
+  IF state = "patrolling" THEN
+    IF distance &lt; COLLECT_RANGE THEN
+      state ← "collecting"
+    ELSE IF colour = "black" THEN
+      turnRight(speed: 50, duration: 0.5)
+    ELSE
+      driveForward(speed: 50)
+    ENDIF
+
+  ELSE IF state = "collecting" THEN
+    collectObject()
+    state ← "returning"
+
+  ELSE IF state = "returning" THEN
+    IF colour = BASE_COLOUR THEN
+      depositObject()
+      state ← "patrolling"
+    ELSE
+      navigateToBase()
+    ENDIF
+  ENDIF
+
+  wait(20ms)
+ENDWHILE</code></pre>
+            <div class="step-explain">
+              This three-state machine handles patrol, collect, and return. Notice: sensor reads happen outside the state branches — every state has access to current sensor data. State transitions always lead to a concrete next state — there is no undefined transition.
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-panel" data-lang="vex">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">VEX VR Python</span>
+              <span class="step-label">Three-state patrol robot</span>
+            </div>
+            <pre><code>COLLECT_RANGE = 15    # cm
+BASE_COLOUR   = Color.WHITE
+
+state = "patrolling"
+
+def collect_object():
+    drivetrain.stop()
+    wait(1, SECONDS)
+
+def deposit_object():
+    wait(0.5, SECONDS)
+
+def navigate_to_base():
+    if eye_sensor.get_color() == Color.BLACK:
+        drivetrain.turn(RIGHT)
+        wait(0.5, SECONDS)
+    else:
+        drivetrain.drive(FORWARD)
+
+while True:
+    distance = distance_sensor.get_distance(MM) / 10
+    colour   = eye_sensor.get_color()
+
+    if state == "patrolling":
+        if distance < COLLECT_RANGE:
+            state = "collecting"
+        elif colour == Color.BLACK:
+            drivetrain.turn(RIGHT)
+            wait(0.5, SECONDS)
+        else:
+            drivetrain.drive(FORWARD)
+
+    elif state == "collecting":
+        collect_object()
+        state = "returning"
+
+    elif state == "returning":
+        if colour == BASE_COLOUR:
+            deposit_object()
+            state = "patrolling"
+        else:
+            navigate_to_base()
+
+    wait(20, MSEC)</code></pre>
+            <div class="step-explain">
+              <strong style="color:var(--vex-bright);">VEX note:</strong> The eye sensor returns <code>Color.WHITE</code> / <code>Color.BLACK</code> constants — not strings. Check which color constants are available in the VEX VR documentation for your world's tile colours.
+            </div>
+          </div>
+        </div>
+
+        <div class="lang-panel" data-lang="mm">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">Micromelon Python</span>
+              <span class="step-label">Three-state patrol robot</span>
+            </div>
+            <pre><code>from micromelon import *
+
+COLLECT_RANGE = 15    # cm
+BASE_COLOUR   = "white"
+
+state = "patrolling"
+
+def collect_object():
+    sleep(1000)
+    rover.setLED("green")
+
+def deposit_object():
+    sleep(500)
+    rover.setLED("off")
+
+def navigate_to_base():
+    colour = rover.getColour()
+    if colour == "black":
+        rover.right(90)
+    else:
+        rover.forward(1)
+
+while True:
+    distance = rover.getDistance()
+    colour   = rover.getColour()
+
+    if state == "patrolling":
+        if distance < COLLECT_RANGE:
+            state = "collecting"
+        elif colour == "black":
+            rover.right(90)
+        else:
+            rover.forward(1)
+
+    elif state == "collecting":
+        collect_object()
+        state = "returning"
+
+    elif state == "returning":
+        if colour == BASE_COLOUR:
+            deposit_object()
+            state = "patrolling"
+        else:
+            navigate_to_base()</code></pre>
+            <div class="step-explain">
+              <strong style="color:var(--mm-bright);">Micromelon note:</strong> No <code>wait()</code> at the end of the loop — <code>rover.forward(1)</code> and <code>rover.right(90)</code> are blocking, so the loop naturally paces itself. If your state machine doesn't move the rover in a given iteration (e.g. during a state transition), add a small <code>sleep(50)</code> to prevent a busy loop.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: MODULAR DESIGN
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="modular-design">
+        <h2>Pattern 03 — Modular function design</h2>
+        <p>
+          A well-designed robot program looks like a table of contents at the top level —
+          the main loop reads like plain English, and the implementation details live
+          inside clearly named functions. This makes programs easier to read, test, debug,
+          and reuse across sprints.
+        </p>
+
+        <div class="module-diagram" aria-label="Modular program structure: main loop calls three functions, each handles one concern">
+          <div class="module-row">
+            <div class="module-box is-main">
+              <div class="module-box__label">Main loop</div>
+              <div class="module-box__name">while True</div>
+              <div class="module-box__desc">Coordinates everything — no logic, only calls</div>
+            </div>
+          </div>
+          <div class="module-row" style="padding-left: var(--space-8);">
+            <div class="module-connector">↙</div>
+            <div class="module-connector">↓</div>
+            <div class="module-connector">↘</div>
+          </div>
+          <div class="module-row">
+            <div class="module-box">
+              <div class="module-box__label">Function</div>
+              <div class="module-box__name">get_sensor_data()</div>
+              <div class="module-box__desc">All sensor reads in one place</div>
+            </div>
+            <div class="module-box">
+              <div class="module-box__label">Function</div>
+              <div class="module-box__name">avoid_obstacle()</div>
+              <div class="module-box__desc">Complete avoidance behaviour</div>
+            </div>
+            <div class="module-box">
+              <div class="module-box__label">Function</div>
+              <div class="module-box__name">collect_debris()</div>
+              <div class="module-box__desc">Complete collection behaviour</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" aria-expanded="false" aria-controls="body-function-rules">
+            Rules for writing good robot functions
+            <svg class="expand-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="expand-card__body" id="body-function-rules">
+            <ul>
+              <li><strong>One job per function:</strong> <code>avoid_obstacle()</code> avoids an obstacle. It does not also read sensors or update state. If a function does two unrelated things, split it.</li>
+              <li><strong>Name the job, not the mechanism:</strong> <code>turn_right_600ms()</code> tells you how. <code>avoid_obstacle()</code> tells you why. Use the why name.</li>
+              <li><strong>Parameters for variation:</strong> If you need to avoid at different speeds, pass speed as a parameter — <code>avoid_obstacle(speed)</code> — rather than hardcoding it inside.</li>
+              <li><strong>Return values for data:</strong> Functions that calculate or read data should return their result — <code>get_distance_cm()</code> returns a number. Functions that command actuators typically return nothing.</li>
+              <li><strong>Write a docstring:</strong> One sentence describing what the function does and what it returns. Future you will thank present you.</li>
+              <li><strong>Test functions in isolation:</strong> Before wiring functions into the state machine, test each one independently. A function that works alone is much easier to debug than a function buried in a 200-line program.</li>
+            </ul>
+            <div class="example-box">
+              <strong>Before modularisation (hard to test):</strong>
+              <pre style="margin:var(--space-3) 0; font-size:var(--text-xs); line-height:1.8; overflow-x:auto;">while True:
+    d = distance_sensor.get_distance(MM) / 10
+    if d &lt; 30:
+        drivetrain.stop()
+        wait(200, MSEC)
+        drivetrain.turn(RIGHT)
+        wait(0.6, SECONDS)
+        drivetrain.stop()
+    else:
+        drivetrain.drive(FORWARD)
+    wait(20, MSEC)</pre>
+              <strong>After modularisation (easy to test):</strong>
+              <pre style="margin:var(--space-3) 0; font-size:var(--text-xs); line-height:1.8; overflow-x:auto;">def get_distance_cm():
+    return distance_sensor.get_distance(MM) / 10
+
+def avoid_obstacle():
+    """Stop, pause, and turn right to clear detected obstacle."""
+    drivetrain.stop()
+    wait(200, MSEC)
+    drivetrain.turn(RIGHT)
+    wait(0.6, SECONDS)
+    drivetrain.stop()
+
+while True:
+    if get_distance_cm() &lt; STOP_DISTANCE:
+        avoid_obstacle()
+    else:
+        drivetrain.drive(FORWARD)
+    wait(LOOP_DELAY, MSEC)</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: DESK CHECKING
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="desk-checking">
+        <div class="section-phase-tag test"><span class="dot"></span> Testing &amp; Evaluating</div>
+        <h2>Pattern 05 — Desk checking</h2>
+        <p>
+          Desk checking is the practice of manually tracing through pseudocode or code
+          step by step, tracking the value of each variable as you go.
+          It catches logic errors before you spend time typing code that doesn't work.
+          It is also a required assessment skill in NSW Computing Technology.
+        </p>
+
+        <div class="deskcheck-wrap">
+          <h3>The desk checking process</h3>
+          <p>Follow these six steps every time you desk check an algorithm:</p>
+          <div class="deskcheck-steps">
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Set up a variable tracking table</h4>
+                <p>Create a table with one column per variable, plus columns for the current line and any output. Leave a row for each step. This is your trace table.</p>
+              </div>
+            </div>
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Choose test input values</h4>
+                <p>Select values that exercise different paths through the code. Include: a typical normal value, a boundary value (exactly at a threshold), a value just above the boundary, and an edge case (zero, negative, empty). Don't just use comfortable middle values.</p>
+              </div>
+            </div>
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Execute one line at a time</h4>
+                <p>Work through the code line by line. At each line, update the variable values in your table. Never skip lines — every assignment, condition, and function call changes something.</p>
+              </div>
+            </div>
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Evaluate conditions explicitly</h4>
+                <p>When you reach an IF condition, substitute current variable values and write out whether it evaluates to TRUE or FALSE — don't assume. <code>IF distance &lt; 30</code> with <code>distance = 30</code> is FALSE, not TRUE.</p>
+              </div>
+            </div>
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Record every output and state change</h4>
+                <p>Note any output produced (print, motor command, LED change) and any state variable that changes. The trace table captures what the robot does, not just what variables hold.</p>
+              </div>
+            </div>
+            <div class="deskcheck-step">
+              <div class="deskcheck-step__body">
+                <h4>Compare expected to predicted behaviour</h4>
+                <p>After tracing, check: does the output match what the algorithm is supposed to do? If not, find the line where the trace diverges from expectation — that's where the bug is.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-box">
+          <div class="analysis-box__eyebrow">🔍 Desk check practice — trace this algorithm</div>
+          <h3>Obstacle avoidance with hysteresis</h3>
+          <p>Trace through this algorithm for the test values below. Complete a trace table in your project notebook — one row per line executed. Check your predictions in the simulator after completing the trace.</p>
+          <ol>
+            <li>Trace with <code>distance = 28</code>, <code>avoiding = FALSE</code>. What does the robot do?</li>
+            <li>Trace with <code>distance = 35</code>, <code>avoiding = TRUE</code>. What does the robot do? When does it resume driving?</li>
+            <li>Trace with <code>distance = 25</code>, <code>avoiding = TRUE</code>. What does the robot do?</li>
+            <li>Identify the boundary value at which the robot transitions from avoiding to driving. What is <code>distance</code> at exactly that transition?</li>
+          </ol>
+        </div>
+
+        <div class="pseudo-block">
+          <div class="pseudo-block__label">NSW Pseudocode — algorithm to desk check</div>
+          <pre>
+CONSTANT ENTER_AVOID ← 30    ← start avoiding if closer than this
+CONSTANT EXIT_AVOID  ← 45    ← stop avoiding once this clear
+
+avoiding ← FALSE
+
+WHILE True DO
+  distance ← sensor.readDistance()
+
+  IF avoiding = FALSE AND distance &lt; ENTER_AVOID THEN
+    avoiding ← TRUE
+  ELSE IF avoiding = TRUE AND distance &gt; EXIT_AVOID THEN
+    avoiding ← FALSE
+  ENDIF
+
+  IF avoiding THEN
+    stopMotors()
+    turnRight(speed: 30, duration: 100ms)
+  ELSE
+    driveForward(speed: 50)
+  ENDIF
+
+  wait(20ms)
+ENDWHILE</pre>
+        </div>
+
+        <div class="trace-table-wrap">
+          <table class="trace-table" aria-label="Starter trace table — three test scenarios">
+            <thead>
+              <tr>
+                <th>Scenario</th>
+                <th>distance</th>
+                <th class="td-var">avoiding (before)</th>
+                <th class="td-var">Condition 1 result</th>
+                <th class="td-var">Condition 2 result</th>
+                <th class="td-var">avoiding (after)</th>
+                <th class="td-output">Robot action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-step">A</td>
+                <td class="td-code">28</td>
+                <td class="td-var">FALSE</td>
+                <td class="td-var">FALSE AND 28 &lt; 30 → TRUE</td>
+                <td class="td-var">—</td>
+                <td class="td-var">TRUE ←</td>
+                <td class="td-output">Stop, turn right</td>
+              </tr>
+              <tr>
+                <td class="td-step">B</td>
+                <td class="td-code">35</td>
+                <td class="td-var">TRUE</td>
+                <td class="td-var">TRUE AND 35 &lt; 30 → FALSE</td>
+                <td class="td-var">TRUE AND 35 &gt; 45 → FALSE</td>
+                <td class="td-var">TRUE (unchanged)</td>
+                <td class="td-output">Still avoiding — stop, turn</td>
+              </tr>
+              <tr>
+                <td class="td-step">C</td>
+                <td class="td-code">47</td>
+                <td class="td-var">TRUE</td>
+                <td class="td-var">TRUE AND 47 &lt; 30 → FALSE</td>
+                <td class="td-var">TRUE AND 47 &gt; 45 → TRUE</td>
+                <td class="td-var">FALSE ←</td>
+                <td class="td-output">Resume driving forward</td>
+              </tr>
+              <tr>
+                <td class="td-step">D</td>
+                <td class="td-code">45</td>
+                <td class="td-var">TRUE</td>
+                <td class="td-var">?</td>
+                <td class="td-var">?</td>
+                <td class="td-var">?</td>
+                <td class="td-output td-var">← Complete this row</td>
+              </tr>
+              <tr>
+                <td class="td-step">E</td>
+                <td class="td-code">46</td>
+                <td class="td-var">TRUE</td>
+                <td class="td-var">?</td>
+                <td class="td-var">?</td>
+                <td class="td-var">?</td>
+                <td class="td-output td-var">← Complete this row</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <strong>Complete rows D and E in your notebook</strong> before checking against the simulator. Rows D and E test the exact boundary (distance = EXIT_AVOID). The difference between 45 and 46 reveals whether the condition is strict (&gt;) or inclusive (≥). What does the pseudocode say?
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TEST TABLES
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="test-tables">
+        <h2>Pattern 06 — Systematic testing with test tables</h2>
+        <p>
+          A test table links each functional requirement to at least one test case.
+          It records the input condition, the expected behaviour, the actual behaviour,
+          and whether the test passed or failed.
+          Test tables are evidence that you validated your system — not just that you ran it once and it worked.
+        </p>
+
+        <div class="expand-card">
+          <button class="expand-card__header" aria-expanded="false" aria-controls="body-test-design">
+            Designing good test cases — four categories
+            <svg class="expand-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="expand-card__body" id="body-test-design">
+            <ul>
+              <li><strong>Normal / typical:</strong> Values in the expected range — the most common scenario. If your obstacle threshold is 30cm, test with distance = 50 (clear) and distance = 15 (obstacle).</li>
+              <li><strong>Boundary / edge:</strong> Values at the exact threshold. If the condition is <code>distance &lt; 30</code>, test with distance = 29, 30, and 31. These three catch most off-by-one errors.</li>
+              <li><strong>Extreme:</strong> Values at the sensor's limits — distance = 0 (touching the wall), distance = 300 (maximum range). Does the algorithm fail gracefully?</li>
+              <li><strong>Invalid / unexpected:</strong> What if the sensor returns -1 (no reading)? What if two contradictory conditions are true simultaneously? Good testing anticipates failure modes.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom:var(--space-3); margin-top:var(--space-6);">Example test table — Castle Crasher obstacle avoidance</h3>
+        <p style="color:var(--color-text-secondary); font-size:var(--text-sm);">This is the format you'll complete in your sprint log. Fill in the "Actual" and "Pass/Fail" columns after running the program.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table" aria-label="Castle Crasher test table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Requirement</th>
+                <th>Input condition</th>
+                <th>Expected behaviour</th>
+                <th>Actual behaviour</th>
+                <th>Pass / Fail</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-id">T01</td>
+                <td class="td-req">Robot drives forward on clear path</td>
+                <td class="td-input">distance = 150 cm</td>
+                <td class="td-expect">drivetrain.drive(FORWARD) called</td>
+                <td>Robot drives forward continuously</td>
+                <td class="td-pass">✓</td>
+                <td class="td-note">Normal — well clear of threshold</td>
+              </tr>
+              <tr>
+                <td class="td-id">T02</td>
+                <td class="td-req">Robot stops when obstacle &lt; 30cm</td>
+                <td class="td-input">distance = 15 cm</td>
+                <td class="td-expect">drivetrain.stop() then turn</td>
+                <td>Robot stops and turns right</td>
+                <td class="td-pass">✓</td>
+                <td class="td-note">Normal — clearly inside threshold</td>
+              </tr>
+              <tr>
+                <td class="td-id">T03</td>
+                <td class="td-req">Robot stops when obstacle &lt; 30cm</td>
+                <td class="td-input">distance = 29 cm</td>
+                <td class="td-expect">avoid_obstacle() called</td>
+                <td></td>
+                <td></td>
+                <td class="td-note td-var">Boundary — just inside threshold</td>
+              </tr>
+              <tr>
+                <td class="td-id">T04</td>
+                <td class="td-req">Robot drives forward on clear path</td>
+                <td class="td-input">distance = 30 cm</td>
+                <td class="td-expect">Robot continues driving (30 is NOT &lt; 30)</td>
+                <td></td>
+                <td></td>
+                <td class="td-note td-var">Boundary — exactly at threshold</td>
+              </tr>
+              <tr>
+                <td class="td-id">T05</td>
+                <td class="td-req">Robot drives forward on clear path</td>
+                <td class="td-input">distance = 31 cm</td>
+                <td class="td-expect">Robot continues driving</td>
+                <td></td>
+                <td></td>
+                <td class="td-note td-var">Boundary — just outside threshold</td>
+              </tr>
+              <tr>
+                <td class="td-id">T06</td>
+                <td class="td-req">Robot handles maximum sensor range</td>
+                <td class="td-input">distance = 300 cm</td>
+                <td class="td-expect">Robot drives forward normally</td>
+                <td></td>
+                <td></td>
+                <td class="td-note td-var">Extreme — maximum valid reading</td>
+              </tr>
+              <tr>
+                <td class="td-id">T07</td>
+                <td class="td-req">Robot completes maze without contact</td>
+                <td class="td-input">Full maze run</td>
+                <td class="td-expect">Zero wall contacts, reaches exit</td>
+                <td></td>
+                <td></td>
+                <td class="td-note td-var">System test — overall requirement</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="info-box">
+          <strong>Tests T03–T07 are blank — complete them in your project notebook</strong> after running the Castle Crasher program. T03, T04, and T05 are the three boundary tests for a threshold of 30. Notice: T04 expects the robot to keep driving (30 is NOT less than 30). Many students assume &lt; 30 means ≤ 30. The test proves it one way or the other.
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: PLATFORM TRANSLATION MAP
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="platform-map">
+        <h2>Platform translation map</h2>
+        <p>
+          Use this table to translate any pseudocode construct into the correct syntax
+          for each platform. The algorithm stays the same — only the words change.
+        </p>
+
+        <div class="algo-compare">
+          <table aria-label="Algorithm pattern translation map: pseudocode, VEX VR Python, Micromelon Python">
+            <thead>
+              <tr>
+                <th>Concept</th>
+                <th>NSW Pseudocode</th>
+                <th>VEX VR Python</th>
+                <th>Micromelon Python</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="td-concept">Drive forward</td>
+                <td><code>driveForward(speed)</code></td>
+                <td><code>drivetrain.drive(FORWARD)</code></td>
+                <td><code>rover.forward(1)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Stop</td>
+                <td><code>stopMotors()</code></td>
+                <td><code>drivetrain.stop()</code></td>
+                <td><code>rover.stop()</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Turn right</td>
+                <td><code>turnRight(speed, duration)</code></td>
+                <td><code>drivetrain.turn(RIGHT)</code></td>
+                <td><code>rover.right(90)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Turn exact angle</td>
+                <td><code>turnRight(angle: 90°)</code></td>
+                <td><code>drivetrain.turn_for(RIGHT, 90, DEGREES)</code></td>
+                <td><code>rover.right(90)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Read distance</td>
+                <td><code>distance ← sensor.readDistance()</code></td>
+                <td><code>distance_sensor.get_distance(MM) / 10</code></td>
+                <td><code>rover.getDistance()</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Read colour</td>
+                <td><code>colour ← sensor.readColour()</code></td>
+                <td><code>eye_sensor.get_color()</code></td>
+                <td><code>rover.getColour()</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Wait</td>
+                <td><code>wait(500ms)</code></td>
+                <td><code>wait(500, MSEC)</code></td>
+                <td><code>sleep(500)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Set speed</td>
+                <td><code>setSpeed(50)</code></td>
+                <td><code>drivetrain.set_drive_velocity(50, PERCENT)</code></td>
+                <td><code>rover.setSpeed(50)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Print to console</td>
+                <td><code>OUTPUT value</code></td>
+                <td><code>print(value)</code></td>
+                <td><code>print(value)</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Main loop</td>
+                <td><code>WHILE True DO … ENDWHILE</code></td>
+                <td><code>while True: …</code></td>
+                <td><code>while True: …</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Define function</td>
+                <td><code>FUNCTION name() … ENDFUNCTION</code></td>
+                <td><code>def name(): …</code></td>
+                <td><code>def name(): …</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Selection</td>
+                <td><code>IF … THEN … ELSE IF … ELSE … ENDIF</code></td>
+                <td><code>if …: elif …: else: …</code></td>
+                <td><code>if …: elif …: else: …</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">WHILE loop</td>
+                <td><code>WHILE condition DO … ENDWHILE</code></td>
+                <td><code>while condition: …</code></td>
+                <td><code>while condition: …</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">FOR loop</td>
+                <td><code>FOR i ← 1 TO n DO … ENDFOR</code></td>
+                <td><code>for i in range(n): …</code></td>
+                <td><code>for i in range(n): …</code></td>
+              </tr>
+              <tr>
+                <td class="td-concept">Assignment</td>
+                <td><code>variable ← value</code></td>
+                <td><code>variable = value</code></td>
+                <td><code>variable = value</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TIERED TASKS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="tasks">
+        <h2>Tiered tasks</h2>
+        <p style="color:var(--color-text-secondary);margin-bottom:var(--space-6);">These tasks apply the patterns from this page to your sprint programs.</p>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Complete the trace table</h4>
+            <p>Complete rows D and E of the hysteresis desk check trace table above. Then create a test table for the Micromelon Coral Reef Clean-Up program with at least five test cases — one normal, two boundary (red tile detected at different distances), one extreme (boundary tile immediately ahead at start), and one system test (complete run).</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Design a new algorithm from scratch</h4>
+            <p>Design an algorithm for a new scenario: a robot that must patrol a rectangular room, detect when an object enters the room (distance drops below 50cm), and trigger an alarm (flash LED red five times) before resuming patrol. Write full NSW pseudocode, identify the states, draw a state diagram, desk check with two scenarios, then implement on either platform.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Refactor and evaluate</h4>
+            <p>Take your current Castle Crasher or Coral Reef program and refactor it using all six patterns: (1) identify and name the SDA loop, (2) convert to a formal state machine if not already, (3) ensure every behaviour is a named function, (4) replace all magic numbers with named constants, (5) desk check two scenarios with a trace table, (6) create a complete test table with boundary and extreme cases. Document every refactoring decision in your project notebook.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: CPD STRIP
+      ══════════════════════════════════════════════════════ -->
+      <section class="cpd-section" id="cpd" aria-label="Course performance descriptors">
+        <h2>Grade descriptors — where are you?</h2>
+        <p class="cpd-intro">Click a grade to highlight it. These descriptors reflect algorithm design and testing skill across all platforms.</p>
+        <div class="cpd-strip" role="list">
+
+          <div class="cpd-grade cpd-grade-a" role="listitem" tabindex="0" aria-label="Grade A descriptor">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Skilfully applies all six algorithm patterns to produce <strong>technically concise, well-structured programs</strong> on either platform. NSW pseudocode precisely specifies all logic before implementation. Desk checking is systematic and complete — trace tables include boundary and extreme values. Test tables address all functional and non-functional requirements. Evaluates testing results critically and implements targeted improvements with clear justification.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" role="listitem" tabindex="0" aria-label="Grade B descriptor">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Applies SDA loop, state machine, and modular function design to produce <strong>functional, well-organised programs</strong>. NSW pseudocode written before implementation. Desk checking identifies logic errors before coding. Test tables include normal, boundary, and system test cases. Accurately translates pseudocode to either VEX or Micromelon platform.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" role="listitem" tabindex="0" aria-label="Grade C descriptor">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Applies the SDA loop and at least one other pattern (state machine or modular functions) to produce <strong>working robot programs</strong>. Writes NSW pseudocode for key algorithms. Completes a desk check with two or more test values. Creates a test table with at least three test cases and records actual vs expected behaviour.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" role="listitem" tabindex="0" aria-label="Grade D descriptor">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Identifies the Sensor-Decision-Action pattern in existing robot programs. Writes NSW pseudocode with support. Completes a partial desk check with one or two test values. Completes a test table with teacher-provided test cases, recording observed behaviour.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" role="listitem" tabindex="0" aria-label="Grade E descriptor">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p><strong>Identifies</strong> the sense, decide, and act stages in a provided robot program diagram. Follows a given trace table to track variable values through two steps of an algorithm. Recognises that testing involves comparing expected and actual behaviour.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: PROJECT NOTEBOOK
+      ══════════════════════════════════════════════════════ -->
+      <aside class="notebook-prompt" id="notebook" aria-label="Project notebook prompts">
+        <div class="notebook-prompt__label">📓 Project Notebook — Algorithms &amp; Testing</div>
+        <ul>
+          <li>
+            Choose one behaviour from your Castle Crasher or Coral Reef program. Draw the Sensor-Decision-Action loop for it — label the sensor read, the condition checked, and the actuator command.
+            <span class="sentence-starter">The SDA loop for [behaviour] is: ① Sense: [sensor + reading] → ② Decide: [condition] → ③ Act: [command]…</span>
+          </li>
+          <li>
+            Draw a state diagram for your current program. Label every state and every transition arrow with its trigger condition. Identify any state that has no exit — that's a design flaw.
+            <span class="sentence-starter">My program has [n] states: … The transition from [stateA] to [stateB] is triggered when…</span>
+          </li>
+          <li>
+            Desk check one function from your program with three test values: one normal, one boundary, one extreme. Record the full trace table.
+            <span class="sentence-starter">I desk checked [function name] with values [x, y, z]. The boundary value was [n] because… When I traced [boundary value], the result was… which [matched / didn't match] my expectation because…</span>
+          </li>
+          <li>
+            Create a test table for your current sprint program. Include at least: two normal tests, three boundary tests, and one system test. Record actual behaviour after running the program.
+            <span class="sentence-starter">My test table has [n] tests. The tests I found most revealing were [T__] because they showed that my program [behaviour] when [condition]…</span>
+          </li>
+        </ul>
+        <a href="../../../project-notebooks/sd-mechatronics-notebook.html" class="notebook-link">Open project notebook →</a>
+      </aside>
+
+      <!-- Page navigation footer -->
+      <nav class="skills-page-nav" aria-label="Page navigation" style="margin-top:var(--space-8);">
+        <span class="skills-page-nav__label">Navigate</span>
+        <a href="skills-micromelon.html">← ④ Micromelon</a>
+        <a href="skills.html">← Skills hub</a>
+        <a href="theory.html" style="margin-left:auto;">Theory page →</a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+</body>
+</html>
