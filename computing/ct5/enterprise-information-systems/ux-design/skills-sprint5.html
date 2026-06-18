@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 5: Python Data Layer — Apps &amp; Web Software CT5</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <style>
+    :root {
+      --accent:          #0d9488;
+      --accent-dim:      #0a7a70;
+      --accent-bright:   #14b8a8;
+      --accent-surface:  rgba(13, 148, 136, 0.10);
+      --accent-border:   rgba(13, 148, 136, 0.28);
+    }
+
+    /* ── Sprint badge — indigo for Python sprint ── */
+    .sprint-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: rgba(129,140,248,0.12);
+      border: 1px solid rgba(129,140,248,0.3);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #a5b4fc;
+      margin-bottom: var(--space-3);
+    }
+    .sprint-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: #a5b4fc; }
+
+    /* ── Section phase tags ── */
+    .section-phase-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: var(--space-3);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .section-phase-tag.identify { background: rgba(99,102,241,0.12);  color: #a5b4fc; }
+    .section-phase-tag.produce  { background: rgba(251,113,133,0.12); color: #fda4af; }
+    .section-phase-tag.test     { background: rgba(245,158,11,0.12);  color: #fcd34d; }
+    .section-phase-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── Info box ── */
+    .info-box {
+      background: var(--color-surface-3);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: var(--space-3) var(--space-4);
+      margin-top: var(--space-3);
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Concept cards ── */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+    .concept-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+    .concept-card__term {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-2);
+    }
+    .concept-card__def {
+      font-size: 0.88rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin: 0 0 var(--space-3);
+    }
+    .concept-card__example {
+      background: #0d1117;
+      border-radius: var(--radius-sm);
+      padding: var(--space-2) var(--space-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+
+    /* ── Pipeline diagram ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin: var(--space-5) 0;
+    }
+    .pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      min-width: 100px;
+    }
+    .pipeline-step__icon {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    .pipeline-step__icon--js  { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); }
+    .pipeline-step__icon--file{ background: rgba(20,184,166,0.12);  border: 1px solid rgba(20,184,166,0.25); }
+    .pipeline-step__icon--py  { background: rgba(129,140,248,0.12); border: 1px solid rgba(129,140,248,0.25); }
+    .pipeline-step__icon--csv { background: rgba(34,197,94,0.10);   border: 1px solid rgba(34,197,94,0.25); }
+    .pipeline-step__label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-align: center;
+      color: var(--color-text-secondary);
+      line-height: 1.35;
+    }
+    .pipeline-arrow {
+      font-size: 1.2rem;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+    @media (max-width: 580px) {
+      .pipeline { flex-direction: column; }
+      .pipeline-arrow { transform: rotate(90deg); }
+    }
+
+    /* ── Pseudocode block ── */
+    .pseudocode-block {
+      background: #0d1117;
+      border: 1px solid var(--color-border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin: var(--space-4) 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .pseudocode-block .ps-kw  { color: #f97583; font-weight: 700; }
+    .pseudocode-block .ps-cmt { color: #6a737d; font-style: italic; }
+    .pseudocode-block .ps-str { color: #9ecbff; }
+    .pseudocode-block .ps-var { color: #79b8ff; }
+    .pseudocode-block .ps-fn  { color: #b392f0; }
+
+    /* ── Python code walkthrough — indigo banners ── */
+    .code-step {
+      background: #0d1117;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin: var(--space-5) 0;
+    }
+    .code-step__banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(129,140,248,0.10);
+      border-bottom: 1px solid rgba(129,140,248,0.2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #a5b4fc;
+    }
+    .code-step__banner-dot { width: 8px; height: 8px; border-radius: 50%; background: #a5b4fc; flex-shrink: 0; }
+    .code-step__body { padding: var(--space-4); overflow-x: auto; }
+    .code-step__body pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.75;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+    .code-step__explanation {
+      padding: var(--space-3) var(--space-4) var(--space-4);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.88rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+    .code-step__explanation strong { color: var(--color-text-primary); }
+
+    /* Green highlights + magenta change banners */
+    .code-new { background: rgba(34,197,94,0.10); display: block; }
+    .code-change-banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 4px var(--space-4);
+      background: rgba(236,72,153,0.12);
+      border-top: 1px solid rgba(236,72,153,0.25);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #f0abfc;
+    }
+    .code-change-banner::before { content: '▶'; font-size: 0.6rem; }
+
+    /* Python syntax tokens */
+    .py-kw   { color: #f97583; }          /* keywords: import, def, with, if, for, return */
+    .py-fn   { color: #b392f0; }          /* function/method names */
+    .py-str  { color: #9ecbff; }          /* strings */
+    .py-cmt  { color: #6a737d; font-style: italic; }
+    .py-num  { color: #79b8ff; }
+    .py-var  { color: #e2e8f0; }
+    .py-mod  { color: #85e89d; }          /* module names after import */
+    .py-dec  { color: #fda4af; }          /* decorators / special names */
+
+    /* JS syntax tokens (for the export step) */
+    .tok-kw  { color: #f97583; }
+    .tok-fn  { color: #b392f0; }
+    .tok-str { color: #9ecbff; }
+    .tok-cmt { color: #6a737d; font-style: italic; }
+    .tok-num { color: #79b8ff; }
+    .tok-var { color: #79b8ff; }
+    .tok-tag { color: #f97583; }
+    .tok-attr{ color: #79b8ff; }
+
+    /* ── JS vs Python comparison table ── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: var(--space-4) 0;
+    }
+    .compare-table th {
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+    }
+    .compare-table th.th-js  { background: rgba(245,158,11,0.08); }
+    .compare-table th.th-py  { background: rgba(129,140,248,0.08); }
+    .compare-table td {
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      vertical-align: top;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+    }
+    .compare-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .compare-table .concept-col {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: 0.85rem;
+    }
+
+    /* ── Sample CSV output visualiser ── */
+    .csv-vis {
+      background: #0d1117;
+      border: 1px solid var(--color-border);
+      border-left: 3px solid #22c55e;
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin: var(--space-4) 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .csv-header { color: #86efac; font-weight: 700; }
+    .csv-row    { color: var(--color-text-secondary); }
+    .csv-label  {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-2);
+    }
+
+    /* ── Trace table ── */
+    .trace-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      margin: var(--space-4) 0;
+    }
+    .trace-table th {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+      font-family: 'Nunito', sans-serif;
+    }
+    .trace-table td {
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      vertical-align: top;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+    .trace-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .cell-hl  { color: var(--accent-bright); font-weight: 700; }
+    .cell-py  { color: #a5b4fc; }
+
+    /* ── Bug detective ── */
+    .bug-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-left: 3px solid #ef4444;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: var(--space-4);
+    }
+    .bug-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(239,68,68,0.08);
+      border-bottom: 1px solid rgba(239,68,68,0.15);
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: #fca5a5;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .bug-card__body { padding: var(--space-4); }
+    .bug-card__code {
+      background: #0d1117;
+      border-radius: var(--radius-sm);
+      padding: var(--space-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      margin-bottom: var(--space-3);
+      overflow-x: auto;
+    }
+    .bug-card__question { font-size: 0.88rem; color: var(--color-text-secondary); margin-bottom: var(--space-3); }
+    .bug-reveal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: var(--space-2) var(--space-4);
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: #fca5a5;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .bug-reveal-btn:hover { background: rgba(239,68,68,0.15); }
+    .bug-answer {
+      display: none;
+      margin-top: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      color: #bbf7d0;
+      line-height: 1.6;
+    }
+    .bug-answer.visible { display: block; }
+    .bug-answer strong { color: #86efac; }
+
+    /* ── Tier grid + sprint log ── */
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+    .tier-card { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-4); }
+    .tier-card h4 { margin: var(--space-2) 0; color: var(--color-text-primary); font-size: 0.95rem; }
+    .tier-card p  { font-size: 0.87rem; color: var(--color-text-secondary); margin: 0; line-height: 1.55; }
+
+    .sprint-log { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; margin-top: var(--space-4); }
+    .sprint-log__header { background: var(--accent-surface); border-bottom: 1px solid var(--accent-border); padding: var(--space-3) var(--space-4); font-weight: 700; font-size: 0.88rem; color: var(--accent-bright); }
+    .sprint-log__body { padding: var(--space-4); }
+    .sprint-log__field { margin-bottom: var(--space-4); }
+    .sprint-log__field:last-child { margin-bottom: 0; }
+    .sprint-log__label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+    .sprint-log__input { width: 100%; background: var(--color-surface-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-3); color: var(--color-text-primary); font-family: inherit; font-size: 0.88rem; resize: vertical; min-height: 64px; transition: border-color 0.15s; }
+    .sprint-log__input:focus { outline: none; border-color: var(--accent); }
+    .sprint-log__input::placeholder { color: var(--color-text-muted); }
+
+    /* ── Prev-only nav (final sprint) ── */
+    .sprint-nav { display: flex; justify-content: flex-start; margin-top: var(--space-7); }
+    .sprint-nav__btn { display: inline-flex; align-items: center; gap: var(--space-3); background: var(--accent-surface); border: 1px solid var(--accent-border); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); text-decoration: none; color: inherit; transition: background 0.15s; }
+    .sprint-nav__btn:hover { background: rgba(13,148,136,0.18); }
+    .sprint-nav__btn--prev { flex-direction: row-reverse; }
+    .sprint-nav__label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-muted); }
+    .sprint-nav__title { font-size: 0.95rem; font-weight: 700; color: var(--accent-bright); }
+    .sprint-nav__arrow { font-size: 1.3rem; color: var(--accent-bright); }
+
+    /* ── Complete badge ── */
+    .series-complete {
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      margin-top: var(--space-7);
+      text-align: center;
+    }
+    .series-complete__icon { font-size: 2rem; margin-bottom: var(--space-3); }
+    .series-complete__title { font-size: 1.1rem; font-weight: 700; color: #86efac; margin-bottom: var(--space-2); }
+    .series-complete__desc { font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.6; }
+  </style>
+</head>
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Software Development</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Apps &amp; Web Software</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Sprint 5</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills.html" class="ct-nav-btn">← Skills</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Apps &amp; Web Software</a></li>
+      <li><a href="skills.html">Skills</a></li>
+      <li aria-current="page">Sprint 5</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#concepts">Key concepts</a>
+          <a href="#pseudocode">Pseudocode first</a>
+          <a href="#step1">Step 1 — JS export button</a>
+          <a href="#step2">Step 2 — Read JSON file</a>
+          <a href="#step3">Step 3 — Analyse the data</a>
+          <a href="#step4">Step 4 — Write CSV report</a>
+          <a href="#step5">Step 5 — Complete script</a>
+          <a href="#compare">JS vs Python comparison</a>
+          <a href="#trace">Trace table</a>
+          <a href="#bugs">Bug detective</a>
+          <a href="#tasks">Tiered tasks</a>
+          <a href="#cpd">Grade descriptors</a>
+          <a href="#notebook">Sprint log</a>
+        </nav>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-DAT-01</span>
+          <span class="outcome-tag">CT5-DAT-02</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#a5b4fc;">
+          5 of 5 &nbsp;·&nbsp; Python
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Languages</div>
+        <div style="display:flex; flex-direction:column; gap:var(--space-2);">
+          <span style="display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(245,158,11,0.12);color:#fcd34d;">JavaScript</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(129,140,248,0.12);color:#a5b4fc;">Python 3</span>
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- Hero -->
+      <header class="page-hero">
+        <div class="sprint-badge">
+          <span class="sprint-badge__dot"></span>
+          Sprint 5 · Python
+        </div>
+        <div class="page-eyebrow">SD · Stage 5 · Year 10</div>
+        <h1>Python Data Layer</h1>
+        <p class="page-intro">
+          Your JavaScript app is complete. But it lives entirely in the browser —
+          every analysis has to be done manually, one task at a time. In this sprint
+          you add a standalone Python script that acts as a data layer: it reads your
+          exported task data, analyses it (counts, filters, summaries by status),
+          and writes a structured report to a <code>.csv</code> file. This is your
+          first taste of how the two languages work together — each doing what it's
+          best at.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+      <!-- Pipeline diagram -->
+      <div class="pipeline" aria-label="Data pipeline from JavaScript to Python to CSV">
+        <div class="pipeline-step">
+          <div class="pipeline-step__icon pipeline-step__icon--js">🌐</div>
+          <div class="pipeline-step__label">JS app<br><span style="color:#fcd34d;font-family:'JetBrains Mono',monospace;font-size:0.7rem;">localStorage</span></div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-step__icon pipeline-step__icon--file">📥</div>
+          <div class="pipeline-step__label">Export<br><span style="color:var(--accent-bright);font-family:'JetBrains Mono',monospace;font-size:0.7rem;">tasks.json</span></div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-step__icon pipeline-step__icon--py">🐍</div>
+          <div class="pipeline-step__label">Python<br><span style="color:#a5b4fc;font-family:'JetBrains Mono',monospace;font-size:0.7rem;">analyse.py</span></div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-step__icon pipeline-step__icon--csv">📊</div>
+          <div class="pipeline-step__label">Report<br><span style="color:#86efac;font-family:'JetBrains Mono',monospace;font-size:0.7rem;">report.csv</span></div>
+        </div>
+      </div>
+
+      <div class="info-box" style="margin-bottom:var(--space-6)">
+        <strong>Why Python for this?</strong> JavaScript runs in the browser and is
+        excellent at responding to user interaction. Python runs on your computer, is
+        excellent at processing files, and has a rich ecosystem for data analysis.
+        In professional software, different languages in a system each handle what
+        they do best. This sprint introduces that idea at a small scale.
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: KEY CONCEPTS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="concepts">
+        <div class="section-phase-tag identify"><span class="dot"></span> Identifying &amp; Defining</div>
+        <h2>Key concepts</h2>
+
+        <div class="concept-grid">
+
+          <div class="concept-card">
+            <div class="concept-card__term">json module</div>
+            <p class="concept-card__def">
+              Python's built-in module for reading and writing JSON.
+              <code>json.load(file)</code> reads a JSON file and returns a Python
+              object (list or dict). <code>json.dumps(obj)</code> converts a Python
+              object back to a JSON string.
+            </p>
+            <div class="concept-card__example"><span class="py-kw">import</span> <span class="py-mod">json</span>
+
+<span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>) <span class="py-kw">as</span> f:
+    tasks = json.<span class="py-fn">load</span>(f)
+<span class="py-cmt"># tasks is now a Python list of dicts</span></div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">csv module</div>
+            <p class="concept-card__def">
+              Python's built-in module for reading and writing CSV files.
+              <code>csv.writer(file)</code> returns a writer object.
+              <code>writer.writerow(list)</code> writes one row.
+              <code>writer.writerows(list_of_lists)</code> writes many rows at once.
+            </p>
+            <div class="concept-card__example"><span class="py-kw">import</span> <span class="py-mod">csv</span>
+
+<span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'report.csv'</span>, <span class="py-str">'w'</span>,
+         newline=<span class="py-str">''</span>) <span class="py-kw">as</span> f:
+    writer = csv.<span class="py-fn">writer</span>(f)
+    writer.<span class="py-fn">writerow</span>([<span class="py-str">'id'</span>, <span class="py-str">'text'</span>, <span class="py-str">'status'</span>])</div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">File I/O with with</div>
+            <p class="concept-card__def">
+              The <code>with open(...) as f:</code> pattern is Python's preferred
+              way to work with files. It automatically closes the file when the
+              indented block ends — even if an error occurs. Never leave files open.
+            </p>
+            <div class="concept-card__example"><span class="py-cmt"># File is always closed after the block</span>
+<span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>) <span class="py-kw">as</span> f:
+    data = json.<span class="py-fn">load</span>(f)
+<span class="py-cmt"># f is closed here — even on error</span></div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">List comprehension</div>
+            <p class="concept-card__def">
+              A concise way to create a filtered or transformed list from an existing
+              one. Equivalent to a <code>for</code> loop with an optional
+              <code>if</code> condition — but in one readable line.
+            </p>
+            <div class="concept-card__example"><span class="py-cmt"># All completed tasks</span>
+done = [t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks
+        <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]]
+
+<span class="py-cmt"># All task texts as a list</span>
+texts = [t[<span class="py-str">'text'</span>] <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks]</div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: PSEUDOCODE FIRST
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="pseudocode">
+        <div class="section-phase-tag identify"><span class="dot"></span> Identifying &amp; Defining</div>
+        <h2>Pseudocode first — the full pipeline algorithm</h2>
+        <p>
+          The script has two parts: the JS side adds an export button;
+          the Python side reads, analyses, and writes. Read through both
+          before writing any code.
+        </p>
+
+        <div class="pseudocode-block" aria-label="NSW pseudocode for Sprint 5 pipeline">
+<span class="ps-cmt">// Sprint 5 — NSW pseudocode</span>
+
+<span class="ps-cmt">// PART A: JavaScript — add export button to index.html + app.js</span>
+<span class="ps-kw">PROCEDURE</span> <span class="ps-fn">exportTasks</span>()
+  <span class="ps-var">jsonString</span> ← CONVERT tasks TO JSON (formatted, indented)
+  <span class="ps-var">blob</span>       ← CREATE downloadable object from <span class="ps-var">jsonString</span> with type <span class="ps-str">"application/json"</span>
+  <span class="ps-var">url</span>        ← CREATE temporary download URL from <span class="ps-var">blob</span>
+  CREATE invisible &lt;a&gt; link pointing to <span class="ps-var">url</span>, filename = <span class="ps-str">"tasks.json"</span>
+  TRIGGER click on the &lt;a&gt; link
+  RELEASE <span class="ps-var">url</span>
+<span class="ps-kw">ENDPROCEDURE</span>
+
+<span class="ps-cmt">// PART B: Python — analyse.py</span>
+<span class="ps-kw">PROCEDURE</span> <span class="ps-fn">main</span>()
+  <span class="ps-cmt">// 1. Read</span>
+  OPEN <span class="ps-str">"tasks.json"</span> FOR reading
+  <span class="ps-var">tasks</span> ← PARSE JSON from file
+  CLOSE file
+
+  <span class="ps-cmt">// 2. Analyse</span>
+  <span class="ps-var">total</span>     ← LENGTH of <span class="ps-var">tasks</span>
+  <span class="ps-var">completed</span> ← COUNT tasks WHERE completed = <span class="ps-kw">TRUE</span>
+  <span class="ps-var">active</span>    ← <span class="ps-var">total</span> - <span class="ps-var">completed</span>
+  <span class="ps-var">pct_done</span>  ← (<span class="ps-var">completed</span> / <span class="ps-var">total</span>) × 100  <span class="ps-kw">IF</span> <span class="ps-var">total</span> &gt; 0 <span class="ps-kw">ELSE</span> 0
+
+  <span class="ps-cmt">// 3. Write report</span>
+  OPEN <span class="ps-str">"report.csv"</span> FOR writing
+  WRITE header row: id, text, status, exported_at
+  <span class="ps-kw">FOR EACH</span> <span class="ps-var">task</span> IN <span class="ps-var">tasks</span>
+    <span class="ps-var">status</span> ← <span class="ps-str">"done"</span> <span class="ps-kw">IF</span> <span class="ps-var">task</span>.completed <span class="ps-kw">ELSE</span> <span class="ps-str">"active"</span>
+    WRITE row: <span class="ps-var">task</span>.id, <span class="ps-var">task</span>.text, <span class="ps-var">status</span>, current datetime
+  <span class="ps-kw">NEXT</span>
+  WRITE summary row: total, completed, active, pct_done%
+  CLOSE file
+
+  OUTPUT summary to console
+<span class="ps-kw">ENDPROCEDURE</span>
+
+CALL <span class="ps-fn">main</span>()
+        </div>
+
+        <div class="info-box">
+          <strong>Before coding:</strong> In your notebook, draw the pipeline diagram
+          (JS app → tasks.json → analyse.py → report.csv). For each arrow, write
+          one sentence describing what is happening at that boundary — what format
+          the data is in, and who is reading or writing it.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 1 — JS EXPORT BUTTON
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step1">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 1 — Add an export button to the JS app</h2>
+        <p>
+          Add one button to <code>index.html</code> and one function to
+          <code>app.js</code>. When clicked, it triggers a download of the
+          current task array as a formatted <code>tasks.json</code> file.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 1a · index.html — export button (inside .app-main, after filter bar)
+          </div>
+          <div class="code-change-banner">NEW IN STEP 1a — export button HTML</div>
+          <div class="code-step__body"><pre>
+<span class="code-new"><span class="tok-cmt">&lt;!-- Export for Python analysis --&gt;</span>
+</span><span class="code-new"><span class="tok-tag">&lt;button</span> <span class="tok-attr">id</span>=<span class="tok-str">"export-btn"</span> <span class="tok-attr">type</span>=<span class="tok-str">"button"</span><span class="tok-tag">&gt;</span>
+</span><span class="code-new">  ⬇ Export tasks.json
+</span><span class="code-new"><span class="tok-tag">&lt;/button&gt;</span>
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <code>type="button"</code> prevents the button from accidentally
+            submitting any parent form. Always set this explicitly on buttons
+            that are not submit buttons.
+          </div>
+        </div>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 1b · app.js — exportTasks function + updated initialise
+          </div>
+          <div class="code-change-banner">NEW IN STEP 1b — exportTasks and export button listener</div>
+          <div class="code-step__body"><pre>
+<span class="code-new"><span class="tok-cmt">// ── exportTasks: create a downloadable JSON file from the tasks array ──</span>
+</span><span class="code-new"><span class="tok-kw">function</span> <span class="tok-fn">exportTasks</span>() {
+</span><span class="code-new">  <span class="tok-kw">if</span> (<span class="tok-var">tasks</span>.length === <span class="tok-num">0</span>) {
+</span><span class="code-new">    <span class="tok-fn">alert</span>(<span class="tok-str">'No tasks to export.'</span>);
+</span><span class="code-new">    <span class="tok-kw">return</span>;
+</span><span class="code-new">  }
+</span><span class="code-new">  <span class="tok-kw">const</span> <span class="tok-var">jsonString</span> = JSON.<span class="tok-fn">stringify</span>(<span class="tok-var">tasks</span>, <span class="tok-kw">null</span>, <span class="tok-num">2</span>);  <span class="tok-cmt">// 2-space indented</span>
+</span><span class="code-new">  <span class="tok-kw">const</span> <span class="tok-var">blob</span>       = <span class="tok-kw">new</span> <span class="tok-fn">Blob</span>([<span class="tok-var">jsonString</span>], { type: <span class="tok-str">'application/json'</span> });
+</span><span class="code-new">  <span class="tok-kw">const</span> <span class="tok-var">url</span>        = URL.<span class="tok-fn">createObjectURL</span>(<span class="tok-var">blob</span>);
+</span><span class="code-new">
+</span><span class="code-new">  <span class="tok-cmt">// Programmatically click an invisible link to trigger download</span>
+</span><span class="code-new">  <span class="tok-kw">const</span> <span class="tok-var">a</span>  = document.<span class="tok-fn">createElement</span>(<span class="tok-str">'a'</span>);
+</span><span class="code-new">  <span class="tok-var">a</span>.href     = <span class="tok-var">url</span>;
+</span><span class="code-new">  <span class="tok-var">a</span>.download = <span class="tok-str">'tasks.json'</span>;
+</span><span class="code-new">  <span class="tok-var">a</span>.<span class="tok-fn">click</span>();
+</span><span class="code-new">  URL.<span class="tok-fn">revokeObjectURL</span>(<span class="tok-var">url</span>);  <span class="tok-cmt">// release memory</span>
+</span><span class="code-new">}
+</span><span class="code-new">
+</span><span class="code-new"><span class="tok-cmt">// Add to initialise():</span>
+</span><span class="code-new">document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'export-btn'</span>)
+</span><span class="code-new">        .<span class="tok-fn">addEventListener</span>(<span class="tok-str">'click'</span>, <span class="tok-fn">exportTasks</span>);
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>JSON.stringify(tasks, null, 2)</code></strong> — the second
+            argument is a replacer (unused here, so <code>null</code>); the third is
+            the indent level. Without it, the output is one long line — hard for
+            Python (and humans) to read. With <code>2</code>, each property is on
+            its own indented line.
+            <br><br>
+            <strong><code>URL.revokeObjectURL(url)</code></strong> — the object URL
+            is a temporary reference that holds a chunk of memory. Calling
+            <code>revokeObjectURL</code> immediately after the click releases that
+            memory. Without this, the URL (and the data it references) stays in
+            memory until the tab closes.
+            <br><br>
+            <strong>Test checkpoint:</strong> Click the export button with some tasks
+            added. A file named <code>tasks.json</code> should download. Open it in
+            a text editor and verify it contains valid, indented JSON matching your tasks.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 2 — READ JSON FILE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step2">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 2 — Read the JSON file in Python</h2>
+        <p>
+          Create <code>analyse.py</code> in the same folder as your downloaded
+          <code>tasks.json</code>. Start with just the file-reading step —
+          verify it works before adding analysis.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 2 · analyse.py — complete file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 2 — all lines below</div>
+          <div class="code-step__body"><pre>
+<span class="code-new"><span class="py-kw">import</span> <span class="py-mod">json</span>
+</span><span class="code-new">
+</span><span class="code-new"><span class="py-kw">def</span> <span class="py-fn">main</span>():
+</span><span class="code-new">    <span class="py-cmt"># ── 1. Read the exported JSON file ──</span>
+</span><span class="code-new">    <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+</span><span class="code-new">        tasks = json.<span class="py-fn">load</span>(f)
+</span><span class="code-new">
+</span><span class="code-new">    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Loaded <span class="tok-var">{<span class="py-fn">len</span>(tasks)}</span> tasks.'</span>)
+</span><span class="code-new">    <span class="py-fn">print</span>(<span class="py-str">'First task:'</span>, tasks[<span class="py-num">0</span>])   <span class="py-cmt"># sanity check</span>
+</span><span class="code-new">
+</span><span class="code-new">
+</span><span class="code-new"><span class="py-kw">if</span> __name__ == <span class="py-str">'__main__'</span>:
+</span><span class="code-new">    <span class="py-fn">main</span>()
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>encoding='utf-8'</code></strong> — always specify encoding
+            when opening text files. Without it, Python uses the system default,
+            which differs between Windows (often cp1252) and macOS/Linux (utf-8).
+            Tasks with emoji or accented characters will cause errors on Windows
+            without this argument.
+            <br><br>
+            <strong><code>if __name__ == '__main__':</code></strong> — this guard
+            means <code>main()</code> only runs when the script is executed directly,
+            not when it is imported by another script. It's a Python convention that
+            makes scripts reusable as modules later.
+            <br><br>
+            <strong>Test checkpoint:</strong> Run <code>python analyse.py</code> from
+            the terminal. You should see the task count and first task printed. If you
+            get <code>FileNotFoundError</code>, check that <code>tasks.json</code> is
+            in the same folder as <code>analyse.py</code>.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 3 — ANALYSE THE DATA
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step3">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 3 — Analyse the data</h2>
+        <p>
+          Add the analysis block below the file-reading code.
+          Count total tasks, completed tasks, active tasks, and calculate
+          the completion percentage.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 3 · analyse.py — complete file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 3 — analysis block (lines 9–18)</div>
+          <div class="code-step__body"><pre>
+<span class="py-kw">import</span> <span class="py-mod">json</span>
+
+<span class="py-kw">def</span> <span class="py-fn">main</span>():
+    <span class="py-cmt"># ── 1. Read ──</span>
+    <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+        tasks = json.<span class="py-fn">load</span>(f)
+
+<span class="code-new">    <span class="py-cmt"># ── 2. Analyse ──</span>
+</span><span class="code-new">    total     = <span class="py-fn">len</span>(tasks)
+</span><span class="code-new">    completed = <span class="py-fn">len</span>([t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]])
+</span><span class="code-new">    active    = total - completed
+</span><span class="code-new">    pct_done  = <span class="py-fn">round</span>((completed / total) * <span class="py-num">100</span>, <span class="py-num">1</span>) <span class="py-kw">if</span> total &gt; <span class="py-num">0</span> <span class="py-kw">else</span> <span class="py-num">0</span>
+</span><span class="code-new">
+</span><span class="code-new">    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Total tasks:     <span class="tok-var">{total}</span>'</span>)
+</span><span class="code-new">    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Completed:       <span class="tok-var">{completed}</span>  (<span class="tok-var">{pct_done}</span>%)'</span>)
+</span><span class="code-new">    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Active:          <span class="tok-var">{active}</span>'</span>)
+</span>
+
+<span class="py-kw">if</span> __name__ == <span class="py-str">'__main__'</span>:
+    <span class="py-fn">main</span>()
+</pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong>List comprehension as a counter:</strong>
+            <code>len([t for t in tasks if t['completed']])</code> builds a new
+            list of only the completed tasks, then counts its length. An alternative
+            is <code>sum(1 for t in tasks if t['completed'])</code> — a generator
+            expression that doesn't build a list at all, slightly more memory-efficient
+            for large datasets.
+            <br><br>
+            <strong>Guard for division by zero:</strong>
+            <code>pct_done = ... if total &gt; 0 else 0</code> — if the task list is
+            empty, dividing by zero would raise a <code>ZeroDivisionError</code>.
+            The ternary expression handles this cleanly.
+            <br><br>
+            <strong>f-strings:</strong> <code>f'Completed: {completed}'</code> is
+            Python's string interpolation syntax. The <code>f</code> prefix tells
+            Python to evaluate expressions inside <code>{}</code>.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 4 — WRITE CSV REPORT
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step4">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 4 — Write the CSV report</h2>
+        <p>
+          Add the CSV writing block. The report has one row per task, plus a
+          summary row at the bottom showing totals.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 4 · analyse.py — complete file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 4 — csv import + write block (lines 2, 20–36)</div>
+          <div class="code-step__body"><pre>
+<span class="py-kw">import</span> <span class="py-mod">json</span>
+<span class="code-new"><span class="py-kw">import</span> <span class="py-mod">csv</span>
+</span><span class="code-new"><span class="py-kw">from</span> <span class="py-mod">datetime</span> <span class="py-kw">import</span> <span class="py-mod">datetime</span>
+</span>
+<span class="py-kw">def</span> <span class="py-fn">main</span>():
+    <span class="py-cmt"># ── 1. Read ──</span>
+    <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+        tasks = json.<span class="py-fn">load</span>(f)
+
+    <span class="py-cmt"># ── 2. Analyse ──</span>
+    total     = <span class="py-fn">len</span>(tasks)
+    completed = <span class="py-fn">len</span>([t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]])
+    active    = total - completed
+    pct_done  = <span class="py-fn">round</span>((completed / total) * <span class="py-num">100</span>, <span class="py-num">1</span>) <span class="py-kw">if</span> total &gt; <span class="py-num">0</span> <span class="py-kw">else</span> <span class="py-num">0</span>
+    exported  = datetime.<span class="py-fn">now</span>().<span class="py-fn">strftime</span>(<span class="py-str">'%Y-%m-%d %H:%M'</span>)
+
+<span class="code-new">    <span class="py-cmt"># ── 3. Write CSV report ──</span>
+</span><span class="code-new">    <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'report.csv'</span>, <span class="py-str">'w'</span>, newline=<span class="py-str">''</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+</span><span class="code-new">        writer = csv.<span class="py-fn">writer</span>(f)
+</span><span class="code-new">
+</span><span class="code-new">        <span class="py-cmt"># Header row</span>
+</span><span class="code-new">        writer.<span class="py-fn">writerow</span>([<span class="py-str">'id'</span>, <span class="py-str">'text'</span>, <span class="py-str">'status'</span>, <span class="py-str">'exported_at'</span>])
+</span><span class="code-new">
+</span><span class="code-new">        <span class="py-cmt"># One row per task</span>
+</span><span class="code-new">        <span class="py-kw">for</span> task <span class="py-kw">in</span> tasks:
+</span><span class="code-new">            status = <span class="py-str">'done'</span> <span class="py-kw">if</span> task[<span class="py-str">'completed'</span>] <span class="py-kw">else</span> <span class="py-str">'active'</span>
+</span><span class="code-new">            writer.<span class="py-fn">writerow</span>([
+</span><span class="code-new">                task[<span class="py-str">'id'</span>],
+</span><span class="code-new">                task[<span class="py-str">'text'</span>],
+</span><span class="code-new">                status,
+</span><span class="code-new">                exported,
+</span><span class="code-new">            ])
+</span><span class="code-new">
+</span><span class="code-new">        <span class="py-cmt"># Blank separator then summary row</span>
+</span><span class="code-new">        writer.<span class="py-fn">writerow</span>([])
+</span><span class="code-new">        writer.<span class="py-fn">writerow</span>([<span class="py-str">'SUMMARY'</span>, <span class="py-fn">f</span><span class="py-str">'Total: <span class="tok-var">{total}</span>'</span>,
+</span><span class="code-new">                          <span class="py-fn">f</span><span class="py-str">'Done: <span class="tok-var">{completed}</span> (<span class="tok-var">{pct_done}</span>%)'</span>,
+</span><span class="code-new">                          <span class="py-fn">f</span><span class="py-str">'Active: <span class="tok-var">{active}</span>'</span>])
+</span>
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Total tasks:  <span class="tok-var">{total}</span>'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Completed:    <span class="tok-var">{completed}</span>  (<span class="tok-var">{pct_done}</span>%)'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Active:       <span class="tok-var">{active}</span>'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Report saved: report.csv'</span>)
+
+<span class="py-kw">if</span> __name__ == <span class="py-str">'__main__'</span>:
+    <span class="py-fn">main</span>()
+</pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>newline=''</code></strong> — required by Python's csv module
+            on Windows. Without it, the writer adds an extra blank line between each
+            row. The csv module handles its own newline characters internally, so the
+            file must be opened without Python adding extra ones.
+            <br><br>
+            <strong><code>strftime('%Y-%m-%d %H:%M')</code></strong> — formats the
+            current datetime as an ISO-style string like <code>2026-06-17 14:35</code>.
+            The format codes: <code>%Y</code> = 4-digit year, <code>%m</code> = month,
+            <code>%d</code> = day, <code>%H</code> = 24-hour hour, <code>%M</code> = minutes.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 5 — COMPLETE SCRIPT
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step5">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 5 — Complete script with error handling</h2>
+        <p>
+          The final version wraps the file-read in a <code>try/except</code> block.
+          A missing or corrupted file should produce a clear message — not a stack trace.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 5 · analyse.py — complete final file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 5 — try/except error handling</div>
+          <div class="code-step__body"><pre>
+<span class="py-kw">import</span> <span class="py-mod">json</span>
+<span class="py-kw">import</span> <span class="py-mod">csv</span>
+<span class="py-kw">from</span> <span class="py-mod">datetime</span> <span class="py-kw">import</span> <span class="py-mod">datetime</span>
+
+<span class="py-kw">def</span> <span class="py-fn">main</span>():
+    <span class="py-cmt"># ── 1. Read JSON ──</span>
+<span class="code-new">    <span class="py-kw">try</span>:
+</span><span class="code-new">        <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+</span><span class="code-new">            tasks = json.<span class="py-fn">load</span>(f)
+</span><span class="code-new">    <span class="py-kw">except</span> <span class="py-dec">FileNotFoundError</span>:
+</span><span class="code-new">        <span class="py-fn">print</span>(<span class="py-str">'Error: tasks.json not found.'</span>)
+</span><span class="code-new">        <span class="py-fn">print</span>(<span class="py-str">'Export your tasks from the app first.'</span>)
+</span><span class="code-new">        <span class="py-kw">return</span>
+</span><span class="code-new">    <span class="py-kw">except</span> json.<span class="py-dec">JSONDecodeError</span> <span class="py-kw">as</span> e:
+</span><span class="code-new">        <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Error: tasks.json is not valid JSON. <span class="tok-var">{e}</span>'</span>)
+</span><span class="code-new">        <span class="py-kw">return</span>
+</span>
+    <span class="py-cmt"># ── 2. Analyse ──</span>
+    total     = <span class="py-fn">len</span>(tasks)
+    completed = <span class="py-fn">len</span>([t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]])
+    active    = total - completed
+    pct_done  = <span class="py-fn">round</span>((completed / total) * <span class="py-num">100</span>, <span class="py-num">1</span>) <span class="py-kw">if</span> total &gt; <span class="py-num">0</span> <span class="py-kw">else</span> <span class="py-num">0</span>
+    exported  = datetime.<span class="py-fn">now</span>().<span class="py-fn">strftime</span>(<span class="py-str">'%Y-%m-%d %H:%M'</span>)
+
+    <span class="py-cmt"># ── 3. Write CSV ──</span>
+    <span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'report.csv'</span>, <span class="py-str">'w'</span>, newline=<span class="py-str">''</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+        writer = csv.<span class="py-fn">writer</span>(f)
+        writer.<span class="py-fn">writerow</span>([<span class="py-str">'id'</span>, <span class="py-str">'text'</span>, <span class="py-str">'status'</span>, <span class="py-str">'exported_at'</span>])
+        <span class="py-kw">for</span> task <span class="py-kw">in</span> tasks:
+            status = <span class="py-str">'done'</span> <span class="py-kw">if</span> task[<span class="py-str">'completed'</span>] <span class="py-kw">else</span> <span class="py-str">'active'</span>
+            writer.<span class="py-fn">writerow</span>([task[<span class="py-str">'id'</span>], task[<span class="py-str">'text'</span>], status, exported])
+        writer.<span class="py-fn">writerow</span>([])
+        writer.<span class="py-fn">writerow</span>([<span class="py-str">'SUMMARY'</span>, <span class="py-fn">f</span><span class="py-str">'Total: <span class="tok-var">{total}</span>'</span>,
+                          <span class="py-fn">f</span><span class="py-str">'Done: <span class="tok-var">{completed}</span> (<span class="tok-var">{pct_done}</span>%)'</span>,
+                          <span class="py-fn">f</span><span class="py-str">'Active: <span class="tok-var">{active}</span>'</span>])
+
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Total tasks:  <span class="tok-var">{total}</span>'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Completed:    <span class="tok-var">{completed}</span>  (<span class="tok-var">{pct_done}</span>%)'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Active:       <span class="tok-var">{active}</span>'</span>)
+    <span class="py-fn">print</span>(<span class="py-fn">f</span><span class="py-str">'Report saved: report.csv'</span>)
+
+<span class="py-kw">if</span> __name__ == <span class="py-str">'__main__'</span>:
+    <span class="py-fn">main</span>()
+</pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>try/except</code></strong> — catching specific exceptions
+            rather than a bare <code>except:</code> is best practice. It lets expected
+            errors produce clear messages while unexpected errors still propagate
+            normally. Two exceptions are handled here: <code>FileNotFoundError</code>
+            (file doesn't exist) and <code>json.JSONDecodeError</code> (file exists
+            but isn't valid JSON — e.g. it was corrupted or is the wrong file).
+            <br><br>
+            <strong>Test checklist:</strong>
+            <ol style="margin:0.5rem 0 0 1.25rem; font-size:0.88rem; line-height:1.8;">
+              <li>Run with <code>tasks.json</code> present — report.csv is created.</li>
+              <li>Open <code>report.csv</code> — verify one row per task plus summary.</li>
+              <li>Delete <code>tasks.json</code>, run again — friendly error message appears.</li>
+              <li>Corrupt <code>tasks.json</code> (delete a brace), run — JSONDecodeError message.</li>
+              <li>Export with some completed tasks — verify "done" vs "active" in the status column.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Sample CSV output -->
+        <div class="csv-label">What report.csv looks like after running the script (4 tasks, 2 completed):</div>
+        <div class="csv-vis" aria-label="Example CSV report output">
+<span class="csv-header">id,text,status,exported_at</span>
+<span class="csv-row">1,Buy milk,done,2026-06-17 14:35</span>
+<span class="csv-row">2,Walk dog,active,2026-06-17 14:35</span>
+<span class="csv-row">3,Pay bills,done,2026-06-17 14:35</span>
+<span class="csv-row">4,Call dentist,active,2026-06-17 14:35</span>
+<span class="csv-row"></span>
+<span class="csv-row">SUMMARY,Total: 4,Done: 2 (50.0%),Active: 2</span>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: JS VS PYTHON COMPARISON
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="compare">
+        <h2>JavaScript vs Python — the same ideas, different syntax</h2>
+        <p>
+          You now know both languages. Here is the same concept expressed in each —
+          use this as a reference when you get stuck on Python syntax.
+        </p>
+
+        <table class="compare-table" aria-label="JavaScript vs Python syntax comparison">
+          <thead>
+            <tr>
+              <th style="width:18%;">Concept</th>
+              <th class="th-js">JavaScript</th>
+              <th class="th-py">Python</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="concept-col">Variable</td>
+              <td><span class="tok-kw">let</span> x = <span class="tok-num">5</span>;</td>
+              <td><span class="py-var">x</span> = <span class="py-num">5</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Function</td>
+              <td><span class="tok-kw">function</span> <span class="tok-fn">add</span>(a, b) { <span class="tok-kw">return</span> a + b; }</td>
+              <td><span class="py-kw">def</span> <span class="py-fn">add</span>(a, b):<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="py-kw">return</span> a + b</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Array / List</td>
+              <td>[<span class="tok-num">1</span>, <span class="tok-num">2</span>, <span class="tok-num">3</span>]</td>
+              <td>[<span class="py-num">1</span>, <span class="py-num">2</span>, <span class="py-num">3</span>]</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Object / Dict</td>
+              <td>{ <span class="tok-str">"id"</span>: <span class="tok-num">1</span>, <span class="tok-str">"text"</span>: <span class="tok-str">"Buy milk"</span> }</td>
+              <td>{ <span class="py-str">"id"</span>: <span class="py-num">1</span>, <span class="py-str">"text"</span>: <span class="py-str">"Buy milk"</span> }</td>
+            </tr>
+            <tr>
+              <td class="concept-col">For loop</td>
+              <td><span class="tok-kw">for</span> (<span class="tok-kw">const</span> t <span class="tok-kw">of</span> tasks) { … }</td>
+              <td><span class="py-kw">for</span> t <span class="py-kw">in</span> tasks:</td>
+            </tr>
+            <tr>
+              <td class="concept-col">If / else</td>
+              <td><span class="tok-kw">if</span> (x &gt; 0) { … } <span class="tok-kw">else</span> { … }</td>
+              <td><span class="py-kw">if</span> x &gt; 0:<br>&nbsp;&nbsp;&nbsp;&nbsp;…<br><span class="py-kw">else</span>:</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Ternary</td>
+              <td>x &gt; <span class="tok-num">0</span> ? <span class="tok-str">'pos'</span> : <span class="tok-str">'neg'</span></td>
+              <td><span class="py-str">'pos'</span> <span class="py-kw">if</span> x &gt; <span class="py-num">0</span> <span class="py-kw">else</span> <span class="py-str">'neg'</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">String format</td>
+              <td><span class="tok-str">`Count: ${n}`</span></td>
+              <td><span class="py-fn">f</span><span class="py-str">'Count: {n}'</span></td>
+            </tr>
+            <tr>
+              <td class="concept-col">Length</td>
+              <td>array.length</td>
+              <td><span class="py-fn">len</span>(lst)</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Filter</td>
+              <td>tasks.<span class="tok-fn">filter</span>(t =&gt; t.completed)</td>
+              <td>[t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]]</td>
+            </tr>
+            <tr>
+              <td class="concept-col">JSON parse</td>
+              <td>JSON.<span class="tok-fn">parse</span>(str)</td>
+              <td>json.<span class="py-fn">load</span>(file)</td>
+            </tr>
+            <tr>
+              <td class="concept-col">Error handling</td>
+              <td><span class="tok-kw">try</span> { … } <span class="tok-kw">catch</span> (e) { … }</td>
+              <td><span class="py-kw">try</span>:<br>&nbsp;&nbsp;&nbsp;&nbsp;…<br><span class="py-kw">except</span> ErrorType <span class="py-kw">as</span> e:</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TRACE TABLE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="trace">
+        <h2>Trace table — main() with 3 tasks (1 completed)</h2>
+        <p>Starting <code>tasks.json</code>:
+          <code style="font-family:'JetBrains Mono',monospace; font-size:0.82rem;">
+          [{"id":1,"text":"Buy milk","completed":true}, {"id":2,"text":"Walk dog","completed":false}, {"id":3,"text":"Pay bills","completed":false}]
+          </code>
+        </p>
+
+        <table class="trace-table" aria-label="Trace table for analyse.py main function">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Line / operation</th>
+              <th>Variable state</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cell-hl">1</td>
+              <td><code>json.load(f)</code></td>
+              <td class="cell-py">tasks = list of 3 dicts</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">2</td>
+              <td><code>total = len(tasks)</code></td>
+              <td class="cell-hl">total = 3</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">3</td>
+              <td>List comprehension — filter <code>completed == True</code></td>
+              <td class="cell-hl">completed = 1</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">4</td>
+              <td><code>active = 3 - 1</code></td>
+              <td class="cell-hl">active = 2</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">5</td>
+              <td><code>pct_done = round((1/3)*100, 1)</code></td>
+              <td class="cell-hl">pct_done = 33.3</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">6</td>
+              <td>Open report.csv, write header row</td>
+              <td>—</td>
+              <td class="cell-py">id,text,status,exported_at</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">7</td>
+              <td>Loop task 1 — completed=True → status="done"</td>
+              <td class="cell-py">status = "done"</td>
+              <td class="cell-py">1,Buy milk,done,…</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">8</td>
+              <td>Loop task 2 — completed=False → status="active"</td>
+              <td class="cell-py">status = "active"</td>
+              <td class="cell-py">2,Walk dog,active,…</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">9</td>
+              <td>Loop task 3 — status="active"</td>
+              <td class="cell-py">status = "active"</td>
+              <td class="cell-py">3,Pay bills,active,…</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">10</td>
+              <td>Write summary row</td>
+              <td>—</td>
+              <td class="cell-py">SUMMARY,Total: 3,Done: 1 (33.3%),Active: 2</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">11</td>
+              <td>Print to console</td>
+              <td>—</td>
+              <td class="cell-hl">3 tasks, 1 completed, report saved</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="info-box" style="margin-top:var(--space-4)">
+          <strong>Your turn:</strong> In your notebook, trace the same
+          <code>main()</code> function but with an empty <code>tasks.json</code>
+          (<code>[]</code>). Walk through each step — what is <code>total</code>?
+          What does the <code>pct_done</code> guard evaluate to? How many rows does
+          the CSV have? Does the summary row still write?
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: BUG DETECTIVE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="bugs">
+        <h2>Bug detective</h2>
+        <p>Each Python snippet has a deliberate bug. Identify the problem before revealing.</p>
+
+        <!-- Bug 1 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 1 — missing encoding argument</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'tasks.json'</span>, <span class="py-str">'r'</span>) <span class="py-kw">as</span> f:
+    tasks = json.<span class="py-fn">load</span>(f)</div>
+            <div class="bug-card__question">Works fine on the developer's Mac. Fails on a student's Windows PC with a <code>UnicodeDecodeError</code>. Why?</div>
+            <button class="bug-reveal-btn" data-bug="s5bug1">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s5bug1">
+              <strong>Bug:</strong> Without <code>encoding='utf-8'</code>, Python uses
+              the system's default encoding. On macOS and Linux this is UTF-8. On
+              Windows it is often <code>cp1252</code> (Windows-1252). If any task
+              text contains a character outside cp1252 — an emoji, an accented vowel,
+              a smart quote — the file cannot be decoded and Python raises a
+              <code>UnicodeDecodeError</code>. Fix: always specify
+              <code>encoding='utf-8'</code> explicitly, matching the encoding used
+              when the JS app created the JSON.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 2 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 2 — missing newline='' in csv.writer</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="py-kw">with</span> <span class="py-fn">open</span>(<span class="py-str">'report.csv'</span>, <span class="py-str">'w'</span>, encoding=<span class="py-str">'utf-8'</span>) <span class="py-kw">as</span> f:
+    writer = csv.<span class="py-fn">writer</span>(f)
+    writer.<span class="py-fn">writerow</span>([<span class="py-str">'id'</span>, <span class="py-str">'text'</span>, <span class="py-str">'status'</span>])</div>
+            <div class="bug-card__question">On Windows, the CSV opens in Excel with blank rows between every data row. On macOS it looks fine. What causes this and how do you fix it?</div>
+            <button class="bug-reveal-btn" data-bug="s5bug2">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s5bug2">
+              <strong>Bug:</strong> Python's <code>csv.writer</code> writes its own
+              line endings (<code>\r\n</code> on Windows). When the file is opened
+              in text mode (the default), Python also translates <code>\n</code> to
+              <code>\r\n</code> on Windows. The result is <code>\r\r\n</code> — a
+              carriage return, another carriage return, then a newline — which Excel
+              interprets as two line endings, producing a blank row between every data
+              row. Fix: open the file with <code>newline=''</code> to disable Python's
+              universal newline translation and let the csv module handle it.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 3 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 3 — division by zero</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code">total    = <span class="py-fn">len</span>(tasks)
+completed = <span class="py-fn">len</span>([t <span class="py-kw">for</span> t <span class="py-kw">in</span> tasks <span class="py-kw">if</span> t[<span class="py-str">'completed'</span>]])
+pct_done  = <span class="py-fn">round</span>((completed / total) * <span class="py-num">100</span>, <span class="py-num">1</span>)  <span class="py-cmt"># no guard</span></div>
+            <div class="bug-card__question">The script works for every test run during development. When does it crash, and what error does it produce?</div>
+            <button class="bug-reveal-btn" data-bug="s5bug3">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s5bug3">
+              <strong>Bug:</strong> If the task list is empty (the user exported before
+              adding any tasks), <code>total = 0</code>. Dividing by zero raises a
+              <code>ZeroDivisionError</code>. This never happened during development
+              because the developer always had tasks in the app — but a real user
+              clicking Export on an empty app will crash the script. Fix: use the
+              guard <code>pct_done = round(...) if total &gt; 0 else 0</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 4 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 4 — JSON.stringify without indent in JS</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="tok-cmt">// In exportTasks():</span>
+<span class="tok-kw">const</span> jsonString = JSON.<span class="tok-fn">stringify</span>(<span class="tok-var">tasks</span>);  <span class="tok-cmt">// no indent args</span></div>
+            <div class="bug-card__question">The Python script still reads the file correctly. So is this actually a bug? Argue both sides.</div>
+            <button class="bug-reveal-btn" data-bug="s5bug4">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s5bug4">
+              <strong>It depends on how you define "bug".</strong> Python's
+              <code>json.load()</code> parses both compact and indented JSON
+              identically — the file is functionally correct. So this is not a
+              correctness bug. However, it is a <strong>maintainability and
+              debugging problem</strong>: when a student opens the exported file
+              to verify it before running the Python script, compact JSON is very
+              hard to read. A single error (a missing bracket, an extra comma) is
+              invisible. Indented JSON makes structural errors immediately obvious.
+              Professional tools like <code>curl</code> and browser DevTools always
+              pretty-print JSON for exactly this reason. The verdict: use
+              <code>JSON.stringify(tasks, null, 2)</code> — it costs nothing and
+              aids debugging significantly.
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TIERED TASKS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="tasks">
+        <h2>Tiered tasks</h2>
+        <p style="color:var(--color-text-secondary); margin-bottom:1.5rem;">
+          Choose the task that matches your level. All students must run the full
+          pipeline at least once and verify their CSV report in a spreadsheet.
+        </p>
+        <div class="tier-grid">
+
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Run the pipeline end to end</h4>
+            <p>
+              Add the export button to your Sprint 4 app and implement
+              <code>analyse.py</code> using this walkthrough. Export at least five
+              tasks (mix of active and done), run the script, and open
+              <code>report.csv</code> in a spreadsheet. In your notebook, annotate
+              the CSV — explain what each column means and why the summary row
+              is useful to a non-technical reader.
+            </p>
+          </div>
+
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Extend the analysis</h4>
+            <p>
+              Add two more statistics to the console output and summary row: the
+              length of the longest task text and the average task text length
+              (in characters). Write NSW pseudocode for each calculation before
+              implementing. Then add a second CSV sheet — write a separate
+              <code>active_tasks.csv</code> containing only incomplete tasks,
+              sorted by text length (shortest first).
+            </p>
+          </div>
+
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Command-line arguments + multiple reports</h4>
+            <p>
+              Use Python's <code>sys.argv</code> to accept the input filename
+              as a command-line argument (e.g.
+              <code>python analyse.py tasks.json</code>) so the script can
+              process any exported file, not just one named
+              <code>tasks.json</code>. Add a <code>--summary-only</code> flag
+              that prints statistics to the console without writing a CSV.
+              Write NSW pseudocode for the argument-parsing procedure, then
+              implement and test with at least three different input files.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: CPD STRIP
+      ══════════════════════════════════════════════════════ -->
+      <section class="cpd-section" id="cpd" aria-label="Course performance descriptors">
+        <h2>Grade descriptors — where are you?</h2>
+        <p class="cpd-intro">Click a grade to highlight it.</p>
+        <div class="cpd-strip" role="list">
+
+          <div class="cpd-grade cpd-grade-a" role="listitem" tabindex="0" aria-label="Grade A descriptor">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Implements the complete pipeline with technically concise code in both languages; demonstrates extensive understanding of file I/O, JSON serialisation, and data analysis; extends with additional statistics and command-line arguments; writes precise NSW pseudocode; evaluates design trade-offs between approaches.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" role="listitem" tabindex="0" aria-label="Grade B descriptor">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Implements the complete pipeline correctly; extends with additional analysis; thoroughly explains the role of each module and the reason for each design decision; handles all five test cases; writes functional NSW pseudocode; annotates the CSV output meaningfully.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" role="listitem" tabindex="0" aria-label="Grade C descriptor">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Implements the complete pipeline; all five test cases pass; can explain the purpose of the <code>json</code> and <code>csv</code> modules and the <code>with</code> statement; describes the pipeline in own words; trace table completed with mostly accurate values.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" role="listitem" tabindex="0" aria-label="Grade D descriptor">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Implements most of the pipeline with minor errors; script runs and produces a report; can describe what the script does in general terms; attempts the trace table.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" role="listitem" tabindex="0" aria-label="Grade E descriptor">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Partially implements the pipeline with guidance; identifies that Python reads a file and writes a CSV; attempts to follow the walkthrough steps.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: SPRINT LOG
+      ══════════════════════════════════════════════════════ -->
+      <aside class="notebook-prompt" id="notebook" aria-label="Sprint log">
+        <div class="notebook-prompt__label">📓 Sprint 5 Log</div>
+        <p style="font-size:0.88rem; color:var(--color-text-secondary); margin-bottom:var(--space-4);">
+          Draft responses here, then transfer to your project notebook.
+        </p>
+
+        <div class="sprint-log">
+          <div class="sprint-log__header">Sprint 5 — Log scaffold</div>
+          <div class="sprint-log__body">
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Describe the data pipeline in your own words — what is in each file and who reads or writes it?</div>
+              <textarea class="sprint-log__input" placeholder="The pipeline starts with… The JS app creates… Python reads… and writes…" rows="3"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Why does Python need a JSON module to read the file when the data looks the same as a JavaScript object?</div>
+              <textarea class="sprint-log__input" placeholder="Although JSON looks like a JavaScript object, Python cannot understand it directly because… The json module…" rows="3"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">What would happen if you ran analyse.py before exporting tasks.json? How does the script handle this?</div>
+              <textarea class="sprint-log__input" placeholder="If tasks.json doesn't exist, Python would… The try/except handles this by…" rows="2"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Identify one way this pipeline could be improved for a larger dataset (e.g. hundreds or thousands of tasks)</div>
+              <textarea class="sprint-log__input" placeholder="For a larger dataset, the current approach would struggle with… A better approach would be… because…" rows="2"></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <ul style="margin-top:var(--space-4)">
+          <li>
+            Explain the difference between <code>json.load(f)</code> and <code>json.loads(s)</code> — when would you use each?
+            <span class="sentence-starter"><code>json.load()</code> reads from a file object, while <code>json.loads()</code> reads from a string. I would use <code>json.loads()</code> when…</span>
+          </li>
+          <li>
+            Why is <code>newline=''</code> needed when opening a CSV for writing on Windows but not when opening a JSON for reading?
+            <span class="sentence-starter"><code>newline=''</code> is needed for CSV because… JSON reading doesn't need it because…</span>
+          </li>
+          <li>
+            Compare the JavaScript <code>filter()</code> method with Python's list comprehension — what do they have in common and where do they differ?
+            <span class="sentence-starter">Both <code>filter()</code> and list comprehensions… The key difference is that in Python…</span>
+          </li>
+        </ul>
+
+        <a href="../../../project-notebooks/sd-apps-web-notebook.html" class="notebook-link">Open full project notebook →</a>
+      </aside>
+
+      <!-- Series complete banner -->
+      <div class="series-complete">
+        <div class="series-complete__icon">🎉</div>
+        <div class="series-complete__title">Sprint series complete</div>
+        <p class="series-complete__desc">
+          You've built a full-stack task tracker — from HTML form to JavaScript event
+          listener, localStorage persistence, filtered views, complete CRUD, and a
+          Python data analysis layer. That's a real software development pipeline.
+          Open your project notebook and write a reflection: what was the hardest
+          concept across all five sprints, and how did you work through it?
+        </p>
+      </div>
+
+      <!-- Prev-only nav -->
+      <div class="sprint-nav">
+        <a href="skills-sprint4.html" class="sprint-nav__btn sprint-nav__btn--prev" aria-label="Go to Sprint 4">
+          <div class="sprint-nav__arrow">←</div>
+          <div>
+            <div class="sprint-nav__label">Previous</div>
+            <div class="sprint-nav__title">Sprint 4 — Delete, Edit &amp; Complete</div>
+          </div>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.bug-reveal-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id   = btn.dataset.bug;
+          var ans  = document.getElementById(id);
+          if (!ans) return;
+          var open = ans.classList.contains('visible');
+          ans.classList.toggle('visible', !open);
+          btn.textContent = open ? '🔍 Reveal answer' : '🙈 Hide answer';
+        });
+      });
+    }());
+
+    if (typeof App !== 'undefined' && App.init) { App.init(); }
+  </script>
+
+</body>
+</html>

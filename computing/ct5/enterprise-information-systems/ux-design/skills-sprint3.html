@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 3: Filtering &amp; Searching — Apps &amp; Web Software CT5</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-print.css" media="print">
+
+  <style>
+    :root {
+      --accent:          #0d9488;
+      --accent-dim:      #0a7a70;
+      --accent-bright:   #14b8a8;
+      --accent-surface:  rgba(13, 148, 136, 0.10);
+      --accent-border:   rgba(13, 148, 136, 0.28);
+    }
+
+    /* ── Sprint badge — amber for JS sprints ── */
+    .sprint-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fcd34d;
+      margin-bottom: var(--space-3);
+    }
+    .sprint-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: #fcd34d; }
+
+    /* ── Section phase tags ── */
+    .section-phase-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: var(--space-3);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .section-phase-tag.identify { background: rgba(99,102,241,0.12);  color: #a5b4fc; }
+    .section-phase-tag.produce  { background: rgba(251,113,133,0.12); color: #fda4af; }
+    .section-phase-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+    /* ── Info box ── */
+    .info-box {
+      background: var(--color-surface-3);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: var(--space-3) var(--space-4);
+      margin-top: var(--space-3);
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ── Concept cards (reused from Sprint 2) ── */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+    .concept-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+    .concept-card__term {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-2);
+    }
+    .concept-card__def {
+      font-size: 0.88rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin: 0 0 var(--space-3);
+    }
+    .concept-card__example {
+      background: #0d1117;
+      border-radius: var(--radius-sm);
+      padding: var(--space-2) var(--space-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+
+    /* ── Data vs View diagram ── */
+    .arch-diagram {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: var(--space-4);
+      align-items: center;
+      margin: var(--space-5) 0;
+    }
+    @media (max-width: 580px) {
+      .arch-diagram { grid-template-columns: 1fr; }
+      .arch-diagram__arrow { transform: rotate(90deg); }
+    }
+    .arch-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+    .arch-box--data   { border-top: 3px solid var(--accent); }
+    .arch-box--view   { border-top: 3px solid #f59e0b; }
+    .arch-box__label  { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+    .arch-box__title  { font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-2); font-size: 0.95rem; }
+    .arch-box__desc   { font-size: 0.83rem; color: var(--color-text-secondary); line-height: 1.5; margin: 0; }
+    .arch-diagram__mid { text-align: center; }
+    .arch-diagram__arrow { font-size: 1.4rem; color: var(--color-text-muted); }
+    .arch-diagram__arrow-label { font-size: 0.7rem; color: var(--color-text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+    /* ── Pseudocode block ── */
+    .pseudocode-block {
+      background: #0d1117;
+      border: 1px solid var(--color-border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      margin: var(--space-4) 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      color: #e2e8f0;
+      overflow-x: auto;
+    }
+    .pseudocode-block .ps-kw  { color: #f97583; font-weight: 700; }
+    .pseudocode-block .ps-cmt { color: #6a737d; font-style: italic; }
+    .pseudocode-block .ps-str { color: #9ecbff; }
+    .pseudocode-block .ps-var { color: #79b8ff; }
+    .pseudocode-block .ps-fn  { color: #b392f0; }
+
+    /* ── Code walkthrough ── */
+    .code-step {
+      background: #0d1117;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin: var(--space-5) 0;
+    }
+    .code-step__banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(245,158,11,0.10);
+      border-bottom: 1px solid rgba(245,158,11,0.2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fcd34d;
+    }
+    .code-step__banner-dot { width: 8px; height: 8px; border-radius: 50%; background: #fcd34d; flex-shrink: 0; }
+    .code-step__body { padding: var(--space-4); overflow-x: auto; }
+    .code-step__body pre {
+      margin: 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.75;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+    .code-step__explanation {
+      padding: var(--space-3) var(--space-4) var(--space-4);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.88rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+    .code-step__explanation strong { color: var(--color-text-primary); }
+
+    /* Green highlights + magenta change banners */
+    .code-new { background: rgba(34,197,94,0.10); display: block; }
+    .code-change-banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 4px var(--space-4);
+      background: rgba(236,72,153,0.12);
+      border-top: 1px solid rgba(236,72,153,0.25);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #f0abfc;
+    }
+    .code-change-banner::before { content: '▶'; font-size: 0.6rem; }
+
+    /* Syntax tokens */
+    .tok-kw   { color: #f97583; }
+    .tok-fn   { color: #b392f0; }
+    .tok-str  { color: #9ecbff; }
+    .tok-cmt  { color: #6a737d; font-style: italic; }
+    .tok-num  { color: #79b8ff; }
+    .tok-var  { color: #79b8ff; }
+    .tok-tag  { color: #f97583; }
+    .tok-attr { color: #79b8ff; }
+
+    /* ── Array method comparison table ── */
+    .method-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.87rem;
+      margin: var(--space-4) 0;
+    }
+    .method-table th {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+    }
+    .method-table td {
+      border: 1px solid var(--color-border);
+      padding: var(--space-3);
+      vertical-align: top;
+      color: var(--color-text-secondary);
+      line-height: 1.55;
+    }
+    .method-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .method-table code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: var(--accent-bright);
+    }
+    .method-table .used-here {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #86efac;
+      background: rgba(34,197,94,0.10);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 999px;
+      padding: 1px 7px;
+      margin-left: 6px;
+      white-space: nowrap;
+    }
+
+    /* ── Trace table ── */
+    .trace-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      margin: var(--space-4) 0;
+    }
+    .trace-table th {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+      font-family: 'Nunito', sans-serif;
+    }
+    .trace-table td {
+      border: 1px solid var(--color-border);
+      padding: var(--space-2) var(--space-3);
+      vertical-align: top;
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+    .trace-table tr:nth-child(even) td { background: var(--color-surface-2); }
+    .cell-hl  { color: var(--accent-bright); font-weight: 700; }
+    .cell-act { color: #fda4af; }
+
+    /* ── Bug detective ── */
+    .bug-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-left: 3px solid #ef4444;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: var(--space-4);
+    }
+    .bug-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(239,68,68,0.08);
+      border-bottom: 1px solid rgba(239,68,68,0.15);
+      font-size: 0.83rem;
+      font-weight: 700;
+      color: #fca5a5;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .bug-card__body { padding: var(--space-4); }
+    .bug-card__code {
+      background: #0d1117;
+      border-radius: var(--radius-sm);
+      padding: var(--space-3);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: #e2e8f0;
+      margin-bottom: var(--space-3);
+      overflow-x: auto;
+    }
+    .bug-card__question { font-size: 0.88rem; color: var(--color-text-secondary); margin-bottom: var(--space-3); }
+    .bug-reveal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: var(--space-2) var(--space-4);
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: #fca5a5;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .bug-reveal-btn:hover { background: rgba(239,68,68,0.15); }
+    .bug-answer {
+      display: none;
+      margin-top: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: rgba(34,197,94,0.08);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      color: #bbf7d0;
+      line-height: 1.6;
+    }
+    .bug-answer.visible { display: block; }
+    .bug-answer strong { color: #86efac; }
+
+    /* ── Tier grid + sprint log ── */
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+      margin-top: var(--space-4);
+    }
+    .tier-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+    .tier-card h4 { margin: var(--space-2) 0; color: var(--color-text-primary); font-size: 0.95rem; }
+    .tier-card p  { font-size: 0.87rem; color: var(--color-text-secondary); margin: 0; line-height: 1.55; }
+
+    .sprint-log { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; margin-top: var(--space-4); }
+    .sprint-log__header { background: var(--accent-surface); border-bottom: 1px solid var(--accent-border); padding: var(--space-3) var(--space-4); font-weight: 700; font-size: 0.88rem; color: var(--accent-bright); }
+    .sprint-log__body { padding: var(--space-4); }
+    .sprint-log__field { margin-bottom: var(--space-4); }
+    .sprint-log__field:last-child { margin-bottom: 0; }
+    .sprint-log__label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+    .sprint-log__input { width: 100%; background: var(--color-surface-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-3); color: var(--color-text-primary); font-family: inherit; font-size: 0.88rem; resize: vertical; min-height: 64px; transition: border-color 0.15s; }
+    .sprint-log__input:focus { outline: none; border-color: var(--accent); }
+    .sprint-log__input::placeholder { color: var(--color-text-muted); }
+
+    /* ── Prev / next nav ── */
+    .sprint-nav { display: flex; justify-content: space-between; margin-top: var(--space-7); gap: var(--space-4); }
+    .sprint-nav__btn { display: inline-flex; align-items: center; gap: var(--space-3); background: var(--accent-surface); border: 1px solid var(--accent-border); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); text-decoration: none; color: inherit; transition: background 0.15s; }
+    .sprint-nav__btn:hover { background: rgba(13,148,136,0.18); }
+    .sprint-nav__btn--prev { flex-direction: row-reverse; }
+    .sprint-nav__label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--color-text-muted); }
+    .sprint-nav__title { font-size: 0.95rem; font-weight: 700; color: var(--accent-bright); }
+    .sprint-nav__arrow { font-size: 1.3rem; color: var(--accent-bright); }
+  </style>
+</head>
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../../../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">CT5</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Software Development</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Apps &amp; Web Software</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Sprint 3</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="skills.html" class="ct-nav-btn">← Skills</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">CT5</a></li>
+      <li><a href="../index.html">Software Development</a></li>
+      <li><a href="index.html">Apps &amp; Web Software</a></li>
+      <li><a href="skills.html">Skills</a></li>
+      <li aria-current="page">Sprint 3</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#concepts">Key concepts</a>
+          <a href="#pseudocode">Pseudocode first</a>
+          <a href="#step1">Step 1 — HTML filter controls</a>
+          <a href="#step2">Step 2 — activeFilter state</a>
+          <a href="#step3">Step 3 — Update renderTasks()</a>
+          <a href="#step4">Step 4 — Filter button events</a>
+          <a href="#step5">Step 5 — Search input</a>
+          <a href="#step6">Step 6 — Wire up initialise()</a>
+          <a href="#trace">Trace table</a>
+          <a href="#bugs">Bug detective</a>
+          <a href="#tasks">Tiered tasks</a>
+          <a href="#cpd">Grade descriptors</a>
+          <a href="#notebook">Sprint log</a>
+        </nav>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-DAT-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#fcd34d;">
+          3 of 5 &nbsp;·&nbsp; JavaScript
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <!-- Hero -->
+      <header class="page-hero">
+        <div class="sprint-badge">
+          <span class="sprint-badge__dot"></span>
+          Sprint 3 · JavaScript
+        </div>
+        <div class="page-eyebrow">SD · Stage 5 · Year 10</div>
+        <h1>Filtering &amp; Searching</h1>
+        <p class="page-intro">
+          Your task tracker now persists data — but every task is always visible, all at once.
+          In this sprint you add two ways to narrow the view: filter buttons (All / Active / Done)
+          and a live search field. You'll learn the most important architectural principle in
+          front-end development — <strong>never mutate the data to change the view</strong>.
+          The array stays unchanged; only the rendered output changes.
+        </p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+      <div class="info-box" style="margin-bottom:var(--space-6)">
+        <strong>The key insight of Sprint 3:</strong> When a user clicks "Done",
+        you do <em>not</em> delete tasks from the array. You set a variable
+        (<code>activeFilter</code>) that tells <code>renderTasks()</code> which
+        tasks to show. The array is always complete. The view is always a subset.
+        This is how spreadsheet filters, database queries, and every search engine works.
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: KEY CONCEPTS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="concepts">
+        <div class="section-phase-tag identify"><span class="dot"></span> Identifying &amp; Defining</div>
+        <h2>Key concepts</h2>
+
+        <!-- Data vs View diagram -->
+        <div class="arch-diagram" aria-label="Data layer versus View layer architecture">
+          <div class="arch-box arch-box--data">
+            <div class="arch-box__label">Data layer — never changes for display</div>
+            <div class="arch-box__title">tasks[ ] array</div>
+            <p class="arch-box__desc">All tasks, always intact. Modified only when tasks are added, edited, or deleted.</p>
+          </div>
+          <div class="arch-diagram__mid">
+            <div class="arch-diagram__arrow">→</div>
+            <div class="arch-diagram__arrow-label">filter()<br>+ search</div>
+          </div>
+          <div class="arch-box arch-box--view">
+            <div class="arch-box__label">View layer — rebuilt on every change</div>
+            <div class="arch-box__title">Rendered &lt;ul&gt;</div>
+            <p class="arch-box__desc">A filtered, searched subset of the array. Thrown away and rebuilt whenever <code>renderTasks()</code> runs.</p>
+          </div>
+        </div>
+
+        <!-- Array method cards -->
+        <div class="concept-grid">
+          <div class="concept-card">
+            <div class="concept-card__term">array.filter()</div>
+            <p class="concept-card__def">
+              Returns a <strong>new array</strong> containing only the elements for which
+              the callback returns <code>true</code>. The original array is never modified.
+              The callback receives each element and must return a boolean.
+            </p>
+            <div class="concept-card__example"><span class="tok-cmt">// Keep only incomplete tasks</span>
+<span class="tok-kw">const</span> active = tasks.<span class="tok-fn">filter</span>(<span class="tok-kw">function</span> (t) {
+  <span class="tok-kw">return</span> t.completed === <span class="tok-kw">false</span>;
+});
+<span class="tok-cmt">// tasks is unchanged; active is a new array</span></div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">String.includes()</div>
+            <p class="concept-card__def">
+              Returns <code>true</code> if the string contains the given substring.
+              Case-sensitive by default — so we convert both strings to lowercase
+              before comparing, giving us a case-insensitive search.
+            </p>
+            <div class="concept-card__example"><span class="tok-cmt">// Case-insensitive search</span>
+<span class="tok-kw">const</span> query = <span class="tok-str">"milk"</span>;
+<span class="tok-str">"Buy Milk"</span>.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">includes</span>(query)
+<span class="tok-cmt">// → true  ("buy milk".includes("milk"))</span>
+
+<span class="tok-str">"Walk dog"</span>.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">includes</span>(query)
+<span class="tok-cmt">// → false</span></div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">Chained .filter()</div>
+            <p class="concept-card__def">
+              Because <code>filter()</code> returns an array, you can chain a second
+              <code>filter()</code> directly onto the result. Status filter first,
+              then search filter — both applied in a single expression.
+            </p>
+            <div class="concept-card__example"><span class="tok-kw">const</span> visible = tasks
+  .<span class="tok-fn">filter</span>(<span class="tok-var">t</span> => <span class="tok-fn">statusMatch</span>(<span class="tok-var">t</span>))
+  .<span class="tok-fn">filter</span>(<span class="tok-var">t</span> => <span class="tok-var">t</span>.text
+    .<span class="tok-fn">toLowerCase</span>()
+    .<span class="tok-fn">includes</span>(<span class="tok-var">query</span>));
+<span class="tok-cmt">// tasks is still unchanged</span></div>
+          </div>
+
+          <div class="concept-card">
+            <div class="concept-card__term">State variable</div>
+            <p class="concept-card__def">
+              A variable that records the current mode of the UI — not data, but a
+              <em>description of what the user has selected</em>. <code>activeFilter</code>
+              holds the current filter: <code>'all'</code>, <code>'active'</code>, or
+              <code>'done'</code>. Changing it triggers a re-render.
+            </p>
+            <div class="concept-card__example"><span class="tok-kw">let</span> activeFilter = <span class="tok-str">'all'</span>;
+<span class="tok-cmt">// When user clicks "Done":</span>
+activeFilter = <span class="tok-str">'done'</span>;
+<span class="tok-fn">renderTasks</span>();  <span class="tok-cmt">// re-render with new state</span></div>
+          </div>
+        </div>
+
+        <!-- Array methods reference table -->
+        <h3 style="font-size:0.95rem; margin:var(--space-5) 0 var(--space-2);">Array methods in this sprint</h3>
+        <table class="method-table" aria-label="Array methods used in Sprint 3">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>What it returns</th>
+              <th>Mutates original?</th>
+              <th>Used for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>filter()</code> <span class="used-here">used here</span></td>
+              <td>New array with matching elements</td>
+              <td>No</td>
+              <td>Status filter, search filter</td>
+            </tr>
+            <tr>
+              <td><code>forEach()</code> <span class="used-here">used here</span></td>
+              <td><code>undefined</code> — side effects only</td>
+              <td>No (but callback may mutate)</td>
+              <td>Rendering each visible task</td>
+            </tr>
+            <tr>
+              <td><code>find()</code></td>
+              <td>First matching element (or <code>undefined</code>)</td>
+              <td>No</td>
+              <td>Sprint 4 — find task by id</td>
+            </tr>
+            <tr>
+              <td><code>findIndex()</code></td>
+              <td>Index of first match (or <code>-1</code>)</td>
+              <td>No</td>
+              <td>Sprint 4 — locate task to delete</td>
+            </tr>
+            <tr>
+              <td><code>splice()</code></td>
+              <td>Removed elements</td>
+              <td><strong>Yes</strong></td>
+              <td>Sprint 4 — remove task from array</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: PSEUDOCODE FIRST
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="pseudocode">
+        <div class="section-phase-tag identify"><span class="dot"></span> Identifying &amp; Defining</div>
+        <h2>Pseudocode first — the Sprint 3 algorithm</h2>
+        <p>
+          Sprint 3 adds two new state variables and updates <code>renderTasks()</code>
+          to use them. No other existing procedures change.
+        </p>
+
+        <div class="pseudocode-block" aria-label="NSW pseudocode for Sprint 3">
+<span class="ps-cmt">// Sprint 3 additions — NSW pseudocode</span>
+<span class="ps-cmt">// New state variables (added to the top of app.js)</span>
+<span class="ps-var">activeFilter</span> ← <span class="ps-str">"all"</span>       <span class="ps-cmt">// "all" | "active" | "done"</span>
+<span class="ps-var">searchQuery</span>  ← <span class="ps-str">""</span>         <span class="ps-cmt">// current search string (lowercase)</span>
+
+<span class="ps-kw">PROCEDURE</span> <span class="ps-fn">renderTasks</span>()   <span class="ps-cmt">// replaces the Sprint 2 version</span>
+  <span class="ps-cmt">// Step 1: apply status filter</span>
+  <span class="ps-kw">IF</span> <span class="ps-var">activeFilter</span> = <span class="ps-str">"active"</span> <span class="ps-kw">THEN</span>
+    <span class="ps-var">visible</span> ← tasks WHERE completed = <span class="ps-kw">FALSE</span>
+  <span class="ps-kw">ELSE IF</span> <span class="ps-var">activeFilter</span> = <span class="ps-str">"done"</span> <span class="ps-kw">THEN</span>
+    <span class="ps-var">visible</span> ← tasks WHERE completed = <span class="ps-kw">TRUE</span>
+  <span class="ps-kw">ELSE</span>
+    <span class="ps-var">visible</span> ← ALL tasks
+  <span class="ps-kw">ENDIF</span>
+
+  <span class="ps-cmt">// Step 2: apply search filter on top of status filter</span>
+  <span class="ps-kw">IF</span> <span class="ps-var">searchQuery</span> ≠ <span class="ps-str">""</span> <span class="ps-kw">THEN</span>
+    <span class="ps-var">visible</span> ← <span class="ps-var">visible</span> WHERE LOWERCASE(text) CONTAINS <span class="ps-var">searchQuery</span>
+  <span class="ps-kw">ENDIF</span>
+
+  <span class="ps-cmt">// Step 3: clear the DOM and rebuild from visible subset</span>
+  CLEAR <span class="ps-var">taskList</span>
+  <span class="ps-kw">IF</span> LENGTH of <span class="ps-var">visible</span> = 0 <span class="ps-kw">THEN</span>
+    SHOW <span class="ps-var">emptyMsg</span>
+    <span class="ps-kw">RETURN</span>
+  <span class="ps-kw">ENDIF</span>
+  HIDE <span class="ps-var">emptyMsg</span>
+  <span class="ps-kw">FOR EACH</span> <span class="ps-var">task</span> IN <span class="ps-var">visible</span>
+    <span class="ps-var">li</span>   ← CREATE &lt;li&gt; with data-id = <span class="ps-var">task</span>.id
+    <span class="ps-var">span</span> ← CREATE &lt;span&gt; with text = <span class="ps-var">task</span>.text
+    ADD <span class="ps-var">span</span> INSIDE <span class="ps-var">li</span>
+    ADD <span class="ps-var">li</span> TO <span class="ps-var">taskList</span>
+  <span class="ps-kw">NEXT</span>
+<span class="ps-kw">ENDPROCEDURE</span>
+
+<span class="ps-kw">PROCEDURE</span> <span class="ps-fn">setFilter</span>(<span class="ps-var">filterValue</span>)
+  <span class="ps-var">activeFilter</span> ← <span class="ps-var">filterValue</span>
+  CALL <span class="ps-fn">renderTasks</span>()
+<span class="ps-kw">ENDPROCEDURE</span>
+
+<span class="ps-kw">PROCEDURE</span> <span class="ps-fn">handleSearch</span>()
+  <span class="ps-var">searchQuery</span> ← LOWERCASE(VALUE of search input)
+  CALL <span class="ps-fn">renderTasks</span>()
+<span class="ps-kw">ENDPROCEDURE</span>
+        </div>
+
+        <div class="info-box">
+          <strong>Notice:</strong> <code>setFilter</code> and <code>handleSearch</code>
+          do the same two things — update one state variable, then call
+          <code>renderTasks()</code>. This is the pattern: <em>change state, then
+          re-render</em>. The render function always reads current state fresh.
+          It never needs to know what changed — only what the state is now.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 1 — HTML FILTER CONTROLS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step1">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 1 — Add filter controls to index.html</h2>
+        <p>
+          The HTML needs three filter buttons and a search input. Add these inside
+          <code>.app-main</code>, after the form and before the task list.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 1 · index.html — complete file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 1 — filter controls div and search input (lines 22–37)</div>
+          <div class="code-step__body"><pre>
+<span class="tok-tag">&lt;main</span> <span class="tok-attr">class</span>=<span class="tok-str">"app-main"</span><span class="tok-tag">&gt;</span>
+
+  <span class="tok-cmt">&lt;!-- Existing form (unchanged) --&gt;</span>
+  <span class="tok-tag">&lt;form</span> <span class="tok-attr">id</span>=<span class="tok-str">"task-form"</span> <span class="tok-attr">autocomplete</span>=<span class="tok-str">"off"</span><span class="tok-tag">&gt;</span>
+    <span class="tok-tag">&lt;input</span> <span class="tok-attr">type</span>=<span class="tok-str">"text"</span> <span class="tok-attr">id</span>=<span class="tok-str">"task-input"</span>
+           <span class="tok-attr">placeholder</span>=<span class="tok-str">"Add a new task…"</span>
+           <span class="tok-attr">aria-label</span>=<span class="tok-str">"New task description"</span>
+           <span class="tok-attr">maxlength</span>=<span class="tok-str">"120"</span><span class="tok-tag">&gt;</span>
+    <span class="tok-tag">&lt;button</span> <span class="tok-attr">type</span>=<span class="tok-str">"submit"</span><span class="tok-tag">&gt;</span>Add<span class="tok-tag">&lt;/button&gt;</span>
+  <span class="tok-tag">&lt;/form&gt;</span>
+
+<span class="code-new">  <span class="tok-cmt">&lt;!-- Filter controls --&gt;</span>
+</span><span class="code-new">  <span class="tok-tag">&lt;div</span> <span class="tok-attr">class</span>=<span class="tok-str">"filter-bar"</span> <span class="tok-attr">role</span>=<span class="tok-str">"group"</span> <span class="tok-attr">aria-label</span>=<span class="tok-str">"Filter tasks"</span><span class="tok-tag">&gt;</span>
+</span><span class="code-new">    <span class="tok-tag">&lt;button</span> <span class="tok-attr">class</span>=<span class="tok-str">"filter-btn active"</span> <span class="tok-attr">data-filter</span>=<span class="tok-str">"all"</span>    <span class="tok-attr">aria-pressed</span>=<span class="tok-str">"true"</span><span class="tok-tag">&gt;</span>All<span class="tok-tag">&lt;/button&gt;</span>
+</span><span class="code-new">    <span class="tok-tag">&lt;button</span> <span class="tok-attr">class</span>=<span class="tok-str">"filter-btn"</span>        <span class="tok-attr">data-filter</span>=<span class="tok-str">"active"</span> <span class="tok-attr">aria-pressed</span>=<span class="tok-str">"false"</span><span class="tok-tag">&gt;</span>Active<span class="tok-tag">&lt;/button&gt;</span>
+</span><span class="code-new">    <span class="tok-tag">&lt;button</span> <span class="tok-attr">class</span>=<span class="tok-str">"filter-btn"</span>        <span class="tok-attr">data-filter</span>=<span class="tok-str">"done"</span>   <span class="tok-attr">aria-pressed</span>=<span class="tok-str">"false"</span><span class="tok-tag">&gt;</span>Done<span class="tok-tag">&lt;/button&gt;</span>
+</span><span class="code-new">  <span class="tok-tag">&lt;/div&gt;</span>
+</span><span class="code-new">
+</span><span class="code-new">  <span class="tok-cmt">&lt;!-- Search --&gt;</span>
+</span><span class="code-new">  <span class="tok-tag">&lt;input</span>
+</span><span class="code-new">    <span class="tok-attr">type</span>=<span class="tok-str">"search"</span>
+</span><span class="code-new">    <span class="tok-attr">id</span>=<span class="tok-str">"search-input"</span>
+</span><span class="code-new">    <span class="tok-attr">placeholder</span>=<span class="tok-str">"Search tasks…"</span>
+</span><span class="code-new">    <span class="tok-attr">aria-label</span>=<span class="tok-str">"Search tasks"</span>
+</span><span class="code-new">  <span class="tok-tag">&gt;</span>
+</span>
+  <span class="tok-tag">&lt;ul</span> <span class="tok-attr">id</span>=<span class="tok-str">"task-list"</span> <span class="tok-attr">aria-live</span>=<span class="tok-str">"polite"</span> <span class="tok-attr">aria-label</span>=<span class="tok-str">"Task list"</span><span class="tok-tag">&gt;&lt;/ul&gt;</span>
+  <span class="tok-tag">&lt;p</span> <span class="tok-attr">id</span>=<span class="tok-str">"empty-msg"</span><span class="tok-tag">&gt;</span>No tasks yet. Add one above.<span class="tok-tag">&lt;/p&gt;</span>
+
+<span class="tok-tag">&lt;/main&gt;</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>data-filter</code> attributes:</strong> Each button stores its
+            filter value in a <code>data-*</code> attribute. JavaScript reads this with
+            <code>btn.dataset.filter</code> — no need for separate IDs per button.
+            <br><br>
+            <strong><code>aria-pressed</code>:</strong> Toggle buttons need
+            <code>aria-pressed="true"</code> when active so screen readers announce their
+            state. The "All" button starts pressed; the others start unpressed. JavaScript
+            will update these values when a button is clicked.
+            <br><br>
+            <strong><code>type="search"</code>:</strong> Tells the browser this is a
+            search field — it may render a clear (✕) button automatically and announces
+            it correctly to assistive technology.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 2 — STATE VARIABLES
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step2">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 2 — Add state variables to app.js</h2>
+        <p>
+          Add two new variables at the top of <code>app.js</code>, directly below
+          the existing element references and data declarations.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 2 · app.js — complete file
+          </div>
+          <div class="code-change-banner">NEW IN STEP 2 — searchInput reference + two state variables (lines 7–11)</div>
+          <div class="code-step__body"><pre>
+<span class="tok-cmt">// ── Element references ──</span>
+<span class="tok-kw">const</span> <span class="tok-var">form</span>        = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-form'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">input</span>       = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-input'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">taskList</span>    = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-list'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">emptyMsg</span>    = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'empty-msg'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">filterBtns</span>  = document.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'.filter-btn'</span>);
+<span class="code-new"><span class="tok-kw">const</span> <span class="tok-var">searchInput</span> = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'search-input'</span>);
+</span>
+<span class="tok-cmt">// ── Data ──</span>
+<span class="tok-kw">let</span> <span class="tok-var">tasks</span>  = [];
+<span class="tok-kw">let</span> <span class="tok-var">nextId</span> = <span class="tok-num">1</span>;
+
+<span class="code-new"><span class="tok-cmt">// ── UI state ──</span>
+</span><span class="code-new"><span class="tok-kw">let</span> <span class="tok-var">activeFilter</span> = <span class="tok-str">'all'</span>;   <span class="tok-cmt">// 'all' | 'active' | 'done'</span>
+</span><span class="code-new"><span class="tok-kw">let</span> <span class="tok-var">searchQuery</span>  = <span class="tok-str">''</span>;     <span class="tok-cmt">// current search string, always lowercase</span>
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong>Why separate "UI state" from "data"?</strong>
+            <code>tasks</code> is persistent application data — it is saved to localStorage.
+            <code>activeFilter</code> and <code>searchQuery</code> are <em>display preferences</em>
+            — they describe what the user is looking at, not the underlying data. We don't
+            save them to localStorage because when the app reloads, showing all tasks is
+            the correct default regardless of what filter was active last session.
+            <br><br>
+            <strong><code>querySelectorAll</code> vs <code>getElementById</code>:</strong>
+            <code>querySelectorAll('.filter-btn')</code> returns a NodeList of all three
+            buttons at once. We'll iterate over this list in Step 4 to attach one event
+            listener per button.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 3 — UPDATE RENDERTASKS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step3">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 3 — Update renderTasks() to use filters</h2>
+        <p>
+          Replace the Sprint 2 version of <code>renderTasks()</code>. The structure
+          is the same — clear and rebuild — but now it filters before rendering.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 3 · app.js — renderTasks() replacement
+          </div>
+          <div class="code-change-banner">NEW IN STEP 3 — filter logic replaces the old renderTasks body</div>
+          <div class="code-step__body"><pre>
+<span class="tok-cmt">// ── renderTasks: filter → search → clear → rebuild ──</span>
+<span class="tok-kw">function</span> <span class="tok-fn">renderTasks</span>() {
+
+<span class="code-new">  <span class="tok-cmt">// 1. Apply status filter</span>
+</span><span class="code-new">  <span class="tok-kw">let</span> <span class="tok-var">visible</span> = tasks.<span class="tok-fn">filter</span>(<span class="tok-kw">function</span> (<span class="tok-var">t</span>) {
+</span><span class="code-new">    <span class="tok-kw">if</span> (<span class="tok-var">activeFilter</span> === <span class="tok-str">'active'</span>) { <span class="tok-kw">return</span> !<span class="tok-var">t</span>.completed; }
+</span><span class="code-new">    <span class="tok-kw">if</span> (<span class="tok-var">activeFilter</span> === <span class="tok-str">'done'</span>)   { <span class="tok-kw">return</span>  <span class="tok-var">t</span>.completed; }
+</span><span class="code-new">    <span class="tok-kw">return</span> <span class="tok-kw">true</span>;  <span class="tok-cmt">// 'all' — include everything</span>
+</span><span class="code-new">  });
+</span><span class="code-new">
+</span><span class="code-new">  <span class="tok-cmt">// 2. Apply search filter on top</span>
+</span><span class="code-new">  <span class="tok-kw">if</span> (<span class="tok-var">searchQuery</span>) {
+</span><span class="code-new">    <span class="tok-var">visible</span> = <span class="tok-var">visible</span>.<span class="tok-fn">filter</span>(<span class="tok-kw">function</span> (<span class="tok-var">t</span>) {
+</span><span class="code-new">      <span class="tok-kw">return</span> <span class="tok-var">t</span>.text.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">includes</span>(<span class="tok-var">searchQuery</span>);
+</span><span class="code-new">    });
+</span><span class="code-new">  }
+</span>
+  <span class="tok-cmt">// 3. Clear and rebuild DOM from visible subset</span>
+  taskList.innerHTML = <span class="tok-str">''</span>;
+  <span class="tok-kw">if</span> (<span class="tok-var">visible</span>.length === <span class="tok-num">0</span>) {
+    emptyMsg.style.display = <span class="tok-str">''</span>;
+    <span class="tok-kw">return</span>;
+  }
+  emptyMsg.style.display = <span class="tok-str">'none'</span>;
+  <span class="tok-var">visible</span>.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (<span class="tok-var">task</span>) {
+    <span class="tok-kw">const</span> <span class="tok-var">li</span>   = document.<span class="tok-fn">createElement</span>(<span class="tok-str">'li'</span>);
+    <span class="tok-var">li</span>.className  = <span class="tok-str">'task-item'</span>;
+    <span class="tok-var">li</span>.dataset.id = <span class="tok-var">task</span>.id;
+    <span class="tok-kw">const</span> <span class="tok-var">span</span> = document.<span class="tok-fn">createElement</span>(<span class="tok-str">'span'</span>);
+    <span class="tok-var">span</span>.textContent = <span class="tok-var">task</span>.text;
+    <span class="tok-var">li</span>.<span class="tok-fn">appendChild</span>(<span class="tok-var">span</span>);
+    taskList.<span class="tok-fn">appendChild</span>(<span class="tok-var">li</span>);
+  });
+}
+</pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong>Why filter twice instead of one combined filter?</strong>
+            Two chained filters are clearer and easier to change independently.
+            If you later want to add a third filter (e.g. by priority), you add a
+            third <code>.filter()</code> call — you don't rewrite the existing logic.
+            Each filter has one responsibility.
+            <br><br>
+            <strong>Note on the empty state:</strong> If the user is in "Done" mode and
+            there are no completed tasks, the empty message appears — even though the
+            full <code>tasks</code> array has items. This is correct: "no results for
+            this filter" is different from "no tasks at all." Consider updating
+            <code>emptyMsg</code>'s text to reflect this in the Extension task.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 4 — FILTER BUTTON EVENTS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step4">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 4 — Filter button event handlers</h2>
+        <p>
+          Add <code>setFilter()</code> and attach it to each button. When a button is
+          clicked, update <code>activeFilter</code>, update the active button's visual
+          state, and re-render.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 4 · app.js — setFilter and button loop
+          </div>
+          <div class="code-change-banner">NEW IN STEP 4 — setFilter function</div>
+          <div class="code-step__body"><pre>
+<span class="code-new"><span class="tok-cmt">// ── setFilter: update state, update button UI, re-render ──</span>
+</span><span class="code-new"><span class="tok-kw">function</span> <span class="tok-fn">setFilter</span>(<span class="tok-var">filterValue</span>) {
+</span><span class="code-new">  <span class="tok-var">activeFilter</span> = <span class="tok-var">filterValue</span>;
+</span><span class="code-new">
+</span><span class="code-new">  <span class="tok-cmt">// Update aria-pressed and active class on all buttons</span>
+</span><span class="code-new">  <span class="tok-var">filterBtns</span>.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (<span class="tok-var">btn</span>) {
+</span><span class="code-new">    <span class="tok-kw">const</span> <span class="tok-var">isActive</span> = <span class="tok-var">btn</span>.dataset.filter === <span class="tok-var">filterValue</span>;
+</span><span class="code-new">    <span class="tok-var">btn</span>.classList.<span class="tok-fn">toggle</span>(<span class="tok-str">'active'</span>, <span class="tok-var">isActive</span>);
+</span><span class="code-new">    <span class="tok-var">btn</span>.<span class="tok-fn">setAttribute</span>(<span class="tok-str">'aria-pressed'</span>, <span class="tok-var">isActive</span>);
+</span><span class="code-new">  });
+</span><span class="code-new">
+</span><span class="code-new">  <span class="tok-fn">renderTasks</span>();
+</span><span class="code-new">}
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong><code>classList.toggle(className, force)</code>:</strong> When
+            <code>force</code> is <code>true</code>, the class is added; when
+            <code>false</code>, it is removed. This replaces an <code>if/else</code>
+            — one line handles both states.
+            <br><br>
+            <strong>Why update <code>aria-pressed</code>?</strong> The CSS
+            <code>.active</code> class changes the visual style, but screen readers
+            don't see CSS. <code>aria-pressed</code> communicates the toggle state to
+            assistive technology — both must be updated together.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 5 — SEARCH INPUT
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step5">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 5 — Live search handler</h2>
+        <p>
+          Add <code>handleSearch()</code>. The search updates on every keystroke
+          using the <code>input</code> event — not <code>change</code>, which only
+          fires when the field loses focus.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 5 · app.js — handleSearch function
+          </div>
+          <div class="code-change-banner">NEW IN STEP 5 — handleSearch function</div>
+          <div class="code-step__body"><pre>
+<span class="code-new"><span class="tok-cmt">// ── handleSearch: update searchQuery state and re-render ──</span>
+</span><span class="code-new"><span class="tok-kw">function</span> <span class="tok-fn">handleSearch</span>() {
+</span><span class="code-new">  <span class="tok-var">searchQuery</span> = <span class="tok-var">searchInput</span>.value.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">trim</span>();
+</span><span class="code-new">  <span class="tok-fn">renderTasks</span>();
+</span><span class="code-new">}
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong>Why <code>.toLowerCase()</code> here?</strong> We store the query
+            in lowercase so the comparison in <code>renderTasks()</code> is simple:
+            <code>task.text.toLowerCase().includes(searchQuery)</code>. Both sides are
+            lowercase — the match is case-insensitive without needing a regex.
+            <br><br>
+            <strong><code>input</code> event vs <code>keyup</code>:</strong>
+            <code>input</code> fires on every character change — typing, paste, delete,
+            autocomplete. <code>keyup</code> only fires on keyboard events, missing
+            paste and speech input. Always use <code>input</code> for live search.
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           STEP 6 — WIRE UP INITIALISE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="step6">
+        <div class="section-phase-tag produce"><span class="dot"></span> Producing &amp; Implementing</div>
+        <h2>Step 6 — Update initialise() — complete Sprint 3 file</h2>
+        <p>
+          Update <code>initialise()</code> to attach the filter and search event
+          listeners. This is the complete, working Sprint 3 <code>app.js</code>.
+        </p>
+
+        <div class="code-step">
+          <div class="code-step__banner">
+            <span class="code-step__banner-dot"></span>
+            Step 6 · app.js — complete file (Sprint 3 finished)
+          </div>
+          <div class="code-change-banner">NEW IN STEP 6 — updated initialise with filter and search listeners</div>
+          <div class="code-step__body"><pre>
+<span class="tok-cmt">// ── Element references ──</span>
+<span class="tok-kw">const</span> <span class="tok-var">form</span>        = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-form'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">input</span>       = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-input'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">taskList</span>    = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'task-list'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">emptyMsg</span>    = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'empty-msg'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">filterBtns</span>  = document.<span class="tok-fn">querySelectorAll</span>(<span class="tok-str">'.filter-btn'</span>);
+<span class="tok-kw">const</span> <span class="tok-var">searchInput</span> = document.<span class="tok-fn">getElementById</span>(<span class="tok-str">'search-input'</span>);
+
+<span class="tok-cmt">// ── Data ──</span>
+<span class="tok-kw">let</span> <span class="tok-var">tasks</span>  = [];
+<span class="tok-kw">let</span> <span class="tok-var">nextId</span> = <span class="tok-num">1</span>;
+
+<span class="tok-cmt">// ── UI state ──</span>
+<span class="tok-kw">let</span> <span class="tok-var">activeFilter</span> = <span class="tok-str">'all'</span>;
+<span class="tok-kw">let</span> <span class="tok-var">searchQuery</span>  = <span class="tok-str">''</span>;
+
+<span class="tok-cmt">// ── saveTasks / loadTasks (unchanged from Sprint 2) ──</span>
+<span class="tok-kw">function</span> <span class="tok-fn">saveTasks</span>() {
+  localStorage.<span class="tok-fn">setItem</span>(<span class="tok-str">'tasks'</span>, JSON.<span class="tok-fn">stringify</span>(<span class="tok-var">tasks</span>));
+}
+<span class="tok-kw">function</span> <span class="tok-fn">loadTasks</span>() {
+  <span class="tok-kw">const</span> <span class="tok-var">stored</span> = localStorage.<span class="tok-fn">getItem</span>(<span class="tok-str">'tasks'</span>);
+  <span class="tok-kw">if</span> (<span class="tok-var">stored</span>) {
+    <span class="tok-var">tasks</span>  = JSON.<span class="tok-fn">parse</span>(<span class="tok-var">stored</span>);
+    <span class="tok-var">nextId</span> = Math.<span class="tok-fn">max</span>(...<span class="tok-var">tasks</span>.<span class="tok-fn">map</span>(<span class="tok-var">t</span> => <span class="tok-var">t</span>.id)) + <span class="tok-num">1</span>;
+  }
+}
+
+<span class="tok-cmt">// ── renderTasks (updated Sprint 3 version with filters) ──</span>
+<span class="tok-kw">function</span> <span class="tok-fn">renderTasks</span>() {
+  <span class="tok-kw">let</span> <span class="tok-var">visible</span> = <span class="tok-var">tasks</span>.<span class="tok-fn">filter</span>(<span class="tok-kw">function</span> (<span class="tok-var">t</span>) {
+    <span class="tok-kw">if</span> (<span class="tok-var">activeFilter</span> === <span class="tok-str">'active'</span>) { <span class="tok-kw">return</span> !<span class="tok-var">t</span>.completed; }
+    <span class="tok-kw">if</span> (<span class="tok-var">activeFilter</span> === <span class="tok-str">'done'</span>)   { <span class="tok-kw">return</span>  <span class="tok-var">t</span>.completed; }
+    <span class="tok-kw">return</span> <span class="tok-kw">true</span>;
+  });
+  <span class="tok-kw">if</span> (<span class="tok-var">searchQuery</span>) {
+    <span class="tok-var">visible</span> = <span class="tok-var">visible</span>.<span class="tok-fn">filter</span>(<span class="tok-var">t</span> => <span class="tok-var">t</span>.text.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">includes</span>(<span class="tok-var">searchQuery</span>));
+  }
+  taskList.innerHTML = <span class="tok-str">''</span>;
+  <span class="tok-kw">if</span> (<span class="tok-var">visible</span>.length === <span class="tok-num">0</span>) { emptyMsg.style.display = <span class="tok-str">''</span>; <span class="tok-kw">return</span>; }
+  emptyMsg.style.display = <span class="tok-str">'none'</span>;
+  <span class="tok-var">visible</span>.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (<span class="tok-var">task</span>) {
+    <span class="tok-kw">const</span> <span class="tok-var">li</span> = document.<span class="tok-fn">createElement</span>(<span class="tok-str">'li'</span>);
+    <span class="tok-var">li</span>.className = <span class="tok-str">'task-item'</span>; <span class="tok-var">li</span>.dataset.id = <span class="tok-var">task</span>.id;
+    <span class="tok-kw">const</span> <span class="tok-var">span</span> = document.<span class="tok-fn">createElement</span>(<span class="tok-str">'span'</span>);
+    <span class="tok-var">span</span>.textContent = <span class="tok-var">task</span>.text;
+    <span class="tok-var">li</span>.<span class="tok-fn">appendChild</span>(<span class="tok-var">span</span>); taskList.<span class="tok-fn">appendChild</span>(<span class="tok-var">li</span>);
+  });
+}
+
+<span class="tok-cmt">// ── setFilter / handleSearch (Sprint 3) ──</span>
+<span class="tok-kw">function</span> <span class="tok-fn">setFilter</span>(<span class="tok-var">filterValue</span>) {
+  <span class="tok-var">activeFilter</span> = <span class="tok-var">filterValue</span>;
+  <span class="tok-var">filterBtns</span>.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (<span class="tok-var">btn</span>) {
+    <span class="tok-kw">const</span> <span class="tok-var">isActive</span> = <span class="tok-var">btn</span>.dataset.filter === <span class="tok-var">filterValue</span>;
+    <span class="tok-var">btn</span>.classList.<span class="tok-fn">toggle</span>(<span class="tok-str">'active'</span>, <span class="tok-var">isActive</span>);
+    <span class="tok-var">btn</span>.<span class="tok-fn">setAttribute</span>(<span class="tok-str">'aria-pressed'</span>, <span class="tok-var">isActive</span>);
+  });
+  <span class="tok-fn">renderTasks</span>();
+}
+<span class="tok-kw">function</span> <span class="tok-fn">handleSearch</span>() {
+  <span class="tok-var">searchQuery</span> = <span class="tok-var">searchInput</span>.value.<span class="tok-fn">toLowerCase</span>().<span class="tok-fn">trim</span>();
+  <span class="tok-fn">renderTasks</span>();
+}
+
+<span class="tok-cmt">// ── addTask / handleSubmit (unchanged from Sprint 2) ──</span>
+<span class="tok-kw">function</span> <span class="tok-fn">addTask</span>() {
+  <span class="tok-kw">const</span> <span class="tok-var">taskText</span> = <span class="tok-var">input</span>.value.<span class="tok-fn">trim</span>();
+  <span class="tok-kw">if</span> (<span class="tok-var">taskText</span> === <span class="tok-str">''</span>) { <span class="tok-fn">alert</span>(<span class="tok-str">'Please enter a task.'</span>); <span class="tok-kw">return</span>; }
+  <span class="tok-var">tasks</span>.<span class="tok-fn">push</span>({ id: <span class="tok-var">nextId</span>, text: <span class="tok-var">taskText</span>, completed: <span class="tok-kw">false</span> });
+  <span class="tok-var">nextId</span>++;
+  <span class="tok-fn">saveTasks</span>(); <span class="tok-fn">renderTasks</span>();
+  <span class="tok-var">input</span>.value = <span class="tok-str">''</span>;
+}
+<span class="tok-kw">function</span> <span class="tok-fn">handleSubmit</span>(<span class="tok-var">e</span>) { <span class="tok-var">e</span>.<span class="tok-fn">preventDefault</span>(); <span class="tok-fn">addTask</span>(); }
+
+<span class="code-new"><span class="tok-cmt">// ── initialise: load, render, attach all listeners ──</span>
+</span><span class="code-new"><span class="tok-kw">function</span> <span class="tok-fn">initialise</span>() {
+</span><span class="code-new">  <span class="tok-fn">loadTasks</span>();
+</span><span class="code-new">  <span class="tok-fn">renderTasks</span>();
+</span><span class="code-new">  <span class="tok-var">form</span>.<span class="tok-fn">addEventListener</span>(<span class="tok-str">'submit'</span>, <span class="tok-fn">handleSubmit</span>);
+</span><span class="code-new">  <span class="tok-var">filterBtns</span>.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (<span class="tok-var">btn</span>) {
+</span><span class="code-new">    <span class="tok-var">btn</span>.<span class="tok-fn">addEventListener</span>(<span class="tok-str">'click'</span>, <span class="tok-kw">function</span> () {
+</span><span class="code-new">      <span class="tok-fn">setFilter</span>(<span class="tok-var">btn</span>.dataset.filter);
+</span><span class="code-new">    });
+</span><span class="code-new">  });
+</span><span class="code-new">  <span class="tok-var">searchInput</span>.<span class="tok-fn">addEventListener</span>(<span class="tok-str">'input'</span>, <span class="tok-fn">handleSearch</span>);
+</span><span class="code-new">}
+</span><span class="code-new">
+</span><span class="code-new">initialise();
+</span></pre>
+          </div>
+          <div class="code-step__explanation">
+            <strong>Test checklist:</strong>
+            <ol style="margin:0.5rem 0 0 1.25rem; font-size:0.88rem; line-height:1.8;">
+              <li>Add three tasks. Click "Active" — all three appear (none completed yet).</li>
+              <li>Click "Done" — list shows "No tasks yet" (no completed tasks).</li>
+              <li>Click "All" — all three reappear. Tasks array is unchanged throughout.</li>
+              <li>Type a letter in the search box — only matching tasks appear instantly.</li>
+              <li>Clear the search — all tasks reappear.</li>
+              <li>Combine filter + search: click "Active", then type a word — works correctly.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TRACE TABLE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="trace">
+        <h2>Trace table — filter + search combined</h2>
+        <p>
+          Starting state: three tasks in the array. Trace through
+          <code>renderTasks()</code> when <code>activeFilter = 'active'</code>
+          and <code>searchQuery = 'walk'</code>.
+        </p>
+        <p style="font-size:0.85rem; color:var(--color-text-muted); margin-bottom:var(--space-3);">
+          Initial tasks array:
+          <code style="font-family:'JetBrains Mono',monospace;">[{id:1,text:"Buy milk",completed:false}, {id:2,text:"Walk dog",completed:false}, {id:3,text:"Pay bills",completed:true}]</code>
+        </p>
+
+        <table class="trace-table" aria-label="Trace table for renderTasks with filter and search">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Operation</th>
+              <th>visible[ ] after step</th>
+              <th>DOM result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cell-hl">0</td>
+              <td>Enter <code>renderTasks()</code></td>
+              <td>—</td>
+              <td>unchanged</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">1</td>
+              <td><code>filter()</code> — activeFilter = 'active' → keep !completed</td>
+              <td class="cell-hl">[{id:1,"Buy milk"}, {id:2,"Walk dog"}]</td>
+              <td>not yet rebuilt</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">2</td>
+              <td><code>filter()</code> — searchQuery = 'walk' → text.toLowerCase().includes('walk')</td>
+              <td class="cell-hl">[{id:2,"Walk dog"}]</td>
+              <td>not yet rebuilt</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">3</td>
+              <td><code>taskList.innerHTML = ''</code> — DOM cleared</td>
+              <td>[{id:2,"Walk dog"}]</td>
+              <td class="cell-act">empty</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">4</td>
+              <td><code>visible.length === 1</code> — not zero, hide emptyMsg</td>
+              <td>[{id:2,"Walk dog"}]</td>
+              <td>emptyMsg hidden</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">5</td>
+              <td><code>forEach()</code> — create and append li for "Walk dog"</td>
+              <td>[{id:2,"Walk dog"}]</td>
+              <td class="cell-hl">li[id=2] "Walk dog"</td>
+            </tr>
+            <tr>
+              <td class="cell-hl">6</td>
+              <td>tasks[ ] — unchanged throughout</td>
+              <td>—</td>
+              <td class="cell-hl">3 items still in array</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="info-box" style="margin-top:var(--space-4)">
+          <strong>Your turn:</strong> In your notebook, trace <code>renderTasks()</code>
+          with <code>activeFilter = 'done'</code> and <code>searchQuery = ''</code>
+          using the same starting array. How many items are in <code>visible</code>
+          after the status filter? After the search filter? What does the DOM show?
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: BUG DETECTIVE
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="bugs">
+        <h2>Bug detective</h2>
+        <p>Each snippet has a deliberate bug. Identify the problem before revealing the answer.</p>
+
+        <!-- Bug 1 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 1 — mutating the array to filter</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="tok-kw">function</span> <span class="tok-fn">setFilter</span>(filterValue) {
+  <span class="tok-kw">if</span> (filterValue === <span class="tok-str">'active'</span>) {
+    tasks = tasks.<span class="tok-fn">filter</span>(t => !t.completed);  <span class="tok-cmt">// reassign tasks!</span>
+  }
+  <span class="tok-fn">renderTasks</span>();
+}</div>
+            <div class="bug-card__question">The filtered view looks correct. But what happens when the user clicks "All"? And what data has been lost?</div>
+            <button class="bug-reveal-btn" data-bug="s3bug1">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s3bug1">
+              <strong>Bug:</strong> <code>tasks = tasks.filter(...)</code> permanently
+              overwrites the <code>tasks</code> array — removing the completed tasks
+              from the data itself, not just from the view. When the user clicks "All",
+              <code>renderTasks()</code> rebuilds from <code>tasks</code> — which now
+              only contains incomplete tasks. The completed tasks are gone forever
+              (unless localStorage still has the old version). The fix: always filter
+              into a local <code>visible</code> variable and never reassign
+              <code>tasks</code> for display purposes.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 2 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 2 — case-sensitive search</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="tok-kw">function</span> <span class="tok-fn">handleSearch</span>() {
+  searchQuery = searchInput.value.<span class="tok-fn">trim</span>();  <span class="tok-cmt">// no toLowerCase()</span>
+  <span class="tok-fn">renderTasks</span>();
+}
+
+<span class="tok-cmt">// Inside renderTasks:</span>
+<span class="tok-kw">return</span> t.text.<span class="tok-fn">includes</span>(searchQuery);    <span class="tok-cmt">// no toLowerCase()</span></div>
+            <div class="bug-card__question">A user types "milk". The task "Buy Milk" exists. What happens? Why?</div>
+            <button class="bug-reveal-btn" data-bug="s3bug2">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s3bug2">
+              <strong>Bug:</strong> <code>"Buy Milk".includes("milk")</code> returns
+              <code>false</code> because JavaScript string comparison is case-sensitive.
+              "Milk" ≠ "milk". The user types in lowercase but the stored task text has
+              a capital M — so no match is found and the task disappears from the filtered
+              view. Fix: convert both sides to lowercase before comparing:
+              <code>t.text.toLowerCase().includes(searchQuery.toLowerCase())</code>.
+              In our implementation we store <code>searchQuery</code> already lowercased,
+              so only <code>t.text.toLowerCase()</code> is needed at the filter site.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 3 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 3 — search on keyup instead of input</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code">searchInput.<span class="tok-fn">addEventListener</span>(<span class="tok-str">'keyup'</span>, handleSearch);</div>
+            <div class="bug-card__question">This mostly works. Describe two specific scenarios where it fails.</div>
+            <button class="bug-reveal-btn" data-bug="s3bug3">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s3bug3">
+              <strong>Bug:</strong> <code>keyup</code> only fires for physical keyboard
+              events. It misses: (1) <strong>paste</strong> — if the user pastes text
+              with Ctrl+V or right-click → Paste, <code>keyup</code> does not fire
+              and the search field updates visually but the task list doesn't filter.
+              (2) <strong>voice input / speech-to-text</strong> — text inserted by
+              speech recognition triggers <code>input</code> but not <code>keyup</code>.
+              The <code>input</code> event covers all content change mechanisms and is
+              the correct choice for any live field.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bug 4 -->
+        <div class="bug-card">
+          <div class="bug-card__header">🐛 Bug 4 — aria-pressed not updated</div>
+          <div class="bug-card__body">
+            <div class="bug-card__code"><span class="tok-kw">function</span> <span class="tok-fn">setFilter</span>(filterValue) {
+  activeFilter = filterValue;
+  filterBtns.<span class="tok-fn">forEach</span>(<span class="tok-kw">function</span> (btn) {
+    btn.classList.<span class="tok-fn">toggle</span>(<span class="tok-str">'active'</span>, btn.dataset.filter === filterValue);
+    <span class="tok-cmt">// aria-pressed line is missing</span>
+  });
+  <span class="tok-fn">renderTasks</span>();
+}</div>
+            <div class="bug-card__question">The buttons look correct visually. Who is affected by this bug, and why?</div>
+            <button class="bug-reveal-btn" data-bug="s3bug4">🔍 Reveal answer</button>
+            <div class="bug-answer" id="s3bug4">
+              <strong>Bug:</strong> Screen reader users are affected. The
+              <code>.active</code> CSS class changes the visual appearance of the
+              button, but screen readers don't read CSS — they read the accessibility
+              tree. Without updating <code>aria-pressed</code>, a screen reader user
+              hears "button, All" with no indication of whether it is currently
+              selected or not. Sighted users see the highlight; screen reader users
+              are left guessing. Fix: always pair visual state changes with the
+              corresponding ARIA attribute update.
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: TIERED TASKS
+      ══════════════════════════════════════════════════════ -->
+      <section class="content-section" id="tasks">
+        <h2>Tiered tasks</h2>
+        <p style="color:var(--color-text-secondary); margin-bottom:1.5rem;">
+          Complete the task for your level. Extension students: ensure Core is done first.
+        </p>
+        <div class="tier-grid">
+
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Implement &amp; test</h4>
+            <p>
+              Build Sprint 3 using this walkthrough. Run all six test cases from the
+              checklist at the end of Step 6. In your notebook, draw a diagram showing
+              the tasks array, the <code>visible</code> array, and the DOM — and use
+              arrows to show which direction data flows when a filter button is clicked.
+            </p>
+          </div>
+
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Context-aware empty message</h4>
+            <p>
+              Update <code>emptyMsg</code> to show a different message depending on
+              context: "No tasks yet. Add one above." when there are truly no tasks;
+              "No active tasks." when the Active filter shows nothing;
+              "No completed tasks." when Done shows nothing; "No tasks match your
+              search." when search returns nothing. Write NSW pseudocode for the
+              logic before implementing.
+            </p>
+          </div>
+
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Task count summary + URL-state filter</h4>
+            <p>
+              Add a summary line below the filter bar: "Showing 2 of 5 tasks."
+              that updates dynamically with every filter and search. Then investigate
+              <code>URLSearchParams</code> — can you persist the active filter in the
+              URL (e.g. <code>?filter=done</code>) so that sharing or refreshing the
+              page restores the correct filter? Write pseudocode for both features
+              and evaluate the trade-offs of URL state vs localStorage state.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: CPD STRIP
+      ══════════════════════════════════════════════════════ -->
+      <section class="cpd-section" id="cpd" aria-label="Course performance descriptors">
+        <h2>Grade descriptors — where are you?</h2>
+        <p class="cpd-intro">Click a grade to highlight it.</p>
+        <div class="cpd-strip" role="list">
+
+          <div class="cpd-grade cpd-grade-a" role="listitem" tabindex="0" aria-label="Grade A descriptor">
+            <div class="grade-label" aria-hidden="true">A</div>
+            <p>Implements Sprint 3 with technically concise code; demonstrates extensive understanding of the data/view separation principle; adds meaningful extension features; writes precise NSW pseudocode for all procedures; correctly identifies accessibility implications of <code>aria-pressed</code>; evaluates trade-offs between implementation approaches.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" role="listitem" tabindex="0" aria-label="Grade B descriptor">
+            <div class="grade-label" aria-hidden="true">B</div>
+            <p>Implements Sprint 3 correctly and extends with context-aware messaging; thoroughly explains why the <code>tasks</code> array must not be mutated for display; correctly uses chained <code>filter()</code> calls; completes trace table extension; updates both <code>classList</code> and <code>aria-pressed</code>.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" role="listitem" tabindex="0" aria-label="Grade C descriptor">
+            <div class="grade-label" aria-hidden="true">C</div>
+            <p>Implements Sprint 3 and all six test cases pass; explains the role of <code>activeFilter</code> and <code>searchQuery</code> as state variables; can describe the data vs view separation in own words; completes the trace table with mostly accurate values.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" role="listitem" tabindex="0" aria-label="Grade D descriptor">
+            <div class="grade-label" aria-hidden="true">D</div>
+            <p>Implements Sprint 3 with minor errors; most test cases pass; can describe in general terms what filtering does; attempts the trace table with some inaccuracies.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" role="listitem" tabindex="0" aria-label="Grade E descriptor">
+            <div class="grade-label" aria-hidden="true">E</div>
+            <p>Partially implements Sprint 3 with guidance; identifies that filter buttons change what is displayed; attempts to follow the walkthrough steps.</p>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════
+           SECTION: SPRINT LOG
+      ══════════════════════════════════════════════════════ -->
+      <aside class="notebook-prompt" id="notebook" aria-label="Sprint log">
+        <div class="notebook-prompt__label">📓 Sprint 3 Log</div>
+        <p style="font-size:0.88rem; color:var(--color-text-secondary); margin-bottom:var(--space-4);">
+          Draft your responses here, then transfer to your project notebook.
+        </p>
+
+        <div class="sprint-log">
+          <div class="sprint-log__header">Sprint 3 — Log scaffold</div>
+          <div class="sprint-log__body">
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Explain in your own words why the tasks array must never be mutated to change the filter view</div>
+              <textarea class="sprint-log__input" placeholder="If we deleted tasks from the array to filter them, the problem would be… Instead, we…" rows="3"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Describe what activeFilter and searchQuery are — and why they are not saved to localStorage</div>
+              <textarea class="sprint-log__input" placeholder="activeFilter and searchQuery are… They are not saved to localStorage because…" rows="3"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">What does chaining two .filter() calls achieve? Why is this better than one combined filter?</div>
+              <textarea class="sprint-log__input" placeholder="Chaining two filter() calls means… This is better than one combined filter because…" rows="2"></textarea>
+            </div>
+
+            <div class="sprint-log__field">
+              <div class="sprint-log__label">Identify one remaining limitation of the app and which sprint addresses it</div>
+              <textarea class="sprint-log__input" placeholder="The app still cannot… This will be fixed in Sprint… because…" rows="2"></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <ul style="margin-top:var(--space-4)">
+          <li>
+            Why do we use the <code>input</code> event on the search field instead of <code>keyup</code>?
+            <span class="sentence-starter">The <code>input</code> event is better because it fires when… whereas <code>keyup</code> misses…</span>
+          </li>
+          <li>
+            A user complains that searching for "milk" doesn't find the task "Buy Milk". What is the cause and what is the fix?
+            <span class="sentence-starter">The cause is… because JavaScript string comparison is… The fix is to…</span>
+          </li>
+          <li>
+            The <code>filter()</code> method is described as "non-destructive". What does this mean in the context of this app?
+            <span class="sentence-starter">Non-destructive means that… In this app, it matters because…</span>
+          </li>
+        </ul>
+
+        <a href="../../../project-notebooks/sd-apps-web-notebook.html" class="notebook-link">Open full project notebook →</a>
+      </aside>
+
+      <!-- Prev / Next sprint nav -->
+      <div class="sprint-nav">
+        <a href="skills-sprint2.html" class="sprint-nav__btn sprint-nav__btn--prev" aria-label="Go to Sprint 2">
+          <div class="sprint-nav__arrow">←</div>
+          <div>
+            <div class="sprint-nav__label">Previous</div>
+            <div class="sprint-nav__title">Sprint 2 — Objects &amp; Local Storage</div>
+          </div>
+        </a>
+        <a href="skills-sprint4.html" class="sprint-nav__btn" aria-label="Go to Sprint 4">
+          <div>
+            <div class="sprint-nav__label">Next up</div>
+            <div class="sprint-nav__title">Sprint 4 — Delete, Edit &amp; Complete</div>
+          </div>
+          <div class="sprint-nav__arrow">→</div>
+        </a>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.bug-reveal-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id   = btn.dataset.bug;
+          var ans  = document.getElementById(id);
+          if (!ans) return;
+          var open = ans.classList.contains('visible');
+          ans.classList.toggle('visible', !open);
+          btn.textContent = open ? '🔍 Reveal answer' : '🙈 Hide answer';
+        });
+      });
+    }());
+
+    if (typeof App !== 'undefined' && App.init) { App.init(); }
+  </script>
+
+</body>
+</html>
