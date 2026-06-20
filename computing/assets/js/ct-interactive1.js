@@ -380,35 +380,6 @@
 
 
 /* ─────────────────────────────────────────────────────────────
-   FLIP CARDS — vocabulary deep-dive
-   .flip-card toggles .is-flipped on click/Enter/Space.
-   Swaps aria-hidden between front/back face so screen readers
-   announce only the visible side, rather than both at once.
-───────────────────────────────────────────────────────────── */
-
-(function initFlipCards() {
-  function setup() {
-    document.querySelectorAll('.flip-card').forEach(function (card) {
-      var front = card.querySelector('.flip-card__face--front');
-      var back  = card.querySelector('.flip-card__face--back');
-
-      card.addEventListener('click', function () {
-        var flipped = card.classList.toggle('is-flipped');
-        card.setAttribute('aria-pressed', String(flipped));
-        if (front) front.setAttribute('aria-hidden', String(flipped));
-        if (back)  back.setAttribute('aria-hidden', String(!flipped));
-      });
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setup);
-  } else {
-    setup();
-  }
-}());
-
-
-/* ─────────────────────────────────────────────────────────────
    BUG DETECTIVE — reveal answer on button click
    .bug-reveal-btn reveals .bug-detective__reveal in same .bug-detective
 ───────────────────────────────────────────────────────────── */
