@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 8: Divide and Conquer, and Backtracking — The Idea | Practical Programming in Context</title>
+<meta name="description" content="Lesson 8 of the Practical Programming in Context NESA sample unit — introducing divide and conquer and backtracking as algorithmic design strategies, using a binary search and a simple maze before either idea touches Sudoku.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 8</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">Two new strategies</a>
+        <a href="#divide-conquer">Divide and conquer</a>
+        <a href="#backtracking-idea">Backtracking</a>
+        <a href="#comparison">Comparing the two</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Divide and Conquer, and Backtracking: The Idea</h1>
+      <p class="page-intro">Back in Lesson 1, you noticed a moment in your own Sudoku-solving where a number you placed turned out to be wrong, and you had to erase it and try again. Today that moment gets a name — backtracking — and you'll meet it through a problem that has nothing to do with Sudoku at all, alongside a second strategy, divide and conquer, that the syllabus pairs with it.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> Two new strategies (5 min) · Divide and conquer (12 min) · Backtracking (18 min) · Comparing the two (5 min) · Checkpoint + Notebook + CPD (10 min)
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Two new strategies</h2>
+      <p>Decomposition told you how to break a problem into pieces. Loops and branching told you how to repeat and decide. Today's two strategies are about something different: <em>how you actually search for a solution</em> when you don't know in advance which choice will work. Neither idea will touch a Sudoku grid today — that's deliberate. Both are easier to trust once you've seen them somewhere simpler first.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="divide-conquer">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Divide and conquer</h2>
+      <p><strong>Divide and conquer</strong> means splitting a problem into smaller subproblems of the <em>same kind</em>, solving each one, then combining the results. A classic example is searching a sorted list: instead of checking every item one by one, you can repeatedly cut the list in half.</p>
+      <div class="guided-box">
+        <p class="guided-box__eyebrow">Let's trace a binary search together</p>
+        <p>Sorted list: <code>[2, 5, 8, 12, 16, 23, 38, 45, 56, 72, 91]</code> (indices 0–10). Target: find <strong>45</strong>.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead><tr><th>Step</th><th>low, high</th><th>mid index</th><th>Value at mid</th><th>Decision</th></tr></thead>
+            <tbody>
+              <tr><td class="td-step">1</td><td class="td-var">0, 10</td><td class="td-code">5</td><td class="td-output">23</td><td class="td-note">45 &gt; 23 → search the right half</td></tr>
+              <tr><td class="td-step">2</td><td class="td-var">6, 10</td><td class="td-code">8</td><td class="td-output">56</td><td class="td-note">45 &lt; 56 → search the left half</td></tr>
+              <tr><td class="td-step">3</td><td class="td-var">6, 7</td><td class="td-code">6</td><td class="td-output">38</td><td class="td-note">45 &gt; 38 → search the right half</td></tr>
+              <tr><td class="td-step">4</td><td class="td-var">7, 7</td><td class="td-code">7</td><td class="td-output">45</td><td class="td-note">Found it!</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Eleven items, found in just four steps — because each step throws away half of what's left, instead of checking items one at a time.</p>
+      </div>
+      <p>Now trace one yourself.</p>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Trace the first two steps</h4>
+            <p>Using the same sorted list, trace the first two steps of a binary search for the target value 8, recording low, high, and the value found at each midpoint.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Trace the full search</h4>
+            <p>Trace a complete binary search for the target value 72 in the same list, continuing until you find it, recording every step in a table like the one above.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Search for a missing value</h4>
+            <p>Trace a binary search for the value 30, which doesn't appear in the list at all. Show what happens to low and high as the search proceeds, and explain how the algorithm would know to report "not found."</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="backtracking-idea">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Backtracking</h2>
+      <p><strong>Backtracking</strong> means trying a choice, and — if it eventually leads to a dead end — undoing that choice and trying a different one instead. Picture a small maze with two junctions:</p>
+      <div class="example-box">
+        <strong>The maze</strong>
+        Junction 1 offers Left or Right. Left leads to Junction 2; Right is a dead end.<br>
+        Junction 2 offers Left or Right. Left is a dead end; Right leads to the Finish.
+      </div>
+      <div class="guided-box">
+        <p class="guided-box__eyebrow">Let's trace a path through it together</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead><tr><th>Step</th><th>Position</th><th>Choice tried</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr><td class="td-step">1</td><td class="td-code">Junction 1</td><td class="td-var">Try Left</td><td class="td-output">Leads to Junction 2 — continue</td></tr>
+              <tr><td class="td-step">2</td><td class="td-code">Junction 2</td><td class="td-var">Try Left</td><td class="td-output">Dead end — backtrack</td></tr>
+              <tr><td class="td-step">3</td><td class="td-code">Junction 2</td><td class="td-var">Try Right</td><td class="td-output">Leads to the Finish — success!</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Notice that the dead end at Step 2 didn't end the search — it just meant undoing that one choice and trying the next option <em>at the same junction</em>, not starting over from Junction 1. That's the entire idea of backtracking in one sentence: undo the smallest possible amount, then try again.</p>
+      </div>
+      <p>Now trace a maze of your own.</p>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Trace a given maze</h4>
+            <p>Junction 1 offers Up or Down — Up is a dead end, Down leads to Junction 2. Junction 2 has only one path, leading straight to the Finish. Trace the path through it in a table like the one above.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Design and trace your own</h4>
+            <p>Design your own small maze with at least two junctions and at least one dead end, then trace a full path through it from start to finish, including any backtracking step.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Add a three-way junction</h4>
+            <p>Design a maze where at least one junction has three options, not two, and trace a path through it. Explain what information the algorithm would need to keep track of at that junction so it doesn't try the same dead-end option twice.</p>
+          </div>
+        </div>
+      </div>
+      <aside class="paper-sticky paper-sticky--rotate-l">
+        <p class="paper-sticky__label">Teacher tip</p>
+        <p>The Extension task is deliberately fishing for the idea of "remembering which options have already been tried" — that's exactly the bookkeeping the real Sudoku solver will need in Lesson 9.</p>
+      </aside>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="comparison">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Comparing the two</h2>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead><tr><th>Aspect</th><th>Divide and conquer</th><th>Backtracking</th></tr></thead>
+          <tbody>
+            <tr><td>What it does</td><td>Splits a problem into independent subproblems, solves each, combines results</td><td>Tries a choice, and undoes it if it leads to a dead end</td></tr>
+            <tr><td>Subproblems</td><td>Independent of each other</td><td>Each choice depends on the choices made so far</td></tr>
+            <tr><td>Example today</td><td>Binary search</td><td>Maze navigation</td></tr>
+            <tr><td>Role in our solver</td><td>Not used directly by the Sudoku solver</td><td>Exactly how the solver will decide what to place — next lesson</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Both strategies are named together in the syllabus because they're both genuine algorithm design strategies worth knowing — but only one of them is about to become the engine of your Sudoku solver. Lesson 9 takes today's maze idea and points it directly at the grid.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — trying a choice and undoing it if it fails describes backtracking, not divide and conquer."
+           data-feedback-b="✓ Correct — divide and conquer splits a problem into smaller subproblems of the same kind, solves each, then combines the results."
+           data-feedback-c="Incorrect — that's the repeating pattern from Lesson 5, not a description of divide and conquer."
+           data-feedback-d="Incorrect — that's two's complement, an entirely different topic from Lesson 3.">
+        <div class="mcq-question">1. What does "divide and conquer" mean as an algorithm design strategy?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Trying a choice and undoing it if it fails</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Breaking a problem into smaller subproblems of the same kind, solving each, then combining the results</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Repeating an identical check for every value from 1–9</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Storing integers using two's complement</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="A"
+           data-feedback-a="✓ Correct — since the target (45) is greater than the value found at the midpoint (23), it must be somewhere in the right half of the list."
+           data-feedback-b="Incorrect — 23 was the value found at the midpoint, not the target the search was looking for."
+           data-feedback-c="Incorrect — the list in the example was sorted in ascending order, smallest to largest."
+           data-feedback-d="Incorrect — index 5 being the midpoint is exactly why it was checked, but it doesn't explain which half to search next.">
+        <div class="mcq-question">2. In the binary search trace, why did the search move to the right half after checking index 5 (value 23)?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because the target, 45, is greater than 23, so it must be in the right half</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because 23 was the target being searched for</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because the list was sorted in descending order</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because index 5 happened to be the midpoint of the whole list</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="C"
+           data-feedback-a="Incorrect — reaching the finish ends the search successfully; it doesn't trigger a backtrack."
+           data-feedback-b="Incorrect — choosing the first option at a junction is just the normal first attempt, not a backtrack."
+           data-feedback-c="✓ Correct — a backtrack happens specifically when a choice leads to a dead end and you need to undo it to try something different."
+           data-feedback-d="Incorrect — running out of junctions to visit isn't what backtracking responds to; a dead end is.">
+        <div class="mcq-question">3. In the maze trace, what specifically triggers a "backtrack" step?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Reaching the Finish</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Choosing the first option available at a junction</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Hitting a dead end and needing to undo the last choice to try a different one</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Running out of junctions to visit</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Researching &amp; Designing</p>
+        <ul>
+          <li>
+            Describe the maze you designed today, including its dead end and backtracking step, in your own words.
+            <span class="sentence-starter">Sentence starter: "My maze had a dead end at..., so the path had to backtrack and try..."</span>
+          </li>
+          <li>
+            Predict, in one or two sentences, what you think backtracking will actually look like once it's applied to the Sudoku grid in the next lesson.
+            <span class="sentence-starter">Sentence starter: "I think backtracking in the Sudoku solver will involve..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your maze design and notebook entry today.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Accurately traces a complete binary search and designs a maze with a three-way junction, tracing it correctly while precisely explaining what bookkeeping backtracking would need to avoid repeating a failed choice.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Accurately traces a complete binary search and designs and traces an original maze with at least one correctly handled backtracking step.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Traces a binary search with mostly correct steps and traces a given maze correctly, including identifying the backtracking step.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Attempts to trace a binary search or maze with some correct steps, with support required to identify the backtracking moment.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that a dead end requires undoing a previous choice.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson07.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 7: Loops and Branching</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson09.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Backtracking, Applied to Sudoku</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson08',
+    totalQuestions: 3
+  });
+</script>
+
+</body>
+</html>

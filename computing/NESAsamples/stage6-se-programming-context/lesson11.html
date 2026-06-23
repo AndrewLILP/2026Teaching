@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 11: Coding the Solver — Part 2 | Practical Programming in Context</title>
+<meta name="description" content="Lesson 11 of the Practical Programming in Context NESA sample unit — writing the recursive solve() function that ties the whole Sudoku solver together, running it on a real puzzle, and a light-touch comparison of programming paradigms.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 11</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">The missing piece</a>
+        <a href="#designing-solve">Designing solve()</a>
+        <a href="#coding-solve">Coding solve()</a>
+        <a href="#running-it">Running it</a>
+        <a href="#paradigm-comparison">Other ways to write this</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Coding the Solver: Part 2</h1>
+      <p class="page-intro">You have three working functions — a grid, a way to find empty squares, and a way to check whether a value is allowed. Today you write the one function that uses all three together, calls itself, and actually solves the puzzle: <code>solve()</code>.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> The missing piece (5 min) · Designing solve() (8 min) · Coding solve() (12 min) · Running it (7 min) · Other ways to write this (10 min) · Checkpoint + Notebook + CPD (8 min)
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>The missing piece</h2>
+      <p><code>find_empty()</code> finds a square. <code>is_valid()</code> checks a value. Neither one, on its own, solves anything. What's missing is the function that ties them together — tries a value, places it, moves on, and undoes its own decision if things go wrong further down the line. That's <code>solve()</code>, and it's the only function in this entire unit that calls itself.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="designing-solve">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Designing solve()</h2>
+      <p>Before any code, the logic — and it's almost exactly Lesson 5's six-step breakdown, written as a function for the first time:</p>
+      <div class="pseudo-block">
+        <p class="pseudo-block__label">Pseudocode</p>
+        <pre>FUNCTION solve(grid):
+    find the next empty square
+    IF there is no empty square THEN
+        RETURN True          // solved!
+    ENDIF
+
+    FOR value = 1 TO 9
+        IF value is valid at this square THEN
+            place value
+            IF solve(grid) THEN
+                RETURN True
+            ENDIF
+            remove value      // backtrack
+        ENDIF
+    ENDFOR
+
+    RETURN False              // trigger backtracking one level up</pre>
+      </div>
+      <p>The strange-looking part is <code>solve(grid)</code> appearing inside its own definition. This is called <strong>recursion</strong> — a function calling itself to solve a smaller version of the same problem. Each call handles one square, then hands the rest of the grid to another call of itself. If that next call eventually returns <code>False</code>, it means every value it tried led nowhere — exactly the dead end from Lessons 8 and 9 — so the current call undoes its own value and tries the next one.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="coding-solve">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Coding solve()</h2>
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 5</span>
+            <span class="step-label">Tie it all together</span>
+          </div>
+          <div class="code-change-banner">// ── NEW IN STEP 5 ──</div>
+          <pre><code>grid = [ ... ]  # same 9×9 grid as Lesson 10, Step 1
+
+def print_grid(grid):
+    for row in grid:
+        print(row)
+
+def find_empty(grid):
+    for row in range(9):
+        for col in range(9):
+            if grid[row][col] == 0:
+                return (row, col)
+    return None
+
+def is_valid(grid, row, col, value):
+    for c in range(9):
+        if grid[row][c] == value:
+            return False
+    for r in range(9):
+        if grid[r][col] == value:
+            return False
+    box_row_start = (row // 3) * 3
+    box_col_start = (col // 3) * 3
+    for r in range(box_row_start, box_row_start + 3):
+        for c in range(box_col_start, box_col_start + 3):
+            if grid[r][c] == value:
+                return False
+    return True
+
+<span class="code-new">def solve(grid):
+    empty = find_empty(grid)
+    if empty is None:
+        return True
+
+    row, col = empty
+
+    for value in range(1, 10):
+        if is_valid(grid, row, col, value):
+            grid[row][col] = value
+
+            if solve(grid):
+                return True
+
+            grid[row][col] = 0
+
+    return False</span></code></pre>
+          <div class="step-explain"><strong>What's new:</strong> <code>if empty is None: return True</code> is the "puzzle is finished" check from Lesson 5, step 1. The <code>for value in range(1, 10)</code> loop tries every digit, same as Lesson 7's scans. <code>grid[row][col] = value</code> followed by <code>grid[row][col] = 0</code> are the exact place-and-undo pair from the Lesson 9 widget — except now they're real code, not a replayed trace.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="running-it">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Running it</h2>
+      <p>Add this underneath everything else and run the file:</p>
+      <div class="outcome-code-block">if solve(grid):
+    print_grid(grid)
+else:
+    print("No solution found")</div>
+      <p>On the puzzle from Lesson 10, this prints a fully completed 9×9 grid — every row, column and box a valid permutation of 1–9. Behind that single line of output, the computer actually made <strong>4,157 separate backtracks</strong> before reaching the final answer. The Lesson 9 widget needed exactly one. That gap is the whole reason this had to be a computer's job rather than yours: the logic is identical at both scales, but only a computer can try and undo a choice thousands of times in a fraction of a second.</p>
+      <aside class="paper-sticky paper-sticky--rotate-r">
+        <p class="paper-sticky__label">Teacher tip</p>
+        <p>If a student is curious how the 4,157 figure was found, it's a global counter incremented every time <code>grid[row][col] = 0</code> runs — worth mentioning as a preview of the kind of instrumentation real debugging sometimes uses, ahead of Lessons 12–13.</p>
+      </aside>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="paradigm-comparison">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Other ways to write this</h2>
+      <p>Everything you've written today is one particular style of programming. Tap each card to reveal what it means.</p>
+      <div class="flip-card-grid">
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Imperative</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">A series of step-by-step instructions that change shared data over time. This is exactly the style of solve(), is_valid() and find_empty().</span>
+            </span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Object-oriented</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Organising code around objects that bundle data and behaviour together — a Sudoku version might have a Grid object with its own solve() method, instead of separate functions.</span>
+            </span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Logic</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">You state the rules a solution must satisfy, and the language itself searches for an answer — you'd describe "no repeats in any row, column or box" and let the system do the searching.</span>
+            </span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Functional</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Building a solution out of functions that never change existing data, only produce new results — instead of editing grid in place, each step would return a brand-new grid.</span>
+            </span>
+          </span>
+        </button>
+      </div>
+      <p>Now do a little digging of your own.</p>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Name what we used</h4>
+            <p>In your own words, explain why today's code counts as imperative programming, and name one of the other three paradigms from the cards above.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Research one alternative</h4>
+            <p>Search online for how Sudoku solving is approached in one other paradigm (try "logic programming Sudoku" or "functional programming Sudoku"), and write 2–3 sentences comparing it to the imperative version you wrote today.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Compare two alternatives</h4>
+            <p>Research two paradigms other than imperative, and write a short paragraph on which one you think would express backtracking most naturally, and why — referring back to what backtracking actually requires (trying, undoing, and retrying a choice).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — calling solve(grid) again doesn't restart the whole program; it's a new call working on the same grid."
+           data-feedback-b="✓ Correct — solve(grid) calls itself to try solving the rest of the grid, now that this square has a value in it."
+           data-feedback-c="Incorrect — solve() doesn't print anything itself; print_grid() does that separately."
+           data-feedback-d="Incorrect — checking syntax is the job of Python itself before the program even runs, not something solve() does."
+        >
+        <div class="mcq-question">1. What happens when <code>solve()</code> places a value and then calls <code>solve(grid)</code> again?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The entire program restarts from the very beginning</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It calls itself to try solving the rest of the grid with this new value in place</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It prints the grid to the screen</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It checks the code's syntax for errors</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="A"
+           data-feedback-a="✓ Correct — setting the square back to 0 is the backtracking step, undoing a value that didn't lead to a full solution."
+           data-feedback-b="Incorrect — 0 specifically means the square is being cleared, not given a final answer."
+           data-feedback-c="Incorrect — two's complement is unrelated to this line; it's a plain reset to the empty-square sentinel."
+           data-feedback-d="Incorrect — this line is part of the algorithm's own logic, not a debugging tool.">
+        <div class="mcq-question">2. What does <code>grid[row][col] = 0</code> represent inside <code>solve()</code>?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The backtracking step — undoing a choice that didn't lead anywhere</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Placing a final answer in that square</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A two's complement conversion</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A debugging breakpoint</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="C"
+           data-feedback-a="Incorrect — functional programming avoids changing existing data; today's code repeatedly edits the same grid in place."
+           data-feedback-b="Incorrect — logic programming states rules and lets the system search; today's code explicitly controls every step itself."
+           data-feedback-c="✓ Correct — ordinary step-by-step statements that change shared data over time is exactly the imperative paradigm."
+           data-feedback-d="Incorrect — object-oriented code organises behaviour around objects; today's code uses plain functions instead.">
+        <div class="mcq-question">3. Today's <code>solve()</code> function is written using ordinary step-by-step statements that share and change data through the grid. Which paradigm does this describe?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Functional</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Logic</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Imperative</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Object-oriented</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Producing &amp; Implementing</p>
+        <ul>
+          <li>
+            Describe, in your own words, what recursion means in solve(), and how it connects to backtracking from Lessons 8 and 9.
+            <span class="sentence-starter">Sentence starter: "solve() calls itself to... and when it returns False, that means..."</span>
+          </li>
+          <li>
+            Note your reaction to the 4,157-backtrack figure — what does it tell you about the difference between the Lesson 9 widget and a real 9×9 solve?
+            <span class="sentence-starter">Sentence starter: "Finding out it took 4,157 backtracks made me realise..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your code and notebook entry today.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Implements a fully correct, working solve() and explains recursion and backtracking with precision, and compares two alternative paradigms with well-reasoned judgement about which best suits backtracking.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Implements a fully correct, working solve() and explains recursion and backtracking accurately, with a sound comparison to one alternative paradigm.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Implements a mostly correct solve() that solves the puzzle, with a reasonable explanation of recursion and at least one paradigm correctly named.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Types up solve() with some correct logic, with support required to get the puzzle fully solving.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that solve() calls itself to work through the grid.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson10.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 10: Coding the Solver: Part 1</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson12.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Debugging: Breakpoints, Stepping, and Output Statements</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson11',
+    totalQuestions: 3
+  });
+</script>
+
+</body>
+</html>

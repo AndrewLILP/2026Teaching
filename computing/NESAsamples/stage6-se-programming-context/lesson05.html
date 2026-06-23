@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 5: Decomposition and Pattern Recognition | Practical Programming in Context</title>
+<meta name="description" content="Lesson 5 of the Practical Programming in Context NESA sample unit — breaking the Sudoku-solving problem into smaller subproblems, spotting the patterns that repeat, and naming sequence, selection and iteration as the building blocks of any algorithm.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 5</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">No skipped thoughts</a>
+        <a href="#decomposition">Decomposition</a>
+        <a href="#pattern-recognition">Pattern recognition</a>
+        <a href="#control-structures">Sequence, selection, iteration</a>
+        <a href="#decomposing-sudoku">Decomposing our solver</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Decomposition and Pattern Recognition</h1>
+      <p class="page-intro">Back in Lesson 1, you were asked whether you could explain how you solve Sudoku precisely enough for someone else to follow, step by step, with no skipped thoughts. Today you'll actually do it — by breaking the problem into smaller pieces, and noticing which of those pieces you end up doing over and over again.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> No skipped thoughts (5 min) · Decomposition (8 min) · Pattern recognition (7 min) · Sequence, selection, iteration (8 min) · Decomposing our solver (12 min) · Checkpoint + Notebook + CPD (10 min)
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>No skipped thoughts</h2>
+      <p>Try saying out loud how you solve a Sudoku square. You'll probably say something like "I just look at what's missing." That sentence has a hidden skipped thought in it: <em>how</em> do you know what's missing? What, exactly, are you checking, and in what order? A computer can't run on "I just look" — every single step has to be made explicit.</p>
+      <div class="info-box">
+        <strong>The question for today</strong>
+        Two skills make "I just look" turn into something a computer could actually run: breaking the problem into smaller pieces (decomposition), and noticing which of those pieces repeat (pattern recognition).
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="decomposition">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Decomposition</h2>
+      <p><strong>Decomposition</strong> means breaking a big, hard-to-tackle problem into smaller problems that are each much easier to solve on their own.</p>
+      <div class="example-box">
+        <strong>"Solve the Sudoku puzzle" broken down</strong>
+        Instead of one giant instruction, the problem splits into smaller, manageable pieces: find an empty square → try a value in it → check whether that value is allowed → place it (or try a different value) → move on
+      </div>
+      <p>None of those five smaller pieces is hard on its own. The difficulty in Sudoku was never any single step — it was trying to hold the whole puzzle in your head at once. Decomposition is what makes that unnecessary.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="pattern-recognition">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Pattern recognition</h2>
+      <p><strong>Pattern recognition</strong> means noticing when one of your smaller pieces isn't actually unique — it's the same piece of work showing up again and again, just with different numbers plugged in.</p>
+      <div class="example-box">
+        <strong>The pattern hiding in our breakdown</strong>
+        "Check whether that value is allowed" happens for every single square, for every single value you try — dozens or even hundreds of times in one solve. It's exactly the same check every time: does this value already exist in this row, this column, or this 3×3 box?
+      </div>
+      <p>Once you've spotted a pattern like that, it's a strong signal that piece deserves to become its own reusable building block — something you'll act on directly when you start writing functions in Lesson 10.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="control-structures">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Sequence, selection, iteration</h2>
+      <p>Every algorithm, however complicated, is built from just three basic kinds of step. Tap each card to reveal what it means.</p>
+      <div class="flip-card-grid">
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Sequence</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Doing steps one after another, in a fixed order. "Find an empty square, then try a value" is a sequence.</span>
+            </span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Selection</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Choosing what to do based on a condition. "If this value already exists in the row, don't place it" is selection.</span>
+            </span>
+          </span>
+        </button>
+        <button class="flip-card" type="button" aria-pressed="false">
+          <span class="flip-card__inner">
+            <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+              <span class="flip-card__term">Iteration</span>
+              <span class="flip-card__hint">Tap to reveal</span>
+            </span>
+            <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Repeating a step, often with something slightly different each time. "Try every value from 1 to 9 in turn" is iteration.</span>
+            </span>
+          </span>
+        </button>
+      </div>
+      <p>These three names will matter a lot more in Lesson 7, where you'll use selection and iteration explicitly to scan the grid. For now, it's enough to be able to spot each one inside your own decomposition — which is exactly what the next task asks you to do.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="decomposing-sudoku">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Decomposing our solver</h2>
+      <div class="guided-box">
+        <p class="guided-box__eyebrow">Let's decompose "solve the puzzle" together, in full</p>
+        <ol>
+          <li>Find the next empty square. If there isn't one, the puzzle is already solved.</li>
+          <li>Try placing a value in it, starting at 1.</li>
+          <li>Check whether that value is already used in its row, its column, or its 3×3 box.</li>
+          <li>If it's allowed, place it and move on to the next empty square.</li>
+          <li>If it isn't allowed, try the next value instead.</li>
+          <li>If no value from 1–9 works in this square, undo the last placement and go back to try a different value there. (This last step is called <strong>backtracking</strong> — you'll meet it properly in Lessons 8 and 9.)</li>
+        </ol>
+        <p>Step 3 is the pattern we identified above — it repeats, unchanged, no matter which square or value you're checking. Steps 1, 2, 4 and 6 each happen too, but they're more tied to a specific moment in the solve rather than being one identical, reusable check.</p>
+      </div>
+      <p>Now apply the same thinking yourself.</p>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Spot the pattern</h4>
+            <p>Looking at the six-step breakdown above, identify which step is the clearest example of a repeating pattern, and explain in one or two sentences why it counts as one.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Decompose a new problem</h4>
+            <p>Choose a different everyday task — alphabetising a shelf of books, or assembling a jigsaw puzzle — and break it down into a similar list of smaller steps. Underline whichever step(s) repeat as a pattern.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Plan your functions</h4>
+            <p>Look back at the six-step Sudoku breakdown and decide which steps would naturally become their own separate function later in the build, versus which ones are one-off and wouldn't be reused. Justify each call.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — that's closer to testing, not decomposition."
+           data-feedback-b="✓ Correct — decomposition means breaking a big problem into smaller, easier-to-solve pieces."
+           data-feedback-c="Incorrect — that's pattern recognition, a related but separate skill."
+           data-feedback-d="Incorrect — decomposition doesn't require writing any code at all; it's a planning step.">
+        <div class="mcq-question">1. What does decomposition mean?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Checking a finished program for errors</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Breaking a big problem into smaller, easier-to-solve pieces</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Noticing that a step repeats throughout a solution</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Writing Python code directly from a syllabus outcome</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="C"
+           data-feedback-a="Incorrect — that happens once per square attempt, not repeatedly across the whole grid in an identical way."
+           data-feedback-b="Incorrect — that's a one-off check at the very start, not a repeating action."
+           data-feedback-c="✓ Correct — checking row, column and box validity happens identically every single time, for every square and every value tried."
+           data-feedback-d="Incorrect — undoing a placement (backtracking) only happens when something goes wrong, not on every step.">
+        <div class="mcq-question">2. In the six-step Sudoku breakdown, which step is the clearest example of a repeating pattern?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Trying a value in an empty square</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Finding the very first empty square</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Checking whether a value is already used in its row, column or box</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Undoing the last placement</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="A"
+           data-feedback-a="✓ Correct — repeating a step with a different value each time, like trying every digit 1–9, is iteration."
+           data-feedback-b="Incorrect — that's selection, choosing what to do based on a condition."
+           data-feedback-c="Incorrect — that's sequence, doing fixed steps one after another."
+           data-feedback-d="Incorrect — that describes decomposition, not one of the three control structures.">
+        <div class="mcq-question">3. "Try every value from 1 to 9 in turn until one works" is an example of which control structure?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Iteration</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Selection</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Sequence</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Decomposition</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Researching &amp; Designing</p>
+        <ul>
+          <li>
+            Write out your own decomposition of a problem from today's task, and name the step(s) you identified as a repeating pattern.
+            <span class="sentence-starter">Sentence starter: "I broke my problem down into... and the step that repeats is... because..."</span>
+          </li>
+          <li>
+            Note which of sequence, selection or iteration you found easiest to spot in your own breakdown, and which felt least obvious.
+            <span class="sentence-starter">Sentence starter: "...was the easiest to spot, because... ; I found... trickier because..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your decomposition task and notebook entry today.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Decomposes a new problem into clear, logically ordered steps, accurately identifies every repeating pattern, and justifies with precision which steps would become reusable functions versus one-off actions.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Decomposes a new problem into clear, sensible steps and correctly identifies the step(s) that repeat as a pattern, with sound reasoning.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Breaks a problem down into a reasonable sequence of steps and identifies at least one repeating pattern within it.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Attempts to break a problem down into smaller steps, with support required to spot any repeating pattern.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that a problem can be split into smaller parts.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson04.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 4: Data Types and Data Structures</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson06.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Modelling and Desk-Checking Algorithms</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson05',
+    totalQuestions: 3
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 13: Debugging — Watches and Interfaces Between Functions | Practical Programming in Context</title>
+<meta name="description" content="Lesson 13 of the Practical Programming in Context NESA sample unit — using watch expressions to track values automatically, and using Step Into, Step Out and the Call Stack to see exactly what crosses the boundary when one function calls another.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+
+  /* ── Screenshot brief placeholder (same pattern as Lesson 12) ── */
+  .screenshot-brief {
+    border: 2px dashed var(--accent-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-5) 0;
+    background: var(--color-surface-2);
+  }
+  .screenshot-brief__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-weight: 700;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-label);
+    color: var(--accent-bright);
+  }
+  .screenshot-brief__icon { font-size: 1.1rem; }
+  .screenshot-brief__capture {
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .screenshot-brief__annotate {
+    margin: 0;
+    padding-left: var(--space-6);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+  }
+  .screenshot-brief__annotate li { margin-bottom: var(--space-2); }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 13</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">Two more debugger tools</a>
+        <a href="#watches">Watches</a>
+        <a href="#interfaces">Interfaces between functions</a>
+        <a href="#tying-together">Tying it together</a>
+        <a href="#your-turn">Your turn</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Debugging: Watches and Interfaces Between Functions</h1>
+      <p class="page-intro">Lesson 12 paused your program and let you look around. Today you get a way to track one value continuously without hunting for it every time — and a way to actually follow execution across the boundary when one function calls another, which is exactly where some of the sneakiest bugs hide.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> Two more debugger tools (5 min) · Watches (12 min) · Interfaces between functions (15 min) · Tying it together (3 min) · Your turn (8 min) · Checkpoint + Notebook + CPD (7 min)
+    </div>
+
+    <div class="info-box">
+      <strong>A note on today's screenshots:</strong> as in Lesson 12, the sections below use <code>📷 Screenshot needed</code> placeholders instead of real VS Code images, each with an exact capture and annotation spec, ready to be swapped for genuine screenshots before this page ships.
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Two more debugger tools</h2>
+      <p>Stepping one line at a time is powerful, but tiring if you're only interested in one value buried in a long Variables panel. And Step Over, from Lesson 12, deliberately skips over the inside of any function it's called on — which is a problem the moment a bug might actually be hiding <em>inside</em> the function being called, not in the line that calls it.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="watches">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Watches</h2>
+      <p>A <strong>watch</strong> is an expression you add once, which the debugger then keeps displayed and automatically up to date every single time the program pauses — no more scrolling through the Variables panel looking for it.</p>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — adding a watch expression</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> VS Code's Run and Debug sidebar with the WATCH panel expanded (below Variables), showing the "+" (Add Expression) button being used to add <code>row, col, value</code> as a watch, with its current value displayed underneath.</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Circle the "+" Add Expression button.</li>
+          <li>Box the WATCH panel and label it "tracked automatically, every time the program pauses."</li>
+          <li>Underline the displayed value next to the watch expression.</li>
+        </ol>
+      </div>
+
+      <p>Watches matter most for exactly the kind of program you've built: <code>solve()</code> pauses at the same breakpoint thousands of times across one run. Without a watch, you'd be hunting for <code>row</code>, <code>col</code> and <code>value</code> in the Variables panel after every single pause. With a watch, they're just always there.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="interfaces">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Interfaces between functions</h2>
+      <p>Every time <code>solve()</code> calls <code>is_valid()</code> — or calls itself — there's a boundary being crossed: specific arguments go in, and a specific value comes back out. That boundary is the <strong>interface</strong> between the two functions, and it's exactly where mismatched expectations cause bugs that are invisible from inside either function alone.</p>
+
+      <div class="example-box">
+        <strong>Step Over vs Step Into</strong>
+        Step Over treats a function call as a black box — it runs the whole call and lands you on the next line, without showing you what happened inside. Step Into does the opposite: it follows execution across the boundary, landing you on the very first line inside the function being called.
+      </div>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — stepping into a function call</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> paused on the line <code>if is_valid(grid, row, col, value):</code> inside <code>solve()</code>, immediately after clicking <strong>Step Into</strong> — execution should now be paused on the very first line inside <code>is_valid()</code>, with the Call Stack panel showing <code>is_valid</code> at the top and <code>solve</code> listed beneath it as the caller.</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Circle the Step Into button.</li>
+          <li>Box the highlighted line, now inside is_valid(), and label it "we crossed the interface."</li>
+          <li>Box the Call Stack panel and draw an arrow from "solve" to "is_valid" labelled "caller → called function."</li>
+        </ol>
+      </div>
+
+      <p>The <strong>Call Stack</strong> panel lists every function call currently in progress, most recent at the top. Because <code>solve()</code> calls itself recursively, this becomes a genuinely useful way to <em>see</em> recursion rather than just reason about it abstractly.</p>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — the call stack during recursion</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> the Call Stack panel after stepping through several recursive calls of <code>solve()</code> — several "solve" entries stacked on top of each other, one for each square currently filled in along the way.</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Box the whole stack of "solve" entries.</li>
+          <li>Label the bottom entry "the very first call" and the top entry "the most recent call, still waiting on the one above it."</li>
+          <li>Count and label how many levels deep the stack has grown.</li>
+        </ol>
+      </div>
+
+      <p><strong>Step Out</strong> does the reverse of Step Into: it finishes the current function completely and lands you back at the caller, right where its return value gets used — letting you watch exactly what crosses back over the interface in the other direction.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="tying-together">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Tying it together</h2>
+      <p>"Interfaces between functions" isn't new vocabulary — it's Lesson 6's procedures, functions and parameters, looked at from the debugger's point of view. A parameter is what crosses the interface going in; a return value is what crosses it coming back out; and the Call Stack is simply a live picture of every interface currently open at once.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="your-turn">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Your turn</h2>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Add and track a watch</h4>
+            <p>Add a watch expression for a variable of your choice inside solve(), step forward five times, and record how its value changes at each step.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Step into is_valid()</h4>
+            <p>Set a breakpoint on the line that calls is_valid() from inside solve(), use Step Into to follow execution across the interface, and describe what appears in the Call Stack panel as a result.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Watch the recursion grow</h4>
+            <p>Use Step Into to follow at least two levels of solve() calling itself, and describe how the Call Stack changes at each level. Explain, in your own words, why each new entry represents one more square being worked on — connecting it back to the recursion concept from Lesson 11.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — adding a watch doesn't delete anything; it only displays a value."
+           data-feedback-b="✓ Correct — a watch expression is tracked and displayed automatically every time the program pauses, without you having to search the Variables panel for it."
+           data-feedback-c="Incorrect — watches don't affect how fast a program runs; they're purely a way to observe it."
+           data-feedback-d="Incorrect — watches display whatever expression you give them; they don't perform number-system conversions on their own."
+        >
+        <div class="mcq-question">1. What is a watch expression used for in a debugger?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Permanently deleting a variable</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Automatically tracking and displaying a chosen value every time the program pauses</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Speeding up program execution</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Converting a decimal number to binary</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="A"
+           data-feedback-a="✓ Correct — Step Into follows execution across the interface, landing you on the first line inside the called function, rather than treating it as a black box."
+           data-feedback-b="Incorrect — skipping the current line entirely isn't what either Step Into or Step Over does; both advance execution."
+           data-feedback-c="Incorrect — stepping commands move forward through a paused program; they don't restart anything."
+           data-feedback-d="Incorrect — stepping observes code as it runs; it never deletes the function being called.">
+        <div class="mcq-question">2. What does Step Into do differently from Step Over?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It follows execution across into the called function's own code, rather than running over it</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It skips the current line entirely</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It restarts the whole program</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It deletes the function being called</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="C"
+           data-feedback-a="Incorrect — the Call Stack only shows calls currently in progress, not a history of every value ever tried."
+           data-feedback-b="Incorrect — the Call Stack tracks function calls, not console output from print statements."
+           data-feedback-c="✓ Correct — the Call Stack lists every function call currently in progress, one entry per active call — for solve()'s recursion, one entry per square currently being worked on."
+           data-feedback-d="Incorrect — the finished grid is shown in the Variables panel or by printing it, not in the Call Stack.">
+        <div class="mcq-question">3. What does the Call Stack panel show during solve()'s recursion?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The contents of the finished, solved grid</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A list of every print statement that has executed</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The chain of currently active calls, one entry per square currently being worked on</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Every value ever tried across the entire solve</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Producing &amp; Implementing</p>
+        <ul>
+          <li>
+            Describe what you saw in the Call Stack panel as you stepped into solve()'s recursion, in your own words.
+            <span class="sentence-starter">Sentence starter: "As I stepped into solve(), the Call Stack showed... which told me..."</span>
+          </li>
+          <li>
+            Note one moment across Lessons 12 and 13 where a debugging tool showed you something a print statement couldn't have.
+            <span class="sentence-starter">Sentence starter: "Using... showed me... which print statements couldn't have, because..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your debugger use and notebook entry today.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Uses watches, Step Into and the Call Stack accurately across multiple recursion levels, and explains with precision why each stack entry corresponds to one square being worked on.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Uses a watch expression and Step Into accurately, correctly describing what appears in the Call Stack as a result.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Successfully sets up either a watch or Step Into, with a reasonable description of what was observed.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Attempts to set up a watch or use Step Into, with support required to get it working correctly.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that a debugger can track a value or follow a function call.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson12.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 12: Breakpoints, Stepping, and Output Statements</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson14.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Testing, Evaluating, and Comparing Peer Solutions</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson13',
+    totalQuestions: 3
+  });
+</script>
+
+</body>
+</html>

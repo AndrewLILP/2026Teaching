@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 12: Debugging — Breakpoints, Stepping, and Output Statements | Practical Programming in Context</title>
+<meta name="description" content="Lesson 12 of the Practical Programming in Context NESA sample unit — debugging output statements, and using an IDE debugger's breakpoints and single-line stepping to pause and inspect the Sudoku solver while it runs.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+
+  /* ── Screenshot brief placeholder (new component, lesson-scoped) ──
+     This unit has no real VS Code screenshots available to embed.
+     Rather than fake a mocked-up debugger UI, each placeholder below
+     specifies exactly what to capture and how to annotate it, ready
+     for Andrew to drop a real screenshot in before this page ships. */
+  .screenshot-brief {
+    border: 2px dashed var(--accent-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    margin: var(--space-5) 0;
+    background: var(--color-surface-2);
+  }
+  .screenshot-brief__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-weight: 700;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-label);
+    color: var(--accent-bright);
+  }
+  .screenshot-brief__icon { font-size: 1.1rem; }
+  .screenshot-brief__capture {
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .screenshot-brief__annotate {
+    margin: 0;
+    padding-left: var(--space-6);
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+  }
+  .screenshot-brief__annotate li { margin-bottom: var(--space-2); }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 12</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">When desk-checking isn't enough</a>
+        <a href="#two-ways">Two ways to look inside</a>
+        <a href="#output-statements">Debugging output statements</a>
+        <a href="#breakpoints-stepping">Breakpoints and stepping</a>
+        <a href="#comparing">Comparing the two</a>
+        <a href="#your-turn">Your turn</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Debugging: Breakpoints, Stepping, and Output Statements</h1>
+      <p class="page-intro">Your solver works — but "it works" and "I understand exactly what it's doing at every moment" are different things. Today you get two genuine ways to look inside a running program: scattering print statements through your own code, and letting the IDE itself pause and show you everything.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> When desk-checking isn't enough (5 min) · Two ways to look inside (5 min) · Debugging output statements (10 min) · Breakpoints and stepping (15 min) · Comparing the two (5 min) · Your turn (5 min) · Checkpoint + Notebook + CPD (5 min)
+    </div>
+
+    <div class="info-box">
+      <strong>A note on today's screenshots:</strong> the breakpoint and stepping sections below use placeholder boxes marked <code>📷 Screenshot needed</code> instead of real VS Code images. Each one specifies exactly what to capture and how to annotate it — these are ready to be replaced with real screenshots before this page goes live.
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>When desk-checking isn't enough</h2>
+      <p>Lesson 6 desk-checked a few lines of pseudocode by hand. Lesson 10 desk-checked real functions by running three lines and reading the output. Neither approach works once a program calls itself recursively thousands of times in a fraction of a second, the way <code>solve()</code> does. You need tools built for exactly that.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="two-ways">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Two ways to look inside</h2>
+      <p>Both of today's techniques answer the same question — "what is my program actually doing right now?" — but in very different ways. <strong>Debugging output statements</strong> means temporarily adding extra <code>print()</code> calls to your own code, so it reports on itself as it runs. <strong>Breakpoints and stepping</strong> mean using tools built into the IDE itself to pause your program mid-run and inspect it directly, without changing your code at all.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="output-statements">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Debugging output statements</h2>
+      <p>The simplest debugging tool there is: add a <code>print()</code> wherever you want visibility, run the program, read the output, then delete the print statement once you're done.</p>
+      <div class="outcome-code-block">def solve(grid):
+    empty = find_empty(grid)
+    if empty is None:
+        return True
+
+    row, col = empty
+
+    for value in range(1, 10):
+        <span class="keyword">print</span>(<span class="string">f"Trying {value} at row {row}, col {col}"</span>)  <span class="comment"># debugging output statement</span>
+        if is_valid(grid, row, col, value):
+            grid[row][col] = value
+
+            if solve(grid):
+                return True
+
+            grid[row][col] = 0
+
+    return False</div>
+      <p>Running this on the Lesson 10 puzzle, the first few lines of output look exactly as expected:</p>
+      <div class="outcome-code-block">Trying 1 at row 0, col 2
+Trying 1 at row 0, col 3
+Trying 2 at row 0, col 3
+Trying 1 at row 0, col 5
+Trying 2 at row 0, col 5
+Trying 3 at row 0, col 5
+Trying 4 at row 0, col 5
+Trying 1 at row 0, col 6</div>
+      <p>So far, so readable. But that print statement runs once for every value tried at every square, for the entire solve — and the entire solve tries a value <strong>37,652 times</strong> before it's done. That's 37,652 lines of console output for one puzzle. Print-statement debugging is fast to set up and easy to understand, but it doesn't scale — past a certain point, the output itself becomes the thing you'd need to debug.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="breakpoints-stepping">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Breakpoints and stepping</h2>
+      <p>A <strong>breakpoint</strong> is a marker you place on a specific line, telling the IDE: "pause the program right before this line runs." Instead of flooding a console with thousands of lines, you choose one exact moment to freeze and look around.</p>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — setting a breakpoint</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> VS Code with <code>solve()</code> open, cursor on the line <code>if is_valid(grid, row, col, value):</code> inside the <code>for</code> loop, with a breakpoint set — the red dot visible in the gutter to the left of the line number.</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Circle the red dot in the gutter.</li>
+          <li>Label it: "breakpoint — execution will pause here every time this line is about to run."</li>
+        </ol>
+      </div>
+
+      <p>Once a breakpoint is set, running the program in debug mode (in VS Code: pressing <strong>F5</strong>, or the green "Run and Debug" arrow) doesn't run straight through — it pauses the instant it reaches that line, with the rest of the program frozen exactly as it was.</p>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — paused at the breakpoint</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> the same file, now running in debug mode and paused at the breakpoint — the current line highlighted (usually yellow), the debug toolbar visible (Continue, Step Over, Step Into, Step Out, Restart, Stop), and the Variables panel in the sidebar showing the current values of <code>row</code>, <code>col</code> and <code>value</code>.</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Box the highlighted current line and label it "execution is paused here, right now."</li>
+          <li>Circle the debug toolbar and label each button (Continue / Step Over / Step Into / Step Out).</li>
+          <li>Box the Variables panel and label it "every variable's current value, live."</li>
+        </ol>
+      </div>
+
+      <p><strong>Single-line stepping</strong> is what happens next: instead of clicking Continue (which runs until the next breakpoint), clicking <strong>Step Over</strong> advances exactly one line and pauses again — letting you watch values change one line at a time.</p>
+
+      <div class="screenshot-brief">
+        <div class="screenshot-brief__header"><span class="screenshot-brief__icon">📷</span>Screenshot needed — stepping forward</div>
+        <p class="screenshot-brief__capture"><strong>Capture:</strong> the same paused program, after clicking Step Over two or three times — the highlighted line has moved down, and the Variables panel shows an updated value (for example, <code>value</code> incremented, or <code>grid</code> now showing a newly placed digit).</p>
+        <ol class="screenshot-brief__annotate">
+          <li>Circle the Step Over button specifically.</li>
+          <li>Draw an arrow from the previous screenshot's highlighted line to this one's, showing the movement.</li>
+          <li>Circle the changed value in the Variables panel and label it "this just changed."</li>
+        </ol>
+      </div>
+
+      <p>Notice what you get that print statements can't give you: every variable's value at once, updating live, with no need to decide in advance what to print or to clean anything up afterward.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="comparing">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Comparing the two</h2>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead><tr><th>Aspect</th><th>Debugging output statements</th><th>Breakpoints and stepping</th></tr></thead>
+          <tbody>
+            <tr><td>Setup</td><td>Add print() lines directly into your code</td><td>Click in the gutter; no code changes needed</td></tr>
+            <tr><td>What you see</td><td>Only what you chose to print, in order</td><td>Every variable's current value, at the exact moment you choose</td></tr>
+            <tr><td>Scales to thousands of calls?</td><td>No — output becomes unreadable</td><td>Yes — you choose exactly when to pause</td></tr>
+            <tr><td>Cleanup required?</td><td>Yes — remove the print statements afterward</td><td>No — breakpoints don't change the saved code</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Neither tool is strictly better — a quick print statement is often faster for a simple check, while breakpoints earn their setup cost on anything complex enough to need watching closely. Knowing both means choosing the right one for the bug in front of you.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="your-turn">
+      <span class="section-phase-tag produce"><span class="dot"></span>Producing &amp; Implementing</span>
+      <h2>Your turn</h2>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Add and remove a print statement</h4>
+            <p>Add a print statement inside is_valid() that reports the value being checked, run your solver, read a few lines of output, then remove the print statement afterward.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Set a breakpoint and step</h4>
+            <p>Set a breakpoint on the line inside solve() where a value gets placed in the grid. Run in debug mode, and click Step Over five times, recording what changes in the Variables panel at each step.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Pick the right tool</h4>
+            <p>Imagine box_row_start had an off-by-one error (using <code>row // 3 + 1</code> instead of <code>row // 3</code>). Argue, with reasons, whether print statements or breakpoints would help you find this specific bug faster — and explain what you'd actually look at to catch it.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — a breakpoint doesn't remove or modify any code."
+           data-feedback-b="✓ Correct — a breakpoint pauses execution right before that line runs, every time the program reaches it."
+           data-feedback-c="Incorrect — breakpoints don't change variable values; they just pause the program so you can look at them."
+           data-feedback-d="Incorrect — a breakpoint pauses the program, which is the opposite of speeding it up.">
+        <div class="mcq-question">1. What does a breakpoint do?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Deletes a line of code</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Pauses program execution at that line, every time it's about to run</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Permanently changes a variable's value</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Speeds up the program</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="C"
+           data-feedback-a="Incorrect — print() can absolutely show variable values; that's exactly what it's used for."
+           data-feedback-b="Incorrect — print() is a built-in part of Python, no extra installation needed."
+           data-feedback-c="✓ Correct — today's example showed a single print statement generating 37,652 lines of output across the full solve, far too many to read through."
+           data-feedback-d="Incorrect — print() works on any data type, not just strings."
+        >
+        <div class="mcq-question">2. What was the key disadvantage of print-statement debugging shown in today's example?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> print() cannot show variable values at all</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It requires installing additional software</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The output ballooned to tens of thousands of lines, becoming impossible to read through</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> print() only works with string data types</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="A"
+           data-feedback-a="✓ Correct — single-line stepping advances exactly one line at a time, pausing again so you can inspect values as they change."
+           data-feedback-b="Incorrect — stepping moves forward through the program; it doesn't restart it."
+           data-feedback-c="Incorrect — stepping observes the code as it runs; it doesn't delete anything."
+           data-feedback-d="Incorrect — debugging tools help you find errors; they don't fix them automatically."
+        >
+        <div class="mcq-question">3. What does single-line stepping let you do once a program is paused at a breakpoint?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Advance execution one line at a time, inspecting values as you go</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Restart the entire program from scratch</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Delete the current line of code</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Automatically fix any errors found</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Producing &amp; Implementing</p>
+        <ul>
+          <li>
+            Record what you observed while stepping through solve() in the debugger — what changed from one step to the next, and what surprised you, if anything.
+            <span class="sentence-starter">Sentence starter: "When I stepped through solve(), I noticed... ; what surprised me was..."</span>
+          </li>
+          <li>
+            Note which debugging tool you reached for first today, and whether you'd make the same choice next time.
+            <span class="sentence-starter">Sentence starter: "I started with... because... ; next time I'd probably..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your debugging work and notebook entry today.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Uses both print statements and breakpoint stepping accurately, and argues precisely which tool suits a specific hypothetical bug, with clear reasoning about what each tool would and wouldn't reveal.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Uses both print statements and breakpoint stepping accurately, recording clear, correct observations from the Variables panel across multiple steps.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Successfully uses one debugging technique (print statements or breakpoints) with reasonable observations recorded.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Attempts to use a debugging technique, with support required to set it up correctly.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that a program can be paused or made to report on itself while running.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson11.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 11: Coding the Solver: Part 2</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson13.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Debugging: Watches and Interfaces Between Functions</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson12',
+    totalQuestions: 3
+  });
+</script>
+
+</body>
+</html>

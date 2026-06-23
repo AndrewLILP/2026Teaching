@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 9: Backtracking, Applied to Sudoku | Practical Programming in Context</title>
+<meta name="description" content="Lesson 9 of the Practical Programming in Context NESA sample unit — watching backtracking happen step by step on a real (mini) Sudoku grid, with an interactive step-through trace of a genuine dead end and undo.">
+<link rel="stylesheet" href="../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:         #047857;
+    --accent-dim:     #036c4e;
+    --accent-bright:  #10b981;
+    --accent-surface: rgba(16, 185, 129, 0.14);
+    --accent-border:  rgba(4, 120, 87, 0.30);
+  }
+
+  /* ── Backtracking step-through widget (new component, lesson-scoped) ── */
+  .backtrack-widget {
+    margin: var(--space-6) 0;
+    padding: var(--space-5);
+    border: 1px solid var(--accent-border);
+    border-radius: var(--radius-xl);
+    background: var(--accent-surface);
+  }
+  .bt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    justify-content: center;
+    margin-bottom: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+  .bt-legend__item { display: flex; align-items: center; gap: var(--space-2); }
+  .bt-legend__swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+  .bt-legend__swatch--given { background: var(--color-surface); border: 1px solid var(--color-border-mid); }
+  .bt-legend__swatch--placed { background: var(--color-surface-3); border: 1px solid var(--accent-bright); }
+  .bt-legend__swatch--trying-ok { background: var(--accent); }
+  .bt-legend__swatch--trying-fail { background: #dc2626; }
+  .bt-legend__swatch--current { background: transparent; border: 2px solid #fbbf24; }
+
+  .bt-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    max-width: 280px;
+    margin: 0 auto var(--space-5);
+    background: var(--color-border-mid);
+    border: 3px solid var(--color-border-mid);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .bt-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-2);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    transition: background 0.25s, color 0.25s;
+  }
+  .bt-cell[data-c="1"] { border-right: 3px solid var(--color-border-mid); }
+  .bt-cell[data-r="1"] { border-bottom: 3px solid var(--color-border-mid); }
+  .bt-cell.is-given { color: var(--color-text-secondary); background: var(--color-surface); }
+  .bt-cell.is-placed { color: var(--accent-bright); background: var(--color-surface-3); }
+  .bt-cell.is-trying-ok { background: var(--accent); color: #fff; animation: bt-pulse 0.5s ease; }
+  .bt-cell.is-trying-fail { background: #dc2626; color: #fff; }
+  .bt-cell.is-current { box-shadow: inset 0 0 0 3px #fbbf24; }
+  @keyframes bt-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+  .backtrack-widget__status { text-align: center; margin-bottom: var(--space-4); }
+  .bt-step-counter { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-2); }
+  .bt-step-desc { font-size: var(--text-base); font-weight: 600; color: var(--color-text-primary); min-height: 2.6em; max-width: 480px; margin: 0 auto; }
+
+  .backtrack-widget__controls { display: flex; justify-content: center; gap: var(--space-3); flex-wrap: wrap; }
+  .bt-btn {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--accent-border);
+    background: var(--color-surface-2);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    font-family: inherit;
+  }
+  .bt-btn:hover:not(:disabled) { background: var(--accent-surface); }
+  .bt-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .bt-btn--primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .bt-btn--primary:hover:not(:disabled) { background: var(--accent-dim); }
+</style>
+</head>
+<body class="font-nunito">
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<nav class="ct-nav" aria-label="Site navigation">
+  <a href="../../index.html" class="ct-logo"><span>CT</span><em>/</em>Stage 6</a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">NESA Sample Unit</span>
+    <span class="ct-nav-sep">·</span>
+    <span>Practical Programming in Context</span>
+  </div>
+  <div class="ct-nav-actions">
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system" aria-pressed="false">Aa</button>
+      <button class="font-btn" data-font="dyslexia" aria-pressed="false">Aa</button>
+    </div>
+    <a href="index.html" class="ct-nav-btn">Unit hub</a>
+  </div>
+</nav>
+
+<nav class="ct-breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="../../index.html">Computing Technology</a></li>
+    <li><a href="../stage6-index.html">Stage 6</a></li>
+    <li><a href="../index.html">NESA Sample Units</a></li>
+    <li><a href="index.html">Practical Programming in Context</a></li>
+    <li aria-current="page">Lesson 9</li>
+  </ol>
+</nav>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <span class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+    <div class="sidebar-section">
+      <span class="sidebar-label">On this page</span>
+      <nav class="sidebar-toc" id="sidebar-toc" aria-label="On this page">
+        <a href="#hook">From maze to grid</a>
+        <a href="#real-grid-intro">A mini grid, for now</a>
+        <a href="#backtracking-widget">Watch it happen</a>
+        <a href="#what-you-watched">What you watched</a>
+        <a href="#your-turn">Your turn</a>
+        <a href="#checkpoint">Checkpoint</a>
+        <a href="#notebook">Notebook entry</a>
+        <a href="#cpd">How am I doing?</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main-content" tabindex="-1">
+
+    <header class="page-hero">
+      <span class="paper-tape paper-tape--cyan" aria-hidden="true"></span>
+      <p class="page-eyebrow">NESA Sample Unit · Programming Fundamentals · Practical Programming in Context</p>
+      <h1>Backtracking, Applied to Sudoku</h1>
+      <p class="page-intro">Last lesson's maze had junctions and dead ends. A Sudoku grid has exactly the same shape of problem — squares instead of junctions, digits instead of directions. Today you'll watch backtracking happen step by step on a real grid, including the exact moment it hits a dead end and has to undo a choice.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">SE-11-01</span>
+        <span class="outcome-tag">SE-11-02</span>
+        <span class="outcome-tag">SE-11-03</span>
+        <span class="outcome-tag">SE-11-04</span>
+        <span class="outcome-tag">SE-11-06</span>
+      </div>
+    </header>
+
+    <div class="info-box">
+      <strong>Today's lesson — 50 minutes:</strong> From maze to grid (5 min) · A mini grid, for now (5 min) · Watch it happen (18 min) · What you watched (7 min) · Your turn (10 min) · Checkpoint + Notebook + CPD (5 min)
+    </div>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>From maze to grid</h2>
+      <p>In the maze, a dead end meant undoing one choice and trying the next option at the same junction. In Sudoku, a "dead end" means an empty square where none of the remaining values work — and "undoing" means erasing the value in the square that was filled just before it, and trying that square's next value instead. Same idea, different costume.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="real-grid-intro">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>A mini grid, for now</h2>
+      <p>A real Sudoku grid is 9×9 — far too many steps to watch one at a time today. So the widget below uses a smaller 4×4 version instead: four rows, four columns, four 2×2 boxes, and digits 1–4. Every rule still applies exactly the same way — a value can't repeat in its row, column, or box — it's just small enough to step through completely in one sitting. The exact same logic is what Lesson 10 will scale up to the full 9×9 grid in actual Python code.</p>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="backtracking-widget">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Watch it happen</h2>
+      <p>This puzzle has five empty squares. Click <strong>Step forward</strong> to watch the solver try values one at a time — and before each click, try to guess what will happen next.</p>
+
+      <div class="backtrack-widget">
+        <div class="bt-legend">
+          <span class="bt-legend__item"><span class="bt-legend__swatch bt-legend__swatch--given"></span>Given clue</span>
+          <span class="bt-legend__item"><span class="bt-legend__swatch bt-legend__swatch--placed"></span>Placed so far</span>
+          <span class="bt-legend__item"><span class="bt-legend__swatch bt-legend__swatch--trying-ok"></span>Trying — works</span>
+          <span class="bt-legend__item"><span class="bt-legend__swatch bt-legend__swatch--trying-fail"></span>Trying — blocked</span>
+          <span class="bt-legend__item"><span class="bt-legend__swatch bt-legend__swatch--current"></span>Current square</span>
+        </div>
+
+        <div class="bt-grid" id="bt-grid" role="img" aria-label="4 by 4 Sudoku grid, described step by step in the text below">
+          <div class="bt-cell" data-r="0" data-c="0"></div>
+          <div class="bt-cell" data-r="0" data-c="1"></div>
+          <div class="bt-cell" data-r="0" data-c="2"></div>
+          <div class="bt-cell" data-r="0" data-c="3"></div>
+          <div class="bt-cell" data-r="1" data-c="0"></div>
+          <div class="bt-cell" data-r="1" data-c="1"></div>
+          <div class="bt-cell" data-r="1" data-c="2"></div>
+          <div class="bt-cell" data-r="1" data-c="3"></div>
+          <div class="bt-cell" data-r="2" data-c="0"></div>
+          <div class="bt-cell" data-r="2" data-c="1"></div>
+          <div class="bt-cell" data-r="2" data-c="2"></div>
+          <div class="bt-cell" data-r="2" data-c="3"></div>
+          <div class="bt-cell" data-r="3" data-c="0"></div>
+          <div class="bt-cell" data-r="3" data-c="1"></div>
+          <div class="bt-cell" data-r="3" data-c="2"></div>
+          <div class="bt-cell" data-r="3" data-c="3"></div>
+        </div>
+
+        <div class="backtrack-widget__status">
+          <p class="bt-step-counter">Step <span id="bt-step-num">1</span> of <span id="bt-step-total">25</span></p>
+          <p class="bt-step-desc" id="bt-step-desc" aria-live="polite"></p>
+        </div>
+
+        <div class="backtrack-widget__controls">
+          <button class="bt-btn" id="bt-prev" type="button">← Step back</button>
+          <button class="bt-btn bt-btn--primary" id="bt-next" type="button">Step forward →</button>
+          <button class="bt-btn" id="bt-restart" type="button">↺ Restart</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="what-you-watched">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>What you watched</h2>
+      <div class="guided-box">
+        <p class="guided-box__eyebrow">Let's name what happened, step by step</p>
+        <p>The solver reached row 0, column 3 and tried every value from 1 to 4 — all four were blocked. That's a <strong>dead end</strong>, exactly like the maze's Left turn at Junction 2 that went nowhere. Backtracking responded the same way it did in the maze: it didn't start over from the very beginning. It undid the single most recent choice — the 3 it had placed at row 0, column 2 — and tried that square's next value instead. That one small change was enough to unblock everything that came after it.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="your-turn">
+      <span class="section-phase-tag research"><span class="dot"></span>Researching &amp; Designing</span>
+      <h2>Your turn</h2>
+      <div class="tier-tasks">
+        <h3>Choose your task</h3>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Describe the dead end</h4>
+            <p>In your own words, describe what happened at row 0, column 3 in the widget, and explain why all four values were blocked there.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Explain the undo</h4>
+            <p>Step the widget back to the dead end and the undo step. Explain, using the reasons shown on screen, exactly why undoing the 3 at row 0, column 2 — rather than any other square — was the correct move.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Design your own dead end</h4>
+            <p>On paper, design a different small 4×4 puzzle (you choose the given clues) that you predict will hit a dead end somewhere, then trace it by hand in a table — step, value tried, blocked by which constraint — the same way Lesson 8's maze trace worked. You won't be able to test it in the widget, so show your full reasoning.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="checkpoint">
+      <h2>Checkpoint</h2>
+      <p>Three quick questions before you go.</p>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Incorrect — the widget showed this value blocked by the row and box, not the column alone."
+           data-feedback-b="✓ Correct — the widget's reason for blocking 1 at row 0, column 3 was that it was already used in that row and that box."
+           data-feedback-c="Incorrect — two's complement is unrelated to this puzzle's row/column/box rules."
+           data-feedback-d="Incorrect — data type has nothing to do with why a specific value was blocked.">
+        <div class="mcq-question">1. What blocked the value 1 from being placed at row 0, column 3?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It was already used in that column only</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It was already used in that row and that box</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It broke a two's complement rule</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It was the wrong data type</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="C"
+           data-feedback-a="Incorrect — the puzzle wasn't yet solved at that point; that's exactly why the search was still going."
+           data-feedback-b="Incorrect — two's complement is a Lesson 3 topic and isn't involved in this trace at all."
+           data-feedback-c="✓ Correct — every value from 1 to 4 failed at row 0, column 3, which is exactly what a dead end is."
+           data-feedback-d="Incorrect — the data structure choice happened back in Lesson 4 and isn't what triggered this backtrack.">
+        <div class="mcq-question">2. What finally triggered the backtrack (undo) step in the widget's trace?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The puzzle was already fully solved</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A two's complement overflow occurred</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Every value from 1–4 failed at row 0, column 3, creating a dead end</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> The wrong data structure was chosen for the grid</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="D"
+           data-feedback-a="Incorrect — 1 was tried much earlier at this square and was blocked."
+           data-feedback-b="Incorrect — 2 was never the value tried at row 0, column 2 in this trace."
+           data-feedback-c="Incorrect — 3 was the original value that got undone; the solver moved on from it after backtracking."
+           data-feedback-d="✓ Correct — after undoing the 3, the solver tried 4 at row 0, column 2 next, and it worked.">
+        <div class="mcq-question">3. After backtracking, which value was successfully placed at row 0, column 2 the second time around?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> 1</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> 2</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> 3</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> 4</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="content-section" id="notebook">
+      <h2>Notebook entry</h2>
+      <div class="notebook-prompt">
+        <p class="notebook-prompt__label">Project notebook — Researching &amp; Designing</p>
+        <ul>
+          <li>
+            Describe, in your own words, the dead end and undo moment from the widget — what was tried, what failed, and what changed.
+            <span class="sentence-starter">Sentence starter: "The solver got stuck at... because... ; it fixed this by..."</span>
+          </li>
+          <li>
+            Note one way the widget's 4×4 trace would look different once it's scaled up to a real 9×9 Sudoku grid in Lesson 10.
+            <span class="sentence-starter">Sentence starter: "On a 9×9 grid, I'd expect... because there are more..."</span>
+          </li>
+        </ul>
+        <textarea class="reflection-textarea" data-progress-reflection aria-label="Notebook reflection" placeholder="Write your reflection here — it autosaves as you type."></textarea>
+        <span class="reflection-status" data-progress-reflection-status></span>
+      </div>
+      <div data-progress-recap></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ -->
+    <section class="cpd-section" id="cpd">
+      <h2>How am I doing?</h2>
+      <p class="cpd-intro">Click the grade that best matches your understanding of today's widget and your notebook entry.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Designs an original 4×4 puzzle with a predicted dead end and justifies the prediction precisely, and explains with full accuracy why the specific undo step in the widget was the correct, minimal fix.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Explains accurately why the dead end occurred and why the undo step targeted the specific square it did, using the reasons shown in the widget.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Describes the dead end and undo moment accurately in their own words, with a reasonable explanation of why it happened.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Identifies that a dead end and an undo occurred in the widget, with support required to explain why.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>Identifies, with support, that the widget showed a value being removed at some point.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson08.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 8: Divide and Conquer, and Backtracking</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson10.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Coding the Solver: Part 1</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../assets/js/ct-core.js"></script>
+<script src="../../assets/js/ct-interactive.js"></script>
+<script src="../../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'nesa-softeng-programming-2026',
+    lessonId: 'lesson09',
+    totalQuestions: 3
+  });
+</script>
+
+<script>
+  // ── Backtracking step-through widget ──────────────────────────────
+  // Original puzzle (0 = empty). All other values are "given" clues.
+  var BT_GIVENS = [
+    [1, 2, 0, 0],
+    [3, 4, 1, 2],
+    [2, 0, 0, 4],
+    [4, 3, 2, 0]
+  ];
+
+  // Precomputed, fully-verified trace of a naive ascending-value
+  // backtracking search over BT_GIVENS. Generated once and fixed —
+  // this widget always replays the same trace, it does not solve live.
+  var BT_STEPS = [{"type":"try","cell":[0,2],"value":1,"ok":false,"reasons":["row","column","box"],"grid":[[1,2,0,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,2],"value":2,"ok":false,"reasons":["row","column","box"],"grid":[[1,2,0,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,2],"value":3,"ok":true,"reasons":[],"grid":[[1,2,0,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"place","cell":[0,2],"value":3,"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":1,"ok":false,"reasons":["row","box"],"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":2,"ok":false,"reasons":["row","column","box"],"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":3,"ok":false,"reasons":["row","box"],"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":4,"ok":false,"reasons":["column"],"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"deadend","cell":[0,3],"grid":[[1,2,3,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"undo","cell":[0,2],"value":3,"grid":[[1,2,0,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,2],"value":4,"ok":true,"reasons":[],"grid":[[1,2,0,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"place","cell":[0,2],"value":4,"grid":[[1,2,4,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":1,"ok":false,"reasons":["row","box"],"grid":[[1,2,4,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":2,"ok":false,"reasons":["row","column","box"],"grid":[[1,2,4,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[0,3],"value":3,"ok":true,"reasons":[],"grid":[[1,2,4,0],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"place","cell":[0,3],"value":3,"grid":[[1,2,4,3],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"try","cell":[2,1],"value":1,"ok":true,"reasons":[],"grid":[[1,2,4,3],[3,4,1,2],[2,0,0,4],[4,3,2,0]]},{"type":"place","cell":[2,1],"value":1,"grid":[[1,2,4,3],[3,4,1,2],[2,1,0,4],[4,3,2,0]]},{"type":"try","cell":[2,2],"value":1,"ok":false,"reasons":["row","column"],"grid":[[1,2,4,3],[3,4,1,2],[2,1,0,4],[4,3,2,0]]},{"type":"try","cell":[2,2],"value":2,"ok":false,"reasons":["row","column","box"],"grid":[[1,2,4,3],[3,4,1,2],[2,1,0,4],[4,3,2,0]]},{"type":"try","cell":[2,2],"value":3,"ok":true,"reasons":[],"grid":[[1,2,4,3],[3,4,1,2],[2,1,0,4],[4,3,2,0]]},{"type":"place","cell":[2,2],"value":3,"grid":[[1,2,4,3],[3,4,1,2],[2,1,3,4],[4,3,2,0]]},{"type":"try","cell":[3,3],"value":1,"ok":true,"reasons":[],"grid":[[1,2,4,3],[3,4,1,2],[2,1,3,4],[4,3,2,0]]},{"type":"place","cell":[3,3],"value":1,"grid":[[1,2,4,3],[3,4,1,2],[2,1,3,4],[4,3,2,1]]},{"type":"solved","grid":[[1,2,4,3],[3,4,1,2],[2,1,3,4],[4,3,2,1]]}];
+
+  (function () {
+    var current = 0;
+    var total = BT_STEPS.length;
+
+    var gridEl   = document.getElementById('bt-grid');
+    var descEl   = document.getElementById('bt-step-desc');
+    var numEl    = document.getElementById('bt-step-num');
+    var totalEl  = document.getElementById('bt-step-total');
+    var prevBtn  = document.getElementById('bt-prev');
+    var nextBtn  = document.getElementById('bt-next');
+    var restartBtn = document.getElementById('bt-restart');
+
+    if (!gridEl) return; // widget not on this page
+
+    totalEl.textContent = total;
+
+    function describe(step) {
+      var rc = step.cell ? ('row ' + step.cell[0] + ', column ' + step.cell[1]) : '';
+      if (step.type === 'try') {
+        if (step.ok) {
+          return 'Trying ' + step.value + ' at ' + rc + ': allowed — about to place it.';
+        }
+        return 'Trying ' + step.value + ' at ' + rc + ': blocked by the ' + step.reasons.join(' and ') + ' — not allowed.';
+      }
+      if (step.type === 'place') {
+        return 'Placed ' + step.value + ' at ' + rc + '.';
+      }
+      if (step.type === 'deadend') {
+        return 'Dead end at ' + rc + ' — no value from 1–4 works here. Time to backtrack.';
+      }
+      if (step.type === 'undo') {
+        return 'Backtracking: removing ' + step.value + ' from ' + rc + ', since every value at the next square failed. This square needs to try something different.';
+      }
+      if (step.type === 'solved') {
+        return 'Solved! Every square is filled correctly, with no rule broken.';
+      }
+      return '';
+    }
+
+    function render(i) {
+      var step = BT_STEPS[i];
+      var cells = gridEl.querySelectorAll('.bt-cell');
+      cells.forEach(function (cell) {
+        var r = parseInt(cell.dataset.r, 10);
+        var c = parseInt(cell.dataset.c, 10);
+        cell.className = 'bt-cell';
+        var val = step.grid[r][c];
+        var label = val !== 0 ? String(val) : '';
+
+        if (BT_GIVENS[r][c] !== 0) {
+          cell.classList.add('is-given');
+        } else if (val !== 0) {
+          cell.classList.add('is-placed');
+        }
+
+        if (step.type === 'try' && step.cell[0] === r && step.cell[1] === c) {
+          label = String(step.value);
+          cell.classList.add(step.ok ? 'is-trying-ok' : 'is-trying-fail');
+          cell.classList.add('is-current');
+        } else if (step.cell && step.cell[0] === r && step.cell[1] === c && step.type !== 'solved') {
+          cell.classList.add('is-current');
+        }
+
+        cell.textContent = label;
+      });
+
+      descEl.textContent = describe(step);
+      numEl.textContent = i + 1;
+      prevBtn.disabled = (i === 0);
+      nextBtn.disabled = (i === total - 1);
+    }
+
+    prevBtn.addEventListener('click', function () {
+      if (current > 0) { current -= 1; render(current); }
+    });
+    nextBtn.addEventListener('click', function () {
+      if (current < total - 1) { current += 1; render(current); }
+    });
+    restartBtn.addEventListener('click', function () {
+      current = 0; render(current);
+    });
+
+    render(current);
+  })();
+</script>
+
+</body>
+</html>
