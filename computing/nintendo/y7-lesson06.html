@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 6 — JavaScript Bridge &amp; Polish · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body {
+      padding: var(--space-5);
+    }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    /* Syntax colours — AA on cream */
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .js-kw     { color: #4338ca; font-weight: 700; }
+    .js-fn     { color: #15803d; }
+    .js-str    { color: #b45309; }
+    .js-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .js-num    { color: #be185d; }
+    .js-type   { color: #007aa0; }
+
+    /* ── Full game JS summary ── */
+    .game-summary {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: var(--space-5) 0;
+    }
+
+    .game-summary__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-5);
+      background: var(--color-surface-2);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .game-summary__title {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+    }
+
+    .game-summary__subtitle {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    .game-summary__code {
+      padding: var(--space-5);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.9;
+      color: var(--color-text-primary);
+      overflow-x: auto;
+    }
+
+    .js-section-comment {
+      color: var(--n-gold);
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    /* ── Block descriptor ── */
+    .block-desc {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-sm);
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      margin: var(--space-1) var(--space-1) var(--space-1) 0;
+    }
+
+    .block-desc__icon { font-size: 0.9rem; }
+
+    /* ── "First JS line" highlight moment ── */
+    .bridge-moment {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .bridge-moment__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+      display: block;
+    }
+
+    .bridge-moment h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .bridge-moment p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Design retrospective table ── */
+    .retro-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .retro-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--n-gold-border);
+    }
+
+    .retro-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.65;
+    }
+
+    .retro-table tbody td:first-child {
+      font-weight: 700;
+      color: var(--color-text-primary);
+      width: 22%;
+    }
+
+    .retro-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .retro-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Peer playtest table ── */
+    .playtest-guide {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin: var(--space-5) 0;
+    }
+
+    .playtest-guide h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .playtest-guide ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      padding-left: var(--space-6);
+      max-width: none;
+      margin-bottom: var(--space-4);
+    }
+
+    .playtest-guide li { margin-bottom: var(--space-2); }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── Ship banner ── */
+    .ship-banner {
+      background: linear-gradient(135deg, var(--n-gold-surface) 0%, var(--accent-surface) 100%);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6) var(--space-6);
+      text-align: center;
+      margin: var(--space-6) 0;
+    }
+
+    .ship-banner__icon { font-size: 2.5rem; display: block; margin-bottom: var(--space-3); }
+
+    .ship-banner h3 {
+      font-size: var(--text-xl);
+      font-weight: 900;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .ship-banner p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0;
+      max-width: none;
+    }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 6</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 6 — JavaScript Bridge &amp; Polish</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#bridge">The Bridge Moment</a>
+          <a href="#full-game">Your Full Game as JS</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#retro">Design Retrospective</a>
+          <a href="#playtest">Peer Playtest</a>
+          <a href="#checkpoint">Final Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Evaluate">CT5-EVL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Ship a polished, complete game. Write your first JavaScript directly. Close the D&amp;P loop.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-6</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lessons 3–6 · Sprint 4 of 4</div>
+        <h1>JavaScript Bridge &amp; Polish</h1>
+        <p class="page-intro">You've built a complete game loop across Sprints 1–3. Sprint 4 has two jobs: understand that the blocks you've been using are JavaScript in disguise, then write your first JavaScript directly — and use that knowledge to polish your game into something worth shipping.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> Sprint 3 review passed — win and lose states are tested. Final note from the studio lead: "Before this ships, I want to see a title screen with your game's name, background music, and at least one design improvement from your Sprint 3 playtest results. And I want you to write at least one line of JavaScript directly — not via a block. Show me you understand what you've been building."
+        </div>
+
+        <p>This is the last sprint of the MakeCode Arcade build. After Lesson 6, your game is submitted and you move to Lesson 7 — wiring a micro:bit as a physical controller. Make your game worth playing before you do.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. THE BRIDGE MOMENT
+      ══════════════════════════════════════ -->
+      <section id="bridge" class="content-section" aria-labelledby="bridge-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="bridge-heading">The Bridge Moment</h2>
+        <p>Here is the most important thing you'll learn in this lesson: <strong>every block in MakeCode Arcade is JavaScript.</strong> The block view and the JavaScript view are two ways of looking at exactly the same code. You've been writing JavaScript since Lesson 3 — you just had a visual interface generating it.</p>
+
+        <div class="bridge-moment">
+          <span class="bridge-moment__label">⚡ The Bridge</span>
+          <h3>Switch to JavaScript View Right Now</h3>
+          <p>Open your MakeCode Arcade project. Click the <strong>JavaScript</strong> toggle at the top of the editor. Look at what's there.</p>
+          <p>Everything you built across Sprints 1, 2, and 3 is visible as JavaScript code. Every block became a function call, a variable declaration, or an event handler. You didn't write this code by hand — but you made every decision that produced it: the sprite kinds, the speed values, the overlap events, the game.over() calls.</p>
+          <p>Now you're going to write the next lines directly — without using a block — and they'll become part of that same program.</p>
+        </div>
+
+        <p>The difference between "blocks programmer" and "JavaScript programmer" is smaller than it looks. The concepts — variables, functions, events, conditions, loops — are identical. The syntax is what changes. In Lessons 5 and 6 of the MakeCode Arcade sequence, you were already reading JavaScript. In Sprint 4, you write it.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. YOUR FULL GAME AS JAVASCRIPT
+      ══════════════════════════════════════ -->
+      <section id="full-game" class="content-section" aria-labelledby="fullgame-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="fullgame-heading">Your Full Game as JavaScript</h2>
+        <p>Here is what four sprints of block-based development produce in JavaScript. Your actual code will differ in the images, positions, and values you chose — but the structure will match this. Find each section in your own JS view and annotate your notebook copy with what each line does.</p>
+
+        <div class="game-summary">
+          <div class="game-summary__header">
+            <span class="game-summary__title">Complete Game — JavaScript View</span>
+            <span class="game-summary__subtitle">Sprints 1–3 combined &nbsp;·&nbsp; Sprint 4 adds lines marked ★</span>
+          </div>
+          <pre class="game-summary__code"><span class="js-section-comment">// ── SPRINT 4 ADDITIONS ★ ─────────────────────</span>
+<span class="js-fn">game.splash</span>(<span class="js-str">"YOUR GAME TITLE"</span>, <span class="js-str">"by Your Name"</span>)  <span class="js-cmt">// ★ title screen</span>
+<span class="js-fn">music.play</span>(                                                <span class="js-cmt">// ★ background music</span>
+  music.<span class="js-fn">melodyPlayable</span>(music.<span class="js-type">powerUp</span>),
+  music.PlaybackMode.<span class="js-type">InBackground</span>
+)
+
+<span class="js-section-comment">// ── SPRINT 1 — Movement &amp; Physics ────────────</span>
+<span class="js-fn">info.setLife</span>(<span class="js-num">3</span>)
+<span class="js-kw">let</span> player = <span class="js-fn">sprites.create</span>(img<span class="js-str">`...`</span>, SpriteKind.<span class="js-type">Player</span>)
+<span class="js-fn">controller.moveSprite</span>(player, <span class="js-num">100</span>, <span class="js-num">0</span>)
+<span class="js-fn">scene.setGravity</span>(<span class="js-num">500</span>)
+<span class="js-fn">scene.cameraFollowSprite</span>(player)
+
+<span class="js-fn">controller.A.onEvent</span>(ControllerButtonEvent.<span class="js-type">Pressed</span>, <span class="js-kw">function</span> () {
+  player.vy = <span class="js-num">-150</span>
+})
+
+<span class="js-section-comment">// ── SPRINT 2 — Collectibles &amp; Score ──────────</span>
+<span class="js-kw">let</span> coin = <span class="js-fn">sprites.create</span>(img<span class="js-str">`...`</span>, SpriteKind.<span class="js-type">Food</span>)
+coin.x = <span class="js-num">80</span>  <span class="js-cmt">// repeat for each collectible</span>
+
+<span class="js-fn">sprites.onOverlap</span>(SpriteKind.<span class="js-type">Player</span>, SpriteKind.<span class="js-type">Food</span>, <span class="js-kw">function</span> (sprite, otherSprite) {
+  <span class="js-fn">info.changeScoreBy</span>(<span class="js-num">1</span>)
+  otherSprite.<span class="js-fn">startEffect</span>(effects.<span class="js-type">spray</span>)
+  otherSprite.<span class="js-fn">destroy</span>()
+  <span class="js-fn">music.play</span>(music.<span class="js-fn">melodyPlayable</span>(music.<span class="js-type">baDing</span>), music.PlaybackMode.<span class="js-type">UntilDone</span>)
+})
+
+<span class="js-section-comment">// ── SPRINT 3 — Enemies &amp; States ──────────────</span>
+<span class="js-kw">let</span> enemy = <span class="js-fn">sprites.create</span>(img<span class="js-str">`...`</span>, SpriteKind.<span class="js-type">Enemy</span>)
+enemy.x = <span class="js-num">120</span>
+enemy.vx = <span class="js-num">60</span>
+enemy.<span class="js-fn">setFlag</span>(SpriteFlag.<span class="js-type">BounceOnWall</span>, <span class="js-kw">true</span>)
+
+<span class="js-fn">sprites.onOverlap</span>(SpriteKind.<span class="js-type">Player</span>, SpriteKind.<span class="js-type">Enemy</span>, <span class="js-kw">function</span> (sprite, otherSprite) {
+  <span class="js-fn">info.changeLifeBy</span>(<span class="js-num">-1</span>)
+  sprite.<span class="js-fn">startEffect</span>(effects.<span class="js-type">spray</span>)
+})
+
+<span class="js-fn">sprites.onOverlap</span>(SpriteKind.<span class="js-type">Player</span>, SpriteKind.<span class="js-type">Goal</span>, <span class="js-kw">function</span> (sprite, otherSprite) {
+  <span class="js-fn">game.over</span>(<span class="js-kw">true</span>)
+})</pre>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Find and Annotate</h3>
+          <p>Switch to JavaScript view in your own project. In your notebook, find and annotate:</p>
+          <ol>
+            <li>The line where your player sprite is created — what are the two arguments to <code>sprites.create()</code>?</li>
+            <li>The line that sets gravity — what number did you choose? Is it the same as the default above?</li>
+            <li>Find both overlap events. For each one, write what the <strong>input</strong>, <strong>process</strong>, and <strong>output</strong> are.</li>
+            <li>Count the total number of function calls (<code>something()</code>) in your entire program. Write the number.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 4 — Four Steps</h2>
+        <p>These steps are completed <strong>in JavaScript view</strong> — not the blocks view. Switch to JS before starting Step 1 and stay there. You can switch back to blocks view to verify your code is correct, but write the new lines directly in JS.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Write Your First JavaScript Line</div>
+              <span class="sprint-step__phase">Your First JS</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>In JavaScript view, scroll to the very top of your code. Click to position your cursor <strong>before</strong> the first line. Type this — replacing the text with your actual game name and your name:</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">What you type</span>
+                  <pre class="code-bridge-block"><span class="js-fn">game.splash</span>(<span class="js-str">"GAME TITLE"</span>, <span class="js-str">"by Your Name"</span>)</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">What it does</span>
+                  <pre class="code-bridge-block"><span class="js-cmt">// Pauses the game before
+// the loop starts and shows
+// a two-line splash screen.
+// Press A to dismiss it.
+// Runs once, at the very start.</span></pre>
+                </div>
+              </div>
+
+              <p><strong>Switch back to Blocks view.</strong> You should see a new block has appeared — <code>game splash [GAME TITLE] [by Your Name]</code>. MakeCode went the other direction: your JavaScript became a block. This works both ways.</p>
+              <p><strong>Play your game.</strong> The splash screen should appear before the player can move. Press A to dismiss it and start playing.</p>
+
+              <div class="eval-callout">
+                <span class="eval-callout__label">★ This is the moment</span>
+                <p>You just wrote JavaScript. Not a block, not a drag-and-drop — a typed line of code. The same skill that produces this splash screen is used to write every JavaScript program on every website, game, and app in the world. The syntax gets more complex; the concept doesn't change.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Add Background Music</div>
+              <span class="sprint-step__phase">Audio</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>In JavaScript view, on the line <strong>after</strong> your <code>game.splash()</code> line, add:</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">What you type</span>
+                  <pre class="code-bridge-block"><span class="js-fn">music.play</span>(
+  music.<span class="js-fn">melodyPlayable</span>(
+    music.<span class="js-type">powerUp</span>
+  ),
+  music.PlaybackMode.<span class="js-type">InBackground</span>
+)</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">What it does</span>
+                  <pre class="code-bridge-block"><span class="js-cmt">// Plays the "powerUp" melody
+// in the background while
+// the game runs.
+//
+// Try other melodies:
+// music.melodyPlayable(
+//   music.jumpUp
+//   music.mystery
+//   music.dadadadum
+// )</span></pre>
+                </div>
+              </div>
+
+              <p>Try at least two different melody options from the comments. Choose the one that best fits your game's theme — a tense level deserves different music than a cheerful one. Record your choice and reason in your project notebook.</p>
+              <p>The key argument is <code>InBackground</code> — this means the music plays continuously without pausing the game loop. <code>UntilDone</code> (used for collection sounds) pauses execution until the sound finishes.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Modify an Existing Value Directly</div>
+              <span class="sprint-step__phase">Iteration</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Find your Sprint 3 enemy patrol code in JavaScript view. The line <code>enemy.vx = 60</code> sets the patrol speed. Based on your Sprint 3 test results — was the enemy too fast, too slow, or just right?</p>
+              <p><strong>Edit the number directly</strong> in JavaScript view. Don't use a block — click the number and change it. This is the kind of rapid iteration that makes JavaScript view more efficient than block view for fine-tuning values.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Before (your Sprint 3 value)</span>
+                  <pre class="code-bridge-block">enemy.vx = <span class="js-num">60</span>  <span class="js-cmt">// original</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">After (your adjusted value)</span>
+                  <pre class="code-bridge-block">enemy.vx = <span class="js-num">??</span>  <span class="js-cmt">// your decision</span></pre>
+                </div>
+              </div>
+
+              <p>Do the same for any other values that felt wrong during testing — jump height (<code>player.vy = -150</code>), gravity (<code>scene.setGravity(500)</code>), or movement speed (<code>controller.moveSprite(player, 100, 0)</code>). Each adjustment is an iteration — a deliberate design decision backed by evidence from testing.</p>
+
+              <p>Record every change in your sprint log: what value you changed, what it was before, what it is now, and why.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Polish Your Level Design</div>
+              <span class="sprint-step__phase">Design</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Open your tilemap editor. Based on your Sprint 3 peer feedback and your own playtest notes, make at least two deliberate improvements to the level layout. This is not random change — it's design iteration informed by evaluation.</p>
+
+              <p>Consider these questions, and record your answers in your notebook before making changes:</p>
+              <ul>
+                <li>Is the difficulty curve appropriate? Does it start accessible and get harder, or does it feel uneven?</li>
+                <li>Are your collectibles placed where they reward exploration — or are they too easy to ignore?</li>
+                <li>Does the player encounter the enemy at a moment of tension — or does the patrol feel random?</li>
+                <li>Can the player see the goal from a distance — or is it hidden? Should it be?</li>
+                <li>Is the level too short (players win without challenge) or too long (players give up)?</li>
+              </ul>
+
+              <div class="example-box">
+                <strong>Design iteration vs random change</strong>
+                Changing your level because "it didn't feel right" is not enough — you need to be able to articulate what felt wrong and why the specific change you made should fix it. That reasoning goes in your notebook. "I moved the first enemy further from the start because players were losing a life before they'd had a chance to learn the controls" is a design decision. "I changed things a bit" is not.
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. DESIGN RETROSPECTIVE
+      ══════════════════════════════════════ -->
+      <section id="retro" class="content-section" aria-labelledby="retro-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="retro-heading">Design Retrospective — Prototype vs Product</h2>
+        <p>In Lesson 2 you designed a paper prototype. You are now four sprints later — with a working game. This retrospective table closes the D&amp;P loop by comparing what you designed against what you built. Complete it in your project notebook.</p>
+
+        <div class="retro-table-wrap">
+          <table class="retro-table">
+            <thead>
+              <tr>
+                <th>Design element</th>
+                <th>Your Lesson 2 prototype plan</th>
+                <th>What you actually built</th>
+                <th>Your reflection (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Player mechanic</td>
+                <td>Left/right movement + jump</td>
+                <td>Implemented via <code>controller.moveSprite</code> + <code>player.vy = -150</code></td>
+                <td>Did it feel how you imagined? What would you refine?</td>
+              </tr>
+              <tr>
+                <td>Collectibles</td>
+                <td>Your prototype's collect item description</td>
+                <td>Food sprites with overlap event + destroy + score</td>
+                <td>Are they placed where you planned? Did you change the design?</td>
+              </tr>
+              <tr>
+                <td>Enemy</td>
+                <td>Your prototype's obstacle description</td>
+                <td>Enemy sprite with BounceOnWall patrol</td>
+                <td>Does it create the tension you designed for? Too hard/easy?</td>
+              </tr>
+              <tr>
+                <td>Fail condition</td>
+                <td>Your prototype's fail condition</td>
+                <td>Player-enemy overlap → lives decrease → game.over(false)</td>
+                <td>Is the penalty fair? Would players want to try again?</td>
+              </tr>
+              <tr>
+                <td>Win condition</td>
+                <td>Your prototype's win condition</td>
+                <td>Goal sprite or collect-all → game.over(true)</td>
+                <td>Does winning feel earned? Is it clearly telegraphed?</td>
+              </tr>
+              <tr>
+                <td>Player feedback</td>
+                <td>Your prototype's feedback plan</td>
+                <td>Spray effect + sound on collect; life decrease on damage</td>
+                <td>Is there enough feedback? Does the player always know what happened?</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">🔎 Evaluation</span>
+          <p>The retrospective table is your primary evaluation evidence for the D&amp;P framework. It should show that you:</p>
+          <ol>
+            <li>Made an original design decision (Lesson 2 prototype)</li>
+            <li>Implemented a solution (Sprints 1–3)</li>
+            <li>Evaluated how well the implementation matched the design (this table)</li>
+            <li>Identified what you would change in a future iteration</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. PEER PLAYTEST
+      ══════════════════════════════════════ -->
+      <section id="playtest" class="content-section" aria-labelledby="playtest-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="playtest-heading">Peer Playtest — Structured Feedback</h2>
+        <p>Before your game is submitted, it must be playtested by someone who didn't build it. A player who has never seen your game will find problems you can't see anymore — you know your level too well.</p>
+
+        <div class="playtest-guide">
+          <h3>For the Player (tester):</h3>
+          <ol>
+            <li>Play the game through once <strong>without any instructions from the developer</strong>. Notice when you feel confused.</li>
+            <li>Try to win and try to lose. Did both outcomes trigger correctly?</li>
+            <li>After playing, answer these in writing: What was the most fun moment? What was the most frustrating moment? Was anything unclear about how to play?</li>
+          </ol>
+
+          <h3>For the Developer (you):</h3>
+          <ol>
+            <li><strong>Do not explain anything</strong> while the tester plays. Watch what they do. Note every moment they pause, miss, or look confused.</li>
+            <li>After the playtest, read their written feedback. Identify one specific, actionable change you could make based on it.</li>
+            <li>Record the feedback and your response in your project notebook. If you disagree with the feedback, explain why — that's a valid design decision too.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. FINAL CHECKPOINT — SHIP IT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Final Sprint Checkpoint — Ship It</h2>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">✓ Sprint 4 — Final Checklist</div>
+          <h3>Your completed game must have:</h3>
+          <ul>
+            <li>A title splash screen with your game name and your name — written in JavaScript view</li>
+            <li>Background music that fits the game's theme</li>
+            <li>At least one value (enemy speed, gravity, jump height) adjusted directly in JavaScript view based on test results</li>
+            <li>At least two deliberate level design improvements documented in your notebook</li>
+            <li>A completed design retrospective table (prototype vs product)</li>
+            <li>A completed peer playtest with written feedback from your tester</li>
+            <li>All Sprint 1–3 behaviours still working: movement, jump, gravity, collect, enemy, lives, win, lose</li>
+          </ul>
+        </div>
+
+        <div class="ship-banner">
+          <span class="ship-banner__icon">🎮</span>
+          <h3>World 1 — Game Shipped</h3>
+          <p>You designed a platformer on paper, translated it to pseudocode, built it across four sprints, tested both win and lose paths, wrote JavaScript directly, and shipped a polished product. That is the complete Design and Production process from Identifying &amp; Defining to Testing &amp; Evaluating.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Syntax</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The rules of a programming language — how statements must be structured for the computer to understand them. Blocks hide syntax; JavaScript exposes it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">General-purpose language</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A programming language that can be used across many different types of programs — games, websites, apps, data tools. JavaScript is a general-purpose language.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Iteration (design)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A design cycle of test → evaluate → improve → repeat. Each sprint was one iteration. Changing a value based on playtest feedback is iteration in action.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Retrospective</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A structured review comparing what was planned against what was built. Identifies what worked, what didn't, and what to change next time. A key evaluation tool.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Playtest</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Having someone who didn't build the game play it and provide structured feedback. Exposes issues that the developer can't see because they know the game too well.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Polish</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The final refinement of a product — adding a title screen, tuning values, improving level layout — that transforms functional into engaging. Polish is not optional; it is the difference between a working product and a finished one.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Argument</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A value passed into a function call. In <code>game.splash("Title", "Name")</code>, the two strings are arguments. In <code>game.over(true)</code>, <code>true</code> is the argument.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Difficulty curve</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How a game's challenge changes over time. A good difficulty curve starts accessible, increases gradually, and peaks before the win condition. A flat or random curve makes games frustrating.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="Blocks and JavaScript are not different programs — they're two views of the same code. MakeCode Arcade generates JavaScript from your blocks automatically and keeps both views in sync."
+             data-feedback-b="JavaScript in MakeCode Arcade is not slower than blocks — they're identical. The JavaScript view and the blocks view represent exactly the same instructions. Speed is the same."
+             data-feedback-c="Correct. Every block in MakeCode Arcade generates JavaScript. The two views are perfectly synchronised — changes in one appear in the other. Blocks are a visual interface over the same JavaScript code."
+             data-feedback-d="JavaScript view is not more advanced in the sense of having different capabilities — it's the same code. The difference is that in JS view you can type directly, which makes fine-tuning values and adding new lines faster once you know the syntax.">
+          <div class="mcq-question">1. In MakeCode Arcade, what is the relationship between the Blocks view and the JavaScript view?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> They are two separate programs — Blocks runs on the hardware, JavaScript runs in the browser</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> JavaScript runs faster than blocks, which is why professionals switch to it</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Both views show the same code — every block generates JavaScript, and both views stay in sync</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> JavaScript view has more features that are hidden from the blocks view</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="A"
+             data-feedback-a="Correct. game.splash() pauses execution before the game loop starts and displays the two text arguments as a title screen. The player must press A to dismiss it before they can play. It runs exactly once, at the very beginning of the program."
+             data-feedback-b="game.splash() is not the game over screen — that's game.over(). The splash screen appears at the start, before the player can move. game.over() appears at the end, after winning or losing."
+             data-feedback-c="game.splash() runs once at the very start — before any player input is accepted. It's not triggered by score or any in-game event."
+             data-feedback-d="game.splash() is a function call in the startup code, not part of the game loop. It pauses the game loop from starting until the player dismisses it.">
+          <div class="mcq-question">2. What does <code>game.splash("Title", "Subtitle")</code> do, and when does it run?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Shows a title screen before the game starts — the player must press A to dismiss it and begin playing</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Shows the game over screen when the player loses all their lives</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Appears in the middle of the game when the player reaches a certain score</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Runs as part of the forever loop to display the current score</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Having fun while testing is good, but it's not what makes playtesting valuable in the design process. The purpose of a structured playtest is to gather specific, actionable feedback — not just general enjoyment."
+             data-feedback-b="Playtesting is not primarily about finding code bugs — that's debugging. Playtesting reveals design problems: unclear objectives, unfair difficulty, missing feedback. These are design issues, not code errors."
+             data-feedback-c="Playtesting isn't about checking that all features work — that's a functional test. The point is to understand the player experience, which reveals issues the developer can't see because they already know how the game works."
+             data-feedback-d="Correct. The developer knows their own game too well — they automatically avoid the confusing parts, know where everything is, and have mental shortcuts the tester doesn't. A fresh player reveals design problems the developer is blind to, which is exactly why playtesting is a separate phase from self-testing.">
+          <div class="mcq-question">3. Why is peer playtesting a separate activity from the developer testing their own game?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because playtesting is more fun when other people are involved</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because the tester can find code bugs that the developer's browser can't detect</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To check that all the features listed in the Sprint Checklist are working correctly</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because the developer knows their game too well — a fresh player reveals design problems the developer is blind to</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-6 Clear!</strong>
+            <p>All questions answered. Complete your retrospective, peer playtest, and final checkpoint — then your game ships.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           10. NOTEBOOK PROMPT — D&P RETROSPECTIVE
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 4 &amp; Unit Retrospective — Notebook Entry</h2>
+        <p>This is the most important notebook entry of the unit — it's your evidence that you completed all four phases of the Design and Production Framework. Take your time. This is not a quick reflection.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint 4 log:</strong> What you added in each step, what the JavaScript view revealed about your code, and what the peer playtest uncovered.</li>
+            <li><strong>Design retrospective table:</strong> Completed in your physical or digital notebook — not this text field. Write a one-sentence summary here of your biggest design change across all four sprints.</li>
+            <li><strong>The D&amp;P loop:</strong> For each of the four phases — Identifying &amp; Defining (L1–2), Researching &amp; Planning (L2), Producing &amp; Implementing (L3–6), Testing &amp; Evaluating (L5–6) — write one sentence describing the most important thing you did in that phase.</li>
+            <li><strong>Future iteration:</strong> If there was a Sprint 5, what would be the single most important feature or improvement to add? Why?</li>
+            <li><strong>Personal reflection:</strong> What was the hardest moment across all four sprints? What did you do when you got stuck? What would you do differently if you started again?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="12"
+                  placeholder="Write your final sprint log and D&amp;P retrospective here. This is your primary evidence for the full Design and Production Framework. Saves automatically."
+                  aria-label="Lesson 6 unit retrospective notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your physical project notebook must also contain: completed retrospective table, completed test table from Lesson 5, peer playtest notes, and sprint logs from Lessons 3–6 before submission.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson05.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 5 — Enemies &amp; Win/Lose States</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson07.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 7 — micro:bit Controller</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson06',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

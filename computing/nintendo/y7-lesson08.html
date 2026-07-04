@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 8 — Controller Calibration &amp; LED Feedback · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Setup step cards ── */
+    .setup-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .setup-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .setup-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .setup-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .setup-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .setup-step__tag {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .setup-step__tag--produce { color: var(--color-phase-produce); }
+    .setup-step__tag--test    { color: var(--color-phase-test); }
+
+    .setup-step__body {
+      padding: var(--space-5);
+    }
+
+    .setup-step__body p,
+    .setup-step__body ul,
+    .setup-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .setup-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    /* Syntax colours — AA on cream */
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .js-kw     { color: #4338ca; font-weight: 700; }
+    .js-fn     { color: #15803d; }
+    .js-str    { color: #b45309; }
+    .js-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .js-num    { color: #be185d; }
+    .js-type   { color: #007aa0; }
+    .js-new    { background: rgba(201,167,0,0.15); border-radius: 2px; }
+
+    /* ── Complete program summary (L7+L8) ── */
+    .program-summary {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin: var(--space-5) 0;
+    }
+
+    .program-summary__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-5);
+      background: var(--color-surface-2);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .program-summary__title {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+    }
+
+    .program-summary__sub {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+    }
+
+    .program-summary__code {
+      padding: var(--space-5);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.9;
+      color: var(--color-text-primary);
+      overflow-x: auto;
+    }
+
+    .js-section-comment { color: var(--n-gold); font-weight: 700; }
+
+    /* ── Calibration table ── */
+    .calib-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .calib-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .calib-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .calib-table tbody td:first-child {
+      font-weight: 800;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: var(--text-base);
+      text-align: center;
+      width: 15%;
+    }
+
+    .calib-table tbody td:not(:first-child) {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .calib-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── LED grid display ── */
+    .led-grid-pair {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+
+    .led-grid-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      text-align: center;
+    }
+
+    .led-grid-card__label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+      display: block;
+    }
+
+    .led-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 3px;
+      width: 90px;
+      margin: 0 auto var(--space-3);
+    }
+
+    .led {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+    }
+
+    .led--on {
+      background: var(--n-gold);
+      border-color: var(--n-gold-border);
+      box-shadow: 0 0 4px rgba(201,167,0,0.4);
+    }
+
+    .led-grid-card__caption {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 8</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 8 — Controller Calibration &amp; LED Feedback</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#constants">Named Constants</a>
+          <a href="#calibration">Calibration</a>
+          <a href="#led">LED Feedback</a>
+          <a href="#complete">Complete Program</a>
+          <a href="#checkpoint">Lesson Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Evaluate">CT5-EVL-01</span>
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Data">CT5-DAT-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Lesson Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Controller calibrated to optimal threshold. LED arrows confirm direction. Complete program flashed and tested.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-8</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lessons 7–8 · Lesson 2 of 2</div>
+        <h1>Controller Calibration &amp; LED Feedback</h1>
+        <p class="page-intro">Your controller works — but does it <em>feel</em> right? In this lesson you'll calibrate the tilt threshold using a systematic data-collection process, introduce named constants to make future adjustments clean, and add LED arrow feedback so the micro:bit confirms what input it's sending. The goal: a controller that feels as good as it plays.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> The hardware team tested your controller from Lesson 7. Their feedback: "The basic controls work. Now make it feel professional. We want three things — a named constant for the threshold so calibration takes five seconds, LED feedback that shows what direction the controller is reading, and a calibration report with actual data from at least five threshold values."
+        </div>
+
+        <p>This lesson combines two D&amp;P phases simultaneously. The LED feedback is Producing &amp; Implementing — adding new code. The calibration is Testing &amp; Evaluating — systematically measuring and adjusting based on evidence. Both need entries in your project notebook.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Analyse First — What Makes a Controller Feel Good?</h2>
+        <p>Before calibrating your own controller, think about the controllers you've used. The feel of a physical controller is a UX design problem — one that Nintendo has spent decades refining.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Controller UX Analysis</h3>
+          <p>In your notebook, answer these questions before you begin calibrating:</p>
+          <ol>
+            <li>Think of a physical controller you've used — Nintendo Switch Joy-Con, a phone game, or another device. What made it feel natural? What made it feel awkward?</li>
+            <li>The Nintendo Wii remote used accelerometer-based input (like our controller). What types of games suited it well, and what games felt frustrating? Why?</li>
+            <li>For a 2D platformer specifically, what matters most in a controller: precision, speed of response, or ease of holding still? Explain your reasoning.</li>
+            <li>Based on your answers, predict: will your calibrated controller feel better than keyboard controls for your game, or worse? Why?</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. NAMED CONSTANTS
+      ══════════════════════════════════════ -->
+      <section id="constants" class="content-section" aria-labelledby="constants-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="constants-heading">Named Constants — One Change, One Place</h2>
+        <p>In your Lesson 7 code, the threshold value <code>300</code> appears twice in the forever loop — once for left, once for right. During calibration you'll change this value many times. If you change one instance but forget the other, the controller breaks.</p>
+
+        <p>The solution is a <strong>named constant</strong> — a variable declared once at the top that holds a value used throughout the program. Change it in one place, and every reference to it updates automatically.</p>
+
+        <div class="code-bridge">
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--pseudo">Without constant (fragile)</span>
+            <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> tilt &lt; <span class="js-num">-300</span> <span class="pseudo-kw">THEN</span>   <span class="js-cmt">← change here</span>
+  send LEFT
+<span class="pseudo-kw">ELSE IF</span> tilt &gt; <span class="js-num">300</span> <span class="pseudo-kw">THEN</span>  <span class="js-cmt">← AND here</span>
+  send RIGHT
+<span class="pseudo-kw">ENDIF</span>
+<span class="js-cmt">// Two places to remember to change.</span>
+<span class="js-cmt">// Easy to forget one.</span></pre>
+          </div>
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--js">With constant (robust)</span>
+            <pre class="code-bridge-block"><span class="js-kw">const</span> THRESHOLD = <span class="js-num">300</span>  <span class="js-cmt">← change here only</span>
+
+<span class="js-kw">if</span> (tilt &lt; -THRESHOLD) {
+  <span class="js-cmt">// reads from constant</span>
+} <span class="js-kw">else if</span> (tilt &gt; THRESHOLD) {
+  <span class="js-cmt">// reads from constant</span>
+}
+<span class="js-cmt">// One place. Always in sync.</span></pre>
+          </div>
+        </div>
+
+        <p><strong>Make this change now</strong> — open your Lesson 7 micro:bit project in JavaScript view and add <code>const THRESHOLD = 300</code> at the very top of your program, then replace both instances of <code>300</code> with <code>THRESHOLD</code> (and <code>-THRESHOLD</code> for the left condition). Flash the updated program and confirm it still works before proceeding to calibration.</p>
+
+        <div class="example-box">
+          <strong>const vs let</strong>
+          We use <code>const</code> (not <code>let</code>) because the threshold is a fixed value we set intentionally — it shouldn't change during the program's runtime. Using <code>const</code> makes this intent clear to anyone reading the code. Constants are typically written in ALL_CAPS by convention, which is why we write <code>THRESHOLD</code> not <code>threshold</code>.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. CALIBRATION
+      ══════════════════════════════════════ -->
+      <section id="calibration" class="content-section" aria-labelledby="calib-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="calib-heading">Calibration — Finding Your Optimal Threshold</h2>
+        <p><strong>Calibration</strong> is the systematic process of adjusting a device's settings based on measured evidence to match real-world conditions. It's a form of evaluation — you're comparing actual performance against expected performance and refining until they match.</p>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">🔎 Evaluation</span>
+          <p>Calibration is not guessing. It is:</p>
+          <ol>
+            <li><strong>Baseline</strong> — record how the current setting performs</li>
+            <li><strong>Adjust</strong> — change one variable (the threshold)</li>
+            <li><strong>Measure</strong> — observe and record the new performance</li>
+            <li><strong>Compare</strong> — decide whether the change was an improvement</li>
+            <li><strong>Repeat</strong> — until performance is satisfactory</li>
+          </ol>
+          <p>This is the scientific method applied to hardware design. Real game controllers go through thousands of calibration iterations before shipping.</p>
+        </div>
+
+        <h3>How to Calibrate</h3>
+        <ol>
+          <li>Open your micro:bit project in JavaScript view</li>
+          <li>Change <code>const THRESHOLD = 300</code> to the new value in the table below</li>
+          <li>Flash the updated program to the micro:bit</li>
+          <li>Open your MakeCode Arcade game and play for 60 seconds</li>
+          <li>Record your observations in the table — in your project notebook, not this page</li>
+          <li>Repeat for each threshold value</li>
+        </ol>
+
+        <div class="calib-table-wrap">
+          <table class="calib-table">
+            <thead>
+              <tr>
+                <th>Threshold</th>
+                <th>Too sensitive? (drifts without tilting)</th>
+                <th>Too unresponsive? (requires large tilt)</th>
+                <th>Felt right?</th>
+                <th>Other observations</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>100</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+              </tr>
+              <tr>
+                <td>200</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+              </tr>
+              <tr>
+                <td>300</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+              </tr>
+              <tr>
+                <td>400</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+              </tr>
+              <tr>
+                <td>500</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+                <td>Record in your notebook →</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>After testing all five values, choose your optimal threshold and set it as the permanent value in your <code>const THRESHOLD</code> declaration. Write a one-paragraph justification in your notebook explaining why you chose that value over the others — this is your calibration report.</p>
+
+        <div class="teaching-advice">
+          <h4>Expected results for each range</h4>
+          <p>At <strong>100</strong>: extremely sensitive — the player will move even when you're trying to hold still. Hard to stand in the dead zone. At <strong>200</strong>: noticeably sensitive — works for confident, deliberate tilts but may drift. At <strong>300</strong>: the default starting point — reasonable for most micro:bits and play styles. At <strong>400</strong>: requires a deliberate tilt — good if you have shaky hands or are sitting a distance from the screen. At <strong>500</strong>: requires a strong tilt — may feel sluggish for a fast platformer. Every micro:bit and player is different — there's no universally correct answer.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. LED FEEDBACK
+      ══════════════════════════════════════ -->
+      <section id="led" class="content-section" aria-labelledby="led-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="led-heading">LED Feedback — The micro:bit Tells You What It's Thinking</h2>
+        <p>The micro:bit has a 5×5 LED display that's been unused since Lesson 7. Adding LED arrows closes an important feedback loop: the player can see what direction the controller is currently reading, making it easier to understand the dead zone and debug control issues.</p>
+
+        <h3>What Each State Shows</h3>
+
+        <div class="led-grid-pair">
+
+          <div class="led-grid-card">
+            <span class="led-grid-card__label">Tilting Left</span>
+            <div class="led-grid" aria-label="Left arrow LED pattern">
+              <div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+              <div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div>
+              <div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div>
+            </div>
+            <p class="led-grid-card__caption">West arrow<br><code>ArrowNames.West</code></p>
+          </div>
+
+          <div class="led-grid-card">
+            <span class="led-grid-card__label">Dead Zone (flat)</span>
+            <div class="led-grid" aria-label="Centre dot LED pattern">
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div><div class="led"></div>
+            </div>
+            <p class="led-grid-card__caption">Centre dot<br><code>led.plot(2,2)</code></p>
+          </div>
+
+          <div class="led-grid-card">
+            <span class="led-grid-card__label">Tilting Right</span>
+            <div class="led-grid" aria-label="Right arrow LED pattern">
+              <div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div>
+              <div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div><div class="led--on led"></div>
+              <div class="led"></div><div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div>
+              <div class="led"></div><div class="led"></div><div class="led--on led"></div><div class="led"></div><div class="led"></div>
+            </div>
+            <p class="led-grid-card__caption">East arrow<br><code>ArrowNames.East</code></p>
+          </div>
+
+        </div>
+
+        <h3>Adding LED Feedback to Your Forever Loop</h3>
+        <p>Open your micro:bit project. Inside the <code>forever</code> loop, add a <code>basic.showArrow()</code> call at the start of each branch — <strong>before</strong> the keyboard key calls. The LED updates first, then the key is sent.</p>
+
+        <p>For the dead zone (else branch), clear the display and show a single centre dot using <code>basic.clearScreen()</code> followed by <code>led.plot(2, 2)</code>. This is less disruptive to the display than <code>basic.showLeds()</code> which redraws all 25 pixels.</p>
+
+        <div class="code-bridge">
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--pseudo">Updated Pseudocode</span>
+            <pre class="code-bridge-block"><span class="pseudo-kw">WHILE</span> true
+  SET tilt ← accelerometer.x
+  <span class="pseudo-kw">IF</span> tilt &lt; -THRESHOLD <span class="pseudo-kw">THEN</span>
+    OUTPUT ← arrow
+    send LEFT keydown
+    send RIGHT keyup
+  <span class="pseudo-kw">ELSE IF</span> tilt &gt; THRESHOLD <span class="pseudo-kw">THEN</span>
+    OUTPUT → arrow
+    send RIGHT keydown
+    send LEFT keyup
+  <span class="pseudo-kw">ELSE</span>
+    OUTPUT · dot
+    send LEFT keyup
+    send RIGHT keyup
+  <span class="pseudo-kw">ENDIF</span>
+  pause 50ms
+<span class="pseudo-kw">ENDWHILE</span></pre>
+          </div>
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--js">JavaScript — Updated Forever Loop</span>
+            <pre class="code-bridge-block"><span class="js-fn">basic.forever</span>(<span class="js-kw">function</span> () {
+  <span class="js-kw">let</span> tilt =
+    <span class="js-fn">input.acceleration</span>(Dimension.<span class="js-type">X</span>)
+
+  <span class="js-kw">if</span> (tilt < -THRESHOLD) {
+    <span class="js-fn">basic.showArrow</span>( <span class="js-cmt">// ★ NEW</span>
+      ArrowNames.<span class="js-type">West</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,
+      KeyEvent.<span class="js-type">Press</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>,
+      KeyEvent.<span class="js-type">Release</span>)
+
+  } <span class="js-kw">else if</span> (tilt > THRESHOLD) {
+    <span class="js-fn">basic.showArrow</span>( <span class="js-cmt">// ★ NEW</span>
+      ArrowNames.<span class="js-type">East</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>,
+      KeyEvent.<span class="js-type">Press</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,
+      KeyEvent.<span class="js-type">Release</span>)
+
+  } <span class="js-kw">else</span> {
+    <span class="js-fn">basic.clearScreen</span>() <span class="js-cmt">// ★ NEW</span>
+    <span class="js-fn">led.plot</span>(<span class="js-num">2</span>, <span class="js-num">2</span>)     <span class="js-cmt">// ★ NEW</span>
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,
+      KeyEvent.<span class="js-type">Release</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>,
+      KeyEvent.<span class="js-type">Release</span>)
+  }
+  <span class="js-fn">basic.pause</span>(<span class="js-num">50</span>)
+})</pre>
+          </div>
+        </div>
+
+        <p>Flash the updated program. The LED display should now clearly show the current input direction — left arrow when tilting left, right arrow when tilting right, single dot in the dead zone. Use this to verify your calibration: if the dot appears when you think you're holding flat, your dead zone is working correctly.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. COMPLETE PROGRAM
+      ══════════════════════════════════════ -->
+      <section id="complete" class="content-section" aria-labelledby="complete-heading">
+        <h2 id="complete-heading">Your Complete Controller Program</h2>
+        <p>Here is the full micro:bit controller program combining Lessons 7 and 8. Lines marked ★ are the Lesson 8 additions. Compare this against your own code — they should match in structure, with your chosen threshold value in place of 300.</p>
+
+        <div class="program-summary">
+          <div class="program-summary__header">
+            <span class="program-summary__title">Complete Controller — Lessons 7 &amp; 8</span>
+            <span class="program-summary__sub">★ marks Lesson 8 additions</span>
+          </div>
+          <pre class="program-summary__code"><span class="js-section-comment">// ── CONSTANT — change this to calibrate ── ★</span>
+<span class="js-kw">const</span> THRESHOLD = <span class="js-num">300</span>  <span class="js-cmt">// ★ replace with your chosen value</span>
+
+<span class="js-section-comment">// ── BUTTON A — Jump ──────────────────────────</span>
+<span class="js-fn">input.onButtonPressed</span>(Button.<span class="js-type">A</span>, <span class="js-kw">function</span> () {
+  <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Space</span>, KeyEvent.<span class="js-type">Press</span>)
+})
+
+<span class="js-fn">input.onButtonReleased</span>(Button.<span class="js-type">A</span>, <span class="js-kw">function</span> () {
+  <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Space</span>, KeyEvent.<span class="js-type">Release</span>)
+})
+
+<span class="js-section-comment">// ── MOVEMENT + LED FEEDBACK ───────────────────</span>
+<span class="js-fn">basic.forever</span>(<span class="js-kw">function</span> () {
+  <span class="js-kw">let</span> tilt = <span class="js-fn">input.acceleration</span>(Dimension.<span class="js-type">X</span>)
+
+  <span class="js-kw">if</span> (tilt &lt; -THRESHOLD) {
+    <span class="js-fn">basic.showArrow</span>(ArrowNames.<span class="js-type">West</span>)  <span class="js-cmt">// ★</span>
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,  KeyEvent.<span class="js-type">Press</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>, KeyEvent.<span class="js-type">Release</span>)
+
+  } <span class="js-kw">else if</span> (tilt &gt; THRESHOLD) {
+    <span class="js-fn">basic.showArrow</span>(ArrowNames.<span class="js-type">East</span>)   <span class="js-cmt">// ★</span>
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>, KeyEvent.<span class="js-type">Press</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,  KeyEvent.<span class="js-type">Release</span>)
+
+  } <span class="js-kw">else</span> {
+    <span class="js-fn">basic.clearScreen</span>()  <span class="js-cmt">// ★</span>
+    <span class="js-fn">led.plot</span>(<span class="js-num">2</span>, <span class="js-num">2</span>)        <span class="js-cmt">// ★  centre dot = dead zone</span>
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Left</span>,  KeyEvent.<span class="js-type">Release</span>)
+    <span class="js-fn">keyboard.key</span>(Key.<span class="js-type">Right</span>, KeyEvent.<span class="js-type">Release</span>)
+  }
+
+  <span class="js-fn">basic.pause</span>(<span class="js-num">50</span>)  <span class="js-cmt">// 20Hz polling rate</span>
+})</pre>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. LESSON CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Lesson 8 Checkpoint — Controller Complete</h2>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">✓ Lesson 8 — Final Checklist</div>
+          <h3>Your completed controller must:</h3>
+          <ul>
+            <li>Use <code>const THRESHOLD</code> at the top of the program — not hardcoded <code>300</code> values scattered through the code</li>
+            <li>Show a left arrow on the LED display when tilting left past the threshold</li>
+            <li>Show a right arrow on the LED display when tilting right past the threshold</li>
+            <li>Show a single centre dot on the LED display when in the dead zone</li>
+            <li>Have a completed calibration table in your project notebook (all five threshold values tested)</li>
+            <li>Have a calibration report — one paragraph justifying your chosen threshold value</li>
+            <li>Be flashed and fully working: tilt left/right moves player, button A jumps, LED confirms direction</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Calibration</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Systematic adjustment of a device's settings based on measured evidence to match real-world conditions. Baseline → adjust → measure → compare → repeat.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Named constant</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A variable declared once and not changed during runtime. Declared with <code>const</code> in JavaScript. Conventionally written in ALL_CAPS. Allows a value used in many places to be changed in one location.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Feedback loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A cycle where the output of a system is fed back as input. The LED arrow closes the feedback loop — the player can see what the controller is reading and adjust their tilt accordingly.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sensitivity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How much physical movement is required to trigger a response. Lower threshold = more sensitive (smaller tilt triggers movement). Higher threshold = less sensitive (requires larger tilt).</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">UX (User Experience)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The overall experience a person has when using a product or system — how it feels, how easy it is to learn, and how satisfying it is to use. Controller calibration is a UX problem.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Baseline</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The starting measurement against which all changes are compared. In calibration, your initial threshold (300) is the baseline — all other values are evaluated as better or worse than it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Polling</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Checking a sensor or device repeatedly at regular intervals. Our 50ms pause creates a polling rate of 20Hz — the accelerometer is checked 20 times per second.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Iteration (hardware)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Repeating a test-adjust-test cycle to improve a physical system. Calibrating the threshold across five values is hardware iteration — the same D&P process as software, applied to a device.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="A named constant doesn't make the code run faster — the computer performs the same operations either way. The benefit is maintainability: it's easier for a human to update and understand."
+             data-feedback-b="const does prevent the value from being changed during runtime, but that's a side effect of using it rather than the main reason in this context. The primary benefit for calibration is having one place to change the threshold value."
+             data-feedback-c="Correct. Without a named constant, the threshold value 300 appears in two places — the if and else-if conditions. During calibration you'd need to remember to change both. Miss one and the controller breaks — one side moves at 300, the other at 400. A named constant ensures both conditions always use the same value."
+             data-feedback-d="Named constants don't affect the micro:bit's memory usage in any meaningful way for a program this size. The benefit is code clarity and maintainability, not memory efficiency.">
+          <div class="mcq-question">1. Why is using <code>const THRESHOLD = 300</code> at the top of the program better than writing <code>300</code> directly in the two <code>if</code> conditions during calibration?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It makes the program run faster because the computer only looks up the value once</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It prevents the threshold from accidentally changing while the game is running</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Changing the threshold value in one place updates both conditions automatically — you can't accidentally leave one condition at the wrong value</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It uses less memory on the micro:bit because the value is stored once instead of twice</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="A"
+             data-feedback-a="Correct. The LED arrow closes the feedback loop — the player can see exactly what the controller is reading in real time. This makes the dead zone visible and helps players understand why their character might not be moving when they think they're tilting enough."
+             data-feedback-b="The LED arrows don't make the controller more accurate — the accelerometer readings and threshold logic are unchanged. The arrows only report what the existing code is doing; they don't improve it."
+             data-feedback-c="The LED display and the keyboard HID system run in the same forever loop — the LED update doesn't affect how keys are sent. basic.showArrow() runs before the key calls, adding a tiny amount of time but not a perceptible delay."
+             data-feedback-d="The LED arrows show the current input direction, not the player's position in the game. The micro:bit has no way to know what's happening in MakeCode Arcade — it only knows its own accelerometer reading.">
+          <div class="mcq-question">2. What problem does the LED arrow feedback solve for the player when using the tilt controller?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It makes the dead zone visible — players can see when the controller is reading "no movement" and understand why the player isn't moving</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It makes the accelerometer more accurate by calibrating the sensor in real time</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It speeds up the key event rate by displaying the arrow before sending the key</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It shows the player's current position in the game level on the micro:bit display</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Testing multiple values does produce more data, but the purpose isn't to collect as much data as possible. It's to make a well-informed decision — and that requires systematically comparing specific values, not random testing."
+             data-feedback-b="Testing five specific values isn't about ruling out the others — it's about finding the best value within a range. A random approach might stumble onto a good value but can't explain why it's better."
+             data-feedback-c="We're not required to test all possible values — the accelerometer range is -1024 to +1024 and testing every value would take hours. We test five representative values to understand the pattern and make an informed choice."
+             data-feedback-d="Correct. Systematic testing at defined intervals lets you observe the pattern of change — at what point does the controller go from 'too sensitive' to 'right' to 'too unresponsive'? Each data point is evidence. A justified choice based on evidence is a design decision; a random guess that happens to work is luck. Evidence is what makes the difference between the two.">
+          <div class="mcq-question">3. Why is it better to test five specific threshold values and record observations than to try random values until something feels right?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because testing more values always produces a better result regardless of which values you choose</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To eliminate all the values that don't work before declaring the correct answer</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because the micro:bit only accepts five possible threshold values</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Systematic testing produces evidence for your choice — you can explain why your threshold is better than the alternatives, turning a guess into a justified design decision</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-8 Clear!</strong>
+            <p>All questions answered. Complete your calibration table, checkpoint, and notebook entry to finish the micro:bit unit.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           10. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Notebook Prompt — Calibration Report &amp; Unit Reflection</h2>
+        <p>This is the final notebook entry for the micro:bit unit (Lessons 7–8). It should combine your calibration evidence with a broader reflection on physical computing.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Calibration report:</strong> State the threshold you chose and your reason. Reference at least two other threshold values from your table and explain specifically why they were worse. This is your evaluation evidence.</li>
+            <li><strong>Calibration data table:</strong> The completed five-row table from the Calibration section — in your physical or digital project notebook (not this text field). Write a one-sentence summary here of the trend you observed.</li>
+            <li><strong>Controller vs keyboard:</strong> Having now used both, which felt better for playing your game — the keyboard or the micro:bit controller? Be specific about what was better and what was worse. If the answer depends on what you're doing in the game (e.g. precise jumps vs moving around), explain that distinction.</li>
+            <li><strong>Systems reflection:</strong> Describe one moment during Lessons 7–8 where a problem you encountered could be traced to a specific link in the signal chain. What broke, where, and how did you fix it?</li>
+            <li><strong>Design question:</strong> If you were designing a Nintendo Switch Joy-Con for your game specifically — not a general controller — what would you change about the physical design compared to the micro:bit controller? Think about shape, buttons, sensors, and feedback.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="11"
+                  placeholder="Write your calibration report and micro:bit unit reflection here — threshold justification, trend summary, controller comparison, systems reflection, design question. Saves automatically."
+                  aria-label="Lesson 8 calibration report and unit reflection"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your physical project notebook must contain the completed calibration table and your signal chain diagram from Lesson 7 before the micro:bit unit is considered complete.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson07.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 7 — micro:bit Controller</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson09.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 9 — TinkerCAD Amiibo Design</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson08',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

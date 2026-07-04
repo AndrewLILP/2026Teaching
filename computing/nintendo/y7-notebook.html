@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Notebook — World 1 · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    /* ── Notebook badge (replaces world-level-badge) ── */
+    .notebook-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--n-gold-surface);
+      border: 1px solid var(--n-gold-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Digital snapshot ── */
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    .snapshot-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .snapshot-card__lesson {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1.3;
+    }
+
+    .snapshot-card__indicators {
+      display: flex;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.15em 0.5em;
+      border-radius: 3px;
+    }
+
+    .indicator--done  { background: rgba(21,128,61,0.12); color: #15803d; }
+    .indicator--part  { background: var(--n-gold-surface); color: var(--n-gold); }
+    .indicator--empty { background: var(--color-surface-3); color: var(--color-text-muted); }
+
+    .snapshot-card__reflection {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.55;
+      border-top: 1px solid var(--color-border);
+      padding-top: var(--space-2);
+      margin-top: var(--space-1);
+      display: none;
+      max-height: 8rem;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .snapshot-card__reflection.is-visible { display: block; }
+
+    .snapshot-card__toggle {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-align: left;
+      font-family: var(--font-body);
+    }
+
+    .snapshot-card__toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
+    .snapshot-empty {
+      text-align: center;
+      padding: var(--space-6);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      background: var(--color-surface-2);
+      border: 1px dashed var(--color-border-mid);
+      border-radius: var(--radius-lg);
+    }
+
+    /* ── Progress bar ── */
+    .progress-overview {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .progress-overview__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .progress-bar-track {
+      height: 0.6rem;
+      background: var(--color-surface-3);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: var(--space-2);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--n-gold) 0%, var(--accent) 100%);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .progress-bar-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .progress-bar-label strong { color: var(--color-text-primary); }
+
+    /* ── Lesson evidence expand-cards ── */
+    .evidence-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin: var(--space-4) 0;
+    }
+
+    .expand-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .expand-card__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+    }
+
+    .expand-card__header:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .expand-card__lesson-num {
+      flex-shrink: 0;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+    }
+
+    .expand-card__title {
+      flex: 1;
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
+      line-height: 1.3;
+    }
+
+    .expand-card__phase-pill {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+
+    .expand-card__chevron {
+      font-size: 0.7rem;
+      color: var(--color-text-muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .expand-card.is-open .expand-card__chevron { transform: rotate(180deg); }
+
+    .expand-card__body {
+      display: none;
+      padding: var(--space-4) var(--space-5);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .expand-card.is-open .expand-card__body { display: block; }
+
+    .evidence-requirements {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .evidence-requirements li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    .evidence-requirements li:last-child { border-bottom: none; }
+
+    .evidence-requirements li::before {
+      content: '📓';
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .evidence-requirements li.digital::before { content: '💾'; }
+    .evidence-requirements li.physical::before { content: '✏️'; }
+
+    .evidence-requirements strong { color: var(--color-text-primary); }
+
+    /* ── Quality guide ── */
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 580px) { .quality-grid { grid-template-columns: 1fr; } }
+
+    .quality-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+
+    .quality-card--developing { border-top-color: #007aa0; }
+    .quality-card--achieving  { border-top-color: var(--n-gold); }
+    .quality-card--extending  { border-top-color: #15803d; }
+
+    .quality-card__level {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+
+    .quality-card--developing .quality-card__level { color: #007aa0; }
+    .quality-card--achieving  .quality-card__level { color: var(--n-gold); }
+    .quality-card--extending  .quality-card__level { color: #15803d; }
+
+    .quality-card__desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.65;
+    }
+
+    .quality-card__example {
+      margin-top: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-surface-3);
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.55;
+    }
+
+    /* ── Submission checklist ── */
+    .submit-checklist {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .submit-checklist__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-4);
+    }
+
+    .submit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--n-gold-border);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    .submit-item:last-child { border-bottom: none; }
+
+    .submit-box {
+      flex-shrink: 0;
+      width: 1.2rem;
+      height: 1.2rem;
+      border: 2px solid var(--n-gold-border);
+      border-radius: 3px;
+      background: var(--color-surface-2);
+      margin-top: 1px;
+    }
+
+    .submit-item strong { color: var(--color-text-primary); }
+
+    /* ── Additional notes textarea ── */
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Project Notebook</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Project Notebook</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#what">What is the Notebook?</a>
+          <a href="#snapshot">Digital Snapshot</a>
+          <a href="#evidence">Evidence by Lesson</a>
+          <a href="#quality">What Quality Looks Like</a>
+          <a href="#notes">Additional Notes</a>
+          <a href="#submit">Submission Checklist</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-EVL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="notebook-badge">📓 World 1 · Ongoing · All Lessons</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Project Evidence</div>
+        <h1>Project Notebook</h1>
+        <p class="page-intro">Your project notebook is not a polished report — it is evidence of thinking. It shows your studio lead what decisions you made, why you made them, and what you changed when things didn't work. This page is your notebook headquarters: a digital snapshot of saved reflections, a guide to what goes in the physical notebook each lesson, and the submission checklist for when it's time to hand it in.</p>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. WHAT IS THE NOTEBOOK?
+      ══════════════════════════════════════ -->
+      <section id="what" class="content-section" aria-labelledby="what-heading">
+        <h2 id="what-heading">What is the Project Notebook?</h2>
+        <p>Nintendo designers keep detailed design notebooks — not because they're required to, but because working out ideas on paper is faster than working them out in code or 3D software. Your project notebook does the same job.</p>
+
+        <div class="info-box">
+          <strong>The notebook is evidence of the Design and Production process.</strong> It shows that you didn't just produce a product — you identified a problem, researched and planned a solution, built and improved it iteratively, and evaluated the result against your original design. That process is what Computing Technology assesses, not just the final product.
+        </div>
+
+        <h3>Physical vs Digital</h3>
+        <p>Your project notebook has two parts:</p>
+        <ul>
+          <li><strong>Physical notebook</strong> — handwritten or printed entries, sketches, diagrams, analysis tables, sprint checklists, and test results. This is the primary evidence artefact. It must exist on paper or as a saved PDF/document.</li>
+          <li><strong>Digital entries</strong> — the reflection boxes in each lesson page save automatically to this browser. They are your working notes — a starting point, not a substitute for the physical notebook. The Digital Snapshot below shows you what's been saved.</li>
+        </ul>
+
+        <div class="example-box">
+          <strong>What the notebook is NOT</strong>
+          It is not a polished essay. It is not a step-by-step recount of what you did. It does not need correct spelling and grammar to be excellent evidence. What makes a notebook excellent is <em>specificity</em> — recording exactly what decision you made, exactly what happened when you tested it, and exactly what you changed as a result.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. DIGITAL SNAPSHOT
+      ══════════════════════════════════════ -->
+      <section id="snapshot" class="content-section" aria-labelledby="snapshot-heading">
+        <h2 id="snapshot-heading">Digital Snapshot</h2>
+        <p>This section reads the reflection entries you've saved across all ten lessons. It shows which lessons have saved responses and lets you review them here. Entries are stored in your browser — they are not sent anywhere.</p>
+
+        <div class="progress-overview">
+          <div class="progress-overview__label">World 1 — Digital completion</div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+          </div>
+          <p class="progress-bar-label" id="progress-bar-label">Loading…</p>
+        </div>
+
+        <div class="snapshot-grid" id="snapshot-grid">
+          <div class="snapshot-empty">Loading your saved entries…</div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. EVIDENCE BY LESSON
+      ══════════════════════════════════════ -->
+      <section id="evidence" class="content-section" aria-labelledby="evidence-heading">
+        <h2 id="evidence-heading">Evidence by Lesson</h2>
+        <p>Use this as your checklist for the physical notebook. Click any lesson to see what it requires. Items marked <strong>✏️ Physical</strong> must be handwritten or in a saved document. Items marked <strong>💾 Digital</strong> are saved in the lesson pages but should also be copied or summarised in the physical notebook.</p>
+
+        <div class="evidence-list">
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">1</span>
+              <span class="expand-card__title">How Mario Began</span>
+              <span class="expand-card__phase-pill">Identifying &amp; Defining</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Three risky design decisions</strong> from the Nintendo timeline — one sentence each on the risk and outcome</li>
+                <li class="physical"><strong>World 1-1 analysis table</strong> — all six design elements with your own observations in the third column</li>
+                <li class="physical"><strong>Wii discussion paragraph</strong> — enterprise, innovation, or automation? Your justified position</li>
+                <li class="digital"><strong>Reflection</strong> — at least one full paragraph answering a lesson prompt (saved in Lesson 1 page)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">2</span>
+              <span class="expand-card__title">Paper Prototype Lab</span>
+              <span class="expand-card__phase-pill">Researching &amp; Planning</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Paper prototype</strong> — all seven planning zones completed (title, character, mechanics, rules, feedback, fail/win conditions, level sketch)</li>
+                <li class="physical"><strong>NSW pseudocode</strong> — movement, gravity/collision, fail condition, and win condition in structured English using BEGIN/END/WHILE/IF/THEN/ENDIF/←</li>
+                <li class="physical"><strong>Pre-design analysis</strong> — one sentence per World 1-1 design element comparing Nintendo's approach to your planned approach</li>
+                <li class="digital"><strong>Reflection</strong> — design decision, pseudocode problem discovered, comparison to World 1-1</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">3</span>
+              <span class="expand-card__title">MakeCode Arcade — Sprint 1</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Analysis of starter project</strong> — four questions about the existing Godot/MakeCode example answered before building</li>
+                <li class="physical"><strong>Sprint 1 log</strong> — one sentence per step (sprite, movement, jump, gravity, camera) describing what worked and what needed fixing</li>
+                <li class="physical"><strong>Pseudocode comparison</strong> — one difference between your Lesson 2 pseudocode and the generated JavaScript, with explanation</li>
+                <li class="physical"><strong>Sprint 1 checkpoint</strong> — all seven items ticked and signed</li>
+                <li class="digital"><strong>Reflection</strong> — sprint log, pseudocode comparison, gravity value decision</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">4</span>
+              <span class="expand-card__title">Collectibles &amp; Score — Sprint 2</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Score system analysis</strong> — four questions from the analysis task answered about an existing game's score system</li>
+                <li class="physical"><strong>IPO model description</strong> — one paragraph identifying the input, process, and output of your score system</li>
+                <li class="physical"><strong>Collectible placement rationale</strong> — where you placed collectibles and why (what player behaviour does the placement encourage?)</li>
+                <li class="physical"><strong>Sprint 2 checkpoint</strong> — all six items ticked</li>
+                <li class="digital"><strong>Reflection</strong> — sprint log, IPO data description, placement rationale</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">5</span>
+              <span class="expand-card__title">Enemies &amp; Win/Lose States — Sprint 3</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing · Testing &amp; Evaluating</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Enemy analysis</strong> — four questions about how an existing game handles enemies and game over states</li>
+                <li class="physical"><strong>Test table</strong> — all six test cases completed with your actual observed results (not expected results)</li>
+                <li class="physical"><strong>Bug report</strong> — at least one bug: what it was, what you changed, whether the fix caused a regression</li>
+                <li class="physical"><strong>Sprint 3 checkpoint</strong> — all six items ticked</li>
+                <li class="digital"><strong>Reflection</strong> — sprint log, test results, bug report, design reflection</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">6</span>
+              <span class="expand-card__title">JavaScript Bridge &amp; Polish — Sprint 4</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing · Testing &amp; Evaluating</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>JS view annotation</strong> — four questions answered about the full game JavaScript (sprite arguments, gravity value, IPO per overlap, function count)</li>
+                <li class="physical"><strong>Design retrospective table</strong> — all six design elements compared (prototype vs product)</li>
+                <li class="physical"><strong>Peer playtest notes</strong> — feedback from your tester and your response to it</li>
+                <li class="physical"><strong>Sprint 4 checkpoint</strong> — all seven items ticked</li>
+                <li class="physical"><strong>D&amp;P retrospective</strong> — one sentence per D&amp;P phase describing the most important thing you did</li>
+                <li class="digital"><strong>Reflection</strong> — sprint log, retrospective summary, peer feedback, future iteration</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">7</span>
+              <span class="expand-card__title">micro:bit Controller</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Input mapping table</strong> — every game input listed with the micro:bit action that replicates it</li>
+                <li class="physical"><strong>Signal chain diagram</strong> — drawn and annotated: seven nodes from physical tilt to game response, one sentence per node explaining what could go wrong there</li>
+                <li class="physical"><strong>Lesson 7 checkpoint</strong> — all seven items ticked</li>
+                <li class="digital"><strong>Reflection</strong> — signal chain annotation summary, controller feel comparison, threshold rationale, systems reflection</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">8</span>
+              <span class="expand-card__title">Controller Calibration &amp; LED Feedback</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing · Testing &amp; Evaluating</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Calibration table</strong> — five rows (thresholds 100–500), all four observation columns completed with actual results</li>
+                <li class="physical"><strong>Calibration report</strong> — one paragraph justifying your chosen threshold, referencing at least two other tested values</li>
+                <li class="physical"><strong>Lesson 8 checkpoint</strong> — all seven items ticked</li>
+                <li class="digital"><strong>Reflection</strong> — calibration report summary, controller vs keyboard comparison, signal chain failure analysis, Joy-Con design question</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">9</span>
+              <span class="expand-card__title">TinkerCAD Amiibo Design</span>
+              <span class="expand-card__phase-pill">Researching &amp; Planning · Producing &amp; Implementing</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Amiibo analysis table</strong> — all six design elements with your own design decision for each</li>
+                <li class="physical"><strong>Three-view character sheet</strong> — front, side, and top views drawn with ruler, at least 6cm tall each, labelled</li>
+                <li class="physical"><strong>Design constraint check</strong> — each of the five constraints verified against the character sheet, any changes described</li>
+                <li class="physical"><strong>Modelling log</strong> — each shape added described with type, approximate dimensions, and what character part it represents</li>
+                <li class="physical"><strong>Lesson 9 checkpoint</strong> — all five items ticked</li>
+                <li class="digital"><strong>Reflection</strong> — analysis summary, constraint check, modelling log, design decision</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="expand-card">
+            <button class="expand-card__header" aria-expanded="false" type="button">
+              <span class="expand-card__lesson-num">10</span>
+              <span class="expand-card__title">3D Print Preparation</span>
+              <span class="expand-card__phase-pill">Producing &amp; Implementing · Testing &amp; Evaluating</span>
+              <span class="expand-card__chevron" aria-hidden="true">▼</span>
+            </button>
+            <div class="expand-card__body">
+              <ul class="evidence-requirements">
+                <li class="physical"><strong>Print failure analysis</strong> — four questions about your model's print risks answered</li>
+                <li class="physical"><strong>Print readiness checklist</strong> — all nine items ticked, signed, and dated</li>
+                <li class="physical"><strong>Design retrospective</strong> — final model compared to three-view character sheet: what changed, why, what you're most satisfied with</li>
+                <li class="physical"><strong>World 1 product list</strong> — every product built across ten lessons, with one sentence per product on the computing skill it required</li>
+                <li class="physical"><strong>Letter to Year 10 self</strong> — short paragraph about the Amiibo character, what you'd change in v2</li>
+                <li class="digital"><strong>Reflection</strong> — print readiness evaluation, design retrospective, World 1 product list, letter</li>
+              </ul>
+            </div>
+          </div>
+
+        </div><!-- /evidence-list -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. WHAT QUALITY LOOKS LIKE
+      ══════════════════════════════════════ -->
+      <section id="quality" class="content-section" aria-labelledby="quality-heading">
+        <h2 id="quality-heading">What Quality Looks Like</h2>
+        <p>Notebook quality isn't about length or neatness. It's about specificity and evidence of thinking across all four D&amp;P phases. Compare these examples and locate your own work honestly.</p>
+
+        <div class="quality-grid">
+
+          <div class="quality-card quality-card--developing">
+            <div class="quality-card__level">Developing</div>
+            <div class="quality-card__desc">Entries describe what was done, not why. Sparse detail. Checklist items ticked but not supported by written evidence. Reflections are one or two sentences. Test tables have expected results copied from the lesson page.</div>
+            <div class="quality-card__example">"I added an enemy. It worked. I did the sprint checkpoint."</div>
+          </div>
+
+          <div class="quality-card quality-card--achieving">
+            <div class="quality-card__level">Achieving</div>
+            <div class="quality-card__desc">Entries record decisions and results. Sprint logs describe what happened at each step. Test tables have actual observed results. Reflections explain one or two key choices with reasons. Analysis tasks completed in full.</div>
+            <div class="quality-card__example">"I set enemy vx to 60 — it felt too fast so I changed it to 40. The test table shows lives decreased correctly on contact but the win condition triggered too early because I'd counted the goal as a collectible."</div>
+          </div>
+
+          <div class="quality-card quality-card--extending">
+            <div class="quality-card__level">Extending</div>
+            <div class="quality-card__desc">Entries connect decisions across lessons. The D&amp;P framework is visible in the notebook structure — analysis before design, testing informing iteration. Bugs are documented with causes, fixes, and regression checks. Retrospectives show genuine critical reflection.</div>
+            <div class="quality-card__example">"In L2 I planned a speed of 100 (vx). By L5 playtesting showed the enemy at 60 outran the player on narrow platforms, which wasn't fair given the 45° tilt threshold set in L8. Reducing to 40 fixed the fairness issue and aligned with the controller's natural dead zone range."</div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. ADDITIONAL NOTES
+      ══════════════════════════════════════ -->
+      <section id="notes" class="content-section" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">Additional Notes</h2>
+        <p>Use this space for any notebook entries that don't fit neatly into a single lesson's reflection — cross-lesson observations, questions you want to follow up, or design ideas for World 2 and World 3. Saves automatically.</p>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="8"
+                  placeholder="Cross-lesson observations, open questions, World 2 / World 3 design ideas, anything else worth recording…"
+                  aria-label="Additional notebook notes"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">These notes are saved in your browser under the notebook entry for this unit. They will not appear in the individual lesson pages — copy anything important into your physical notebook.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. SUBMISSION CHECKLIST
+      ══════════════════════════════════════ -->
+      <section id="submit" class="content-section" aria-labelledby="submit-heading">
+        <h2 id="submit-heading">Submission Checklist</h2>
+        <p>When you're ready to submit the World 1 notebook, use this checklist. Tick each item only when you have confirmed it physically or can open the file.</p>
+
+        <div class="submit-checklist">
+          <div class="submit-checklist__label">✓ World 1 — Submission</div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Physical notebook</strong> — all ten lessons have entries. Sprint logs, test tables, analysis tasks, and checkpoints are present. No lesson has only a digital entry without a physical one.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Three-view character sheet</strong> (Lesson 9) — front, side, and top views drawn, labelled, and measured against the five design constraints.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Design retrospective table</strong> (Lesson 6) — prototype vs product comparison for all six design elements, signed and dated.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Signal chain diagram</strong> (Lesson 7) — annotated diagram showing all seven nodes of the controller signal chain.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Calibration table</strong> (Lesson 8) — five threshold values tested and recorded. Calibration report written.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>Print readiness checklist</strong> (Lesson 10) — all nine items ticked, signed, and dated.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>STL file</strong> — named <em>[YourName]_Amiibo_v1.stl</em>, exported from TinkerCAD, submitted digitally to your teacher.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>MakeCode Arcade game</strong> — shared link or downloaded .png file submitted. All Sprint 1–4 features working.</div>
+          </div>
+
+          <div class="submit-item">
+            <div class="submit-box" aria-hidden="true"></div>
+            <div><strong>World 1 product list &amp; letter to Year 10 self</strong> (Lesson 10 notebook) — written in physical notebook and signed.</div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson10.html">
+          <span class="lesson-nav__dir">← Lesson 10</span>
+          <span class="lesson-nav__title">3D Print Preparation</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="index.html">
+          <span class="lesson-nav__dir">World Map →</span>
+          <span class="lesson-nav__title">Nintendo Developer Studio Hub</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+  /* ────────────────────────────────────────────
+     Digital Snapshot — reads all saved lesson
+     reflections and MCQ progress for this unit
+  ──────────────────────────────────────────── */
+  (function () {
+
+    var UNIT_ID = 'nintendo-y7';
+
+    var LESSONS = [
+      { id: 'lesson01', label: 'L1 — How Mario Began',              total: 3 },
+      { id: 'lesson02', label: 'L2 — Paper Prototype Lab',          total: 3 },
+      { id: 'lesson03', label: 'L3 — MakeCode Arcade (Sprint 1)',   total: 3 },
+      { id: 'lesson04', label: 'L4 — Collectibles &amp; Score',     total: 3 },
+      { id: 'lesson05', label: 'L5 — Enemies &amp; Win/Lose',       total: 3 },
+      { id: 'lesson06', label: 'L6 — JavaScript Bridge',            total: 3 },
+      { id: 'lesson07', label: 'L7 — micro:bit Controller',         total: 3 },
+      { id: 'lesson08', label: 'L8 — Calibration &amp; LED',        total: 3 },
+      { id: 'lesson09', label: 'L9 — TinkerCAD Amiibo',             total: 3 },
+      { id: 'lesson10', label: 'L10 — 3D Print Preparation',        total: 3 },
+      { id: 'notebook', label: 'Notebook — Additional Notes',       total: 0 }
+    ];
+
+    function init () {
+      var allData   = CTProgress.readAll(UNIT_ID);
+      var grid      = document.getElementById('snapshot-grid');
+      var fill      = document.getElementById('progress-bar-fill');
+      var barLabel  = document.getElementById('progress-bar-label');
+
+      if (!grid) return;
+
+      /* Count completed lessons (reflection + all MCQs) */
+      var completedCount = 0;
+      var lessonCount    = LESSONS.filter(function (l) { return l.total > 0; }).length;
+
+      var cards = LESSONS.map(function (lesson) {
+        var lessonData = allData[lesson.id] || { mcq: {}, reflection: '' };
+        var summary    = CTProgress.summarise(lessonData, lesson.total);
+
+        var hasReflection = lessonData.reflection && lessonData.reflection.trim().length > 10;
+        var mcqsDone      = lesson.total > 0 && summary.answered >= lesson.total;
+        var noData        = !hasReflection && !mcqsDone;
+
+        if (lesson.total > 0 && summary.isComplete) completedCount++;
+
+        /* Build card */
+        var card = document.createElement('div');
+        card.className = 'snapshot-card';
+
+        /* Lesson label */
+        var labelEl = document.createElement('div');
+        labelEl.className = 'snapshot-card__lesson';
+        labelEl.innerHTML = lesson.label;
+        card.appendChild(labelEl);
+
+        /* Indicators row */
+        var indRow = document.createElement('div');
+        indRow.className = 'snapshot-card__indicators';
+
+        if (lesson.total > 0) {
+          var mcqInd = document.createElement('span');
+          var mcqClass = mcqsDone ? 'indicator--done' : (summary.answered > 0 ? 'indicator--part' : 'indicator--empty');
+          mcqInd.className = 'indicator ' + mcqClass;
+          mcqInd.textContent = mcqsDone
+            ? '✓ ' + lesson.total + '/' + lesson.total + ' questions'
+            : summary.answered + '/' + lesson.total + ' questions';
+          indRow.appendChild(mcqInd);
+        }
+
+        var refInd = document.createElement('span');
+        var refClass = hasReflection ? 'indicator--done' : 'indicator--empty';
+        refInd.className = 'indicator ' + refClass;
+        refInd.textContent = hasReflection ? '✓ Reflection saved' : '— No reflection';
+        indRow.appendChild(refInd);
+
+        card.appendChild(indRow);
+
+        /* Toggle + saved reflection */
+        if (hasReflection) {
+          var toggleBtn = document.createElement('button');
+          toggleBtn.className = 'snapshot-card__toggle';
+          toggleBtn.type = 'button';
+          toggleBtn.textContent = 'Read saved entry ▾';
+
+          var refBox = document.createElement('div');
+          refBox.className = 'snapshot-card__reflection';
+          refBox.textContent = lessonData.reflection;
+
+          toggleBtn.addEventListener('click', function () {
+            var open = refBox.classList.toggle('is-visible');
+            toggleBtn.textContent = open ? 'Hide entry ▴' : 'Read saved entry ▾';
+          });
+
+          card.appendChild(toggleBtn);
+          card.appendChild(refBox);
+        }
+
+        return card;
+      });
+
+      /* Render */
+      grid.innerHTML = '';
+
+      var hasAny = cards.some(function (c) { return c; });
+      if (!hasAny) {
+        grid.innerHTML = '<div class="snapshot-empty">No saved entries found. Complete lessons 1–10 to populate this snapshot.</div>';
+      } else {
+        cards.forEach(function (c) { if (c) grid.appendChild(c); });
+      }
+
+      /* Progress bar */
+      var pct = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
+      if (fill)     fill.style.width = pct + '%';
+      if (barLabel) barLabel.innerHTML =
+        '<strong>' + completedCount + ' of ' + lessonCount + '</strong> lessons fully complete' +
+        (pct > 0 ? ' (' + pct + '%)' : '');
+    }
+
+    /* Run after DOM + scripts ready */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    /* Init the notebook additional-notes textarea via CTProgress */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initNotes);
+    } else {
+      initNotes();
+    }
+
+    function initNotes () {
+      CTProgress.initLessonPage({
+        unitId:         UNIT_ID,
+        lessonId:       'notebook',
+        totalQuestions: 0
+      });
+    }
+
+  }());
+  </script>
+
+</body>
+</html>

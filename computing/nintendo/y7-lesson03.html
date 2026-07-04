@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 3 — MakeCode Arcade Platformer · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+      counter-reset: sprint-step;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      counter-increment: sprint-step;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body {
+      padding: var(--space-5);
+    }
+
+    .sprint-step__body p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-4);
+      max-width: none;
+    }
+
+    /* ── Pseudocode → code bridge ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw  { color: #4338ca; font-weight: 700; }
+    .js-kw      { color: #007aa0; font-weight: 700; }  /* blue — keyword */
+    .js-fn      { color: #15803d; }                    /* green — function/method */
+    .js-str     { color: #b45309; }                    /* amber — string/value */
+    .js-cmt     { color: var(--color-text-muted); font-style: italic; }
+    .js-num     { color: #be185d; }                    /* pink — number */
+
+    /* ── Block description pill ── */
+    .block-desc {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-sm);
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      margin: var(--space-1) var(--space-1) var(--space-1) 0;
+    }
+
+    .block-desc__icon { font-size: 0.9rem; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.55;
+      max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 3</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 3 — MakeCode Arcade Platformer</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#setup">Setup</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Design Process">CT5-DPM-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phase</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Player moves left/right and jumps on platforms in MakeCode Arcade.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-3</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lessons 3–6 · Sprint 1 of 4</div>
+        <h1>MakeCode Arcade Platformer</h1>
+        <p class="page-intro">Your paper prototype is approved. It's time to build. In this sprint you'll create a player sprite, add left/right movement, implement jumping, and set up gravity — translating the pseudocode you wrote in Lesson 2 directly into MakeCode Arcade.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> Your paper prototype has been signed off. Sprint 1 begins now. By the end of this lesson you need a player sprite that moves left/right and can jump on platforms. No collectibles, no enemies yet — this sprint is about the core movement feeling right.
+        </div>
+
+        <p>Lessons 3–6 each add a new layer to your game. Each lesson ends with a sprint checkpoint — a list of things that must be working before you move on. Don't skip ahead. Solid foundations in Sprint 1 make everything else easier.</p>
+
+        <div class="example-box">
+          <strong>Pseudocode before code — always</strong>
+          Open your project notebook to the pseudocode you wrote in Lesson 2. Each step in this sprint maps directly to a section of that pseudocode. If your pseudocode doesn't cover a step, write it now before you code it.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Analyse First — Read Before You Build</h2>
+        <p>Before writing a single block, you need to read an existing MakeCode Arcade project. This is the analysis-first principle: understanding how something works helps you make better decisions when you build your own.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Explore a Working Platformer</h3>
+          <p>Open this shared MakeCode Arcade starter project with your teacher's link, or search "MakeCode Arcade platformer tutorial" on makecode.com/arcade. Before running it, try to answer these questions in your notebook:</p>
+          <ol>
+            <li>How many sprites can you identify? What is each one's <strong>kind</strong> (Player, Enemy, Projectile)?</li>
+            <li>Where is the <code>on start</code> block? What code runs when the game begins?</li>
+            <li>Find the movement code. What numbers control the player's speed?</li>
+            <li>How does the game detect when the player touches an enemy? What happens next?</li>
+          </ol>
+          <p>Run the project after answering. Did anything surprise you? Update your notebook.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. SETUP
+      ══════════════════════════════════════ -->
+      <section id="setup" class="content-section" aria-labelledby="setup-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="setup-heading">Setting Up MakeCode Arcade</h2>
+
+        <p>MakeCode Arcade (<a href="https://arcade.makecode.com" target="_blank" rel="noopener">arcade.makecode.com</a>) is a browser-based game development environment. It lets you build games using visual blocks that automatically generate JavaScript. You can switch between blocks and JavaScript at any time — and you should, to understand what your blocks are doing.</p>
+
+        <h3>Create Your Project</h3>
+        <ol>
+          <li>Go to <strong>arcade.makecode.com</strong> and click <strong>New Project</strong></li>
+          <li>Name your project using your game title from Lesson 2</li>
+          <li>You'll see two views: <strong>Blocks</strong> (default) and <strong>JavaScript</strong> — there's a toggle at the top. Switch between them throughout this lesson.</li>
+          <li>The workspace has two default blocks: <code>on start</code> and <code>forever</code>. We'll use both.</li>
+        </ol>
+
+        <div class="teaching-advice">
+          <h4>Blocks ↔ JavaScript</h4>
+          <p>Every time you place a block in MakeCode Arcade, it writes JavaScript code for you. Click the <strong>JavaScript</strong> toggle to see what each block produces. Reading the JavaScript version helps you understand what the code is doing — and prepares you for writing code directly in Lessons 5–6.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 1 — Five Steps</h2>
+        <p>Follow each step in order. After each step, switch to the JavaScript view and compare the generated code with your pseudocode from Lesson 2. Add a note to your project notebook about any differences.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Create Your Player Sprite</div>
+              <span class="sprint-step__phase">Sprites</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>A <strong>sprite</strong> is any game object — your player, enemies, coins, and projectiles are all sprites. Each sprite has a position (x, y), a velocity (vx, vy), and an image.</p>
+
+              <p><strong>Blocks to use:</strong> Inside the <code>on start</code> block, drag in:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🟨</span> Sprites → set mySprite to sprite [ ] of kind Player</span>
+              </div>
+              <p>Click the grey square to draw your character image. Keep it simple — 16×16 pixels is a good size.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode (Lesson 2)</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> createPlayer
+  SET player ← new sprite
+  SET player.kind ← Player
+<span class="pseudo-kw">END</span> createPlayer</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript (MakeCode generates)</span>
+                  <pre class="code-bridge-block"><span class="js-kw">let</span> player = <span class="js-fn">sprites.create</span>(
+  img<span class="js-str">`your image here`</span>,
+  SpriteKind.<span class="js-str">Player</span>
+)</pre>
+                </div>
+              </div>
+
+              <p>After adding the block, switch to JavaScript view. You'll see <code>sprites.create()</code> — this is a <strong>function call</strong> that creates the sprite object.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Left &amp; Right Movement</div>
+              <span class="sprint-step__phase">Input</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>The <code>controller.moveSprite</code> block handles left/right movement automatically — it reads the arrow keys (or A/D keys) and updates the sprite's x position every frame.</p>
+
+              <p><strong>Block to use:</strong> Inside <code>on start</code>, after the sprite creation block:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🎮</span> Controller → move mySprite with buttons vx 100 vy 0</span>
+              </div>
+              <p>Set <code>vx</code> to <strong>100</strong> (horizontal speed) and <code>vy</code> to <strong>0</strong> (we handle vertical separately with gravity).</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> LEFT pressed <span class="pseudo-kw">THEN</span>
+  player.x ← player.x - speed
+<span class="pseudo-kw">ENDIF</span>
+<span class="pseudo-kw">IF</span> RIGHT pressed <span class="pseudo-kw">THEN</span>
+  player.x ← player.x + speed
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">controller.moveSprite</span>(
+  player,
+  <span class="js-num">100</span>,  <span class="js-cmt">// vx — horizontal speed</span>
+  <span class="js-num">0</span>     <span class="js-cmt">// vy — let gravity handle this</span>
+)</pre>
+                </div>
+              </div>
+
+              <p><strong>Test it now</strong> — click the Play button (▶). Can you move left and right? If not, check that <code>moveSprite</code> is inside <code>on start</code>, not <code>forever</code>.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Jumping</div>
+              <span class="sprint-step__phase">Input</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Jumping works by giving the player sprite a negative vertical velocity (<code>vy</code>) — pushing them upward. Gravity (Step 4) then pulls them back down.</p>
+
+              <p><strong>Blocks to use:</strong> Add a new event block:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🎮</span> Controller → on A button pressed</span>
+              </div>
+              <p>Inside that event, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🟨</span> Sprites → set mySprite vy to -150</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> A button pressed <span class="pseudo-kw">THEN</span>
+  player.velocityY ← -jumpForce
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">controller.A.onEvent</span>(
+  ControllerButtonEvent.Pressed,
+  <span class="js-kw">function</span> () {
+    player.vy = <span class="js-num">-150</span>
+    <span class="js-cmt">// negative = upward</span>
+  }
+)</pre>
+                </div>
+              </div>
+
+              <p><strong>Why negative?</strong> In MakeCode Arcade, the y-axis is flipped: <code>y = 0</code> is the top of the screen, and y increases going <em>down</em>. So a negative <code>vy</code> moves the sprite upward.</p>
+              <p><strong>Test it</strong> — press A to jump. The player will fly off screen because there's no gravity yet. That's expected. Step 4 fixes this.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Gravity &amp; a Tilemap</div>
+              <span class="sprint-step__phase">Physics</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>MakeCode Arcade has a built-in gravity system. We also need a <strong>tilemap</strong> — a grid of tiles that forms the level layout. Solid tiles act as platforms the player collides with.</p>
+
+              <h3>Add Gravity</h3>
+              <p><strong>Block:</strong> Inside <code>on start</code>, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🌍</span> Scene → set gravity to 500</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHILE</span> game is running
+  player.velocityY ←
+    player.velocityY + gravity
+  player.y ←
+    player.y + player.velocityY
+<span class="pseudo-kw">ENDWHILE</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-cmt">// MakeCode handles this loop
+// automatically each frame</span>
+<span class="js-fn">  player.ay = .5
+
+<span class="js-cmt">// Higher number = falls faster
+// Try 1–100 to feel different</span></pre>
+                </div>
+              </div>
+
+              <h3>Add a Tilemap</h3>
+              <p><strong>Block:</strong> Inside <code>on start</code>, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🗺️</span> Scene → set tilemap to [ ]</span>
+              </div>
+              <p>Click the tilemap editor. Draw a ground row at the bottom and at least two raised platforms. Mark the tiles as <strong>Wall</strong> (right-click → Wall) so the player collides with them.</p>
+
+              <div class="example-box">
+                <strong>What is a tilemap?</strong>
+                A tilemap is a 2D grid where each cell contains a tile image. MakeCode Arcade automatically detects when a sprite with physics overlaps a Wall tile and prevents it from passing through. This is how platforms work — no extra code needed.
+              </div>
+
+              <p><strong>Test it</strong> — the player should now fall onto the ground and be able to jump onto platforms. If the player falls through, check that you marked the tiles as Wall.</p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Camera Follow</div>
+              <span class="sprint-step__phase">Camera</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>If your level is wider than the screen, you need the camera to follow the player. Without this, the player runs off the visible area.</p>
+
+              <p><strong>Block:</strong> Inside <code>on start</code>, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">📷</span> Scene → camera follow sprite mySprite</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHILE</span> game is running
+  camera.x ← player.x
+  camera.y ← player.y
+<span class="pseudo-kw">ENDWHILE</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">scene.cameraFollowSprite</span>(player)
+<span class="js-cmt">// MakeCode handles the
+// update loop automatically</span></pre>
+                </div>
+              </div>
+
+              <p><strong>Final test</strong> — move to the right edge of your tilemap. The camera should scroll with you. Make your tilemap wider in the tilemap editor if the level feels too short.</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 1 Checkpoint</h2>
+        <p>Before moving to Lesson 4, tick off every item below in your project notebook. Don't move on until everything is working — problems now become much harder to fix in later sprints.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">✓ Sprint 1 — Checklist</div>
+          <h3>Your game must be able to:</h3>
+          <ul>
+            <li>Display a player sprite with a custom-drawn image</li>
+            <li>Move left and right when arrow keys (or A/D) are pressed</li>
+            <li>Jump when the A button is pressed</li>
+            <li>Fall back down due to gravity after jumping</li>
+            <li>Land on the ground without falling through</li>
+            <li>Land on at least one raised platform without falling through</li>
+            <li>Have the camera follow the player across a level wider than the screen</li>
+          </ul>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Debugging Tip</p>
+          <h3>Something Not Working?</h3>
+          <p>Check these in order:</p>
+          <ol>
+            <li><strong>Player falls through ground:</strong> Are the tiles marked as Wall (not just drawn)?</li>
+            <li><strong>Jump doesn't work:</strong> Is <code>controller.A.onEvent</code> a separate block — not nested inside <code>on start</code>?</li>
+            <li><strong>Player flies upward forever:</strong> Did you add <code>scene.setGravity()</code>?</li>
+            <li><strong>Camera not moving:</strong> Is <code>scene.cameraFollowSprite(player)</code> inside <code>on start</code>?</li>
+          </ol>
+          <p>If you're still stuck, switch to <strong>JavaScript view</strong> and compare your code with the examples above line by line.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sprite</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A 2D game object with a position, velocity, and image. Players, enemies, coins, and projectiles are all sprites.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Velocity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Speed with direction. vx is horizontal velocity; vy is vertical velocity. Negative vy moves a sprite upward in MakeCode Arcade.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Gravity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A constant downward force applied every frame. In code: vy increases each frame until the sprite hits a solid surface.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Tilemap</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A 2D grid of tiles that forms the level layout. Tiles marked as Wall create solid platforms that sprites collide with.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Event handler</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Code that runs in response to a specific event — a button press, a collision, or a timer. <code>controller.A.onEvent</code> is an event handler.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Function call</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An instruction to run a named block of pre-written code. <code>sprites.create()</code> is a function call — you provide the inputs, it does the work.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Collision detection</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Checking whether two game objects are overlapping. MakeCode Arcade handles Wall tile collisions automatically; sprite-to-sprite collisions use <code>sprites.onOverlap</code>.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Debugging</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The process of finding and fixing errors in code. In MakeCode Arcade, toggling to JavaScript view and reading the code line-by-line is a key debugging technique.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer for each question, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="A negative vx would move the sprite to the left — that's horizontal movement. We're talking about making the sprite go upward, which is the vertical axis."
+             data-feedback-b="Correct. In MakeCode Arcade, vy is vertical velocity and the y-axis is flipped — y increases going downward. So setting vy to a negative number pushes the sprite upward, creating a jump."
+             data-feedback-c="Positive vy would push the player downward (further down the screen), not upward. You'd need that if you wanted the player to fall faster, not jump."
+             data-feedback-d="Gravity is applied by scene.setGravity() — that's a different thing. To make a sprite jump, you directly set its vy to a negative value in an event handler.">
+          <div class="mcq-question">1. In MakeCode Arcade, what does setting a sprite's <code>vy</code> to a negative number (e.g. <code>player.vy = -150</code>) do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Moves the sprite to the left</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Pushes the sprite upward, creating a jump</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Pushes the sprite downward faster</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Activates the gravity system</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="A tilemap stores the visual and structural layout of a level as a grid of tiles. It doesn't directly control speed — that's the vx/vy values on the sprite."
+             data-feedback-b="An event handler responds to events like button presses or collisions. Tilemaps don't handle events — they define which parts of the level are solid."
+             data-feedback-c="Correct. A tilemap is a 2D grid where each cell can hold a tile image. Tiles marked as Wall create solid surfaces — MakeCode Arcade automatically checks for and responds to sprite collisions with Wall tiles."
+             data-feedback-d="Sprites are individual game objects (player, enemy, coin). A tilemap is the grid structure of the level itself — the background and platforms — not a single object.">
+          <div class="mcq-question">2. What is a tilemap in MakeCode Arcade, and why do platformer levels need one?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> A variable that stores the player's movement speed</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> An event handler that detects button presses</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A 2D grid of tiles where Wall tiles create solid platforms sprites collide with</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A type of sprite used to represent the ground and platforms</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. Switching to JavaScript view in MakeCode Arcade reveals the code that your blocks generate. Reading it helps you understand what each block actually does, which builds the skills you'll need to write code directly in later lessons."
+             data-feedback-b="MakeCode Arcade runs in the browser — you don't need to install anything. The JavaScript toggle is already there in the interface, not something you download."
+             data-feedback-c="The JavaScript toggle is for viewing the code your blocks produce, not for testing your game. The Play button (▶) runs the game."
+             data-feedback-d="You don't need to delete your blocks to see JavaScript — the toggle shows you both views of the same code. Your blocks and JavaScript are always in sync.">
+          <div class="mcq-question">3. Why is it useful to switch to the JavaScript view in MakeCode Arcade while following these steps?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It shows what code your blocks are generating, helping you understand what each block actually does</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It downloads a JavaScript file you need to install separately to run the game</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It runs a test of your game in a separate window</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It deletes your blocks and replaces them with typed code</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-3 Clear!</strong>
+            <p>All questions answered. Complete the Sprint Checkpoint and notebook entry below to finish this level.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 1 — Notebook Entry</h2>
+        <p>Your notebook entry for Sprint 1 is your evidence of the Producing &amp; Implementing phase. Be specific — general statements like "it worked" aren't useful evidence.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> List each of the five steps and write one sentence about what happened when you tested it — what worked, what didn't, and what you changed.</li>
+            <li><strong>Pseudocode comparison:</strong> Find one place where the JavaScript code generated by MakeCode was different from your Lesson 2 pseudocode. Explain the difference.</li>
+            <li><strong>Design decision:</strong> What gravity value did you choose? Why? How did it feel to play compared to a value that was too high or too low?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="9"
+                  placeholder="Write your Sprint 1 notebook entry here — sprint log, pseudocode comparison, design decision. Saves automatically."
+                  aria-label="Lesson 3 sprint notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your Sprint 1 Checkpoint must also be ticked off in your physical or digital project notebook before you move to Lesson 4.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson02.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 2 — Paper Prototype Lab</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson04.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 4 — Collectibles &amp; Score</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson03',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

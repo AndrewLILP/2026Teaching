@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 4 — Collectibles &amp; Score · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    /* ── World / Level badge ── */
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards (same as L3) ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body {
+      padding: var(--space-5);
+    }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    /* Syntax colours — AA on cream */
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .js-kw     { color: #4338ca; font-weight: 700; }
+    .js-fn     { color: #15803d; }
+    .js-str    { color: #b45309; }
+    .js-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .js-num    { color: #be185d; }
+    .js-type   { color: #007aa0; }
+
+    /* ── Block descriptor pill ── */
+    .block-desc {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-sm);
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      margin: var(--space-1) var(--space-1) var(--space-1) 0;
+    }
+
+    .block-desc__icon { font-size: 0.9rem; }
+
+    /* ── Data callout — light blue tint on cream ── */
+    .data-callout {
+      background: rgba(0, 122, 160, 0.07);
+      border: 1px solid rgba(0, 122, 160, 0.25);
+      border-left: 4px solid #007aa0;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .data-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #007aa0;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .data-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .data-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.55;
+      max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 4</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 4 — Collectibles &amp; Score</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#data">Data &amp; Variables</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Data">CT5-DAT-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phase</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Player collects items, score increments, collectible disappears with feedback.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-4</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lessons 3–6 · Sprint 2 of 4</div>
+        <h1>Collectibles &amp; Score</h1>
+        <p class="page-intro">Sprint 1 gave your player movement and a world to move through. Sprint 2 gives them something to do in that world. You'll add collectible sprites, detect when the player touches them, update a score variable, and provide feedback — coin sounds, effects, and a visible score display.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> Movement is working — your Sprint 1 checkpoint is signed off. The studio lead's next note: "The game needs a reason to explore. Add collectibles and a score. The player should feel rewarded every time they collect something — sound, visual effect, and a number going up."
+        </div>
+
+        <p>Before starting, open your project notebook and check your Lesson 2 pseudocode. You should have written something for your <strong>fail condition</strong> and <strong>win condition</strong>. In Sprint 2 we'll implement the positive side — collecting rewards. Your fail condition comes in Lesson 5.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Analyse First — How Games Track Score</h2>
+        <p>Before adding a score to your game, study how an existing game does it. Open any game in MakeCode Arcade's sample gallery (Home → Gallery), or use your teacher's example project.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Read the Score System</h3>
+          <p>Find a game that has a score. In your project notebook, answer:</p>
+          <ol>
+            <li>Where is the score displayed on screen? Is it always visible, or only at certain moments?</li>
+            <li>Switch to <strong>JavaScript view</strong>. Find where the score is changed. What function or block is used?</li>
+            <li>Find what happens when a collectible sprite is touched. Does it disappear? Does something play?</li>
+            <li>Can you find the variable that stores the score? Or does MakeCode manage it internally?</li>
+          </ol>
+          <p>You'll answer Question 4 in the Data &amp; Variables section below — come back to it after reading.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. DATA & VARIABLES
+      ══════════════════════════════════════ -->
+      <section id="data" class="content-section" aria-labelledby="data-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="data-heading">Data &amp; Variables — Score is Information</h2>
+        <p>A game score isn't just a number on a screen — it is <strong>data</strong>. Understanding how games store and display data is a core computing skill that applies far beyond game development.</p>
+
+        <div class="data-callout">
+          <span class="data-callout__label">🗄️ Data concept</span>
+          <p><strong>Data</strong> is raw information that a program stores, processes, and outputs. In your game, the score is data — it starts at zero, is updated when events occur, and is displayed to the player.</p>
+          <p><strong>Variables</strong> are named storage locations that hold data values which can change. <code>score</code>, <code>lives</code>, and <code>playerX</code> are all variables. In MakeCode Arcade, <code>info.score()</code> manages the score as a built-in variable.</p>
+          <p>Good data management means: storing data in the right place, updating it correctly when events happen, and displaying it clearly to the user. All three apply to your score system.</p>
+        </div>
+
+        <h3>Input → Process → Output</h3>
+        <p>Your score system is a classic IPO model:</p>
+        <div class="ipo-flow">
+          <div class="ipo-step">
+            <span class="ipo-step__label">Input</span>
+            <p>Player overlaps a collectible sprite</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Process</span>
+            <p>Score variable increases by 1, collectible is destroyed</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Output</span>
+            <p>Updated score displays on screen, sound plays</p>
+          </div>
+        </div>
+
+        <p>Now go back to your analysis task — you can answer Question 4 now. <code>info.score()</code> in MakeCode Arcade manages the score internally. You don't need to declare a separate variable — but you still control when it changes and by how much.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 2 — Four Steps</h2>
+        <p>Open your MakeCode Arcade project from Lesson 3. Your Sprint 1 code should still be there. Add these four steps on top of it — don't replace anything from Sprint 1.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Create a Collectible Sprite</div>
+              <span class="sprint-step__phase">Sprites</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>A collectible is a sprite of a different <strong>kind</strong> from the player. MakeCode Arcade has a built-in kind called <code>Food</code> — we'll use that, or you can create a custom kind that matches your game theme (e.g. <code>Coin</code>, <code>Star</code>, <code>PowerUp</code>).</p>
+
+              <p><strong>Block:</strong> Inside <code>on start</code>, after your existing Sprint 1 code, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🟨</span> Sprites → set coin to sprite [ ] of kind Food</span>
+              </div>
+              <p>Draw a simple collectible image — a coin circle, a star, or a token that matches your theme. Keep it clearly different from your player sprite.</p>
+
+              <p>Then set its position in the level:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">📍</span> Sprites → set coin position to x [80] y [80]</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> createCollectible
+  SET coin ← new sprite
+  SET coin.kind ← Food
+  SET coin.x ← <span class="pseudo-kw">80</span>
+  SET coin.y ← <span class="pseudo-kw">80</span>
+<span class="pseudo-kw">END</span> createCollectible</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">let</span> coin = <span class="js-fn">sprites.create</span>(
+  img<span class="js-str">`your image`</span>,
+  SpriteKind.<span class="js-type">Food</span>
+)
+coin.x = <span class="js-num">80</span>
+coin.y = <span class="js-num">80</span></pre>
+                </div>
+              </div>
+
+              <div class="example-box">
+                <strong>Placing multiple collectibles</strong>
+                Repeat the create + position blocks for each collectible. Use different x/y values to spread them across your level — on platforms, in gaps that require jumping, or at the end of paths. Placement is a design decision: where you put collectibles teaches the player how to explore your world.
+              </div>
+
+              <p><strong>Aim for at least 5 collectibles</strong> spread across different parts of your tilemap.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Detect the Overlap &amp; Update Score</div>
+              <span class="sprint-step__phase">Events</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>An <strong>overlap event</strong> fires when two sprites of specified kinds touch. This is the most important event in most platformers — it handles collection, damage, winning, and losing.</p>
+
+              <p><strong>Block:</strong> Add a new event block (this goes outside <code>on start</code>, as a separate top-level block):</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">💥</span> Sprites → on sprite of kind Player overlaps otherSprite of kind Food</span>
+              </div>
+              <p>Inside that event, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">📊</span> Info → change score by 1</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps collectible
+<span class="pseudo-kw">THEN</span>
+  score ← score + <span class="pseudo-kw">1</span>
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">sprites.onOverlap</span>(
+  SpriteKind.<span class="js-type">Player</span>,
+  SpriteKind.<span class="js-type">Food</span>,
+  <span class="js-kw">function</span>(sprite, otherSprite) {
+    <span class="js-fn">info.changeScoreBy</span>(<span class="js-num">1</span>)
+  }
+)</pre>
+                </div>
+              </div>
+
+              <p><strong>Test it</strong> — walk your player into a collectible. The score counter should appear in the top corner and increment. The collectible stays on screen for now — Step 3 fixes that.</p>
+
+              <div class="data-callout">
+                <span class="data-callout__label">🗄️ Data note</span>
+                <p><code>info.changeScoreBy(1)</code> adds 1 to MakeCode Arcade's internal score variable and updates the display automatically. This is an example of the game <strong>processing data</strong> (updating the stored score) and <strong>outputting data</strong> (displaying the new value) in one function call.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Destroy the Collectible</div>
+              <span class="sprint-step__phase">Sprites</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>A collectible that stays on screen after being collected breaks the game — the player would earn infinite points by standing still. <code>destroy()</code> removes a sprite from the game permanently.</p>
+
+              <p><strong>Inside the same overlap event</strong> as Step 2, add directly below <code>change score by 1</code>:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">💥</span> Sprites → destroy otherSprite</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps collectible
+<span class="pseudo-kw">THEN</span>
+  score ← score + <span class="pseudo-kw">1</span>
+  collectible.destroy()
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">sprites.onOverlap</span>(
+  SpriteKind.<span class="js-type">Player</span>,
+  SpriteKind.<span class="js-type">Food</span>,
+  <span class="js-kw">function</span>(sprite, otherSprite) {
+    <span class="js-fn">info.changeScoreBy</span>(<span class="js-num">1</span>)
+    otherSprite.<span class="js-fn">destroy</span>()
+  }
+)</pre>
+                </div>
+              </div>
+
+              <p>Notice the parameter is <code>otherSprite</code> — not <code>coin</code>. This is important: the overlap event receives a reference to whichever specific collectible was touched. Using <code>otherSprite</code> means the function works for <em>any</em> Food sprite, not just the first one you created.</p>
+              <p><strong>Test it</strong> — collecting should now remove the sprite from the screen.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Add Feedback — Sound &amp; Effect</div>
+              <span class="sprint-step__phase">Feedback</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Collecting something should <em>feel</em> satisfying. Without feedback, players miss collections or aren't sure they happened. At minimum, add a sound. For a stronger effect, add a visual burst too.</p>
+
+              <h3>Sound Feedback</h3>
+              <p><strong>Inside the same overlap event</strong>, add below <code>destroy</code>:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🔊</span> Music → play sound ba ding until done</span>
+              </div>
+
+              <h3>Visual Effect (Optional but recommended)</h3>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">✨</span> Sprites → spray effects from otherSprite</span>
+              </div>
+              <p>Add the effect block <em>before</em> <code>destroy</code> — if you destroy first, there's no sprite to play the effect on.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps collectible
+<span class="pseudo-kw">THEN</span>
+  score ← score + <span class="pseudo-kw">1</span>
+  OUTPUT visual effect
+  collectible.destroy()
+  OUTPUT sound
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">sprites.onOverlap</span>(
+  SpriteKind.<span class="js-type">Player</span>,
+  SpriteKind.<span class="js-type">Food</span>,
+  <span class="js-kw">function</span>(sprite, otherSprite) {
+    <span class="js-fn">info.changeScoreBy</span>(<span class="js-num">1</span>)
+    otherSprite.<span class="js-fn">startEffect</span>(
+      effects.<span class="js-type">spray</span>
+    )
+    otherSprite.<span class="js-fn">destroy</span>()
+    <span class="js-fn">music.play</span>(
+      music.<span class="js-fn">melodyPlayable</span>(
+        music.<span class="js-type">baDing</span>
+      ),
+      music.PlaybackMode.<span class="js-type">UntilDone</span>
+    )
+  }
+)</pre>
+                </div>
+              </div>
+
+              <p><strong>Final test</strong> — collect every item in your level. Score should increment correctly for each one. Now think about your win condition: should the game end when all collectibles are collected? If so, you can add <code>game.over(true)</code> when the score reaches your target total.</p>
+
+              <div class="analysis-box">
+                <p class="analysis-box__eyebrow">Design Decision</p>
+                <h3>Win Condition — Collect All or Reach the Flag?</h3>
+                <p>In your prototype you defined a win condition. Now decide: does the player win by collecting all items, by reaching a flagpole, or both? Look back at your project notebook. Update your win condition pseudocode to reflect what you're building — then add the code in Lesson 6.</p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 2 Checkpoint</h2>
+        <p>Tick off each item in your project notebook before moving to Lesson 5. If anything isn't working, re-read the relevant step or check the debugging tip below.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">✓ Sprint 2 — Checklist</div>
+          <h3>Your game must be able to:</h3>
+          <ul>
+            <li>Display at least five collectible sprites placed across the level</li>
+            <li>Increment the score by 1 each time the player touches a collectible</li>
+            <li>Remove each collectible from the screen after it is collected</li>
+            <li>Play a sound when a collectible is collected</li>
+            <li>Show the score counter visibly on screen during gameplay</li>
+            <li>Allow all Sprint 1 behaviours to still work (movement, jumping, gravity, platforms)</li>
+          </ul>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Debugging Tip</p>
+          <h3>Something Not Working?</h3>
+          <ol>
+            <li><strong>Score doesn't change:</strong> Is your overlap event using the correct sprite kinds? Both sides of the overlap must match — <code>Player</code> and <code>Food</code> (or whatever kind you chose).</li>
+            <li><strong>Collectible doesn't disappear:</strong> Are you using <code>otherSprite.destroy()</code> not <code>coin.destroy()</code>? If you named a specific sprite, only that one will be destroyed — all others stay.</li>
+            <li><strong>Effect doesn't show:</strong> Move <code>startEffect</code> to before <code>destroy()</code> — you can't add an effect to a sprite that's already been removed.</li>
+            <li><strong>Sprint 1 broke:</strong> Check that all Sprint 2 blocks are separate from your Sprint 1 <code>on start</code> blocks — the overlap event should be its own top-level block, not nested inside <code>on start</code>.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Overlap event</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Code that runs automatically when two sprites of specified kinds touch. The foundation of most game interactions — collection, damage, winning.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sprite kind</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A category label assigned to a sprite — Player, Enemy, Food, Projectile. Kinds let overlap events target specific pairs of sprites.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">destroy()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A method that permanently removes a sprite from the game. The sprite's memory is freed. It cannot be brought back without creating a new sprite.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Parameter</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A variable inside a function that receives a value when the function is called. In the overlap event, <code>otherSprite</code> is a parameter holding whichever collectible was touched.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">IPO model</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Input → Process → Output. A framework for understanding how programs handle data. The score system is a clear IPO: overlap (input) → update score (process) → display score (output).</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Player feedback</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Any signal the game sends to confirm a player's action — sound, visual effect, score change, animation. Multiple simultaneous feedback types are stronger than one alone.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Raw information that a program stores, processes, and outputs. In a game, the score, player position, and number of lives remaining are all data.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Function</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named, reusable block of code that performs a specific task. <code>info.changeScoreBy()</code> and <code>sprite.destroy()</code> are both function calls.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback carefully before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="An overlap event is triggered by sprite contact, not by keyboard input. Controller events (like button presses) are a separate type of event handler."
+             data-feedback-b="An overlap event fires when sprites touch — not just when the game starts. The on start block runs once at the beginning; overlap events can fire many times throughout gameplay."
+             data-feedback-c="Correct. sprites.onOverlap() detects when two sprites of the specified kinds touch each other, and runs the code inside it every time that happens. It's the foundation of collection, damage, and win/lose detection."
+             data-feedback-d="Gravity is handled by scene.setGravity() — that's a physics setting, not an overlap event. Overlap events are about sprite-to-sprite contact, not a sprite hitting the ground.">
+          <div class="mcq-question">1. What does <code>sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, ...)</code> do in MakeCode Arcade?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Runs code when the player presses a controller button</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Runs once when the game starts to set up the collectible sprites</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Runs code every time a Player sprite and a Food sprite touch each other</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Detects when the player sprite lands on a solid tile</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="A"
+             data-feedback-a="Correct. otherSprite is a parameter — it receives a reference to whichever specific collectible was touched in that overlap event. Using it means the code works for all Food sprites, not just one specific coin variable."
+             data-feedback-b="otherSprite isn't a fixed name for all sprites — it's a parameter name that refers to the specific sprite involved in this particular overlap. You could actually name it anything; otherSprite is just the default MakeCode uses."
+             data-feedback-c="otherSprite refers to the Food sprite (the collectible), not the Player sprite. The first parameter of the overlap function (usually named sprite) refers to the Player."
+             data-feedback-d="otherSprite doesn't create a new sprite — it's just a reference to one that already exists. sprites.create() is what creates new sprites.">
+          <div class="mcq-question">2. In the overlap event function, why do we use <code>otherSprite.destroy()</code> instead of <code>coin.destroy()</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>otherSprite</code> refers to whichever specific collectible was touched, so it works for all collectibles — not just the first one created</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>otherSprite</code> is the reserved name for all sprites in the game and must always be used in overlap events</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>otherSprite</code> refers to the player sprite, which is what we want to destroy on collection</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>otherSprite</code> creates a new sprite to replace the collected one automatically</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="The score is data the program stores and processes — it fits the IPO model. The display is the Output part, but the score itself (the stored value) is part of Input/Process too."
+             data-feedback-b="The score isn't just input — input is the player's action (touching a collectible). The score value is what gets processed and then output to the display."
+             data-feedback-c="Displaying the score is the Output stage of IPO, not the Processing stage. Processing is when the score value is updated (changeScoreBy adds 1 to the stored value)."
+             data-feedback-d="Correct. The score system maps directly to IPO: the overlap is the Input, changing the score value is the Process (updating stored data), and displaying the new number on screen is the Output.">
+          <div class="mcq-question">3. Which statement best describes how the score system in this lesson fits the IPO (Input → Process → Output) model?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The score is only the Output — it has no Input or Process stage</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The score value is the Input, which causes the player to move</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Displaying the score on screen is the Processing stage</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Touching a collectible is the Input, updating the score variable is the Process, and showing the new number is the Output</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-4 Clear!</strong>
+            <p>All questions answered. Complete the Sprint Checkpoint and notebook entry to finish this level.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 2 — Notebook Entry</h2>
+        <p>Your Sprint 2 notebook entry is evidence of Producing &amp; Implementing and the data concepts from this lesson. Be specific.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> Describe what happened at each step — what worked first time, what needed fixing, and what you changed from the default settings (e.g. score increment, effect type, sound).</li>
+            <li><strong>Data entry:</strong> Using the IPO model, write a one-paragraph description of how your score system handles data — what is the input, what is processed, and what is output.</li>
+            <li><strong>Design decision:</strong> Where did you place your collectibles, and why? What were you trying to encourage the player to do? Does the placement teach the player anything about your level?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="9"
+                  placeholder="Write your Sprint 2 notebook entry here — sprint log, IPO data description, collectible placement rationale. Saves automatically."
+                  aria-label="Lesson 4 sprint notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your Sprint 2 Checkpoint must also be ticked off in your project notebook before moving to Lesson 5.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson03.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 3 — MakeCode Arcade Platformer</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson05.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 5 — Enemies &amp; Win / Lose States</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson04',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

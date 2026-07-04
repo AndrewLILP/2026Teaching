@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 5 — Enemies &amp; Win/Lose States · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__phase--test { color: var(--color-phase-test); }
+
+    .sprint-step__body {
+      padding: var(--space-5);
+    }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .js-kw     { color: #4338ca; font-weight: 700; }
+    .js-fn     { color: #15803d; }
+    .js-str    { color: #b45309; }
+    .js-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .js-num    { color: #be185d; }
+    .js-type   { color: #007aa0; }
+
+    /* ── Block descriptor ── */
+    .block-desc {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-sm);
+      padding: var(--space-1) var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-family: var(--font-mono);
+      margin: var(--space-1) var(--space-1) var(--space-1) 0;
+    }
+
+    .block-desc__icon { font-size: 0.9rem; }
+
+    /* ── Game state diagram ── */
+    .state-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin: var(--space-5) 0;
+      padding: var(--space-5);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+    }
+
+    .state-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .state-box {
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: var(--text-sm);
+      text-align: center;
+      min-width: 110px;
+    }
+
+    .state-box--playing {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      color: var(--n-gold);
+    }
+
+    .state-box--win {
+      background: rgba(21, 128, 61, 0.12);
+      border: 2px solid rgba(21, 128, 61, 0.35);
+      color: #15803d;
+    }
+
+    .state-box--lose {
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+    }
+
+    .state-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+      text-align: center;
+      max-width: 110px;
+    }
+
+    .state-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+      text-align: center;
+      max-width: 80px;
+    }
+
+    .state-arrow-line {
+      font-size: 1.2rem;
+      line-height: 1;
+      color: var(--color-border-mid);
+    }
+
+    /* ── Evaluate callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      width: 28%;
+    }
+
+    .test-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 5</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 5 — Enemies &amp; Win/Lose States</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#states">Game States</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#testing">Test Both Paths</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Evaluate">CT5-EVL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Enemy patrols level. Player loses a life on contact. Win and lose states both trigger correctly.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-5</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lessons 3–6 · Sprint 3 of 4</div>
+        <h1>Enemies &amp; Win/Lose States</h1>
+        <p class="page-intro">Your world has movement and collectibles. Now it needs stakes. In Sprint 3 you'll add a patrolling enemy, a lives counter, and the two outcomes every game must have — a way to win and a way to lose. You'll then test both deliberately, which is your first formal evaluation activity.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> Sprint 2 review is done — collectibles and score work. The studio lead's next note: "The game has no tension yet. Add at least one enemy and make sure the player can actually win and lose. Test both outcomes before Sprint 4 begins. No untested win/lose states make it to production."
+        </div>
+
+        <p>Before starting, check your Lesson 2 pseudocode. You should have defined a <strong>fail condition</strong> (what causes the player to lose) and a <strong>win condition</strong> (how the player completes the level). This sprint implements both. If your pseudocode didn't include these, write them now before touching any blocks.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Analyse First — How Games Handle Enemies</h2>
+        <p>Before building your own enemy, analyse how an existing MakeCode Arcade game handles them. Open any example from the gallery that includes enemies.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Read the Enemy System</h3>
+          <p>In your project notebook, answer these questions about the example game:</p>
+          <ol>
+            <li>How does the enemy move? Is it a fixed patrol, or does it respond to the player's position?</li>
+            <li>What happens when the player touches the enemy? Does it cause instant game over, or does the player lose a life?</li>
+            <li>Switch to <strong>JavaScript view</strong>. Find the overlap event for the enemy. Which sprite kinds are involved?</li>
+            <li>Find where <code>game.over()</code> is called. What argument does it receive — <code>true</code> or <code>false</code>? What does that difference mean?</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. GAME STATES
+      ══════════════════════════════════════ -->
+      <section id="states" class="content-section" aria-labelledby="states-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="states-heading">Game States — A Program Behaves Differently Over Time</h2>
+        <p>Every game exists in one of several <strong>states</strong> at any given moment. A state determines what the program does and what input it accepts. Understanding states is a key computing concept — many programs beyond games use the same idea.</p>
+
+        <div class="state-diagram" role="img" aria-label="Game state flow diagram showing Playing transitioning to Win or Lose">
+
+          <div class="state-node">
+            <div class="state-box state-box--playing">PLAYING</div>
+            <div class="state-label">Player can move, collect, take damage</div>
+          </div>
+
+          <div class="state-arrow">
+            <div class="state-arrow-line">→</div>
+            <div>reach goal</div>
+          </div>
+
+          <div class="state-node">
+            <div class="state-box state-box--win">WIN</div>
+            <div class="state-label">game.over(true) — celebration screen</div>
+          </div>
+
+          <div class="state-arrow" style="flex-direction:column-reverse;align-self:flex-end;">
+            <div class="state-arrow-line">→</div>
+            <div>lives = 0</div>
+          </div>
+
+          <div class="state-node" style="align-self:flex-end;">
+            <div class="state-box state-box--lose">LOSE</div>
+            <div class="state-label">game.over(false) — try again screen</div>
+          </div>
+
+        </div>
+
+        <p>In MakeCode Arcade, <code>game.over(true)</code> triggers the win screen and <code>game.over(false)</code> triggers the lose screen. Both end the PLAYING state. Your job in this sprint is to make sure both transitions work correctly — and test them.</p>
+
+        <div class="example-box">
+          <strong>States in the real world</strong>
+          State machines appear everywhere in computing. A traffic light cycles through STOP → READY → GO states. A door lock is LOCKED or UNLOCKED. An ATM is IDLE, PROCESSING, or DISPENSING. Game states are just one application of this fundamental idea.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 3 — Five Steps</h2>
+        <p>Open your MakeCode Arcade project. Sprints 1 and 2 should both be working. Add these steps on top — never remove previous work.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Create a Patrolling Enemy</div>
+              <span class="sprint-step__phase">Sprites</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>An enemy is a sprite of kind <code>Enemy</code>. The simplest patrol behaviour uses a constant horizontal velocity and the <code>BounceOnWall</code> flag — the enemy reverses direction automatically when it reaches a screen edge.</p>
+
+              <p><strong>Inside <code>on start</code></strong>, after your existing code:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🟥</span> Sprites → set enemy to sprite [ ] of kind Enemy</span>
+              </div>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">📍</span> Sprites → set enemy position to x [120] y [80]</span>
+              </div>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">➡️</span> Sprites → set enemy vx to 60</span>
+              </div>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🔁</span> Sprites → set enemy flag BounceOnWall to true</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> createEnemy
+  SET enemy ← new sprite
+  SET enemy.kind ← Enemy
+  SET enemy.x ← <span class="pseudo-kw">120</span>
+  SET enemy.vx ← <span class="pseudo-kw">60</span>
+  <span class="pseudo-kw">IF</span> enemy hits wall
+  <span class="pseudo-kw">THEN</span> enemy.vx ← enemy.vx × <span class="pseudo-kw">-1</span>
+  <span class="pseudo-kw">ENDIF</span>
+<span class="pseudo-kw">END</span> createEnemy</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">let</span> enemy = <span class="js-fn">sprites.create</span>(
+  img<span class="js-str">`your image`</span>,
+  SpriteKind.<span class="js-type">Enemy</span>
+)
+enemy.x = <span class="js-num">120</span>
+enemy.vx = <span class="js-num">60</span>
+enemy.<span class="js-fn">setFlag</span>(
+  SpriteFlag.<span class="js-type">BounceOnWall</span>,
+  <span class="js-kw">true</span>
+)
+<span class="js-cmt">// MakeCode reverses vx
+// when screen edge is reached</span></pre>
+                </div>
+              </div>
+
+              <p>Draw a clearly threatening sprite image — red, spiky, or any design that signals "danger" to the player. Position the enemy on a platform your player must cross.</p>
+              <p><strong>Test it</strong> — the enemy should move left/right and reverse at screen edges without any extra code.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Set Up the Lives Counter</div>
+              <span class="sprint-step__phase">Data</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Before detecting enemy contact, set the player's starting lives. MakeCode Arcade manages lives as a built-in data value — similar to how it manages score. When lives reach zero, the game automatically triggers a lose state.</p>
+
+              <p><strong>Inside <code>on start</code></strong>, near the top before the sprite creation code:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">❤️</span> Info → set life to 3</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> setupGame
+  SET lives ← <span class="pseudo-kw">3</span>
+  <span class="pseudo-cmt">-- displayed top-left</span>
+<span class="pseudo-kw">END</span> setupGame</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">info.setLife</span>(<span class="js-num">3</span>)
+<span class="js-cmt">// Shows as heart icons top-left
+// Auto game.over(false) at 0</span></pre>
+                </div>
+              </div>
+
+              <p>Three lives is standard — but consider your game's difficulty. If your level is very short, one or two lives might create better tension. Add a note in your project notebook explaining your choice.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Player–Enemy Overlap → Lose a Life</div>
+              <span class="sprint-step__phase">Events</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>When the player touches an enemy, they should lose a life and the enemy should briefly flash (giving the player a moment to recover). This uses the same <code>sprites.onOverlap</code> pattern from Lesson 4 — different sprite kinds, different outcome.</p>
+
+              <p><strong>Add a new top-level overlap event block:</strong></p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">💥</span> Sprites → on sprite of kind Player overlaps otherSprite of kind Enemy</span>
+              </div>
+              <p>Inside it, add:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">❤️</span> Info → change life by -1</span>
+              </div>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">✨</span> Sprites → sprite start effect spray</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps enemy
+<span class="pseudo-kw">THEN</span>
+  lives ← lives - <span class="pseudo-kw">1</span>
+  OUTPUT damage effect
+  <span class="pseudo-kw">IF</span> lives = <span class="pseudo-kw">0</span> <span class="pseudo-kw">THEN</span>
+    game.over(lose)
+  <span class="pseudo-kw">ENDIF</span>
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">sprites.onOverlap</span>(
+  SpriteKind.<span class="js-type">Player</span>,
+  SpriteKind.<span class="js-type">Enemy</span>,
+  <span class="js-kw">function</span>(sprite, otherSprite) {
+    <span class="js-fn">info.changeLifeBy</span>(<span class="js-num">-1</span>)
+    sprite.<span class="js-fn">startEffect</span>(
+      effects.<span class="js-type">spray</span>
+    )
+    <span class="js-cmt">// MakeCode auto-calls
+    // game.over(false) at 0</span>
+  }
+)</pre>
+                </div>
+              </div>
+
+              <p><strong>Test it</strong> — walk into the enemy. A heart icon should disappear. Run into the enemy three times — the game should automatically show the lose screen. If it does, Step 3 is working.</p>
+
+              <div class="eval-callout">
+                <span class="eval-callout__label">🔎 Evaluation note</span>
+                <p>You just deliberately tested a fail path. This is called <strong>negative testing</strong> — verifying that your failure condition triggers correctly. Good developers test fail cases as rigorously as success cases. Record what happened in your sprint log.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Win Condition — Reach the Goal</div>
+              <span class="sprint-step__phase">Events</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Every game needs a win condition. Choose the one that matches your Lesson 2 design — reaching a goal sprite, collecting all items, or both. The most common approach for a platformer is a goal sprite at the end of the level.</p>
+
+              <h3>Create a Goal Sprite</h3>
+              <p><strong>Inside <code>on start</code></strong>:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🌟</span> Sprites → set goal to sprite [ ] of kind Food</span>
+              </div>
+              <p>Use a kind of <code>Food</code> (or create a new kind called <code>Goal</code> via Advanced → Sprites). Position it at the far end of your level.</p>
+
+              <h3>Detect the Goal Overlap</h3>
+              <p><strong>Add a new overlap event</strong> for Player and your goal kind:</p>
+              <div>
+                <span class="block-desc"><span class="block-desc__icon">🏆</span> Game → game over WIN</span>
+              </div>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps goal
+<span class="pseudo-kw">THEN</span>
+  OUTPUT "You win!"
+  game.over(win)
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-fn">sprites.onOverlap</span>(
+  SpriteKind.<span class="js-type">Player</span>,
+  SpriteKind.<span class="js-type">Food</span>,
+  <span class="js-kw">function</span>(sprite, otherSprite) {
+    <span class="js-cmt">// Only if it's the goal</span>
+    <span class="js-fn">game.over</span>(<span class="js-kw">true</span>)
+    <span class="js-cmt">// true = WIN screen</span>
+  }
+)</pre>
+                </div>
+              </div>
+
+              <div class="teaching-advice">
+                <h4>Separating goal from collectibles</h4>
+                <p>If your goal sprite is the same kind as your collectibles (<code>Food</code>), the collect event from Lesson 4 will fire first — destroying the goal before the win event triggers. The cleanest solution is to create a custom kind for your goal. In MakeCode Arcade: open the <code>sprites.onOverlap</code> block → click the kind dropdown → <strong>Add a new kind</strong> → name it <code>Goal</code>. Then set your goal sprite's kind to <code>Goal</code> and write a separate overlap event for Player + Goal.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Win Condition — Collect All Items (Alternative)</div>
+              <span class="sprint-step__phase--test phase-test" style="font-size:var(--text-xs);font-weight:700;letter-spacing:var(--letter-spacing-label);text-transform:uppercase;">Optional</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>If your game's win condition is collecting all items (not reaching a flag), you need to check whether all collectibles have been destroyed after each collection. Add this inside your existing Lesson 4 collectible overlap event:</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Your Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF</span> player overlaps collectible
+<span class="pseudo-kw">THEN</span>
+  score ← score + <span class="pseudo-kw">1</span>
+  collectible.destroy()
+  <span class="pseudo-kw">IF</span> score = totalCollectibles
+  <span class="pseudo-kw">THEN</span>
+    game.over(win)
+  <span class="pseudo-kw">ENDIF</span>
+<span class="pseudo-kw">ENDIF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-cmt">// Inside existing overlap event:</span>
+<span class="js-fn">info.changeScoreBy</span>(<span class="js-num">1</span>)
+otherSprite.<span class="js-fn">destroy</span>()
+<span class="js-cmt">// Check if all collected:</span>
+<span class="js-kw">if</span> (<span class="js-fn">info.score</span>() >= <span class="js-num">5</span>) {
+  <span class="js-fn">game.over</span>(<span class="js-kw">true</span>)
+}</pre>
+                </div>
+              </div>
+
+              <p>Replace <code>5</code> with however many collectibles your level has. If you add or remove collectibles later, update this number too — otherwise the win condition will never trigger (or trigger too early).</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. TEST BOTH PATHS
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test Both Paths — Evaluation Begins Here</h2>
+        <p>This is your first formal testing and evaluation activity. In the Design and Production Framework, <strong>Testing &amp; Evaluating</strong> means deliberately checking that your solution works as designed — not just playing it and hoping for the best.</p>
+
+        <p>Use this test table as a guide. Complete it in your project notebook — write the actual result you observed, not what you expected.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected result</th>
+                <th>Your actual result (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Walk into enemy once</td>
+                <td>One heart disappears; player continues</td>
+                <td>Record actual result →</td>
+              </tr>
+              <tr>
+                <td>Walk into enemy 3 times</td>
+                <td>All hearts gone; lose screen appears</td>
+                <td>Record actual result →</td>
+              </tr>
+              <tr>
+                <td>Collect one item</td>
+                <td>Score increases by 1; item disappears; sound plays</td>
+                <td>Record actual result →</td>
+              </tr>
+              <tr>
+                <td>Reach the goal sprite</td>
+                <td>Win screen appears immediately</td>
+                <td>Record actual result →</td>
+              </tr>
+              <tr>
+                <td>Collect all items (if collect-all win)</td>
+                <td>Win screen appears after last item</td>
+                <td>Record actual result →</td>
+              </tr>
+              <tr>
+                <td>Jump on a platform while enemy patrols below</td>
+                <td>Player safe on platform; enemy doesn't follow</td>
+                <td>Record actual result →</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">🔎 Evaluation</span>
+          <p>For each test where the actual result didn't match the expected result, write:</p>
+          <ol>
+            <li>What went wrong (the <strong>bug</strong>)</li>
+            <li>What you changed to fix it (the <strong>fix</strong>)</li>
+            <li>Whether the fix introduced any new problems (a <strong>regression</strong>)</li>
+          </ol>
+          <p>This is the process real software developers follow. Recording bugs and fixes is as important as recording what worked.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 3 Checkpoint</h2>
+        <p>Tick off every item in your project notebook. Your game must have a complete, testable loop before Lesson 6.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">✓ Sprint 3 — Checklist</div>
+          <h3>Your game must:</h3>
+          <ul>
+            <li>Display at least one patrolling enemy that moves left/right and reverses direction</li>
+            <li>Reduce the player's lives by 1 on each enemy contact</li>
+            <li>Trigger the lose screen when lives reach zero</li>
+            <li>Display a win screen when the player reaches the goal (or collects all items)</li>
+            <li>Have a completed test table in your project notebook (all six tests attempted)</li>
+            <li>Have all Sprint 1 and Sprint 2 behaviours still working</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Game state</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A mode that determines how a program behaves and what input it accepts. Common game states: Playing, Win, Lose, Paused. State machines are used throughout computing.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Win condition</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The specific event that triggers a transition to the Win state. e.g. reach the flag, collect all items, defeat the boss. Must be clearly defined before coding begins.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Fail condition</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The specific event that triggers a transition to the Lose state. e.g. lives reach zero, player falls off map, time runs out. Must be proportionate and consistent.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Negative testing</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Deliberately testing that your failure conditions work correctly — not just testing the happy path. Walking into an enemy to check lives decrease is negative testing.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Regression</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A bug introduced when fixing another bug or adding a new feature. After every change, re-test previously working features to check for regressions.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Flag (sprite)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A boolean property of a sprite that enables or disables a behaviour. BounceOnWall is a flag — setting it to true makes the sprite reverse direction at screen edges.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Boolean</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A value that is either TRUE or FALSE — nothing else. game.over(true) passes a boolean argument: true means WIN, false means LOSE.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">State machine</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A programming pattern where a system moves between defined states based on events. Traffic lights, door locks, vending machines, and game screens are all state machines.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="game.over(true) triggers the WIN screen — passing true means the player succeeded. You'd call game.over(false) for a loss. The boolean argument is what distinguishes win from lose."
+             data-feedback-b="Correct. game.over(false) ends the current game session and displays the lose/try-again screen. The false argument signals that the player did not win — MakeCode Arcade uses this to decide which screen to show."
+             data-feedback-c="game.over() ends the entire game session — the game loop stops running. It doesn't reset lives to zero; the lives were already at zero, which is what caused game.over() to be called."
+             data-feedback-d="game.over() is called after a condition is met — it's a response, not a trigger. The enemy overlap event detects contact and reduces lives; game.over(false) fires when lives hit zero.">
+          <div class="mcq-question">1. What does <code>game.over(false)</code> do in MakeCode Arcade?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Triggers the win screen, because false means the game is not over yet</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Ends the game and shows the lose screen, because false signals the player did not win</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Resets the player's lives to zero and restarts the level</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Detects when the player touches an enemy and removes a life</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="Negative testing is specifically about testing failure conditions — checking that the game handles bad inputs or incorrect player actions correctly. Testing only the win condition would be positive testing."
+             data-feedback-b="Negative testing means deliberately triggering failure — walking into enemies, falling off the map, running out of time. It doesn't mean testing with invalid data like typing letters into a score field."
+             data-feedback-c="Testing movement and jumping is part of functional testing — checking that features work. Negative testing is specifically about verifying that failure states and error conditions trigger correctly."
+             data-feedback-d="Correct. Negative testing means deliberately triggering the failure condition — walking into the enemy, losing all lives — to verify that the lose state activates correctly. It checks that your failure handling works, not just your success path.">
+          <div class="mcq-question">2. What is negative testing, and why is it important when building a game?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Testing only the win condition to make sure it works correctly</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Entering invalid data (like letters instead of numbers) to crash the game</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Testing that movement and jumping work correctly in all directions</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Deliberately triggering the fail condition to verify that the lose state activates correctly</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="C"
+             data-feedback-a="A state is a mode that determines how the program behaves — not a variable that stores a number. Lives are stored as data, but the Playing/Win/Lose states describe the program's current behaviour, not a specific stored value."
+             data-feedback-b="A function call like sprites.create() performs an action and may return a value. A game state is a broader concept — it describes what mode the whole program is in, which affects many functions simultaneously."
+             data-feedback-c="Correct. A game state is a mode that controls what the program does and what inputs it responds to. In the Playing state, movement and overlap events are active. In the Win or Lose state, those events stop and a screen is shown instead."
+             data-feedback-d="A sprite kind is a category label for a single sprite (Player, Enemy, Food). A game state describes the entire program's current mode — it's a much broader concept that affects how the whole program behaves.">
+          <div class="mcq-question">3. What is a game state, and how does it affect what the program does?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> A variable that stores the current number of lives remaining</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A function call that creates a new sprite at the start of the game</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A mode that controls what the program does and which inputs it responds to — Playing, Win, and Lose are all states</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A category label assigned to a sprite, like Player, Enemy, or Food</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-5 Clear!</strong>
+            <p>All questions answered. Complete your test table and Sprint Checkpoint before Lesson 6.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 3 — Notebook Entry</h2>
+        <p>Sprint 3 crosses two D&amp;P phases — Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> For each step, write one sentence — what you implemented and whether it worked first time. Note any differences between your pseudocode and the final code.</li>
+            <li><strong>Test table:</strong> The completed test table from the Testing section (all six test cases, with your actual results written in).</li>
+            <li><strong>Bug report:</strong> Describe at least one thing that didn't work as expected. What was the bug? What did you change? Did the fix cause any regressions?</li>
+            <li><strong>Design reflection:</strong> Now that your game has a complete loop (move → collect → avoid → win/lose), play it through twice. Does it feel fair? Is the enemy too fast or too slow? What one change would most improve the player's experience?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Sprint 3 notebook entry here — sprint log, test results, bug report, design reflection. Saves automatically."
+                  aria-label="Lesson 5 sprint notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your completed test table must be in your project notebook (physical or digital) before you move to Lesson 6. Untested win/lose states don't go to production.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson04.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 4 — Collectibles &amp; Score</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson06.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 6 — JavaScript Bridge &amp; Polish</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson05',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

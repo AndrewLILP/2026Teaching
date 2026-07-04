@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 2 — Paper Prototype Lab · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    /* ── Nintendo accent override ── */
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    /* ── World / Level badge ── */
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Design element cards ── */
+    .design-element-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--space-3);
+      margin: var(--space-5) 0 var(--space-6);
+    }
+
+    .design-element-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+
+    .design-element-card--research { border-top-color: var(--color-phase-research); }
+    .design-element-card--produce  { border-top-color: var(--color-phase-produce);  }
+    .design-element-card--test     { border-top-color: var(--color-phase-test);     }
+
+    .design-element-icon {
+      font-size: 1.4rem;
+      display: block;
+      margin-bottom: var(--space-2);
+    }
+
+    .design-element-title {
+      font-weight: 700;
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .design-element-desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.55;
+    }
+
+    /* ── Prototype canvas ── */
+    .prototype-canvas {
+      background: var(--color-surface-2);
+      border: 2px dashed var(--accent-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .prototype-canvas h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .prototype-zone {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-3);
+    }
+
+    .prototype-zone:last-child { margin-bottom: 0; }
+
+    .prototype-zone-label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .prototype-zone-prompt {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Pseudocode block ── */
+    .pseudo-block {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-left: 4px solid var(--n-gold);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.9;
+      color: var(--color-text-primary);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw  { color: #4338ca; font-weight: 700; }   /* keyword — indigo, AA on cream */
+    .pseudo-cmt { color: var(--color-text-muted); font-style: italic; }
+    .pseudo-val { color: #15803d; }                      /* value — green, AA on cream */
+
+    .pseudo-label {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+      font-family: var(--font-body);
+    }
+
+    /* ── Two-col layout for pseudocode examples ── */
+    .pseudo-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+
+    @media (max-width: 680px) { .pseudo-pair { grid-template-columns: 1fr; } }
+
+    /* ── Level clear banner ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.55;
+      max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .reflection-prompts-box ol {
+      margin: 0;
+      padding-left: var(--space-6);
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      line-height: 1.75;
+      max-width: none;
+    }
+
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 1 — Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lesson 2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lesson 2 — Paper Prototype Lab</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#prototype">What is Prototyping?</a>
+          <a href="#elements">Game Design Elements</a>
+          <a href="#activity">Prototype Activity</a>
+          <a href="#pseudocode">Pseudocode</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT4 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Design Process">CT5-DPM-01</span>
+          <span class="outcome-tag" title="Thinking Skills">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 1 &nbsp;·&nbsp; Level 1-2</span>
+        <div class="page-eyebrow">Year 7 · Stage 4 · Lesson 2 of 10</div>
+        <h1>Paper Prototype Lab</h1>
+        <p class="page-intro">In Lesson 1 you analysed how Nintendo designed games. Now it's your turn. Before you write code, you'll design your platformer on paper — identifying mechanics, rules, feedback loops, and win/lose conditions. Then you'll translate your design into NSW pseudocode.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. YOUR BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> Nintendo's studio lead has approved your research. Now you need to pitch a platformer concept. Before you touch a computer, you must produce a paper prototype — a rough but testable design of your game's core loop. Only approved prototypes move into production.
+        </div>
+
+        <p>By the end of this lesson you will have a paper prototype of your platformer with at least six defined design elements, and a pseudocode description of your player's movement. Both become entries in your project notebook.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. WHAT IS PROTOTYPING?
+      ══════════════════════════════════════ -->
+      <section id="prototype" class="content-section" aria-labelledby="proto-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="proto-heading">What is Prototyping?</h2>
+        <p>A <strong>prototype</strong> is an early, rough version of a product used to test ideas before committing to a final design. In game development, prototyping almost always happens on paper first — it's faster, cheaper, and easier to change than code.</p>
+
+        <div class="teaching-advice">
+          <h4>Why paper first?</h4>
+          <p>Nintendo's game designers famously sketch levels and mechanics on paper before any code is written. Shigeru Miyamoto (creator of Mario) still draws his level ideas by hand. A paper prototype lets you test whether your idea is <em>fun</em> before spending hours programming it.</p>
+        </div>
+
+        <h3>The Design and Production Framework</h3>
+        <p>Paper prototyping lives in the <strong>Researching &amp; Planning</strong> phase of the D&amp;P Framework — but it immediately feeds into <strong>Producing &amp; Implementing</strong>. Your pseudocode (written in this lesson) becomes the direct blueprint for your MakeCode Arcade code in Lessons 3–6.</p>
+
+        <div class="ipo-flow">
+          <div class="ipo-step">
+            <span class="ipo-step__label">Paper Prototype</span>
+            <p>Sketch level layout, character, obstacles, rewards</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Pseudocode</span>
+            <p>Translate design decisions into NSW structured English</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">MakeCode Arcade</span>
+            <p>Convert pseudocode to blocks → JavaScript in Lessons 3–6</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. GAME DESIGN ELEMENTS
+      ══════════════════════════════════════ -->
+      <section id="elements" class="content-section" aria-labelledby="elements-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="elements-heading">Game Design Elements</h2>
+        <p>Every platformer — from World 1-1 to your own game — is built from the same core design elements. You need to define all six for your prototype before you start building.</p>
+
+        <div class="design-element-grid">
+
+          <div class="design-element-card">
+            <span class="design-element-icon">🎮</span>
+            <div class="design-element-title">Mechanics</div>
+            <div class="design-element-desc">The rules of interaction — what can the player do? Jump, run, collect, shoot? Each mechanic must be learnable.</div>
+          </div>
+
+          <div class="design-element-card design-element-card--research">
+            <span class="design-element-icon">📋</span>
+            <div class="design-element-title">Rules</div>
+            <div class="design-element-desc">The constraints on the player — what are they not allowed to do? What happens if they break a rule?</div>
+          </div>
+
+          <div class="design-element-card design-element-card--produce">
+            <span class="design-element-icon">📢</span>
+            <div class="design-element-title">Player Feedback</div>
+            <div class="design-element-desc">How does the game confirm actions? Sound, animation, score change, screen flash — every action needs a response.</div>
+          </div>
+
+          <div class="design-element-card design-element-card--test">
+            <span class="design-element-icon">💀</span>
+            <div class="design-element-title">Fail Condition</div>
+            <div class="design-element-desc">When and how does the player lose? The cost of failure must be clear, consistent, and proportionate.</div>
+          </div>
+
+          <div class="design-element-card">
+            <span class="design-element-icon">🏆</span>
+            <div class="design-element-title">Win Condition</div>
+            <div class="design-element-desc">How does the player win the level? The goal should always be visible or clearly communicated.</div>
+          </div>
+
+          <div class="design-element-card design-element-card--research">
+            <span class="design-element-icon">🗺️</span>
+            <div class="design-element-title">Level Structure</div>
+            <div class="design-element-desc">Where do obstacles, rewards, and the goal appear? Level layout teaches mechanics without words.</div>
+          </div>
+
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Quick Analysis</p>
+          <h3>Before You Design Your Own</h3>
+          <p>Review your Lesson 1 analysis of World 1-1. For each of the six elements above, write one sentence in your notebook describing what Nintendo did. This gives you a reference point when you design your own version.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. PROTOTYPE ACTIVITY
+      ══════════════════════════════════════ -->
+      <section id="activity" class="content-section" aria-labelledby="activity-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="activity-heading">Prototype Activity</h2>
+        <p>Use the prompts below to plan your platformer. Complete this on paper in your project notebook — draw your level layout, then fill in each design element. Rough sketches are fine. The goal is clarity of ideas, not artistic quality.</p>
+
+        <div class="prototype-canvas" role="region" aria-label="Prototype planning zones">
+
+          <h3>Your Platformer — Design Plan</h3>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Game Title &amp; Theme</span>
+            <p class="prototype-zone-prompt">What is your game called? What is the world or setting? (e.g. jungle, space, underwater, city). Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Player Character</span>
+            <p class="prototype-zone-prompt">Who or what does the player control? Sketch a rough design. What makes your character unique? Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Mechanics (at least 2)</span>
+            <p class="prototype-zone-prompt">List your player's actions: e.g. run left/right, jump, collect items, avoid enemies. Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Rules &amp; Constraints</span>
+            <p class="prototype-zone-prompt">What limits the player? e.g. gravity, screen boundaries, lives/health, time limit. Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Player Feedback</span>
+            <p class="prototype-zone-prompt">How will the game respond to the player? List at least two: score counter, sound effect, animation, health bar. Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Fail &amp; Win Conditions</span>
+            <p class="prototype-zone-prompt">When does the player lose (fail condition)? When do they complete the level (win condition)? Record in your notebook.</p>
+          </div>
+
+          <div class="prototype-zone">
+            <span class="prototype-zone-label">Level Sketch</span>
+            <p class="prototype-zone-prompt">Draw a rough bird's-eye or side-view sketch of your level. Mark where the player starts, where obstacles appear, where rewards are, and where the goal is. Record in your notebook.</p>
+          </div>
+
+        </div>
+
+        <p><em><span aria-hidden="true">✎ </span>Tip: compare your prototype with a partner. Can they understand your game just from reading your design plan? If not, clarify before moving to pseudocode.</em></p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. PSEUDOCODE
+      ══════════════════════════════════════ -->
+      <section id="pseudocode" class="content-section" aria-labelledby="pseudo-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="pseudo-heading">Pseudocode — Planning Before Code</h2>
+        <p><strong>Pseudocode</strong> is a way of writing the logic of a program in plain English, using a structured set of keywords. In NSW Computing Technology, we use specific keywords so your pseudocode is consistent and unambiguous — your teacher and classmates can read it even if they use a different programming language.</p>
+
+        <h3>NSW Structured English Keywords</h3>
+
+        <div class="word-bank">
+          <h3>Core Pseudocode Keywords</h3>
+          <div class="word-bank-grid">
+            <div class="word-bank-item">
+              <div class="word-bank-term">BEGIN / END</div>
+              <div class="word-bank-def">Mark the start and finish of a program or procedure.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">INPUT / OUTPUT</div>
+              <div class="word-bank-def">Receive data from the user or display data to the screen.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">IF / THEN / ELSE / ENDIF</div>
+              <div class="word-bank-def">Make a decision based on a condition — run one block of code or another.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">WHILE / ENDWHILE</div>
+              <div class="word-bank-def">Repeat a block of code while a condition is TRUE.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">FOR / NEXT</div>
+              <div class="word-bank-def">Repeat a block of code a set number of times.</div>
+            </div>
+            <div class="word-bank-item">
+              <div class="word-bank-term">SET / ←</div>
+              <div class="word-bank-def">Assign a value to a variable. e.g. SET score ← 0</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Pseudocode for Player Movement</h3>
+        <p>Here is how the core movement loop of a platformer looks in NSW structured English. This is what you will translate into MakeCode Arcade blocks in Lesson 3.</p>
+
+        <div class="pseudo-pair">
+
+          <div>
+            <div class="pseudo-block">
+              <span class="pseudo-label">Basic Movement</span>
+<span class="pseudo-kw">BEGIN</span> movePlayer
+  <span class="pseudo-kw">WHILE</span> game is running
+    <span class="pseudo-kw">IF</span> LEFT key pressed <span class="pseudo-kw">THEN</span>
+      player.x ← player.x - speed
+    <span class="pseudo-kw">ENDIF</span>
+    <span class="pseudo-kw">IF</span> RIGHT key pressed <span class="pseudo-kw">THEN</span>
+      player.x ← player.x + speed
+    <span class="pseudo-kw">ENDIF</span>
+    <span class="pseudo-kw">IF</span> UP key pressed <span class="pseudo-kw">THEN</span>
+      player.velocityY ← <span class="pseudo-val">-jumpForce</span>
+    <span class="pseudo-kw">ENDIF</span>
+  <span class="pseudo-kw">ENDWHILE</span>
+<span class="pseudo-kw">END</span> movePlayer</div>
+          </div>
+
+          <div>
+            <div class="pseudo-block">
+              <span class="pseudo-label">Gravity &amp; Collision</span>
+<span class="pseudo-kw">BEGIN</span> applyPhysics
+  <span class="pseudo-kw">WHILE</span> game is running
+    <span class="pseudo-cmt">// Apply gravity every frame</span>
+    player.velocityY ← player.velocityY + gravity
+
+    <span class="pseudo-cmt">// Move player vertically</span>
+    player.y ← player.y + player.velocityY
+
+    <span class="pseudo-kw">IF</span> player overlaps ground <span class="pseudo-kw">THEN</span>
+      player.y ← groundLevel
+      player.velocityY ← <span class="pseudo-val">0</span>
+    <span class="pseudo-kw">ENDIF</span>
+  <span class="pseudo-kw">ENDWHILE</span>
+<span class="pseudo-kw">END</span> applyPhysics</div>
+          </div>
+
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Pseudocode Task</p>
+          <h3>Write Your Own Movement Pseudocode</h3>
+          <p>Using the examples above as a guide, write pseudocode for your game's player movement in your project notebook. Include:</p>
+          <ol>
+            <li>Left and right movement</li>
+            <li>A jump mechanic</li>
+            <li>What happens when the player hits an obstacle (your fail condition)</li>
+            <li>What happens when the player reaches the goal (your win condition)</li>
+          </ol>
+          <p>Use NSW keywords: <strong>BEGIN, END, WHILE, ENDWHILE, IF, THEN, ENDIF, SET, ←</strong></p>
+        </div>
+
+        <div class="example-box">
+          <strong>Pseudocode vs Code</strong>
+          Pseudocode is not run by a computer — it's written for humans. The goal is to think through your logic clearly before you have to worry about exact syntax. In Lesson 3 you will translate your pseudocode directly into MakeCode Arcade blocks.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocab-heading">
+        <h2 id="vocab-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Prototype</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An early, rough version of a product used to test ideas before committing to a final design.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Pseudocode</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A structured plain-English description of a program's logic using standard keywords. Written for humans, not computers.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Algorithm</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A precise, step-by-step set of instructions for solving a problem. Every program is built from algorithms.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Variable</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named storage location that holds a value which can change. e.g. score, playerX, lives.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Condition</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A test that evaluates to TRUE or FALSE and controls which branch of code runs. e.g. IF lives = 0</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A control structure that repeats a block of code. WHILE repeats while a condition is true; FOR repeats a set number of times.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Selection</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A control structure that chooses between two or more paths based on a condition. IF / THEN / ELSE / ENDIF.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Core loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The repeating cycle that defines a game: input → update state → render output. Runs many times per second and never stops while the game is playing.</span>
+              </span>
+            </span>
+          </button>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer for each question, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="Pseudocode is written in plain English with structured keywords — it is designed to be read by humans, not executed by a computer. A computer can only run code in a proper programming language."
+             data-feedback-b="Correct. Pseudocode is written for humans — it describes the logic of a program in plain English using structured keywords, so you can plan and review your algorithm before writing real code."
+             data-feedback-c="Pseudocode is not secret or protected. It's a planning tool that anyone on the team can read and review, which is exactly the point."
+             data-feedback-d="That describes a prototype, not pseudocode. Pseudocode describes the logic of a program in structured English — it has nothing to do with sketching.">
+          <div class="mcq-question">1. What is the main purpose of pseudocode?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> To write instructions that a computer can execute directly</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To describe a program's logic in plain English so humans can plan and review it</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To keep a program's logic secret from other developers</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> To sketch the visual layout of a game before drawing it on paper</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="The level sketch is part of prototyping, but it's not the primary reason game designers prototype on paper before coding. Think about what changes when you need to revise an idea."
+             data-feedback-b="Paper prototyping is not about hiding ideas from others — in fact, good prototyping involves sharing and getting feedback from teammates and playtesters early."
+             data-feedback-c="Correct. Paper prototypes are fast and cheap to make and to change. If you discover a mechanic doesn't work, you can redraw it in seconds — revising code that doesn't work takes much longer."
+             data-feedback-d="Paper prototypes can be shown to others and often are — that's a key benefit. But it's not the primary reason they exist.">
+          <div class="mcq-question">2. Why do professional game designers prototype on paper before writing any code?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because paper sketches are required by the game engine before it will run</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To keep the game idea secret until it's fully finished</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because paper is fast and cheap to change — bad ideas cost seconds, not hours</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because they are not allowed to show the design to anyone outside the studio</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="WHILE is a loop — it repeats a block of code while a condition is TRUE. It's not a selection structure."
+             data-feedback-b="BEGIN and END mark the start and end of a procedure. They don't make decisions."
+             data-feedback-c="FOR / NEXT is used to repeat code a set number of times (counting loop). It doesn't choose between two paths."
+             data-feedback-d="Correct. IF / THEN / ELSE / ENDIF is the selection structure — it evaluates a condition and runs different code depending on whether it's TRUE or FALSE.">
+          <div class="mcq-question">3. Which NSW pseudocode keywords are used to make a decision — running one block of code if a condition is TRUE and a different block if it is FALSE?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> WHILE / ENDWHILE</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> BEGIN / END</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> FOR / NEXT</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> IF / THEN / ELSE / ENDIF</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 1 · Level 1-2 Clear!</strong>
+            <p>All questions answered. Add your notebook reflection below to complete this level.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Notebook Prompt</h2>
+        <p>Your notebook entry for this lesson should include your completed paper prototype and your pseudocode. Write your reflection below — it saves automatically.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Respond to <strong>at least one</strong> prompt. Aim for a full paragraph each:</p>
+          <ol>
+            <li>Describe one design decision you made in your paper prototype. Why did you make that choice? What were you trying to achieve for the player?</li>
+            <li>When you wrote your pseudocode, did you find any problems with your design that you hadn't noticed on paper? What did you change, and why?</li>
+            <li>Compare your game design to World 1-1. What did you borrow from Nintendo's design? What did you deliberately change to make your game different?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="8"
+                  placeholder="Start your notebook entry here — your notes save as you type…"
+                  aria-label="Lesson 2 notebook reflection"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Minimum: one full paragraph. Your pseudocode and prototype sketch should also be in your physical or digital project notebook as evidence for the D&amp;P process.</p>
+      </section>
+
+
+      <!-- Lesson nav -->
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson01.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 1 — How Mario Began</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson03.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 3 — MakeCode Arcade Platformer</span>
+        </a>
+      </nav>
+
+    </main>
+
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y7',
+        lessonId:       'lesson02',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>
