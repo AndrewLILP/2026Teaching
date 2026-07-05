@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 2 &mdash; Enemies &amp; Collectibles &middot; Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Code bridge (pseudocode → GDScript) ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--gd {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .gd-kw     { color: #4338ca; font-weight: 700; }
+    .gd-fn     { color: #15803d; }
+    .gd-str    { color: #b45309; }
+    .gd-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .gd-num    { color: #be185d; }
+    .gd-type   { color: #007aa0; }
+
+    /* ── Scene tree diagram ── */
+    .scene-tree-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 2;
+      overflow-x: auto;
+      color: var(--color-text-secondary);
+      white-space: pre;
+    }
+
+    .scene-tree-block .node-root  { color: var(--accent); font-weight: 700; }
+    .scene-tree-block .node-type  { color: #007aa0; }
+    .scene-tree-block .node-name  { color: var(--color-text-primary); font-weight: 600; }
+    .scene-tree-block .node-cmt   { color: var(--color-text-muted); font-style: italic; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      width: 28%;
+    }
+
+    .test-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Evaluate callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 2 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Sprint 2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Sprint 2 &mdash; Enemies &amp; Collectibles</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#testing">Test Score, Lives &amp; the Enemy</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Iterative design &amp; project management">CT5-DPM-01</span>
+          <span class="outcome-tag" title="Evaluate">CT5-EVL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Score, lives, a collectible, and a patrolling enemy with its own tiny state machine &mdash; the middle two lines of your GDD core loop, working and tested.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 2 &nbsp;&middot;&nbsp; Level 2-4</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lessons 7&ndash;9 &middot; Sprint 2 of 3</div>
+        <h1>Enemies &amp; Collectibles</h1>
+        <p class="page-intro">Sprint 1 gave your player a body and a level to stand on. Sprint 2 gives the game something to <em>do</em>: the next two lines of your core loop &mdash; <em>"IF player overlaps collectible THEN increase score, remove collectible"</em> and <em>"IF player overlaps enemy THEN decrease lives; IF lives = 0 THEN trigger fail condition."</em> Along the way you'll introduce a small state machine for your enemy, and a global place to store score and lives that any scene can read from.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Movement alone isn't a game &mdash; it's a tech demo. Nintendo AU wants to see risk and reward: something to collect, something to avoid. Before you copy the starter project's approach for detecting the player, look again at how it identified who it was colliding with. There's a more robust way to do it, and you're using it from here on."
+        </div>
+
+        <p>Sprint 1 must be fully working before you start &mdash; the checkpoint from last lesson is not optional. Everything in this sprint builds on top of your existing movement and level, never replacing it.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 2 &mdash; Five Steps</h2>
+        <p>Work through these steps in order. Test after each one.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">A Global Home for Score &amp; Lives</div>
+              <span class="sprint-step__phase">Autoload</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Score and lives need to be readable and changeable from any scene &mdash; the Coin, the Enemy, and your UI all need access to the same values. Create a new script called <code>GameState.gd</code>, then register it as an <strong>Autoload</strong> in <strong>Project &rarr; Project Settings &rarr; Autoload</strong>. This makes it a global singleton &mdash; accessible from anywhere in your project simply by typing <code>GameState</code>.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">DECLARE</span> score &larr; <span class="pseudo-kw">0</span>
+<span class="pseudo-kw">DECLARE</span> lives &larr; <span class="pseudo-kw">3</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript &mdash; GameState.gd</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">extends</span> Node
+
+<span class="gd-kw">var</span> score: <span class="gd-type">int</span> = <span class="gd-num">0</span>
+<span class="gd-kw">var</span> lives: <span class="gd-type">int</span> = <span class="gd-num">3</span></pre>
+                </div>
+              </div>
+
+              <p>While you're in the Player scene, also add the Player node to a new <strong>Group</strong> called <code>player</code> (in the Node dock's Groups tab). You'll use this in Step 2 instead of checking the node's name.</p>
+
+              <p><strong>Test it</strong> &mdash; nothing visible changes yet, but <code>GameState</code> should appear with no errors when you run any scene.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Build the Coin</div>
+              <span class="sprint-step__phase">GDD Core Loop &mdash; Line 4</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>This step implements <em>"IF player overlaps collectible THEN increase score, remove collectible."</em> Create a new scene: an <code>Area2D</code> root named <code>Coin</code>, with a <code>Sprite2D</code> and <code>CollisionShape2D</code> child &mdash; the same pattern you found in the starter project during Lessons 1&ndash;2.</p>
+
+              <pre class="scene-tree-block" role="img" aria-label="Coin scene node structure"><span class="node-root">Coin</span> <span class="node-type">(Area2D)</span>
+├─ <span class="node-name">Sprite2D</span>
+└─ <span class="node-name">CollisionShape2D</span></pre>
+
+              <p>Connect the Coin's <code>body_entered</code> signal to a new function on its own script. Notice the check below uses <code>is_in_group("player")</code> instead of comparing the node's name &mdash; this keeps working even if you rename the Player node later, and correctly ignores the Enemy or any other body that might overlap the coin.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHEN</span> body enters coin area
+  <span class="pseudo-kw">IF</span> body is player <span class="pseudo-kw">THEN</span>
+    ADD <span class="pseudo-kw">1</span> TO score
+    REMOVE coin</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_on_body_entered</span>(body):
+  <span class="gd-kw">if</span> body.<span class="gd-fn">is_in_group</span>(<span class="gd-str">"player"</span>):
+    GameState.score += <span class="gd-num">1</span>
+    <span class="gd-fn">queue_free</span>()</pre>
+                </div>
+              </div>
+
+              <p>Place two or three instances of your Coin scene around the level. <strong>Test it</strong> &mdash; walk into a coin; it should disappear immediately. Print <code>GameState.score</code> to the Output panel temporarily to confirm it's actually increasing.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">A Patrolling Enemy with a Simple State Machine</div>
+              <span class="sprint-step__phase">Enemy Scene</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Build an Enemy scene the same way you built the Player: a <code>CharacterBody2D</code> root with <code>Sprite2D</code> and <code>CollisionShape2D</code> children. Rather than writing separate patrol logic with no structure, give it a small <strong>state machine</strong> using an <code>enum</code> and a <code>match</code> statement &mdash; the same idea as the game states (Playing, Win, Lose) you used back in Year 7, now written as real code.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">DECLARE</span> state &larr; PATROL
+
+<span class="pseudo-kw">EVERY</span> physics frame
+  <span class="pseudo-kw">CASE</span> state <span class="pseudo-kw">OF</span>
+    PATROL:
+      move in current direction
+      <span class="pseudo-kw">IF</span> touching wall <span class="pseudo-kw">THEN</span> reverse direction
+    STUNNED:
+      stop moving</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">extends</span> CharacterBody2D
+
+<span class="gd-kw">enum</span> State { PATROL, STUNNED }
+<span class="gd-kw">var</span> state: State = State.PATROL
+<span class="gd-kw">@export var</span> speed: <span class="gd-type">float</span> = <span class="gd-num">80.0</span>
+<span class="gd-kw">var</span> direction: <span class="gd-type">int</span> = <span class="gd-num">1</span>
+
+<span class="gd-kw">func</span> <span class="gd-fn">_physics_process</span>(delta):
+  <span class="gd-kw">match</span> state:
+    State.PATROL:
+      velocity.x = direction * speed
+      <span class="gd-kw">if</span> <span class="gd-fn">is_on_wall</span>():
+        direction *= -<span class="gd-num">1</span>
+    State.STUNNED:
+      velocity.x = <span class="gd-num">0</span>
+  <span class="gd-fn">move_and_slide</span>()</pre>
+                </div>
+              </div>
+
+              <p>Right now <code>STUNNED</code> is never reached &mdash; that's expected. Step 4 is what triggers it. Place the Enemy in your level between two walls (or the level boundary and a wall) so <code>is_on_wall()</code> gives it something to bounce off.</p>
+
+              <p><strong>Test it</strong> &mdash; the enemy should patrol back and forth, correctly reversing direction at each wall, without you needing to specify patrol distances or timers.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Player&ndash;Enemy Overlap &rarr; Lose a Life</div>
+              <span class="sprint-step__phase">GDD Core Loop &mdash; Line 5</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>This step implements <em>"IF player overlaps enemy THEN decrease lives; IF lives = 0 THEN trigger fail condition."</em> Add a child <code>Area2D</code> named <code>HurtArea</code> to your Enemy scene, with its own <code>CollisionShape2D</code> slightly larger than the enemy's body. Connect its <code>body_entered</code> signal on the Enemy's own script.</p>
+
+              <pre class="scene-tree-block" role="img" aria-label="Updated enemy scene node structure with a HurtArea child"><span class="node-root">Enemy</span> <span class="node-type">(CharacterBody2D)</span>
+├─ <span class="node-name">Sprite2D</span>
+├─ <span class="node-name">CollisionShape2D</span>
+└─ <span class="node-name">HurtArea</span> <span class="node-type">(Area2D)</span>
+&nbsp;&nbsp;&nbsp;└─ <span class="node-name">CollisionShape2D</span></pre>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHEN</span> body enters hurt area
+  <span class="pseudo-kw">IF</span> body is player <span class="pseudo-kw">THEN</span>
+    SUBTRACT <span class="pseudo-kw">1</span> FROM lives
+    SET state TO STUNNED
+    <span class="pseudo-kw">IF</span> lives = <span class="pseudo-kw">0</span> <span class="pseudo-kw">THEN</span>
+      trigger fail condition
+    START stun timer</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_on_hurt_area_body_entered</span>(body):
+  <span class="gd-kw">if</span> body.<span class="gd-fn">is_in_group</span>(<span class="gd-str">"player"</span>):
+    GameState.lives -= <span class="gd-num">1</span>
+    state = State.STUNNED
+    <span class="gd-kw">if</span> GameState.lives <= <span class="gd-num">0</span>:
+      <span class="gd-cmt"># full fail-state handling arrives in Sprint 3</span>
+      <span class="gd-fn">print</span>(<span class="gd-str">"Fail condition triggered"</span>)
+    $StunTimer.<span class="gd-fn">start</span>()</pre>
+                </div>
+              </div>
+
+              <p>Add a <code>Timer</code> node named <code>StunTimer</code> as a child of Enemy, set to one-shot with a 1-second wait time. Connect its <code>timeout</code> signal to set <code>state = State.PATROL</code> again, returning the enemy to its normal behaviour.</p>
+
+              <p><strong>Test it</strong> &mdash; walk into the enemy. Lives should decrease by one, the enemy should stop moving briefly, then resume patrolling after about a second.</p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Display Score &amp; Lives</div>
+              <span class="sprint-step__phase">UI</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Numbers that only exist in the Output panel don't help a player. Add a <code>CanvasLayer</code> to your main level scene with two <code>Label</code> children &mdash; matching the UI structure you found in the starter project during Lessons 1&ndash;2.</p>
+
+              <pre class="scene-tree-block" role="img" aria-label="UI scene node structure"><span class="node-root">UI</span> <span class="node-type">(CanvasLayer)</span>
+├─ <span class="node-name">ScoreLabel</span> <span class="node-type">(Label)</span>
+└─ <span class="node-name">LivesLabel</span> <span class="node-type">(Label)</span></pre>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">EVERY</span> frame
+  SET scoreLabel text TO "Score: " + score
+  SET livesLabel text TO "Lives: " + lives</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_process</span>(delta):
+  $ScoreLabel.text = <span class="gd-str">"Score: "</span> + <span class="gd-fn">str</span>(GameState.score)
+  $LivesLabel.text = <span class="gd-str">"Lives: "</span> + <span class="gd-fn">str</span>(GameState.lives)</pre>
+                </div>
+              </div>
+
+              <p><strong>Test it</strong> &mdash; both labels should update live as you collect coins and take hits from the enemy, with no delay or refresh needed.</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test Score, Lives &amp; the Enemy</h2>
+        <p>Complete this test table in your project notebook. Include your Sprint 1 tests too &mdash; confirm movement and physics still work unchanged.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected result</th>
+                <th>Your actual result (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Collect one coin</td>
+                <td>Score increases by 1; coin disappears immediately</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Collect every coin in the level</td>
+                <td>All coins removed; score matches the total number placed</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Enemy reaches a wall while patrolling</td>
+                <td>Enemy reverses direction and continues patrolling</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Walk into the enemy once</td>
+                <td>Lives decreases by 1; enemy stops moving briefly (STUNNED)</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Wait after being hit</td>
+                <td>Enemy resumes patrolling roughly one second later</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Walk into the enemy repeatedly until lives reach 0</td>
+                <td>"Fail condition triggered" is printed to the Output panel</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">&#128269; Evaluation</span>
+          <p>For each test where the actual result didn't match the expected result, write:</p>
+          <ol>
+            <li>What went wrong (the <strong>bug</strong>)</li>
+            <li>What you changed to fix it (the <strong>fix</strong>)</li>
+            <li>Whether the fix introduced any new problems (a <strong>regression</strong>)</li>
+          </ol>
+          <p>A common bug at this stage: lives drop by more than 1 per hit, because the player stays overlapping the HurtArea across several frames before the STUNNED state or invulnerability takes effect. If this happens, check whether <code>body_entered</code> is firing once or repeatedly.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 2 Checkpoint</h2>
+        <p>Tick off every item in your project notebook. Your project must pass this checkpoint before Sprint 3 begins.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">&#10003; Sprint 2 &mdash; Checklist</div>
+          <h3>Your project must:</h3>
+          <ul>
+            <li>Have a GameState Autoload storing score and lives, accessible from every scene</li>
+            <li>Have at least one working Coin that increases score and removes itself on pickup</li>
+            <li>Have a patrolling Enemy that correctly reverses direction at walls using <code>is_on_wall()</code></li>
+            <li>Decrease lives and briefly stun the enemy on player contact, using the PATROL/STUNNED state machine</li>
+            <li>Print a fail condition message when lives reach zero</li>
+            <li>Display live-updating Score and Lives labels on screen</li>
+            <li>Have all Sprint 1 movement, jumping, and collision behaviours still working unchanged</li>
+            <li>Have a completed test table in your project notebook (all six tests attempted)</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Autoload (Singleton)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A script registered to load automatically and stay accessible from any scene in the project — the standard way to store shared data like score and lives.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Enum</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named list of fixed options, like State.PATROL and State.STUNNED, used instead of plain numbers or strings so the code reads clearly and can't hold an invalid value.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">State Machine</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A system that is always in exactly one of a fixed set of states, with clear rules for switching between them — the same idea as Year 7's Playing/Win/Lose states, now applied to an enemy.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">match statement</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A GDScript control structure that runs different code depending on which value a variable currently holds — a cleaner alternative to a long chain of if/elif statements.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Group</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A label a node can be tagged with in the editor, checked in code with is_in_group() — more robust than checking a node's name, since names can change.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Timer</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in node that emits a timeout signal after a set duration — used here to end the enemy's STUNNED state automatically after one second.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">CanvasLayer</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A node that draws its children on top of the game world, unaffected by the camera's position — the standard way to build UI like score displays.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Label</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in node type that displays text on screen — its text property can be updated from code every frame to show live values like score.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">The same NESA Course Performance Descriptors used across World 2. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this sprint sits</strong>
+          Sprint 2 pushes the <em>algorithm</em> bullet further &mdash; enums, match statements, and signals are more technically concise than Sprint 1's simple conditionals. It's also your strongest evidence yet for <em>iterative processes</em>, since regression-testing Sprint 1 before adding new features is exactly what "appropriate iterative processes" means in practice, not just adding features one after another.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="An Autoload isn't tied to a single scene — the opposite is true. Its entire purpose is to remain accessible when scenes change, which a scene-local variable cannot do."
+             data-feedback-b="Autoloads aren't about visual rendering or drawing order — that's what CanvasLayer and node ordering handle. Autoload is about code accessibility, not visuals."
+             data-feedback-c="Correct. An Autoload registers a script as a global singleton, accessible from any scene without needing a direct node reference — exactly what score and lives need, since the Coin, Enemy, and UI all read and write the same values."
+             data-feedback-d="Autoload doesn't detect collisions — that's the job of Area2D and CharacterBody2D nodes with their physics and signal systems. Autoload solves a data-access problem, not a physics problem.">
+          <div class="mcq-question">1. Why does <code>GameState</code> need to be registered as an Autoload rather than just a variable inside the Player's script?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Autoloads are tied to a single scene, so they load faster</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Autoloads control which nodes are drawn on top of others</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> An Autoload is globally accessible from any scene, which score and lives need since the Coin, Enemy, and UI all read and write the same values</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Autoloads automatically detect collisions between any two bodies in the game</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="B"
+             data-feedback-a="is_in_group() doesn't run faster than a name check — performance isn't the reason it's preferred here. The reason is about correctness, not speed."
+             data-feedback-b="Correct. Checking is_in_group('player') keeps working even if the node is renamed, and correctly handles cases where a body might need multiple tags — a name comparison breaks the moment the node's name changes."
+             data-feedback-c="Group membership isn't set by the physics engine automatically — the developer deliberately adds a node to a group in the editor or in code. It's not automatic."
+             data-feedback-d="Groups aren't required for signals to connect at all — body_entered fires regardless of group membership. Groups are used inside the connected function to check who triggered it, not to make the connection itself possible.">
+          <div class="mcq-question">2. Why is <code>body.is_in_group("player")</code> a more robust check than <code>body.name == "Player"</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It runs faster than comparing text strings</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It keeps working even if the node is renamed, and correctly handles a body needing more than one tag</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Group membership is assigned automatically by the physics engine</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Signals can only connect between nodes that share a group</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="The match statement doesn't create new states — the enum defines what states exist. match only decides which block of code to run based on the current state value."
+             data-feedback-b="match isn't specifically for detecting collisions — that's handled separately by signals like body_entered. match is a general-purpose branching structure, used here for state logic."
+             data-feedback-c="This isn't about randomness — the enemy's state is set deliberately by specific code (like the HurtArea's signal handler), not chosen at random."
+             data-feedback-d="Correct. The match statement checks the enemy's current state value and runs the matching block of code — PATROL behaviour or STUNNED behaviour — instead of a long chain of if/elif checks.">
+          <div class="mcq-question">3. What does the <code>match</code> statement do in the enemy's <code>_physics_process</code> function?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Creates a new state each time the function runs</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Detects collisions between the enemy and the player</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Randomly chooses whether the enemy is PATROL or STUNNED</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Runs the block of code matching the enemy's current state, instead of a long chain of if/elif checks</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 2 &middot; Level 2-4 Clear!</strong>
+            <p>All questions answered. Complete your test table and Sprint Checkpoint before Sprint 3 begins.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 2 &mdash; Notebook Entry</h2>
+        <p>Sprint 2 crosses two D&amp;P phases &mdash; Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> for each of the five steps, one sentence on what you implemented and whether it worked first time.</li>
+            <li><strong>Test table:</strong> the completed test table from the Testing section, with actual results written in.</li>
+            <li><strong>Bug report:</strong> describe at least one thing that didn't work as expected, what you changed, and whether the fix caused any regressions.</li>
+            <li><strong>Design reflection:</strong> compare your enemy and coin behaviour to your GDD's core loop pseudocode. Does the STUNNED state change how the game feels compared to what you originally imagined? Would you adjust the pseudocode now?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Sprint 2 notebook entry here — sprint log, test results, bug report, design reflection. Saves automatically."
+                  aria-label="Sprint 2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring a working, tested build to Sprint 3 &mdash; levels, UI screens, and win/lose states are added on top of this, not instead of it.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y9-sprint01.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">Sprint 1 &mdash; Movement &amp; Physics</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y9-sprint03.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Sprint 3 &mdash; Level Design &amp; Polish</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y9',
+        lessonId:       'sprint02',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

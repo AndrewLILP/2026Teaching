@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shader Series — Lesson 2: Texture Sampling &amp; Emission · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+      --n-blue:         #007aa0;
+      --n-blue-surface: rgba(0, 122, 160, 0.10);
+      --n-blue-border:  rgba(0, 122, 160, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--n-blue-surface);
+      border: 1px solid var(--n-blue-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--n-blue-surface);
+      border: 2px solid var(--n-blue-border);
+      color: var(--n-blue);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Code bridge — pseudocode ↔ node graph ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--graph {
+      background: var(--n-blue-surface);
+      color: var(--n-blue);
+      border: 1px solid var(--n-blue-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .node-name { color: var(--n-blue); font-weight: 700; }
+    .node-port { color: #15803d; }
+    .node-val  { color: #b45309; }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(0, 122, 160, 0.07);
+      border: 1px solid rgba(0, 122, 160, 0.25);
+      border-left: 4px solid var(--n-blue);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-2); max-width: none; }
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--n-blue-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child { font-weight: 600; color: var(--color-text-primary); width: 24%; }
+    .test-table tbody td:last-child { background: var(--color-surface-2); color: var(--color-text-muted); font-style: italic; font-size: var(--text-xs); }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 3 — Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Shader Series — Lesson 2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li><a href="y10-shaders.html">Shader Series — Lesson 1</a></li>
+      <li aria-current="page">Lesson 2 — Texture Sampling &amp; Emission</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Lesson 2 Brief</a>
+          <a href="#analyse">Finish Deconstructing UnlitGlow</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#build">Build Texture &amp; Emission</a>
+          <a href="#cpd">CPD Focus</a>
+          <a href="#testing">Test Your Shader</a>
+          <a href="#checkpoint">Lesson Checkpoint</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Design and implementation of user interfaces">CT5-DES-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Lesson Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Add a sampled texture to Base Color and a genuine bloom-triggering Emission — completing your understanding of the collectible orb's glow.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 3 · Shader Series &nbsp;·&nbsp; Lesson 2</span>
+        <div class="page-eyebrow">Year 10 · Stage 5 · Strand A · Visual Extension</div>
+        <h1>Texture Sampling &amp; Emission</h1>
+        <p class="page-intro">Lesson 1 left one part of the collectible orb's <code>UnlitGlow</code> material unexplained on purpose: the actual glow. That glow isn't Base Color at all — it's a separate Fragment input called Emission, paired with a texture instead of a flat colour. This lesson finishes that deconstruction, then has you build both into your own shader.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Lesson 2 Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> "A flat colour was a good start, but nothing in this studio ships with placeholder materials. I want a real texture driving Base Color, and a genuine glow — not a bright colour that only looks like it's glowing. If Emission doesn't actually bloom, it isn't finished."
+        </div>
+
+        <p>You'll need your working Lesson 1 shader graph as a starting point, plus any small test texture (a simple pattern works fine) and access to your scene's URP Volume settings.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. FINISH DECONSTRUCTING UNLITGLOW
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Finish Deconstructing UnlitGlow</h2>
+        <p>Reopen <code>UnlitGlow</code> from the collectible orb. This time, trace what feeds into <strong>Emission</strong> specifically — a separate Fragment input from Base Color entirely. You should find an HDR Color node, likely with an intensity value well above 1.</p>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">Why "well above 1"?</span>
+          <p>A normal colour value tops out at 1 (fully bright). HDR (High Dynamic Range) colours can go higher — 2, 5, even 10 — specifically so a post-processing effect called Bloom can detect "this is genuinely bright" and add a soft glow around it. A colour value of exactly 1 might look bright on screen, but won't trigger Bloom at all.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Texture2D</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An image asset that can be sampled inside a shader to drive colour, detail, or other surface properties — instead of a single flat value.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">UV</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">2D coordinates (U, V) mapping points on a 3D model's surface to points on a flat texture image — this is how a flat image wraps correctly onto a 3D shape.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sample Texture 2D</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The node that actually reads a Texture2D at a given UV coordinate and outputs a colour — a Texture2D node alone holds the image; this node is what looks it up.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Tiling &amp; Offset</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Controls that repeat (tile) or shift (offset) a texture's UV coordinates before sampling — useful for repeating patterns or scrolling effects.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Emission</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A Fragment input separate from Base Color, representing light a surface appears to give off by itself — the basis of any glow effect.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">HDR Color</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A colour whose intensity can exceed the normal 0–1 range — required for Emission to actually trigger Bloom, rather than just looking like a bright flat colour.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Bloom</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A post-processing effect, enabled in the URP Volume, that detects unusually bright pixels (from HDR Emission) and adds a soft glow around them.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. BUILD TEXTURE & EMISSION
+      ══════════════════════════════════════ -->
+      <section id="build" class="content-section" aria-labelledby="build-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="build-heading">Build Texture &amp; Emission</h2>
+        <p>Extend your Lesson 1 graph. Predict your node plan in pseudocode first, then compare against the annotated graph recipe below.</p>
+
+        <div class="sprint-steps">
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">1</span>
+              <span class="sprint-step__title">Sample a Texture into Base Color</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Replace your flat Color node with a texture: add a <strong>Texture2D</strong> node (exposed, so you can swap images per-material), a <strong>UV</strong> node, and a <strong>Sample Texture 2D</strong> node connecting them together, feeding into Base Color.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> BuildTexturedColour()
+  CREATE Texture2D node (myTexture), EXPOSED = <span class="pseudo-kw">true</span>
+  CREATE UV node
+  CREATE SampleTexture2D node
+  CONNECT myTexture, UV <span class="pseudo-kw">TO</span> SampleTexture2D
+  CONNECT SampleTexture2D.RGBA <span class="pseudo-kw">TO</span> Fragment.BaseColor
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--graph">ShaderGraph Nodes</span>
+                  <pre class="code-bridge-block"><span class="node-name">Texture2D</span> (exposed) ──▶ <span class="node-name">Sample Texture 2D</span>.<span class="node-port">Texture</span>
+<span class="node-name">UV</span>            ──▶ <span class="node-name">Sample Texture 2D</span>.<span class="node-port">UV</span>
+<span class="node-name">Sample Texture 2D</span>.<span class="node-port">RGBA</span> ──▶ Fragment.<span class="node-port">Base Color</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">2</span>
+              <span class="sprint-step__title">Add Tiling &amp; Offset</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Insert a <strong>Tiling And Offset</strong> node between your UV node and the Sample Texture 2D node's UV input, so the texture can repeat or shift without touching the model's actual geometry.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> AddTilingOffset()
+  CREATE TilingAndOffset node (tiling, offset)
+  CONNECT UV <span class="pseudo-kw">TO</span> TilingAndOffset.UV
+  CONNECT TilingAndOffset.Out <span class="pseudo-kw">TO</span> SampleTexture2D.UV
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--graph">ShaderGraph Nodes</span>
+                  <pre class="code-bridge-block"><span class="node-name">UV</span> ──▶ <span class="node-name">Tiling And Offset</span>.<span class="node-port">UV</span>
+<span class="node-name">Tiling And Offset</span>.<span class="node-port">Out</span> ──▶ <span class="node-name">Sample Texture 2D</span>.<span class="node-port">UV</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">3</span>
+              <span class="sprint-step__title">Emission with a Genuine HDR Colour</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add an <strong>HDR Color</strong> node, set its intensity above 1 in the colour picker, and connect it to Fragment's <strong>Emission</strong> input — a completely separate input from Base Color.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> BuildEmission()
+  CREATE HDRColor node (glowColour, intensity > 1)
+  CONNECT glowColour <span class="pseudo-kw">TO</span> Fragment.Emission
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--graph">ShaderGraph Nodes</span>
+                  <pre class="code-bridge-block"><span class="node-name">HDR Color</span> (intensity: <span class="node-val">2.5</span>)
+  └─ <span class="node-port">Out</span> ──▶ Fragment.<span class="node-port">Emission</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">4</span>
+              <span class="sprint-step__title">Enable Bloom in the URP Volume</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Open your scene's Global Volume, add a <strong>Bloom</strong> override if one isn't already present, and enable it. Without this step, your HDR Emission is technically correct but produces no visible glow at all.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. CPD FOCUS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Focus — Computational, Design &amp; Systems Thinking</h2>
+        <p class="cpd-intro">This lesson's evidence (your texture/emission graph and its tested behaviour) is assessed primarily against <strong>CT5-THI-01</strong>, the same outcome as Lesson 1. Click a grade to see what that clause looks like at each level.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p><strong>Grade A</strong> — develops highly effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p><strong>Grade B</strong> — develops effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p><strong>Grade C</strong> — develops sound computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p><strong>Grade D</strong> — develops basic computing solutions using computational <em>or</em> design <em>or</em> systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Grade E</strong> — identifies processes that may produce a computing solution.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test Your Shader</h2>
+        <p>The negative tests here specifically target the two mistakes almost everyone makes the first time they try Emission.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr><th>Test Case</th><th>Steps</th><th>Expected Result</th><th>Actual Result</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Texture renders correctly</td>
+                <td>Apply the material to a test object</td>
+                <td>The chosen texture displays correctly, right-way-up, not stretched or distorted</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Tiling &amp; Offset works</td>
+                <td>Adjust the Tiling and Offset values in the Inspector</td>
+                <td>The texture visibly repeats or shifts across the surface as expected</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Emission at intensity 1 <em>(negative test)</em></td>
+                <td>Set the HDR Color's intensity to exactly 1 with Bloom enabled</td>
+                <td>Little to no visible glow — confirming intensity above 1 is genuinely required, not just a bright-looking colour</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Bloom disabled <em>(negative test)</em></td>
+                <td>Temporarily disable the Bloom override in the URP Volume, with Emission intensity above 1</td>
+                <td>The surface looks bright but shows no soft glow at all — confirming Bloom, not Emission alone, produces the visible glow</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Works on either path's object</td>
+                <td>Apply the same material to a Galaxy-style object and a Kart-style object</td>
+                <td>Texture and glow behave identically on both</td>
+                <td>Record here</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. LESSON CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">Lesson Checkpoint</div>
+          <h3>Before moving to the next lesson in the series, all of the following must be true:</h3>
+          <ul>
+            <li>A sampled texture, not a flat colour, drives Base Color.</li>
+            <li>Tiling and Offset visibly change how the texture displays.</li>
+            <li>Emission uses a genuine HDR Color with intensity above 1, and Bloom is enabled in the URP Volume.</li>
+            <li>You can explain what each of the two negative tests above actually proves.</li>
+            <li>All five test cases have recorded actual results.</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="A Sample Texture 2D node doesn't slow anything down meaningfully compared to a direct connection — performance isn't the reason for this extra step."
+             data-feedback-b="This isn't about UV coordinates being optional — UV is required either way to know where on the texture to read from; the real reason for a separate sampling node is different."
+             data-feedback-c="Correct. A Texture2D node just holds a reference to the image asset — it doesn't produce a usable colour on its own. Sample Texture 2D is the node that actually reads a colour value out of that image at a specific UV coordinate, which is what Base Color needs."
+             data-feedback-d="Tiling and Offset is a separate, optional addition — Sample Texture 2D is required to get any colour out of a texture at all, with or without tiling.">
+          <div class="mcq-question">1. Why is a separate Sample Texture 2D node needed, rather than connecting a Texture2D node directly into Base Color?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Sample Texture 2D makes the shader render faster</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A Texture2D node alone doesn't need UV coordinates at all</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A Texture2D node only holds the image asset; Sample Texture 2D is what actually reads a colour from it at a given UV coordinate</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Sample Texture 2D is only needed if Tiling and Offset is also being used</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="An intensity of exactly 1 is a perfectly normal, fully-bright colour in standard range — it isn't invalid, it simply doesn't cross the threshold Bloom looks for."
+             data-feedback-b="This isn't a rendering error — a correctly built graph with intensity 1 renders exactly as expected; it just won't trigger Bloom, which is a separate, deliberate design outcome, not a mistake in the graph."
+             data-feedback-c="Texture sampling and HDR Emission intensity are unrelated systems — a texture not displaying correctly wouldn't be explained by an emission intensity value."
+             data-feedback-d="Correct. Bloom specifically looks for pixels brighter than the normal 0–1 range to decide what should glow. An Emission value at exactly 1 is bright, but not bright enough to register as 'glow-worthy' to Bloom — which is precisely why intensity needs to be pushed above 1.">
+          <div class="mcq-question">2. Why does setting HDR Color intensity to exactly 1 typically produce little to no visible glow, even with Bloom enabled?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> An intensity of 1 is an invalid value for an HDR Color node</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It means the graph has a rendering error</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It means the texture isn't sampling correctly</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Bloom looks for pixels brighter than the normal 0–1 range, and an intensity of exactly 1 doesn't cross that threshold</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="B"
+             data-feedback-a="Emission and Base Color are always separate Fragment inputs regardless of Bloom — Bloom being disabled doesn't merge or disable Emission's connection itself."
+             data-feedback-b="Correct. Emission being wired correctly with a high-intensity HDR value only produces a raw bright colour on the surface — the actual soft glow effect comes entirely from the Bloom post-processing override in the URP Volume. With Bloom disabled, the surface looks bright but there's no glow around it at all."
+             data-feedback-c="This has nothing to do with texture tiling — Bloom is a post-processing effect applied after rendering, completely unrelated to how a texture repeats or shifts."
+             data-feedback-d="Bloom being disabled doesn't affect Base Color's texture sampling at all — Base Color and Emission are independent Fragment inputs; disabling Bloom only removes the glow effect on bright Emission values.">
+          <div class="mcq-question">3. Why does disabling Bloom in the URP Volume remove the glow effect even when Emission is still correctly wired with a high-intensity HDR value?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Disabling Bloom automatically disconnects the Emission node from Fragment</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The actual soft glow comes from the Bloom post-processing effect itself, not from Emission alone — Emission just supplies the bright value Bloom looks for</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Bloom controls how the texture's Tiling and Offset values are applied</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Disabling Bloom also disables Base Color's texture sampling</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>Shader Series · Lesson 2 Clear!</strong>
+            <p>All questions answered. Complete your test table and Lesson Checkpoint before the next lesson in the series.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lesson 2 — Notebook Entry</h2>
+        <p>This lesson crosses two D&amp;P phases — Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Deconstruction notes:</strong> What you found tracing Emission in <code>UnlitGlow</code>, and its actual HDR intensity value.</li>
+            <li><strong>Node plan:</strong> Your pseudocode prediction, alongside a screenshot or sketch of your finished node graph.</li>
+            <li><strong>Test table:</strong> The completed test table from the Testing section, with your actual results recorded.</li>
+            <li><strong>Design reflection:</strong> Now that you understand both halves of a glowing material, where in your Galaxy or Kart game would a genuine glow effect (not just a bright colour) actually improve the player's experience?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Shader Series Lesson 2 notebook entry here — deconstruction notes, node plan, test results, design reflection. Saves automatically."
+                  aria-label="Shader Series Lesson 2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Since the Shader Series is optional, this entry can sit in a separate "Extensions" section of your project notebook rather than your main Strand A log.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y10-shaders.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Shader Series — Lesson 1</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-shaders-lesson03.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Shader Series — Lesson 3</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y10',
+        lessonId:       'shaders-lesson02',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

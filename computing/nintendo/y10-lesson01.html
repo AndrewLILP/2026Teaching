@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 1–2 — Deconstruct a Unity 3D Project · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+      /* World 3 identity colour — used locally for the Unity/C# half of
+         every pseudocode↔code comparison, and the world badge below */
+      --n-blue:         #007aa0;
+      --n-blue-surface: rgba(0, 122, 160, 0.10);
+      --n-blue-border:  rgba(0, 122, 160, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--n-blue-surface);
+      border: 1px solid var(--n-blue-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Code bridge — pseudocode ↔ C# ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--csharp {
+      background: var(--n-blue-surface);
+      color: var(--n-blue);
+      border: 1px solid var(--n-blue-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .cs-kw     { color: #1d4ed8; font-weight: 700; }
+    .cs-type   { color: #007aa0; }
+    .cs-fn     { color: #15803d; }
+    .cs-str    { color: #b45309; }
+    .cs-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .cs-num    { color: #be185d; }
+
+    /* ── Scene hierarchy tree ── */
+    .scene-tree {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 2;
+      color: var(--color-text-secondary);
+    }
+
+    .scene-tree .node-scene   { color: var(--color-text-primary); font-weight: 700; }
+    .scene-tree .node-go      { color: var(--accent-bright); }
+    .scene-tree .node-comp    { color: var(--n-blue); padding-left: var(--space-4); display: block; }
+    .scene-tree .node-note    { color: var(--color-text-muted); font-style: italic; font-family: var(--font-body); }
+    .scene-tree ul { list-style: none; margin: 0; padding-left: var(--space-5); }
+    .scene-tree > ul { padding-left: 0; }
+
+    /* ── No-descriptor note under CPD grade E ── */
+    .cpd-e-note {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-style: italic;
+      margin-top: var(--space-2);
+      padding-left: calc(36px + var(--space-5));
+    }
+
+    /* ── Path choice cards ── */
+    .path-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+      margin: var(--space-5) 0;
+    }
+
+    @media (max-width: 680px) { .path-choice-grid { grid-template-columns: 1fr; } }
+
+    .path-choice-card {
+      display: block;
+      text-decoration: none;
+      background: var(--color-surface-2);
+      border: 2px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .path-choice-card:hover {
+      border-color: var(--n-blue);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .path-choice-icon { font-size: 2rem; display: block; margin-bottom: var(--space-3); }
+
+    .path-choice-eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      display: block;
+      margin-bottom: var(--space-2);
+    }
+
+    .path-choice-card h3 { font-size: var(--text-lg); margin-bottom: var(--space-2); color: var(--color-text-primary); }
+    .path-choice-card p  { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Enterprise/innovation task box ── */
+    .enterprise-box {
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0;
+    }
+
+    .enterprise-box__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .enterprise-box p, .enterprise-box ol { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; }
+    .enterprise-box ol { padding-left: var(--space-6); margin-top: var(--space-2); }
+
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 3 — Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Lessons 1–2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Lessons 1–2 — Deconstruct a Unity 3D Project</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Deconstruct the Project</a>
+          <a href="#architecture">Scene &amp; Script Anatomy</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#enterprise">Enterprise &amp; Innovation</a>
+          <a href="#cpd">CPD Focus</a>
+          <a href="#gdd">Game Design Document</a>
+          <a href="#choose">Choose Your Path</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Design">CT5-DES-01</span>
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-research">Designing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Read an existing Unity 3D project fluently enough to write your own Game Design Document — then commit to Galaxy or Kart.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 3 &nbsp;·&nbsp; Lessons 1-2</span>
+        <div class="page-eyebrow">Year 10 · Stage 5 · CT5 Outcomes · Analyse &amp; Design</div>
+        <h1>Deconstruct a Unity 3D Project</h1>
+        <p class="page-intro">You've shipped a MakeCode platformer and a Godot game. Now you're stepping up to a professional-grade engine. Before you write a single line of C#, you'll read someone else's Unity project the way a new hire at a studio would on their first day — tracing the scene, the components, and the scripts that make it move. Then you'll commit to a path: Galaxy or Kart.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-research">Designing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> "Welcome to Galaxy &amp; Beyond studio. Before you touch Unity, you need to be able to read someone else's project as fluently as your own — every professional 3D game you'll ever join begins with someone else's code. Open the starter project, trace it end to end, then tell me which world you're building: gravity-bending platforms, or the racetrack."
+        </div>
+
+        <p>This is a two-lesson block. Lesson 1 is entirely analysis — no building. Lesson 2 finishes with your Game Design Document and your path decision. Everything downstream (Galaxy Sprints 1–3 or Kart Sprints 1–3) assumes you've done this deconstruction properly.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Deconstruct the Project</h2>
+        <p>Open the shared starter project (<code>Galaxy-Kart-Starter</code>) in Unity 6. It's a small 3D scene with a player capsule, a collectible orb, gravity, and a basic camera rig — deliberately generic, because both Galaxy and Kart are built from the same underlying ideas. Work through the Hierarchy panel first, before you open a single script.</p>
+
+        <div class="scene-tree" aria-label="Unity scene hierarchy">
+          <ul>
+            <li><span class="node-scene">▾ SampleScene</span>
+              <ul>
+                <li><span class="node-go">▸ Player</span>
+                  <span class="node-comp">Transform</span>
+                  <span class="node-comp">Rigidbody <span class="node-note">— physics: mass, gravity, drag</span></span>
+                  <span class="node-comp">Capsule Collider <span class="node-note">— shape used for physical contact</span></span>
+                  <span class="node-comp">PlayerMovement.cs <span class="node-note">— reads input, applies force</span></span>
+                </li>
+                <li><span class="node-go">▸ CollectibleOrb (Prefab)</span>
+                  <span class="node-comp">Transform</span>
+                  <span class="node-comp">Sphere Collider <span class="node-note">— "Is Trigger" ticked</span></span>
+                  <span class="node-comp">CollectibleItem.cs <span class="node-note">— detects pickup, adds score</span></span>
+                  <span class="node-comp">Mesh Renderer + Material <span class="node-note">— ShaderGraph "UnlitGlow"</span></span>
+                </li>
+                <li><span class="node-go">▸ Main Camera</span>
+                  <span class="node-comp">CameraFollow.cs <span class="node-note">— tracks Player transform each frame</span></span>
+                </li>
+                <li><span class="node-go">▸ GameManager</span>
+                  <span class="node-comp">ScoreManager.cs <span class="node-note">— holds score, exposed to every collectible</span></span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <p>Notice the pattern: every <strong>GameObject</strong> is a container, and everything it can do comes from the <strong>Components</strong> attached to it. A Rigidbody doesn't know how to detect a pickup, and a Collider doesn't know how to apply gravity — each component does one job, and a script (like <code>CollectibleItem.cs</code>) is just another component that adds custom behaviour. This is the same "one job per part" thinking you used in Godot's scene tree — the vocabulary has changed, the underlying design idea hasn't.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. SCENE & SCRIPT ANATOMY — CODE BRIDGE
+      ══════════════════════════════════════ -->
+      <section id="architecture" class="content-section" aria-labelledby="architecture-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="architecture-heading">Scene &amp; Script Anatomy</h2>
+        <p>Open <code>CollectibleItem.cs</code>. Before reading the C#, write what you think it must do in NSW structured English pseudocode, based only on what you saw in the Hierarchy. Then compare it against the real script below.</p>
+
+        <div class="code-bridge">
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+            <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> OnTriggerEnter(other)
+  <span class="pseudo-kw">IF</span> other.tag = "Player" <span class="pseudo-kw">THEN</span>
+    ScoreManager.AddScore(pointValue)
+    PlayPickupSound()
+    Destroy(<span class="pseudo-kw">this</span>.gameObject)
+  <span class="pseudo-kw">END IF</span>
+<span class="pseudo-kw">END</span></pre>
+          </div>
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--csharp">C#</span>
+            <pre class="code-bridge-block"><span class="cs-kw">private</span> <span class="cs-type">void</span> <span class="cs-fn">OnTriggerEnter</span>(<span class="cs-type">Collider</span> other)
+{
+    <span class="cs-kw">if</span> (other.CompareTag(<span class="cs-str">"Player"</span>))
+    {
+        ScoreManager.Instance.<span class="cs-fn">AddScore</span>(pointValue);
+        AudioSource.<span class="cs-fn">PlayClipAtPoint</span>(pickupSound, transform.position);
+        <span class="cs-fn">Destroy</span>(gameObject);
+    }
+}</pre>
+          </div>
+        </div>
+
+        <p>Two things worth annotating in your notebook:</p>
+        <ul>
+          <li><strong><code>CompareTag("Player")</code></strong> is a guard condition — without it, the orb would disappear if <em>anything</em> touched it, including an enemy or a stray wall. Reading this line tells you the designer deliberately restricted pickup to one tag.</li>
+          <li><strong><code>ScoreManager.Instance</code></strong> is one script reaching out to another. This is your first look at scripts communicating — a pattern you'll rely on constantly once your game has more than one system (score, lives, UI) that all need to talk to each other.</li>
+        </ul>
+
+        <p>Now open <code>PlayerMovement.cs</code> and <code>CameraFollow.cs</code> and repeat the same process: predict in pseudocode, then compare. Add both annotated pairs to your notebook before Lesson 2.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">GameObject</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A container in a Unity scene. On its own it does nothing — everything it can do comes from the components attached to it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Component</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A single piece of behaviour attached to a GameObject — Transform, Rigidbody, Collider, or a custom script. Each does one job.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Rigidbody</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The component that hands a GameObject over to Unity's physics engine — gravity, mass, drag, and forces all act through it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Collider</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Defines a GameObject's physical shape for contact detection. "Is Trigger" ticked means it detects overlap without physically blocking movement.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Prefab</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A reusable, saved GameObject template. Edit the prefab once and every copy in every scene updates — the same reuse idea as a Godot scene or a MakeCode sprite kind.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">MonoBehaviour</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The base class every Unity script inherits from. It's what lets a plain C# class plug into the engine — receive frame updates, collision events, and appear in the Inspector.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">ShaderGraph</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Unity's node-based tool for building materials — what a surface looks like under light, including the glow on the collectible orb. Covered in depth in the Shader Series.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Instance</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A live copy of something in the running game — one specific placed GameObject, or (as with ScoreManager.Instance) a single shared object other scripts can reach.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. ENTERPRISE, INNOVATION & AUTOMATION
+      ══════════════════════════════════════ -->
+      <section id="enterprise" class="content-section" aria-labelledby="enterprise-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="enterprise-heading">Enterprise, Innovation &amp; Automation</h2>
+
+        <div class="enterprise-box">
+          <span class="enterprise-box__label">Studio Discussion</span>
+          <p>Every real game studio — including the teams behind Nintendo's first-party titles — starts new hires exactly the way you started this lesson: reading an existing project before writing anything new. Prefabs, reusable scripts, and shared systems like <code>ScoreManager</code> are all forms of <strong>automation</strong> — they let a small team avoid rebuilding the same logic for every object, every level, every game.</p>
+          <p>Answer in your notebook:</p>
+          <ol>
+            <li>Name one thing in the starter project that is <em>automated</em> — built once, reused everywhere. What would break down if every collectible had its own unique, hand-written script instead?</li>
+            <li>Studios treat "read before you build" as standard process, not a suggestion. How does today's lesson show that innovation in computing technology is often about <em>working practices</em>, not just new features?</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD FOCUS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Focus — Computational, Design &amp; Systems Thinking</h2>
+        <p class="cpd-intro">This lesson's evidence (your annotated scripts, scene-tree notes, and enterprise/innovation answers) is assessed primarily against <strong>CT5-THI-01</strong>. Click a grade to see what that clause looks like at each level.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p><strong>Grade A</strong> — develops highly effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p><strong>Grade B</strong> — develops effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p><strong>Grade C</strong> — develops sound computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p><strong>Grade D</strong> — develops basic computing solutions using computational <em>or</em> design <em>or</em> systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Grade E</strong> — identifies processes that may produce a computing solution.</p>
+          </div>
+        </div>
+        <p class="cpd-e-note">Note: the official Grade E descriptor doesn't have a separate clause for "computational, design and systems thinking" the way A–D do — at E, that skill is folded into the general processes clause shown above. This is a genuine feature of the NESA descriptors, not a simplification.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. GAME DESIGN DOCUMENT
+      ══════════════════════════════════════ -->
+      <section id="gdd" class="content-section" aria-labelledby="gdd-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Designing
+        </div>
+        <h2 id="gdd-heading">Game Design Document</h2>
+        <p>Using what you now know about GameObjects, components, and scripts talking to each other, write a short GDD for your chosen path's core loop. Every GDD must include NSW structured English pseudocode for at least one system (movement, scoring, or a win/lose condition) — not prose describing what you'll build, the actual pseudocode.</p>
+
+        <div class="tier-tasks">
+          <h3>Tiered GDD Task</h3>
+          <div class="tier-grid">
+            <div class="tier-card">
+              <span class="tier-badge tier-foundation">Foundation · Grades D–E</span>
+              <h4>One system, described</h4>
+              <p>Choose your path. Describe, in pseudocode, one system: either the player's movement OR the collectible/scoring loop. Label which components (from today's vocabulary) it would need.</p>
+            </div>
+            <div class="tier-card">
+              <span class="tier-badge tier-core">Core · Grade C</span>
+              <h4>Two systems, linked</h4>
+              <p>Pseudocode for movement <em>and</em> scoring, showing how they connect (e.g. how a collision event in one leads to a call in the other). Note which GameObjects and components each system touches.</p>
+            </div>
+            <div class="tier-card">
+              <span class="tier-badge tier-extension">Extension · Grades A–B</span>
+              <h4>Full core loop</h4>
+              <p>Pseudocode for your complete core loop — movement, scoring, and a win/lose condition — plus one justified design decision explaining why you chose this approach over an alternative.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHOOSE YOUR PATH
+      ══════════════════════════════════════ -->
+      <section id="choose" class="content-section" aria-labelledby="choose-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Designing
+        </div>
+        <h2 id="choose-heading">Choose Your Path</h2>
+        <p>Both paths meet the same CPD outcome ceiling — this is a choice of genre, not difficulty. Once you choose, you'll follow that path's three sprints through to a finished, playable build.</p>
+
+        <div class="path-choice-grid">
+          <a class="path-choice-card" href="y10-galaxy.html">
+            <span class="path-choice-icon">🌌</span>
+            <span class="path-choice-eyebrow">Path 1</span>
+            <h3>Galaxy-Style 3D Game</h3>
+            <p>Gravity-shifting mechanics, orbital movement, collectibles, and custom shaders in Unity URP.</p>
+          </a>
+          <a class="path-choice-card" href="y10-kart.html">
+            <span class="path-choice-icon">🏎️</span>
+            <span class="path-choice-eyebrow">Path 2</span>
+            <h3>Kart World Racing</h3>
+            <p>Track design, vehicle physics, lap timing, and opponent AI.</p>
+          </a>
+        </div>
+
+        <p class="reflection-hint">Not sure yet? The Shader Series (optional extension, linked from the Studio Hub) works alongside either path if you want to explore custom materials before committing.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="A Rigidbody handles physics — gravity, mass, drag, and forces. It doesn't make a script's functions run automatically; that's the job of MonoBehaviour."
+             data-feedback-b="A Collider defines shape for contact detection — it has nothing to do with whether a script's code runs. Colliders and MonoBehaviour solve completely different problems."
+             data-feedback-c="Correct. MonoBehaviour is the base class every Unity script inherits from. Inheriting from it is what lets a plain C# class plug into the engine — receive Update() calls every frame, respond to collision events like OnTriggerEnter, and show its fields in the Inspector."
+             data-feedback-d="A Prefab is a reusable saved GameObject template — useful for the collectible orb, but it doesn't explain why a script's code executes inside the engine.">
+          <div class="mcq-question">1. Why does <code>CollectibleItem.cs</code> need to inherit from MonoBehaviour?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because Rigidbody requires every script to inherit from MonoBehaviour</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because Colliders can only detect scripts that inherit from MonoBehaviour</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because inheriting from MonoBehaviour is what lets the script plug into Unity's engine — receiving frame updates and events like OnTriggerEnter</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because it turns the script into a reusable Prefab</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="B"
+             data-feedback-a="You already know JavaScript and GDScript's control structures, which is exactly why pseudocode still matters here — the value isn't learning IF/loop syntax again, it's separating the logic from any one language's syntax."
+             data-feedback-b="Correct. Writing pseudocode first forces you to nail down the logic — what should happen, and in what order — completely separately from Unity or C#'s specific syntax. If the logic is wrong, you find out before you've fought the engine's API at the same time."
+             data-feedback-c="Pseudocode isn't a requirement of the Unity Editor — Unity has no idea whether you wrote pseudocode first. This is a design-thinking practice, not a tool constraint."
+             data-feedback-d="C# is a real, useful language you'll keep using — this isn't about avoiding it. Pseudocode is a planning step that happens before you touch C#, not a replacement for learning it.">
+          <div class="mcq-question">2. Why write pseudocode before touching Unity's C# API, when you already know JavaScript and GDScript?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because you haven't learned IF statements or loops before</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because it separates the logic — what should happen and when — from any one language's specific syntax, so you can check the logic is right first</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because the Unity Editor requires a pseudocode file before it will run a C# script</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because C# is too difficult to use directly, so pseudocode replaces it</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="CompareTag doesn't affect physics at all — Rigidbody and gravity are unrelated to which tag an object has."
+             data-feedback-b="The orb is destroyed by Destroy(gameObject), a separate line further down. CompareTag doesn't destroy anything itself — it's a check that gates whether the rest of the method runs."
+             data-feedback-c="CompareTag checks a string tag, not score. ScoreManager.Instance.AddScore(pointValue) is what actually changes the score, and it only runs if the tag check passes."
+             data-feedback-d="Correct. CompareTag(\"Player\") checks whether the colliding object is tagged Player before anything else happens. Without it, the orb would react to ANY collider entering the trigger — an enemy, a wall, another collectible — awarding score incorrectly.">
+          <div class="mcq-question">3. In <code>OnTriggerEnter(Collider other)</code>, what does the <code>CompareTag("Player")</code> check achieve?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It applies gravity only to objects tagged Player</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It destroys the orb immediately, regardless of what touched it</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It updates the player's score directly</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It guards the rest of the method so only the Player object — not enemies, walls, or other objects — can trigger the pickup</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 3 · Level 3-1/2 Clear!</strong>
+            <p>All questions answered. Finish your GDD and choose your path before Sprint 1 begins.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           10. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 1–2 — Notebook Entry</h2>
+        <p>These two lessons cross the Identifying &amp; Defining and Designing phases. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Annotated scripts:</strong> Your pseudocode prediction alongside the real code for all three scripts — CollectibleItem.cs, PlayerMovement.cs, CameraFollow.cs.</li>
+            <li><strong>Enterprise &amp; innovation answers:</strong> Your two responses from the Studio Discussion task.</li>
+            <li><strong>Your GDD:</strong> Pseudocode for your chosen path's core loop, at the tier you're working toward.</li>
+            <li><strong>Path decision:</strong> Galaxy or Kart, with one sentence justifying the choice.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Lessons 1-2 notebook entry here — annotated scripts summary, enterprise/innovation answers, GDD pseudocode, and your path decision. Saves automatically."
+                  aria-label="Lesson 1-2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your full annotated scripts belong in your project notebook (physical or digital) — this box is for your summary and path decision.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="index.html">
+          <span class="lesson-nav__dir">← Back to</span>
+          <span class="lesson-nav__title">Studio Hub</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-galaxy.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Choose Your Path</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y10',
+        lessonId:       'lesson01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

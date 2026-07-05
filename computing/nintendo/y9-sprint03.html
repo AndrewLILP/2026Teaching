@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 3 &mdash; Level Design &amp; Polish &middot; Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__phase--safety { color: #b45309; }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Code bridge (pseudocode → GDScript) ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--gd {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .gd-kw     { color: #4338ca; font-weight: 700; }
+    .gd-fn     { color: #15803d; }
+    .gd-str    { color: #b45309; }
+    .gd-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .gd-num    { color: #be185d; }
+    .gd-type   { color: #007aa0; }
+
+    /* ── Scene tree diagram ── */
+    .scene-tree-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 2;
+      overflow-x: auto;
+      color: var(--color-text-secondary);
+      white-space: pre;
+    }
+
+    .scene-tree-block .node-root  { color: var(--accent); font-weight: 700; }
+    .scene-tree-block .node-type  { color: #007aa0; }
+    .scene-tree-block .node-name  { color: var(--color-text-primary); font-weight: 600; }
+
+    /* ── Safety callout ── */
+    .safety-callout {
+      background: rgba(180, 83, 9, 0.08);
+      border: 1px solid rgba(180, 83, 9, 0.25);
+      border-left: 4px solid #b45309;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .safety-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #b45309;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .safety-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .safety-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      width: 28%;
+    }
+
+    .test-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Evaluate callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 2 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Sprint 3</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Sprint 3 &mdash; Level Design &amp; Polish</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#testing">Test the Complete Build</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Iterative design &amp; project management">CT5-DPM-01</span>
+          <span class="outcome-tag" title="Evaluate">CT5-EVL-01</span>
+          <span class="outcome-tag" title="Safe, secure and ethical use of data">CT5-SAF-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">A real win/lose state, more than one level, sound, and a safely saved high score &mdash; your final playable build for assessment.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 2 &nbsp;&middot;&nbsp; Level 2-5</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lessons 10&ndash;12 &middot; Sprint 3 of 3</div>
+        <h1>Level Design &amp; Polish</h1>
+        <p class="page-intro">Sprint 2 left your fail condition as a single line printed to the Output panel &mdash; nobody playtesting your game would ever see it. Sprint 3 finishes the last line of your core loop, <em>"IF player reaches level goal THEN trigger win condition,"</em> replaces both placeholder outcomes with real win and lose screens, adds a second level, gives the game sound, and safely saves a high score between sessions. This is the build Nintendo AU actually sees.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "This is the version that ships. A print statement in the Output panel is not a lose screen. I also want a high score that survives closing the game &mdash; but I want it done properly. If you're saving any player data, even something as simple as a number, think about what could go wrong and design around it before you write the save code."
+        </div>
+
+        <p>Sprints 1 and 2 must both be fully working before you start. This sprint is entirely about finishing and polishing what already exists &mdash; you are not adding new mechanics, only completing the ones your GDD already promised.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 3 &mdash; Five Steps</h2>
+        <p>Work through these steps in order. Test after each one.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Real Win &amp; Lose Screens</div>
+              <span class="sprint-step__phase">Game State</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Build two small scenes: <code>WinScreen.tscn</code> and <code>LoseScreen.tscn</code>, each a <code>CanvasLayer</code> with a <code>Label</code> and a <code>Button</code>. Then replace Sprint 2's placeholder <code>print()</code> with a single function in <code>GameState</code> that both the Enemy and the level Goal can call.</p>
+
+              <pre class="scene-tree-block" role="img" aria-label="Win screen scene structure">WinScreen <span class="node-type">(CanvasLayer)</span>
+├─ <span class="node-name">MessageLabel</span> <span class="node-type">(Label)</span>
+└─ <span class="node-name">NextButton</span> <span class="node-type">(Button)</span></pre>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> triggerGameOver(won)
+  <span class="pseudo-kw">IF</span> won <span class="pseudo-kw">THEN</span>
+    LOAD win screen
+  <span class="pseudo-kw">ELSE</span>
+    LOAD lose screen
+<span class="pseudo-kw">END</span> triggerGameOver</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript &mdash; GameState.gd</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">trigger_game_over</span>(won: <span class="gd-type">bool</span>):
+  <span class="gd-kw">if</span> won:
+    <span class="gd-fn">get_tree</span>().<span class="gd-fn">change_scene_to_file</span>(<span class="gd-str">"res://ui/win_screen.tscn"</span>)
+  <span class="gd-kw">else</span>:
+    <span class="gd-fn">get_tree</span>().<span class="gd-fn">change_scene_to_file</span>(<span class="gd-str">"res://ui/lose_screen.tscn"</span>)</pre>
+                </div>
+              </div>
+
+              <p>Update the Enemy's <code>HurtArea</code> script from Sprint 2: replace <code>print("Fail condition triggered")</code> with <code>GameState.trigger_game_over(false)</code>.</p>
+
+              <p><strong>Test it</strong> &mdash; lose all your lives; the Lose screen should actually appear, not just a console message.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">The Level Goal</div>
+              <span class="sprint-step__phase">GDD Core Loop &mdash; Final Line</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>This step finally implements the last line of your core loop: <em>"IF player reaches level goal THEN trigger win condition."</em> Add a <code>Goal</code> scene &mdash; an <code>Area2D</code> with <code>Sprite2D</code> and <code>CollisionShape2D</code>, the exact same pattern as your Coin.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHEN</span> body enters goal area
+  <span class="pseudo-kw">IF</span> body is player <span class="pseudo-kw">THEN</span>
+    trigger win condition</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_on_body_entered</span>(body):
+  <span class="gd-kw">if</span> body.<span class="gd-fn">is_in_group</span>(<span class="gd-str">"player"</span>):
+    GameState.<span class="gd-fn">trigger_game_over</span>(<span class="gd-kw">true</span>)</pre>
+                </div>
+              </div>
+
+              <p>Place the Goal somewhere that requires the player to actually navigate the level &mdash; past the enemy, across the platforms &mdash; not immediately next to the spawn point.</p>
+
+              <p><strong>Test it</strong> &mdash; walk into the Goal; the Win screen should appear.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">A Second Level</div>
+              <span class="sprint-step__phase">Multiple Levels</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Duplicate your main level scene to create a second one &mdash; rearrange platforms, add another enemy, and adjust the Goal's position so it isn't identical to Level 1. Store both level paths in <code>GameState</code> so the Win screen knows what to load next.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">DECLARE</span> levels &larr; [level1, level2]
+<span class="pseudo-kw">DECLARE</span> currentLevel &larr; <span class="pseudo-kw">1</span>
+
+<span class="pseudo-kw">BEGIN</span> loadNextLevel
+  currentLevel &larr; currentLevel + <span class="pseudo-kw">1</span>
+  <span class="pseudo-kw">IF</span> currentLevel &le; length(levels) <span class="pseudo-kw">THEN</span>
+    LOAD levels[currentLevel]
+<span class="pseudo-kw">END</span> loadNextLevel</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript &mdash; GameState.gd</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">var</span> levels: <span class="gd-type">Array</span> = [
+  <span class="gd-str">"res://levels/level_1.tscn"</span>,
+  <span class="gd-str">"res://levels/level_2.tscn"</span>
+]
+<span class="gd-kw">var</span> current_level: <span class="gd-type">int</span> = <span class="gd-num">1</span>
+
+<span class="gd-kw">func</span> <span class="gd-fn">load_next_level</span>():
+  current_level += <span class="gd-num">1</span>
+  <span class="gd-kw">if</span> current_level <= levels.size():
+    <span class="gd-fn">get_tree</span>().<span class="gd-fn">change_scene_to_file</span>(levels[current_level - <span class="gd-num">1</span>])</pre>
+                </div>
+              </div>
+
+              <p>Connect the Win screen's <strong>Next</strong> button's <code>pressed</code> signal to call <code>GameState.load_next_level()</code>.</p>
+
+              <p><strong>Test it</strong> &mdash; complete Level 1, press Next on the Win screen, and confirm Level 2 loads with your player able to move immediately.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Sound Design</div>
+              <span class="sprint-step__phase">Polish</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add an <code>AudioStreamPlayer2D</code> child to the Player, the Coin, and the Enemy, each with a short sound effect assigned. Play each sound at the exact moment its matching event happens &mdash; not before, not after.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">WHEN</span> coin collected
+  PLAY pickup sound
+  ADD <span class="pseudo-kw">1</span> TO score</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript &mdash; Coin.gd</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_on_body_entered</span>(body):
+  <span class="gd-kw">if</span> body.<span class="gd-fn">is_in_group</span>(<span class="gd-str">"player"</span>):
+    $PickupSound.<span class="gd-fn">play</span>()
+    GameState.score += <span class="gd-num">1</span>
+    <span class="gd-cmt"># queue_free() waits until the sound finishes —
+    # see the note below</span>
+    <span class="gd-fn">get_tree</span>().<span class="gd-fn">create_timer</span>(<span class="gd-num">0.3</span>).timeout.<span class="gd-fn">connect</span>(queue_free)</pre>
+                </div>
+              </div>
+
+              <p>Notice the coin can no longer call <code>queue_free()</code> immediately &mdash; doing so would delete the <code>AudioStreamPlayer2D</code> before its sound finished playing. A short timer delays the removal just long enough for the sound to complete.</p>
+
+              <p><strong>Test it</strong> &mdash; jumping, collecting a coin, and taking damage from the enemy should each produce a distinct sound, and the coin's sound should play in full before it disappears.</p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Saving a High Score Safely</div>
+              <span class="sprint-step__phase sprint-step__phase--safety">Safe &amp; Secure Data</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>A high score is the simplest kind of persistent data &mdash; but "simple" doesn't mean you skip thinking about it. Godot separates two file locations: <code>res://</code> is your read-only project itself, and <code>user://</code> is a writable location on the player's device for data that changes at runtime, like save files.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> saveHighScore
+  <span class="pseudo-kw">IF</span> score &gt; highScore <span class="pseudo-kw">THEN</span>
+    highScore &larr; score
+    WRITE highScore TO save file
+<span class="pseudo-kw">END</span> saveHighScore</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript &mdash; GameState.gd</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">const</span> SAVE_PATH = <span class="gd-str">"user://highscore.save"</span>
+<span class="gd-kw">var</span> high_score: <span class="gd-type">int</span> = <span class="gd-num">0</span>
+
+<span class="gd-kw">func</span> <span class="gd-fn">save_high_score</span>():
+  <span class="gd-kw">if</span> score > high_score:
+    high_score = score
+    <span class="gd-kw">var</span> file = FileAccess.<span class="gd-fn">open</span>(SAVE_PATH, FileAccess.WRITE)
+    file.<span class="gd-fn">store_var</span>(high_score)
+
+<span class="gd-kw">func</span> <span class="gd-fn">load_high_score</span>():
+  <span class="gd-kw">if</span> FileAccess.<span class="gd-fn">file_exists</span>(SAVE_PATH):
+    <span class="gd-kw">var</span> file = FileAccess.<span class="gd-fn">open</span>(SAVE_PATH, FileAccess.READ)
+    high_score = file.<span class="gd-fn">get_var</span>()</pre>
+                </div>
+              </div>
+
+              <div class="safety-callout">
+                <span class="safety-callout__label">&#128274; Safe, Secure &amp; Ethical Data Use</span>
+                <p>Notice <code>save_high_score()</code> only overwrites the file if the new score is actually higher &mdash; without that check, a worse run could silently erase a genuinely better one. This is a small example of a bigger principle: any time your program writes data, decide deliberately what gets kept, what gets overwritten, and under what condition.</p>
+                <p>If you later added a leaderboard with player names, the same principle scales up significantly &mdash; you'd need to consider what's appropriate to collect, how it's stored, and how it could be misused if displayed publicly. Saving a single integer safely is good practice for handling more sensitive data later.</p>
+              </div>
+
+              <p>Call <code>load_high_score()</code> once when your first level starts, and <code>save_high_score()</code> the moment <code>trigger_game_over()</code> runs.</p>
+
+              <p><strong>Test it</strong> &mdash; get a score, lose, and check the high score displays correctly. Close Godot entirely, reopen the project, and confirm the high score is still there.</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test the Complete Build</h2>
+        <p>This is your final formal test table for World 2. Complete it in your project notebook alongside your Sprint 1 and Sprint 2 results.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected result</th>
+                <th>Your actual result (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Reach the level Goal</td>
+                <td>Win screen appears, showing the correct message</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Lose all lives</td>
+                <td>Lose screen appears &mdash; not a printed console message</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Press Next on the Win screen</td>
+                <td>Level 2 loads, player able to move immediately</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Jump, collect a coin, take damage</td>
+                <td>Each action produces a distinct, correctly timed sound</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Finish a run, then close and reopen the project</td>
+                <td>High score from the previous session is still displayed</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Finish a second run with a lower score than the saved high score</td>
+                <td>High score does not change &mdash; the higher value is preserved</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">&#128269; Evaluation</span>
+          <p>For each test where the actual result didn't match the expected result, write:</p>
+          <ol>
+            <li>What went wrong (the <strong>bug</strong>)</li>
+            <li>What you changed to fix it (the <strong>fix</strong>)</li>
+            <li>Whether the fix introduced any new problems (a <strong>regression</strong>)</li>
+          </ol>
+          <p>A common bug at this stage: the high score resets to zero every time the game starts, because <code>load_high_score()</code> was never actually called, or was called after the value was already overwritten. Check the order your functions run in.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 3 Checkpoint &mdash; Final Build</h2>
+        <p>Tick off every item in your project notebook. This checklist is your final playable build for assessment.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">&#10003; Sprint 3 &mdash; Checklist</div>
+          <h3>Your project must:</h3>
+          <ul>
+            <li>Show a real Win screen when the player reaches the Goal</li>
+            <li>Show a real Lose screen when lives reach zero &mdash; no console-only messages remaining</li>
+            <li>Load a second, distinct level when the player presses Next on the Win screen</li>
+            <li>Play a distinct sound for jumping, collecting a coin, and taking damage</li>
+            <li>Save the high score to <code>user://</code> and correctly reload it when the project restarts</li>
+            <li>Never overwrite a saved high score with a lower score</li>
+            <li>Have all Sprint 1 and Sprint 2 behaviours still working unchanged</li>
+            <li>Have a completed test table in your project notebook (all six tests attempted)</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">change_scene_to_file()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in function that unloads the currently running scene and loads a new one — used here to move between levels and win/lose screens.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">AudioStreamPlayer2D</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in node type that plays a sound effect from a specific point in the 2D world, attached to a script with play().</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">res:// path</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The path prefix for files inside the project itself — read-only once exported, since it's part of the shipped game.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">user:// path</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The path prefix for a writable location on the player's device — the correct place for save data that needs to persist between play sessions.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">FileAccess</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Godot's built-in class for reading from and writing to files, used here to save and load the high score.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Persistent Data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Data that survives after the program closes, stored in a file rather than only in memory — a high score is a simple example.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data Validation</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Checking that a value meets certain conditions before accepting or storing it — like confirming a new score is actually higher before overwriting a saved high score.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Playtest Build</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A version of a game complete enough to be played start to finish by someone other than its developer, used to gather real feedback.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">The same NESA Course Performance Descriptors used across World 2. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this sprint sits</strong>
+          Sprint 3 is your strongest evidence yet for <em>safe, secure and ethical data practices</em> &mdash; validating a score before overwriting it, and reasoning about what a future leaderboard feature would need to consider, both speak directly to that bullet. It also closes out the <em>iterative processes</em> bullet for World 2: three sprints, each tested before the next began, is the complete picture of "appropriate iterative processes to produce computing solutions."
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="res:// isn't writable at runtime once a game is exported — it's the project itself, shipped as read-only. Using it for a save file wouldn't work on an exported build."
+             data-feedback-b="Correct. user:// is a writable location on the player's device, specifically intended for data that changes at runtime and needs to persist — exactly what a high score save file needs. res:// is the read-only project itself."
+             data-feedback-c="Neither path is randomly assigned by Godot — both are fixed, well-defined locations with specific, different purposes."
+             data-feedback-d="This isn't about which path loads faster — the distinction is about read-only project files (res://) versus writable runtime data (user://), not performance.">
+          <div class="mcq-question">1. Why does the high score get saved to <code>user://highscore.save</code> instead of somewhere under <code>res://</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> res:// is faster to write to than user://</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> user:// is the writable location for runtime data that needs to persist, while res:// is the read-only project itself</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Godot randomly assigns one of the two paths each time the game runs</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> user:// loads before the rest of the game, so it must be used for anything needed immediately</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="The check has nothing to do with save speed — comparing two numbers is effectively instant either way. The reason is about correctness, not performance."
+             data-feedback-b="This isn't about preventing the file from being read — the check happens before writing, and doesn't affect whether the file can later be opened and read."
+             data-feedback-c="Correct. Without checking score > high_score first, a worse run would silently overwrite and erase a genuinely better previous result — the check protects data the player has already legitimately earned."
+             data-feedback-d="This validation doesn't stop the game from crashing — it's about data correctness (not losing a legitimate high score), not about program stability.">
+          <div class="mcq-question">2. Why does <code>save_high_score()</code> check <code>if score > high_score</code> before writing the file?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> To make the file save faster</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To prevent the file from ever being read again</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To prevent a worse run from silently overwriting and erasing a genuinely better previous result</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> To stop the game from crashing when it closes</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. change_scene_to_file() unloads whatever scene is currently running and loads a new one in its place — used here to move from one level to the next, and to switch to the win or lose screens."
+             data-feedback-b="This function doesn't save anything to disk — that's FileAccess's job. change_scene_to_file() is entirely about which scene is currently displayed and running."
+             data-feedback-c="It doesn't play sounds — that's what AudioStreamPlayer2D and its play() function handle. change_scene_to_file() only manages which scene is active."
+             data-feedback-d="This function doesn't detect collisions — signals like body_entered handle that. change_scene_to_file() is only responsible for switching between scenes.">
+          <div class="mcq-question">3. What does <code>get_tree().change_scene_to_file()</code> do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Unloads the currently running scene and loads a new one in its place</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Saves the current game state to a file on disk</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Plays a sound effect at a specific point in the level</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Detects when two bodies collide with each other</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 2 &middot; Level 2-5 Clear!</strong>
+            <p>All questions answered. Complete your test table and Sprint Checkpoint &mdash; this is your final build for World 2's Software Development strand.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 3 &mdash; Notebook Entry</h2>
+        <p>Sprint 3 crosses two D&amp;P phases &mdash; Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both, plus a final reflection on the whole build.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> for each of the five steps, one sentence on what you implemented and whether it worked first time.</li>
+            <li><strong>Test table:</strong> the completed test table from the Testing section, with actual results written in.</li>
+            <li><strong>Bug report:</strong> describe at least one thing that didn't work as expected, what you changed, and whether the fix caused any regressions.</li>
+            <li><strong>Full core loop reflection:</strong> your GDD's core loop is now completely implemented, line by line, across three sprints. Reread the original pseudocode from Lesson 3. Which lines changed the most between design and final build, and why?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Sprint 3 notebook entry here — sprint log, test results, bug report, full core loop reflection. Saves automatically."
+                  aria-label="Sprint 3 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Keep this build accessible &mdash; the EIS UX and Data lessons that follow both use your finished game directly.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y9-sprint02.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">Sprint 2 &mdash; Enemies &amp; Collectibles</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y9-ux-design.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">From Store to Game &mdash; Designing for UX</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y9',
+        lessonId:       'sprint03',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

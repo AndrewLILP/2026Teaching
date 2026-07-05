@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shader Series — Lesson 1: Unlit Colour &amp; Transparency · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+      --n-blue:         #007aa0;
+      --n-blue-surface: rgba(0, 122, 160, 0.10);
+      --n-blue-border:  rgba(0, 122, 160, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--n-blue-surface);
+      border: 1px solid var(--n-blue-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── About-series banner ── */
+    .series-banner {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    .series-banner__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .series-banner p { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: var(--space-2); }
+    .series-banner p:last-child { margin-bottom: 0; }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--n-blue-surface);
+      border: 2px solid var(--n-blue-border);
+      color: var(--n-blue);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Code bridge — pseudocode ↔ node graph ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--graph {
+      background: var(--n-blue-surface);
+      color: var(--n-blue);
+      border: 1px solid var(--n-blue-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .node-name { color: var(--n-blue); font-weight: 700; }
+    .node-port { color: #15803d; }
+    .node-val  { color: #b45309; }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(0, 122, 160, 0.07);
+      border: 1px solid rgba(0, 122, 160, 0.25);
+      border-left: 4px solid var(--n-blue);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-2); max-width: none; }
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--n-blue-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child { font-weight: 600; color: var(--color-text-primary); width: 24%; }
+    .test-table tbody td:last-child { background: var(--color-surface-2); color: var(--color-text-muted); font-style: italic; font-size: var(--text-xs); }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 3 — Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Shader Series</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Shader Series — Lesson 1</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#about">About the Shader Series</a>
+          <a href="#brief">Lesson 1 Brief</a>
+          <a href="#analyse">Deconstruct an Existing Material</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#build">Build an Unlit Colour Shader</a>
+          <a href="#cpd">CPD Focus</a>
+          <a href="#testing">Test Your Shader</a>
+          <a href="#checkpoint">Lesson Checkpoint</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Design and implementation of user interfaces">CT5-DES-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Lesson Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Build a working Unlit ShaderGraph material with a solid colour and adjustable transparency, tested on an object from either path.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 3 · Shader Series &nbsp;·&nbsp; Lesson 1</span>
+        <div class="page-eyebrow">Year 10 · Stage 5 · Strand A · Visual Extension</div>
+        <h1>Unlit Colour &amp; Transparency</h1>
+        <p class="page-intro">Every material you've used so far in Galaxy or Kart — including the collectible orb's glow — was built by someone else in ShaderGraph. This series pulls back the curtain: you'll learn to build materials node by node, starting with the simplest possible shader, an Unlit graph with a solid colour and adjustable transparency.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           0. ABOUT THE SERIES
+      ══════════════════════════════════════ -->
+      <section id="about" class="content-section" aria-labelledby="about-heading">
+        <h2 id="about-heading">About the Shader Series</h2>
+        <div class="series-banner">
+          <span class="series-banner__label">Standalone Optional Extension</span>
+          <p>The Shader Series sits alongside Galaxy and Kart rather than inside either one — it works with whichever path you chose, since every Unity project uses the same ShaderGraph system underneath. Nothing here is required to finish your Strand A build, but every material in your game (and your e-Store product photos, for that matter) could be improved by understanding what's actually happening in a material.</p>
+          <p>This page contains the series introduction and Lesson 1 in full. Further lessons in the series will be separate pages, linked from here as they're released.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="brief-heading">Lesson 1 Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> "Every visual effect in this studio starts as a graph, not a photo or a filter. Before you build anything fancy, prove you understand the simplest possible shader — solid colour in, transparency controlled on purpose. Everything else in this series builds on exactly this."
+        </div>
+
+        <p>You'll need Unity's URP (Universal Render Pipeline) and the ShaderGraph package, both already set up in your Galaxy/Kart project. Work in a new, empty Shader Graph asset — don't edit the collectible orb's existing material directly.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. DECONSTRUCT AN EXISTING MATERIAL
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Deconstruct an Existing Material</h2>
+        <p>Back in Lessons 1–2, you noted that the collectible orb uses a ShaderGraph material called <code>UnlitGlow</code>. Open it now (double-click the material's Shader Graph asset) and look at the node graph without changing anything.</p>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">What to look for</span>
+          <p>Find the <strong>Fragment</strong> block on the right-hand side of the graph — this is where nodes eventually connect to decide what colour and transparency each pixel of the surface should be. Trace backward from <strong>Base Color</strong> and <strong>Alpha</strong> to see what feeds into them. You don't need to understand every node yet — just confirm that colour and transparency are separate inputs, fed by separate chains of nodes.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Shader</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A small program that decides how a surface looks under rendering — its colour, transparency, and reaction to light — run for every pixel the surface covers on screen.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Material</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An asset that pairs a Shader with specific settings — colours, textures, values — and gets applied to a GameObject's Mesh Renderer.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">ShaderGraph</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Unity's visual, node-based tool for building shaders — connect nodes instead of writing shader code directly, while still producing a real, working shader underneath.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Node</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A single operation in a Shader Graph — a colour value, a math operation, a texture sample — connected to other nodes by wires to build up a final result.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Fragment / Pixel</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The Fragment stage decides the final colour and transparency of each individual pixel a surface covers on screen — this is where Base Color and Alpha connect.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Base Color</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The Fragment output controlling a surface's core colour before lighting is considered — in an Unlit graph, this is the entire visible colour, since there's no lighting calculation at all.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Alpha</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The transparency value for a pixel — 0 fully invisible, 1 fully solid. Alpha only has a visible effect once the material's Surface Type is set to Transparent.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Surface Type</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A material-level setting — Opaque or Transparent — that controls whether the Alpha value is used at all when rendering the surface.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. BUILD AN UNLIT COLOUR SHADER
+      ══════════════════════════════════════ -->
+      <section id="build" class="content-section" aria-labelledby="build-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="build-heading">Build an Unlit Colour Shader</h2>
+        <p>Create a new Shader Graph asset and set its type to <strong>Unlit</strong> — meaning it ignores scene lighting entirely, which keeps this first shader simple to reason about. Predict your node plan in pseudocode first, then compare against the annotated graph recipe below.</p>
+
+        <div class="sprint-steps">
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">1</span>
+              <span class="sprint-step__title">Solid Colour into Base Color</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add a <strong>Color</strong> node, set it to a colour of your choice, and connect its output directly into the Fragment block's <strong>Base Color</strong> input.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> BuildBaseColour()
+  CREATE Color node (myColour)
+  CONNECT myColour <span class="pseudo-kw">TO</span> Fragment.BaseColor
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--graph">ShaderGraph Nodes</span>
+                  <pre class="code-bridge-block"><span class="node-name">Color</span> node
+  └─ <span class="node-port">Out</span> (<span class="node-val">RGBA</span>) ──▶ Fragment.<span class="node-port">Base Color</span></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">2</span>
+              <span class="sprint-step__title">Controllable Alpha</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add a <strong>Float</strong> node (a single adjustable number) and connect it into the Fragment block's <strong>Alpha</strong> input. Expose it as a property so it can be adjusted per-material in the Inspector, without editing the graph itself.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> BuildAlpha()
+  CREATE Float node (transparency), EXPOSED = <span class="pseudo-kw">true</span>
+  CONNECT transparency <span class="pseudo-kw">TO</span> Fragment.Alpha
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--graph">ShaderGraph Nodes</span>
+                  <pre class="code-bridge-block"><span class="node-name">Float</span> node (exposed: <span class="node-val">Transparency</span>)
+  └─ <span class="node-port">Out</span> ──▶ Fragment.<span class="node-port">Alpha</span></pre>
+                </div>
+              </div>
+
+              <p>Exposing the Float as a property means every material built from this graph can have its own transparency value — one instance fully solid, another half see-through — without needing a second copy of the graph.</p>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">3</span>
+              <span class="sprint-step__title">Set Surface Type to Transparent</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>In the Graph Settings panel, change <strong>Surface Type</strong> from Opaque to Transparent. Save the graph, create a Material from it, and apply it to a test object in your scene.</p>
+
+              <div class="eval-callout">
+                <span class="eval-callout__label">Why this step is easy to forget</span>
+                <p>Alpha is connected and exposed after Step 2, but with Surface Type left on Opaque, it will have no visible effect at all — the object will render fully solid no matter what value you set. This is the shader equivalent of a guard condition: the connection exists, but a separate setting has to also allow it to matter.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. CPD FOCUS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Focus — Computational, Design &amp; Systems Thinking</h2>
+        <p class="cpd-intro">This lesson's evidence (your node graph and its behaviour when tested) is assessed primarily against <strong>CT5-THI-01</strong>. Click a grade to see what that clause looks like at each level.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p><strong>Grade A</strong> — develops highly effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p><strong>Grade B</strong> — develops effective computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p><strong>Grade C</strong> — develops sound computing solutions using computational, design and systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p><strong>Grade D</strong> — develops basic computing solutions using computational <em>or</em> design <em>or</em> systems thinking skills.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Grade E</strong> — identifies processes that may produce a computing solution.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test Your Shader</h2>
+        <p>A shader that only looks right in one specific scene isn't finished — test it somewhere it wasn't originally built for.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr><th>Test Case</th><th>Steps</th><th>Expected Result</th><th>Actual Result</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Colour renders correctly</td>
+                <td>Apply the material to a test object with Alpha set to 1</td>
+                <td>Object displays exactly the chosen Base Color, fully solid</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Transparency scales correctly</td>
+                <td>Adjust the exposed transparency value between 0 and 1 in the Inspector</td>
+                <td>Object visibly fades smoothly from invisible to fully solid</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Surface Type check <em>(negative test)</em></td>
+                <td>Temporarily switch Surface Type back to Opaque with a partial Alpha value set</td>
+                <td>Object renders fully solid regardless of the Alpha value, confirming Alpha only matters when Surface Type is Transparent</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Works on either path's object</td>
+                <td>Apply the same material to a Galaxy collectible-style object and a Kart-style object</td>
+                <td>The material behaves identically on both — it isn't tied to one path's specific project setup</td>
+                <td>Record here</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. LESSON CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">Lesson Checkpoint</div>
+          <h3>Before moving to the next lesson in the series, all of the following must be true:</h3>
+          <ul>
+            <li>A working Unlit Shader Graph exists with Base Color and Alpha both connected.</li>
+            <li>Transparency is exposed as a property and adjustable per-material without editing the graph.</li>
+            <li>Surface Type is set to Transparent, and you can explain what would happen if it wasn't.</li>
+            <li>All four test cases above have recorded actual results.</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="An Unlit shader isn't about performance savings specifically for this lesson's purposes — the real reason to start here is conceptual simplicity, not speed."
+             data-feedback-b="Unlit shaders are a genuine, permanent category used deliberately in real games (UI elements, glowing effects) — they're not simply a stepping stone that gets abandoned once you learn more."
+             data-feedback-c="Correct. An Unlit shader skips all lighting calculations entirely, so Base Color is the only thing determining what you see — no light direction, shadows, or reflections to account for yet. That makes it the simplest possible starting point for understanding how Fragment inputs connect to a visible result."
+             data-feedback-d="This isn't about texture support — Unlit shaders can absolutely use textures; the defining feature of Unlit is that lighting calculations are skipped, not that textures are unavailable.">
+          <div class="mcq-question">1. Why does this lesson start with an Unlit shader rather than one that reacts to scene lighting?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Unlit shaders run faster than any other shader type</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Unlit shaders are only a temporary teaching tool with no real use in finished games</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Skipping lighting calculations means Base Color is the only thing determining the result, making it the simplest possible starting point</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Unlit shaders are the only type that can use textures</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="Alpha connecting to Fragment doesn't automatically change Surface Type — these are two separate things that both need to be set correctly."
+             data-feedback-b="This isn't about the Float node's exposure setting — a Float can be exposed and still have zero visible effect if Surface Type is left on Opaque."
+             data-feedback-c="This has nothing to do with Base Color specifically — Base Color and Alpha are separate Fragment inputs, and Surface Type governs whether Alpha is used at all, regardless of what Base Color is set to."
+             data-feedback-d="Correct. Surface Type is a material-level setting separate from the node graph itself. Even with Alpha correctly wired to a Float node, leaving Surface Type on Opaque means Alpha is simply ignored when rendering — the object stays fully solid no matter what value is set.">
+          <div class="mcq-question">2. Why can a correctly wired Alpha connection still have no visible effect on an object?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because connecting Alpha automatically sets Surface Type to Transparent</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because the Float node needs to be exposed as a property before Alpha can work at all</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because Base Color must be set to white before Alpha can take effect</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because Surface Type must also be set to Transparent — otherwise Alpha is ignored regardless of what value it's connected to</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. Exposing the Float as a property means the underlying graph stays as one single asset, while each Material created from it can set its own transparency value independently — one fully solid, another half see-through — without duplicating the graph itself."
+             data-feedback-b="This isn't about render speed — exposing a property has no meaningful effect on how quickly the shader runs; it's about flexibility per material, not performance."
+             data-feedback-c="Exposing a property doesn't change the Surface Type setting at all — those remain two completely separate things that both need to be configured."
+             data-feedback-d="This isn't required for the graph to compile or function — an unexposed Float node still works inside the graph; exposing it is about giving each Material its own adjustable value, not a technical requirement to make the shader run.">
+          <div class="mcq-question">3. Why expose the transparency Float node as a property rather than leaving it as a fixed internal value?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> So every Material built from this one graph can have its own independent transparency value, without duplicating the graph</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Exposed properties make the shader render noticeably faster</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Exposing a property automatically sets Surface Type to Transparent</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> An unexposed Float node would prevent the graph from compiling at all</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>Shader Series · Lesson 1 Clear!</strong>
+            <p>All questions answered. Complete your test table and Lesson Checkpoint before the next lesson in the series.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lesson 1 — Notebook Entry</h2>
+        <p>This lesson crosses two D&amp;P phases — Identifying &amp; Defining and Producing &amp; Implementing. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Deconstruction notes:</strong> What you found tracing Base Color and Alpha in the collectible orb's <code>UnlitGlow</code> material.</li>
+            <li><strong>Node plan:</strong> Your pseudocode prediction for the shader, alongside a screenshot or sketch of your finished node graph.</li>
+            <li><strong>Test table:</strong> The completed test table from the Testing section, with your actual results recorded.</li>
+            <li><strong>Design reflection:</strong> Where in your Galaxy or Kart game could a simple Unlit transparent material actually be useful — not just as an exercise, but as a real improvement to something you've already built?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Shader Series Lesson 1 notebook entry here — deconstruction notes, node plan, test results, design reflection. Saves automatically."
+                  aria-label="Shader Series Lesson 1 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Since the Shader Series is optional, this entry can sit in a separate "Extensions" section of your project notebook rather than your main Strand A log.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y10-lesson01.html">
+          <span class="lesson-nav__dir">← Back to</span>
+          <span class="lesson-nav__title">Lessons 1–2</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-shaders-lesson02.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Shader Series — Lesson 2</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y10',
+        lessonId:       'shaders-lesson01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

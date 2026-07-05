@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>e-Store: Build · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+      --n-blue:         #007aa0;
+      --n-blue-surface: rgba(0, 122, 160, 0.10);
+      --n-blue-border:  rgba(0, 122, 160, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--n-blue-surface);
+      border: 1px solid var(--n-blue-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__phase--test { color: var(--color-phase-test); }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge — pseudocode ↔ JavaScript ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--js {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .js-kw     { color: #4338ca; font-weight: 700; }
+    .js-fn     { color: #15803d; }
+    .js-str    { color: #b45309; }
+    .js-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .js-num    { color: #be185d; }
+    .js-type   { color: #007aa0; }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(228, 0, 15, 0.06);
+      border: 1px solid rgba(228, 0, 15, 0.22);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--accent-bright);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-2); max-width: none; }
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child { font-weight: 600; color: var(--color-text-primary); width: 26%; }
+    .test-table tbody td:last-child { background: var(--color-surface-2); color: var(--color-text-muted); font-style: italic; font-size: var(--text-xs); }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    /* ── Final build banner ── */
+    .final-build-banner {
+      background: linear-gradient(135deg, var(--n-blue-surface), var(--accent-surface));
+      border: 2px solid var(--n-blue-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+      text-align: center;
+    }
+
+    .final-build-banner strong {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: var(--space-2);
+    }
+
+    .final-build-banner p { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin: 0; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>World 3 — Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>e-Store: Build</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li><a href="y10-estore-ux.html">e-Store: Design</a></li>
+      <li aria-current="page">e-Store: Build</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sprint">Build Steps</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Focus</a>
+          <a href="#testing">Test the Store</a>
+          <a href="#checkpoint">Build Checkpoint</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Safe, secure and ethical data practices">CT5-SAF-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Product listings render from JSON, filter and sort work, and a localStorage cart persists correctly through checkout.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 3 · e-Store &nbsp;·&nbsp; Build</span>
+        <div class="page-eyebrow">Year 10 · Stage 5 · Strand B · e-Store · HTML/CSS/JS</div>
+        <h1>e-Store: Build</h1>
+        <p class="page-intro">Your wireframes and Figma prototype from the Design lesson are the specification — this lesson turns them into working HTML, CSS, and vanilla JavaScript. A JSON product catalogue, filter and sort controls, a cart that survives a page reload using <code>localStorage</code>, and a checkout confirmation screen. No frameworks — every piece of this is plain JavaScript you can trace line by line.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> "Your wireframes are approved. Build exactly what you designed and tested — Home, Product Detail, Cart, Checkout Confirmation. If something in the build doesn't match your wireframe, that's a decision to document, not to make silently."
+        </div>
+
+        <p>Open your completed wireframes and Figma prototype from the Design lesson before starting. Each build step below maps to one of your four required screens — if your wireframe is missing detail for a step, that's worth revisiting before you code around the gap.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. BUILD STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Build Steps</h2>
+        <p>Work through these in order. Each step builds on the last.</p>
+
+        <div class="sprint-steps">
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">1</span>
+              <span class="sprint-step__title">JSON Catalogue &amp; Product Grid</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Create a <code>products.json</code> file — an array of objects, each with an <code>id</code>, <code>name</code>, <code>price</code>, <code>category</code>, and <code>image</code> path. Fetch it and render one product card per entry on your Home screen.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> LoadCatalogue()
+  products = FetchJSON("products.json")
+  <span class="pseudo-kw">FOR EACH</span> product <span class="pseudo-kw">IN</span> products
+    RenderProductCard(product)
+  <span class="pseudo-kw">END FOR</span>
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">async</span> <span class="js-kw">function</span> <span class="js-fn">loadCatalogue</span>() {
+  <span class="js-kw">const</span> response = <span class="js-kw">await</span> <span class="js-fn">fetch</span>(<span class="js-str">'products.json'</span>);
+  <span class="js-kw">const</span> products = <span class="js-kw">await</span> response.<span class="js-fn">json</span>();
+  products.<span class="js-fn">forEach</span>(renderProductCard);
+}</pre>
+                </div>
+              </div>
+
+              <p><code>fetch</code> returns a Promise, which is why <code>await</code> is needed twice — once to wait for the network request, once to wait for the response body to finish parsing as JSON.</p>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">2</span>
+              <span class="sprint-step__title">Filter &amp; Sort</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add a category dropdown and a price sort control. On change, re-derive the list to display from the full <code>products</code> array — never delete or mutate the original data, just filter and sort a copy of it each time.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> ApplyFilters()
+  filtered = products <span class="pseudo-kw">WHERE</span> category matches selected
+  sorted = filtered <span class="pseudo-kw">SORTED BY</span> price, selected direction
+  ClearGrid()
+  <span class="pseudo-kw">FOR EACH</span> product <span class="pseudo-kw">IN</span> sorted
+    RenderProductCard(product)
+  <span class="pseudo-kw">END FOR</span>
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">function</span> <span class="js-fn">applyFilters</span>() {
+  <span class="js-kw">let</span> result = products.<span class="js-fn">filter</span>(p =>
+    selectedCategory === <span class="js-str">'all'</span> || p.category === selectedCategory);
+
+  result.<span class="js-fn">sort</span>((a, b) =>
+    sortOrder === <span class="js-str">'price-asc'</span> ? a.price - b.price : b.price - a.price);
+
+  grid.innerHTML = <span class="js-str">''</span>;
+  result.<span class="js-fn">forEach</span>(renderProductCard);
+}</pre>
+                </div>
+              </div>
+
+              <p><code>products.filter(...)</code> returns a brand new array — it never changes <code>products</code> itself. That matters because every time a filter or sort changes, you need the full original list to filter from again, not whatever was left over from the last filter.</p>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">3</span>
+              <span class="sprint-step__title">Cart with localStorage</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Store the cart as an array of <code>{ id, qty }</code> objects in <code>localStorage</code>, so it survives a page reload. Before adding a new entry, check whether that product is already in the cart — if it is, increase its quantity instead of adding a duplicate row.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> AddToCart(productId)
+  cart = LoadCart()
+  existing = FindInCart(cart, productId)
+  <span class="pseudo-kw">IF</span> existing <span class="pseudo-kw">THEN</span>
+    existing.qty = existing.qty + 1
+  <span class="pseudo-kw">ELSE</span>
+    cart.Add({ id: productId, qty: 1 })
+  <span class="pseudo-kw">END IF</span>
+  SaveCart(cart)
+  UpdateCartDisplay()
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">function</span> <span class="js-fn">addToCart</span>(productId) {
+  <span class="js-kw">const</span> cart = <span class="js-type">JSON</span>.<span class="js-fn">parse</span>(localStorage.<span class="js-fn">getItem</span>(<span class="js-str">'cart'</span>) || <span class="js-str">'[]'</span>);
+  <span class="js-kw">const</span> existing = cart.<span class="js-fn">find</span>(item => item.id === productId);
+
+  <span class="js-kw">if</span> (existing) {
+    existing.qty += 1;
+  } <span class="js-kw">else</span> {
+    cart.<span class="js-fn">push</span>({ id: productId, qty: 1 });
+  }
+
+  localStorage.<span class="js-fn">setItem</span>(<span class="js-str">'cart'</span>, <span class="js-type">JSON</span>.<span class="js-fn">stringify</span>(cart));
+  <span class="js-fn">updateCartDisplay</span>();
+}</pre>
+                </div>
+              </div>
+
+              <div class="eval-callout">
+                <span class="eval-callout__label">Recognise this guard?</span>
+                <p>Check-then-act shows up again: confirm something is true (<code>existing</code> found or not) before deciding what to do. You've now seen this shape in a collectible pickup, a checkpoint, a game-state transition, and here in a shopping cart — same underlying idea, fourth different context.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">4</span>
+              <span class="sprint-step__title">Checkout Confirmation</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Build a confirmation screen that lists every cart item and the total, then clears the cart from <code>localStorage</code> once the player confirms. This is a simulated checkout — it never collects or stores real payment details of any kind, only a mock "Confirm Order" action.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> ConfirmCheckout()
+  RenderOrderSummary(cart)
+  ClearCart()
+  ShowConfirmationScreen()
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--js">JavaScript</span>
+                  <pre class="code-bridge-block"><span class="js-kw">function</span> <span class="js-fn">confirmCheckout</span>() {
+  <span class="js-fn">renderOrderSummary</span>(cart);
+  localStorage.<span class="js-fn">removeItem</span>(<span class="js-str">'cart'</span>);
+  <span class="js-fn">showConfirmationScreen</span>();
+}</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">JSON</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A plain-text data format for storing structured information — objects and arrays — that both JavaScript and countless other systems can read and write.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">fetch / async / await</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">fetch() requests a file or resource and returns a Promise; await pauses the function until that Promise resolves, letting you write asynchronous code that reads top-to-bottom.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">localStorage</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A browser storage API that persists text data between page loads and browser sessions on the same device — used here to keep the cart intact after a reload.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Array.find()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Returns the first array element matching a condition, or undefined if none match — used to check whether a product is already in the cart.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Array.filter()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Returns a brand new array containing only the elements that match a condition, leaving the original array completely unchanged.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Array.sort()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Reorders an array based on a comparison function you supply — (a, b) => a.price - b.price sorts ascending by price.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. CPD FOCUS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Focus — Algorithms in a General-Purpose Programming Language</h2>
+        <p class="cpd-intro">This lesson's evidence (your catalogue, filter/sort, and cart logic) is assessed primarily against <strong>CT5-OPL-01</strong>. Click a grade to see what that clause looks like at each level.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p><strong>Grade A</strong> — skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p><strong>Grade B</strong> — develops, tests and implements functional algorithms in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p><strong>Grade C</strong> — develops common algorithms and implements them in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p><strong>Grade D</strong> — develops basic algorithms and/or implements them in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Grade E</strong> — follows algorithms and/or partially implements them in a general-purpose programming language.</p>
+          </div>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">Why no real payment details, ever</span>
+          <p>This also connects to <strong>CT5-SAF-01</strong> — safe, secure and ethical practices in the use of data. A classroom project is never an appropriate place to collect real card numbers, addresses, or personal details, even for practice. Simulating "Confirm Order" with no real data collection isn't a shortcut — it's the correct, safe design choice a real developer would also make for a demo environment.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test the Store</h2>
+        <p>Run each test deliberately — including the negative tests, which try to break the cart logic on purpose.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr><th>Test Case</th><th>Steps</th><th>Expected Result</th><th>Actual Result</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Catalogue loads</td>
+                <td>Open the Home screen fresh</td>
+                <td>Every product in products.json renders as a card, with no console errors</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Filter accuracy</td>
+                <td>Select a single category</td>
+                <td>Only products in that category display; product count matches a manual count from the JSON</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Duplicate add-to-cart <em>(negative test)</em></td>
+                <td>Add the same product to the cart three times in a row</td>
+                <td>The cart shows one entry for that product with quantity 3 — not three separate entries</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Cart persists after reload</td>
+                <td>Add items, then refresh the page</td>
+                <td>The cart still shows the same items and quantities after reload</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Checkout clears cart <em>(negative test)</em></td>
+                <td>Complete checkout, then reload the page</td>
+                <td>The cart is empty — no leftover items from the completed order</td>
+                <td>Record here</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. BUILD CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">Build Checkpoint</div>
+          <h3>Before this counts as your final e-Store build, all of the following must be true:</h3>
+          <ul>
+            <li>All four screens from your wireframes exist and are reachable: Home, Product Detail, Cart, Checkout Confirmation.</li>
+            <li>Filter and sort correctly narrow and reorder the product grid without altering the original data.</li>
+            <li>Adding an already-cart item increases its quantity rather than duplicating the entry.</li>
+            <li>The cart persists correctly through a full page reload.</li>
+            <li>Checkout clears the cart completely and collects no real payment or personal details.</li>
+            <li>All five test cases above have recorded actual results.</li>
+          </ul>
+        </div>
+
+        <div class="final-build-banner">
+          <strong>★ e-Store Complete</strong>
+          <p>This is your assessable build for Strand B. Bring it, your audit table, and your Figma prototype to your studio panel pitch alongside your Strand A game.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="This isn't about performance — checking for an existing entry doesn't meaningfully affect how fast the function runs; it's about what the cart actually contains afterward."
+             data-feedback-b="Always pushing a new entry is exactly the bug this check prevents — it would create duplicate rows for the same product instead of one entry with an increased quantity."
+             data-feedback-c="Correct. Without checking for an existing entry first, adding the same product multiple times would create a separate cart row each time, rather than one entry with quantity 3. The check-then-act pattern (find, then decide) keeps the cart data accurate and matches how a real shopping cart should behave."
+             data-feedback-d="This has nothing to do with localStorage's storage limits — the check is about correct cart contents, not about how much data localStorage can hold.">
+          <div class="mcq-question">1. Why does <code>addToCart</code> check for an existing entry before deciding whether to increase quantity or push a new one?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> To make the function run faster</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because always pushing a new entry would also work correctly, just less efficiently</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To prevent duplicate cart rows for the same product — repeated adds should increase quantity, not create separate entries</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because localStorage has a strict limit on the number of entries it can store</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="A JavaScript variable would work fine while the page stays open — the issue is specifically what happens across a reload, not while the page is running."
+             data-feedback-b="localStorage doesn't make the cart visible to other users at all — it's local to one browser on one device, which is the opposite of shared or public storage."
+             data-feedback-c="This isn't a security requirement — localStorage is not particularly more secure than an in-memory variable. The reason is about persistence, not protection."
+             data-feedback-d="Correct. A plain JavaScript variable is wiped out the instant the page reloads or closes — the cart would appear empty every time the page refreshed. localStorage persists as text on the user's device across reloads and browser sessions, which is exactly the behaviour a shopping cart needs.">
+          <div class="mcq-question">2. Why store the cart in <code>localStorage</code> instead of only in a JavaScript variable?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> A JavaScript variable can't hold an array of objects</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> localStorage makes the cart visible to other users of the site</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> localStorage is required for the data to be considered secure</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A plain variable is lost when the page reloads; localStorage persists the cart across reloads on the same device</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="B"
+             data-feedback-a="This isn't a technical limitation of localStorage — nothing stops a developer from storing sensitive data insecurely; the reason is a deliberate safety and ethics decision, not a tool constraint."
+             data-feedback-b="Correct. A school project is never an appropriate place to collect or store real card numbers, addresses, or other personal details, even for practice — that data could be exposed, misused, or simply mishandled. Simulating 'Confirm Order' with no real data collection is the safe, ethical design choice, directly connected to CT5-SAF-01."
+             data-feedback-c="This isn't about JavaScript's capabilities — JavaScript is fully capable of building payment forms; the reason for avoiding real payment collection here has nothing to do with what the language can technically do."
+             data-feedback-d="This has nothing to do with the checkout screen's visual design or aesthetic — it's a data safety and ethics decision, unrelated to how the confirmation screen looks.">
+          <div class="mcq-question">3. Why does this e-Store's checkout deliberately avoid collecting any real payment details?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> localStorage is technically incapable of storing payment information</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Collecting real personal or payment data in a classroom project is never appropriate — a simulated checkout is the safe, ethical choice</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> JavaScript cannot build functional payment forms</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It would make the confirmation screen look too cluttered</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 3 · e-Store · Build Complete!</strong>
+            <p>All questions answered. Complete your full test table and Build Checkpoint — this is your final assessable build.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">e-Store: Build — Notebook Entry</h2>
+        <p>This lesson crosses two D&amp;P phases — Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Build log:</strong> For each of the four steps, one sentence — what you implemented and whether it matched your wireframe.</li>
+            <li><strong>Test table:</strong> The completed test table from the Testing section, with your actual results recorded.</li>
+            <li><strong>Bug report:</strong> Describe at least one thing that didn't work first try — especially around the cart logic. What was wrong, and what did you change?</li>
+            <li><strong>Design comparison:</strong> Compare your finished build against your original wireframes. What changed during the build, and why? A build that differs from its design isn't automatically wrong — but it needs a reason.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your e-Store Build notebook entry here — build log, test results, bug report, design comparison. Saves automatically."
+                  aria-label="e-Store Build notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your completed test table must be in your project notebook (physical or digital) before this build is considered finished. Untested cart logic doesn't go to production.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y10-estore-ux.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">e-Store: Design</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-amiibo.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Amiibo Redesign</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y10',
+        lessonId:       'estore-build',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

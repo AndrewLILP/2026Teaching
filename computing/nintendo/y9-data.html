@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player Feedback &amp; Data &middot; Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Survey question examples ── */
+    .survey-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .survey-compare { grid-template-columns: 1fr; } }
+
+    .survey-card {
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .survey-card--bad {
+      background: rgba(190, 24, 93, 0.07);
+      border: 1px solid rgba(190, 24, 93, 0.25);
+    }
+
+    .survey-card--good {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+    }
+
+    .survey-card__label {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      margin-bottom: var(--space-2);
+    }
+
+    .survey-card--bad .survey-card__label { color: #be185d; }
+    .survey-card--good .survey-card__label { color: #15803d; }
+
+    .survey-card p { color: var(--color-text-secondary); max-width: none; margin: 0 0 var(--space-2); }
+    .survey-card p:last-child { margin-bottom: 0; }
+    .survey-card__why { font-style: italic; color: var(--color-text-muted); font-size: var(--text-xs); }
+
+    /* ── Chart demo (Likert averages) ── */
+    .chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: var(--space-4);
+      height: 200px;
+      margin: var(--space-5) 0;
+      padding: var(--space-5) var(--space-4) var(--space-3);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+    }
+
+    .chart-bar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+    }
+
+    .chart-bar__value {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .chart-bar__fill {
+      width: 100%;
+      max-width: 48px;
+      background: var(--accent);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+
+    .chart-bar--low .chart-bar__fill { background: #be185d; }
+
+    .chart-bar__label {
+      font-size: 0.68rem;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-top: var(--space-2);
+      line-height: 1.35;
+    }
+
+    /* ── Before/after bridge (finding → decision) ── */
+    .bridge-example {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: var(--space-4);
+      align-items: center;
+      margin: var(--space-5) 0;
+    }
+
+    @media (max-width: 680px) {
+      .bridge-example { grid-template-columns: 1fr; }
+      .bridge-arrow { transform: rotate(90deg); }
+    }
+
+    .bridge-panel {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+    }
+
+    .bridge-panel__label {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-2);
+    }
+
+    .bridge-panel--design .bridge-panel__label { color: var(--accent); }
+
+    .bridge-panel p { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin: 0; }
+
+    .bridge-arrow { font-size: 1.5rem; color: var(--color-text-muted); text-align: center; }
+
+    /* ── Ethics / safety callout ── */
+    .safety-callout {
+      background: rgba(180, 83, 9, 0.08);
+      border: 1px solid rgba(180, 83, 9, 0.25);
+      border-left: 4px solid #b45309;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .safety-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #b45309;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .safety-callout p,
+    .safety-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .safety-callout ul { padding-left: var(--space-6); }
+    .safety-callout p:last-child,
+    .safety-callout ul:last-child { margin-bottom: 0; }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 2 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>EIS &middot; Data</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Player Feedback &amp; Data</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Why Data-Driven Design</a>
+          <a href="#survey">Design Your Feedback Survey</a>
+          <a href="#visualise">Visualise Your Findings</a>
+          <a href="#justify">From Data to Design Decision</a>
+          <a href="#ethics">Handling Data Safely &amp; Ethically</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Data">CT5-DAT-01</span>
+          <span class="outcome-tag" title="Data">CT5-DAT-02</span>
+          <span class="outcome-tag" title="Communicate">CT5-COM-01</span>
+          <span class="outcome-tag" title="Safe, secure and ethical use of data">CT5-SAF-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Focus Area</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Extra Impacts of Software: Analysing Data &mdash; playtesting your own redesigned build from the UX lesson.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 2 &nbsp;&middot;&nbsp; Level 2-7</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lessons 16&ndash;18 &middot; EIS &mdash; Analysing Data</div>
+        <h1>Player Feedback &amp; Data</h1>
+        <p class="page-intro">You've built a platformer, audited its UX, and redesigned at least one screen. But every decision so far has been based on your own judgement. Over these three lessons you'll recruit real playtesters, design a survey that actually produces useful data, visualise what you find, and use it &mdash; not your own opinion &mdash; to justify your next design change.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Nintendo AU doesn't take 'I think it feels good' as evidence. Real studios playtest with people who've never seen the build, collect data on what actually happens, and only then decide what to change. Recruit at least four playtesters this week who haven't played your game before &mdash; classmates from a different class period work well."
+        </div>
+
+        <p>You need your finished, redesigned build from the UX lesson ready to hand to a playtester today. If you haven't finished your accessibility fixes yet, do that first &mdash; you don't want to collect data on a version you're about to change anyway.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. WHY DATA-DRIVEN DESIGN
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="analyse-heading">Why Data-Driven Design</h2>
+        <p>Your UX audit two lessons ago was valuable, but it had one weakness: you already knew how your own game was supposed to work. A first-time player doesn't have that advantage &mdash; and their confusion is exactly the information a designer needs. This is the difference between <strong>opinion</strong> ("I think the enemy is fair") and <strong>evidence</strong> ("3 of 4 playtesters died to the enemy on their first attempt, and two said afterward they didn't see it coming").</p>
+
+        <div class="example-box">
+          <strong>Two kinds of playtesting data</strong>
+          <strong class="example-box__subhead">Quantitative data</strong> is numeric &mdash; a rating out of 5, a time in seconds, a number of deaths. It's easy to average and compare. <strong class="example-box__subhead">Qualitative data</strong> is descriptive &mdash; what a player said, what you observed them do. It's harder to summarise numerically but often explains <em>why</em> the quantitative data looks the way it does. Good playtesting collects both.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. DESIGN YOUR FEEDBACK SURVEY
+      ══════════════════════════════════════ -->
+      <section id="survey" class="content-section" aria-labelledby="survey-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="survey-heading">Design Your Feedback Survey</h2>
+        <p>A badly worded question produces useless data, no matter how many people answer it. Compare these two ways of asking about the same thing:</p>
+
+        <div class="survey-compare">
+          <div class="survey-card survey-card--bad">
+            <span class="survey-card__label">Weak Question</span>
+            <p>"Did you like the game?"</p>
+            <p class="survey-card__why">Yes/no gives almost no useful information. It doesn't say what worked, what didn't, or how strongly they felt either way.</p>
+          </div>
+          <div class="survey-card survey-card--good">
+            <span class="survey-card__label">Strong Question</span>
+            <p>"On a scale of 1 (not at all clear) to 5 (completely clear), how clear was it that you had been hit by the enemy?"</p>
+            <p class="survey-card__why">This is a <strong>Likert scale</strong> question &mdash; it captures degree, not just a binary answer, and can be averaged across every tester.</p>
+          </div>
+        </div>
+
+        <p>Your survey needs a mix of question types. Include at least:</p>
+        <ul>
+          <li><strong>Three Likert scale questions</strong> (1&ndash;5), covering movement feel, hit feedback clarity, and overall difficulty.</li>
+          <li><strong>One open-ended question</strong>, such as "Describe the moment in the game that felt most confusing."</li>
+          <li><strong>One closed multiple-choice question</strong> with mutually exclusive options, such as which of your two levels felt harder.</li>
+        </ul>
+
+        <p>While each tester plays, observe silently &mdash; don't hint, don't explain controls, don't react. Note where they hesitate, where they die repeatedly, and anything they say out loud unprompted. This is qualitative data you won't get from the survey alone.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. VISUALISE YOUR FINDINGS
+      ══════════════════════════════════════ -->
+      <section id="visualise" class="content-section" aria-labelledby="visualise-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="visualise-heading">Visualise Your Findings</h2>
+        <p>A table of raw numbers is hard to read at a glance. Once you've collected responses from every playtester, average each Likert question and chart the results &mdash; a bar chart makes it immediately obvious which areas are strong and which need work.</p>
+
+        <div class="chart-bars" role="img" aria-label="Bar chart of average playtester ratings across five survey questions, out of 5">
+          <div class="chart-bar">
+            <span class="chart-bar__value">4.2</span>
+            <div class="chart-bar__fill" style="height: 84%;"></div>
+            <span class="chart-bar__label">Movement felt responsive</span>
+          </div>
+          <div class="chart-bar chart-bar--low">
+            <span class="chart-bar__value">2.1</span>
+            <div class="chart-bar__fill" style="height: 42%;"></div>
+            <span class="chart-bar__label">Clear when hit by enemy</span>
+          </div>
+          <div class="chart-bar">
+            <span class="chart-bar__value">4.5</span>
+            <div class="chart-bar__fill" style="height: 90%;"></div>
+            <span class="chart-bar__label">Coins felt satisfying to collect</span>
+          </div>
+          <div class="chart-bar">
+            <span class="chart-bar__value">3.0</span>
+            <div class="chart-bar__fill" style="height: 60%;"></div>
+            <span class="chart-bar__label">Difficulty felt fair</span>
+          </div>
+          <div class="chart-bar">
+            <span class="chart-bar__value">3.8</span>
+            <div class="chart-bar__fill" style="height: 76%;"></div>
+            <span class="chart-bar__label">Would play again</span>
+          </div>
+        </div>
+
+        <p>This example makes one problem immediately visible: hit feedback scored far lower than everything else. That single low bar is worth more than a page of "it felt fine" opinions &mdash; it tells you exactly where to focus Step 5.</p>
+
+        <p>Build your own version of this chart from your real data, using Chart.js, a spreadsheet, or graph paper if needed. Whatever tool you use, make sure the lowest and highest scores are easy to spot at a glance.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. FROM DATA TO DESIGN DECISION
+      ══════════════════════════════════════ -->
+      <section id="justify" class="content-section" aria-labelledby="justify-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="justify-heading">From Data to Design Decision</h2>
+        <p>Data on its own doesn't fix anything &mdash; it only points at a problem. The final step is turning a specific finding into a specific, justified change.</p>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Worked Example &mdash; We Do</p>
+          <div class="bridge-example">
+            <div class="bridge-panel">
+              <span class="bridge-panel__label">Data finding</span>
+              <p>Average rating for "clear when hit by enemy" was 2.1/5. Two testers said in the open-ended question that they only realised they'd been hit after checking the Lives label.</p>
+            </div>
+            <div class="bridge-arrow" aria-hidden="true">&rarr;</div>
+            <div class="bridge-panel bridge-panel--design">
+              <span class="bridge-panel__label">Design decision</span>
+              <p>Add a brief screen shake and a single colour-tint flash on the Player sprite when hit, alongside the existing Lives label update &mdash; a one-time tint change, not rapid strobing, per the accessibility guidance from the UX lesson.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Notice the decision cites a specific number and specific tester comments &mdash; not "I think it needs more feedback." It also respects a constraint from an earlier lesson (no strobing effects) rather than solving one problem by creating another.</p>
+
+        <p><strong>Task:</strong> pick your lowest-scoring finding and write your own data-to-decision pair in the same format. Then actually implement the change in your Godot project.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. HANDLING DATA SAFELY & ETHICALLY
+      ══════════════════════════════════════ -->
+      <section id="ethics" class="content-section" aria-labelledby="ethics-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="ethics-heading">Handling Data Safely &amp; Ethically</h2>
+        <p>Your playtesters are real people, most of them classmates. The data they give you needs the same care as the high score file from Sprint 3 &mdash; deliberate decisions about what's collected, how it's stored, and who can see it.</p>
+
+        <div class="safety-callout">
+          <span class="safety-callout__label">&#128274; Safe, Secure &amp; Ethical Data Use</span>
+          <ul>
+            <li><strong>Anonymise responses.</strong> Label testers "Tester 1," "Tester 2," and so on in your notebook rather than using full names.</li>
+            <li><strong>Be upfront.</strong> Tell each playtester what you're collecting and why before they start &mdash; a survey and some observation notes, used only for your assessment task.</li>
+            <li><strong>Avoid leading questions.</strong> A question like "Don't you think the coins felt great?" pushes testers toward a particular answer, producing biased, less trustworthy data &mdash; a data-integrity problem as much as an ethical one.</li>
+            <li><strong>Store it appropriately.</strong> Keep raw responses in your project notebook or a teacher-approved shared document, not posted publicly where testers didn't agree to have their comments shared.</li>
+          </ul>
+        </div>
+
+        <p>Anonymising your data isn't just good ethics &mdash; testers who know their name won't be attached to a comment are often more willing to give you honest, critical feedback, which is exactly what makes the data useful in the first place.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Playtest</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A structured session where someone other than the developer plays a game so their experience and feedback can be observed and recorded.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Likert Scale</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A rating scale (commonly 1–5) used to measure degree of agreement or feeling, producing numeric data that can be averaged across many responses.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Quantitative Data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Numeric data, like ratings, counts, or times, which can be averaged, compared, and charted.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Qualitative Data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Descriptive data, like written comments or observed behaviour, which often explains why quantitative data looks the way it does.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Leading Question</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A question worded in a way that pushes the respondent toward a particular answer, producing biased and less trustworthy data.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Anonymise</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">To remove or replace identifying information (like a name) from data before storing or sharing it, protecting the person it came from.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sample Size</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The number of people whose data you collected — a larger sample size generally makes averages and trends more reliable.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data Visualisation</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Presenting data visually, such as in a bar chart, so patterns and outliers are easier to notice than in a raw table of numbers.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">The same NESA Course Performance Descriptors used across World 2, reported at the end of Year 10. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          This lesson is where CT5-COM-01, CT5-DAT-01, and CT5-DAT-02 all draw on the <em>same</em> communication bullet &mdash; your chart and your written data-to-decision justification are the evidence for all three at once. Anonymising and questioning your own survey design for bias is your final, strongest evidence for <em>safe, secure and ethical practices</em> across all of World 2.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="Length isn't the core problem here — a short question can still be a good one. The issue with 'Did you like the game?' isn't how many words it uses."
+             data-feedback-b="This isn't primarily a grammar issue — the sentence is grammatically fine. The problem is what kind of answer it can possibly produce."
+             data-feedback-c="Correct. A yes/no answer to 'Did you like the game?' gives almost no useful information — it doesn't reveal what worked, what didn't, or how strongly the tester felt either way."
+             data-feedback-d="This question isn't a Likert scale question at all — it only allows a binary yes/no answer, which is a different (and less informative) format.">
+          <div class="mcq-question">1. What is the main problem with the survey question "Did you like the game?"</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It's too short to be a proper survey question</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It contains a grammar mistake that confuses testers</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A yes/no answer gives almost no useful information about what specifically worked or didn't</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It's already a Likert scale question, so it doesn't need improving</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="Anonymising responses doesn't make data collection faster — the time it takes to label a response 'Tester 1' versus a real name is essentially the same."
+             data-feedback-b="This isn't about avoiding legal requirements — there's no such rule being sidestepped here. The reasons are about privacy and data quality, not legality."
+             data-feedback-c="Charts and graphs work exactly the same whether responses are labelled with names or with 'Tester 1,' 'Tester 2' — anonymising doesn't affect how data is visualised."
+             data-feedback-d="Correct. Anonymising protects testers' privacy, and testers who know their name won't be attached to a comment are often more willing to give honest, critical feedback — which is exactly what makes the data useful.">
+          <div class="mcq-question">2. Why should playtester survey responses be anonymised (labelled "Tester 1," "Tester 2," etc.) rather than recorded with full names?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It makes the data collection process faster</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It's a legal requirement for all school assessment tasks</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Charts and graphs can only be built from anonymised data</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It protects tester privacy, and testers often give more honest feedback when their name isn't attached to it</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. A Likert scale captures degree — how clear, how difficult, how enjoyable — which can be averaged across testers, unlike a binary yes/no answer that only shows how many said yes."
+             data-feedback-b="Likert scale questions aren't necessarily faster to answer than yes/no questions — a tester still has to consider the question either way. Speed isn't the main advantage here."
+             data-feedback-c="This isn't about being easier to translate into another language — that has nothing to do with why a Likert scale is preferred for gauging intensity of feeling."
+             data-feedback-d="A Likert scale doesn't automatically prevent leading or biased wording — a Likert question can still be worded in a leading way. The scale format and question bias are separate issues.">
+          <div class="mcq-question">3. Why use a Likert scale (1&ndash;5) rather than a yes/no question to gauge how clear the enemy's hit feedback was?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It captures degree of clarity, giving more useful, averageable data than a binary yes/no answer</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It's always faster for a tester to answer than a yes/no question</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It's easier to translate into other languages</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It automatically prevents the question from being worded in a leading or biased way</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 2 &middot; Level 2-7 Clear!</strong>
+            <p>All questions answered. Complete your survey, playtest data, chart, and data-to-decision write-up before your final World 2 notebook is due.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           10. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">EIS Data &mdash; Notebook Entry</h2>
+        <p>Your notebook entry today is your full playtesting case study &mdash; survey, data, chart, and a justified design decision.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Your survey questions</strong> in full &mdash; at least three Likert questions, one open-ended, one multiple-choice.</li>
+            <li><strong>Raw data</strong> from at least four anonymised playtesters, plus your own observation notes from watching them play.</li>
+            <li><strong>A chart</strong> visualising your averaged Likert results.</li>
+            <li><strong>One data-to-decision write-up</strong> in the same format as the worked example, plus evidence you actually implemented the change.</li>
+            <li><strong>An ethics reflection:</strong> how did you anonymise and protect your testers' data, and did you find any leading or biased questions in your own survey draft that you had to fix?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your EIS Data notebook entry here — survey, raw data, chart, data-to-decision write-up, ethics reflection. Saves automatically."
+                  aria-label="EIS Data notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">This closes World 2 &mdash; your full project notebook, covering the Godot build, the UX audit, and this data-driven iteration, is your evidence for the entire term's CPD assessment.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y9-ux-design.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">From Store to Game &mdash; Designing for UX</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y9-notebook.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Project Notebook</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y9',
+        lessonId:       'data',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

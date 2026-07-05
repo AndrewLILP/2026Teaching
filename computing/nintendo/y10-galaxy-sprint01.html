@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 1 — Gravity &amp; Orbital Movement · Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+      --n-blue:         #007aa0;
+      --n-blue-surface: rgba(0, 122, 160, 0.10);
+      --n-blue-border:  rgba(0, 122, 160, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--n-blue-surface);
+      border: 1px solid var(--n-blue-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--n-blue-surface);
+      border: 2px solid var(--n-blue-border);
+      color: var(--n-blue);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__phase--test { color: var(--color-phase-test); }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    .sprint-step__body h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: var(--space-4) 0 var(--space-2);
+    }
+
+    /* ── Code bridge — pseudocode ↔ C# ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--csharp {
+      background: var(--n-blue-surface);
+      color: var(--n-blue);
+      border: 1px solid var(--n-blue-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .cs-kw     { color: #1d4ed8; font-weight: 700; }
+    .cs-type   { color: #007aa0; }
+    .cs-fn     { color: #15803d; }
+    .cs-str    { color: #b45309; }
+    .cs-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .cs-num    { color: #be185d; }
+
+    /* ── Eval callout ── */
+    .eval-callout {
+      background: rgba(0, 122, 160, 0.07);
+      border: 1px solid rgba(0, 122, 160, 0.25);
+      border-left: 4px solid var(--n-blue);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-blue);
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-2); max-width: none; }
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--n-blue-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      width: 26%;
+    }
+
+    .test-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Galaxy Path — Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">·</span>
+      <span>Sprint 1</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub →</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li><a href="y10-galaxy.html">Galaxy-Style 3D Game</a></li>
+      <li aria-current="page">Sprint 1 — Gravity &amp; Orbital Movement</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Focus</a>
+          <a href="#testing">Test the Loop</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in GPL">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Iterative processes">CT5-DPM-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Player moves, gravity can be shifted 90° on command, and platforms orbit correctly. All three tested before Sprint 2.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">★ World 3 · Galaxy &nbsp;·&nbsp; Sprint 1</span>
+        <div class="page-eyebrow">Year 10 · Stage 5 · Strand A · Path 1 · Sprint 1 of 3</div>
+        <h1>Gravity &amp; Orbital Movement</h1>
+        <p class="page-intro">Your GDD pseudocode from Lessons 1–2 described a player who can shift which surface counts as "down." This sprint makes that real: player movement, a custom gravity system you control (instead of Unity's default), the gravity-shift trigger itself, and platforms that orbit a central point. Nothing here is decorative yet — this sprint is the physical rules everything else in the game will sit on top of.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio context:</strong> "Your GDD is approved. Sprint 1 is foundation work — no polish, no UI, no score. I need to see the player move, shift gravity on command, and the platforms orbiting correctly, all tested, before we talk about anything else."
+        </div>
+
+        <p>Before starting, re-open your Lesson 1–2 pseudocode for movement. If it didn't account for a custom gravity direction (rather than Unity's built-in downward gravity), revise it now — you'll need that distinction to understand Step 2 below.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint Steps</h2>
+        <p>Work through these in order. Each step builds on the last — don't skip to Step 3 with a Step 1 that doesn't work yet.</p>
+
+        <div class="sprint-steps">
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">1</span>
+              <span class="sprint-step__title">Read Input &amp; Apply Movement Force</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add a Rigidbody to your player capsule. In a script, read horizontal/vertical input each physics step and apply it as a force — not a direct position change, since you want Unity's physics engine handling collisions for you.</p>
+              <ul>
+                <li>Use <code>FixedUpdate()</code>, not <code>Update()</code>, for anything touching Rigidbody — physics runs on a fixed timestep, separate from the render frame rate.</li>
+                <li>Store <code>moveSpeed</code> as a public/serialized field so you can tune it in the Inspector without editing code.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">2</span>
+              <span class="sprint-step__title">Build a Custom Gravity Vector</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Turn off the Rigidbody's built-in gravity (<code>Use Gravity</code> unticked in the Inspector). Instead, store your own <code>gravityDirection</code> as a <code>Vector3</code> (starting pointing down), and apply it manually with <code>AddForce()</code> every physics step. This is what makes shifting gravity possible — you can't rotate Unity's built-in gravity, but you can rotate a variable you control yourself.</p>
+              <div class="eval-callout">
+                <span class="eval-callout__label">Why bother?</span>
+                <p>This is a case where understanding <em>why</em> matters more than copying the code. Unity's default gravity always points world-down. Your game needs "down" to be changeable — so the solution is to stop using Unity's gravity entirely and simulate your own. Every gravity-shift game (and there are commercial examples worth researching) uses some version of this idea.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">3</span>
+              <span class="sprint-step__title">Implement the Gravity-Shift Trigger</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>On a button press, rotate <code>gravityDirection</code> by 90 degrees using a <code>Quaternion</code>, and rotate the player's visual orientation so their "up" matches the new "away from gravity" direction. Predict your pseudocode first, then compare against the annotated example below — it's a simplified version of the real pattern, not a copy-paste solution.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">BEGIN</span> FixedUpdate()
+  ApplyMovementForce()
+  ApplyGravityForce(gravityDirection)
+  <span class="pseudo-kw">IF</span> ShiftButtonPressed() <span class="pseudo-kw">THEN</span>
+    gravityDirection = Rotate(gravityDirection, 90)
+    AlignPlayerUpTo(-gravityDirection)
+  <span class="pseudo-kw">END IF</span>
+<span class="pseudo-kw">END</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--csharp">C#</span>
+                  <pre class="code-bridge-block"><span class="cs-kw">private</span> <span class="cs-type">void</span> <span class="cs-fn">FixedUpdate</span>()
+{
+    <span class="cs-fn">ApplyMovementForce</span>();
+    rb.<span class="cs-fn">AddForce</span>(gravityDirection * gravityStrength);
+
+    <span class="cs-kw">if</span> (Input.<span class="cs-fn">GetButtonDown</span>(<span class="cs-str">"ShiftGravity"</span>))
+    {
+        gravityDirection = Quaternion.<span class="cs-fn">Euler</span>(0, 0, 90) * gravityDirection;
+        <span class="cs-fn">AlignPlayerUp</span>(-gravityDirection);
+    }
+}</pre>
+                </div>
+              </div>
+
+              <p><code>Quaternion.Euler(0, 0, 90) * gravityDirection</code> rotates the vector 90° around the Z-axis. If your gravity-shift feels like it's rotating the wrong way, this is the line to check first — try a different axis or a negative angle before assuming the whole approach is broken.</p>
+            </div>
+          </div>
+
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <span class="sprint-step__number">4</span>
+              <span class="sprint-step__title">Orbital Platform Script</span>
+              <span class="sprint-step__phase">Produce</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Create a script for your orbiting platforms that rotates them around a fixed pivot point using <code>Transform.RotateAround()</code> every frame. Attach it to a Prefab so every platform in every zone can reuse the same behaviour — the same automation idea from Lessons 1–2.</p>
+              <ul>
+                <li>Expose <code>orbitSpeed</code> and <code>pivotPoint</code> as serialized fields so each platform instance can orbit differently without new code.</li>
+                <li>Test with at least two platforms orbiting at different speeds before moving on — a single working platform can hide bugs that only show up with more than one.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Vector3</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A set of three numbers (x, y, z) representing a position or direction in 3D space. gravityDirection is a Vector3.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Quaternion</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Unity's way of representing a 3D rotation. Quaternion.Euler(x, y, z) builds one from degrees around each axis, which you can then apply to a vector or transform.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">FixedUpdate</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Runs on a fixed timestep, independent of frame rate. Anything touching Rigidbody physics (AddForce, velocity) belongs here, not in Update().</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">AddForce</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A Rigidbody method that pushes an object using physics — acceleration builds gradually, unlike directly setting position. This is what makes movement and custom gravity feel physical.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">RotateAround</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A Transform method that rotates an object around an external pivot point, rather than its own centre — exactly what an orbiting platform needs.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Serialized Field</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A script variable exposed in the Unity Inspector so it can be tuned per-object without editing code — e.g. orbitSpeed set differently on two platform instances from the same script.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. CPD FOCUS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Focus — Algorithms in a General-Purpose Programming Language</h2>
+        <p class="cpd-intro">This sprint's evidence (your working gravity-shift and orbit scripts, plus your test table) is assessed primarily against <strong>CT5-OPL-01</strong>. Click a grade to see what that clause looks like at each level.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p><strong>Grade A</strong> — skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p><strong>Grade B</strong> — develops, tests and implements functional algorithms in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p><strong>Grade C</strong> — develops common algorithms and implements them in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p><strong>Grade D</strong> — develops basic algorithms and/or implements them in a general-purpose programming language.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Grade E</strong> — follows algorithms and/or partially implements them in a general-purpose programming language.</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. TESTING
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test the Loop</h2>
+        <p>Run each test deliberately — including the negative tests, which try to break your gravity-shift on purpose. A working demo isn't the same as a tested one.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr><th>Test Case</th><th>Steps</th><th>Expected Result</th><th>Actual Result</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Basic movement</td>
+                <td>Hold each movement direction in turn</td>
+                <td>Player accelerates smoothly in the pressed direction</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Single gravity shift</td>
+                <td>Press the shift button once, mid-air</td>
+                <td>Gravity direction rotates 90°, player's up aligns to match</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Rapid shift spam <em>(negative test)</em></td>
+                <td>Press the shift button repeatedly, very fast</td>
+                <td>Gravity keeps rotating correctly — no getting stuck, no flipping to a broken orientation</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Landing on a moving platform</td>
+                <td>Land on an orbiting platform and stay on it through a full rotation</td>
+                <td>Player stays attached / doesn't clip through or fly off unexpectedly</td>
+                <td>Record here</td>
+              </tr>
+              <tr>
+                <td>Two platforms, different speeds <em>(negative test)</em></td>
+                <td>Set orbitSpeed differently on two platform instances from the same Prefab</td>
+                <td>Both orbit independently at their own set speed — proves the script is reusable, not hard-coded to one value</td>
+                <td>Record here</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">Sprint Checkpoint</div>
+          <h3>Before you move to Sprint 2, all of the following must be true:</h3>
+          <ul>
+            <li>Player moves smoothly in all directions using force, not direct position changes.</li>
+            <li>Gravity is entirely custom (Rigidbody's <code>Use Gravity</code> is off) and applied every physics step via <code>AddForce</code>.</li>
+            <li>Pressing the shift button rotates gravity 90° and the player's visual orientation updates to match.</li>
+            <li>Rapid repeated shifting doesn't break or freeze the gravity direction.</li>
+            <li>At least two orbiting platforms run at independently-set speeds from the same Prefab.</li>
+            <li>All five test cases above have recorded actual results — not left blank.</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="FixedUpdate isn't slower — it runs on a fixed timestep independent of frame rate, which is exactly why it's the correct choice for physics, not a compromise."
+             data-feedback-b="Correct. Physics calculations (Rigidbody.AddForce, velocity changes) need a consistent, fixed timestep to behave predictably regardless of how fast or slow the game is rendering frames. Update() runs once per rendered frame, which varies — using it for physics causes inconsistent behaviour across different machines."
+             data-feedback-c="Update() runs every rendered frame, which is actually more frequent and less consistent than FixedUpdate, not less frequent. Frequency isn't the reason FixedUpdate is correct here."
+             data-feedback-d="Both FixedUpdate and Update can read player input — that's not the distinguishing factor. The distinguishing factor is that physics forces need a fixed, predictable timestep.">
+          <div class="mcq-question">1. Why does force-based movement and the custom gravity system belong in <code>FixedUpdate()</code> rather than <code>Update()</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because FixedUpdate runs more slowly, giving Unity time to process physics</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because physics forces need a fixed, predictable timestep independent of frame rate, which is what FixedUpdate provides</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because FixedUpdate runs less often than Update, reducing lag</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because only FixedUpdate can read player input from the keyboard</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="Unity's built-in gravity always points world-down and can't be rotated — that's precisely the limitation the sprint works around, not something the built-in system solves."
+             data-feedback-b="Ticking Use Gravity back on would re-enable Unity's fixed downward gravity, which would fight against the custom gravityDirection vector rather than support it."
+             data-feedback-c="AddForce alone doesn't fix the direction problem — you could apply force in any direction with the built-in gravity still active, but the built-in gravity would still always pull straight down underneath it."
+             data-feedback-d="Correct. Unity's built-in gravity always points straight down and can't be redirected. By turning it off and simulating gravity yourself with a Vector3 you control, that vector can be rotated by a Quaternion whenever the player shifts — which is impossible with the built-in system.">
+          <div class="mcq-question">2. Why does the gravity-shift mechanic require turning off Unity's built-in Rigidbody gravity?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Unity's built-in gravity already supports rotation, so this step is just a performance optimisation</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It needs to be re-enabled later for the game to work correctly</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> AddForce doesn't work at all while Use Gravity is ticked on</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Unity's built-in gravity always points world-down and can't be rotated — a custom Vector3 can be rotated instead, which is what shifting gravity requires</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">↩ Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. Negative testing here means deliberately trying to break the feature — spamming the shift button fast, not just pressing it once cleanly. If the mechanic only works when used carefully, it isn't finished."
+             data-feedback-b="Testing with two platforms at different speeds checks reusability of the Prefab, which is a different (also valid) test — but it isn't what the rapid-shift-spam test case is checking."
+             data-feedback-c="This isn't about frame rate at all — it's about whether rapid, repeated input breaks the gravity-shift logic itself, regardless of how fast the game happens to be running."
+             data-feedback-d="The test table doesn't test whether the button exists in the Input settings — it assumes the button is already wired up, and tests whether the gravity-shift logic holds up under rapid use.">
+          <div class="mcq-question">3. Why does the test table include "rapid shift spam" as a negative test, rather than testing a single clean button press only?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because negative testing deliberately tries to break a feature through unusual or repeated use, not just the ideal case</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because it checks whether two platforms can orbit at different speeds</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Because it measures whether the game's frame rate is high enough</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because it checks that the shift button is correctly configured in Unity's Input settings</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">⭐</span>
+          <div class="level-clear-text">
+            <strong>World 3 · Galaxy · Sprint 1 Clear!</strong>
+            <p>All questions answered. Complete your test table and Sprint Checkpoint before Sprint 2.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 1 — Notebook Entry</h2>
+        <p>Sprint 1 crosses two D&amp;P phases — Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> For each of the four steps, one sentence — what you implemented and whether your pseudocode prediction matched the real behaviour.</li>
+            <li><strong>Test table:</strong> The completed test table from the Testing section, with your actual results recorded.</li>
+            <li><strong>Bug report:</strong> Describe at least one thing that didn't work first try — especially around the gravity-shift rotation. What was wrong, and what did you change?</li>
+            <li><strong>Design reflection:</strong> Now that gravity can shift, play through a few shifts in a row. Does the rotation feel readable, or disorienting? What's one change that would make it clearer to a player experiencing it for the first time?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Sprint 1 notebook entry here — sprint log, test results, bug report, design reflection. Saves automatically."
+                  aria-label="Galaxy Sprint 1 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Your completed test table must be in your project notebook (physical or digital) before you move to Sprint 2. Untested gravity-shift logic doesn't go to production.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y10-galaxy.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Galaxy-Style 3D Game</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-galaxy-sprint02.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Sprint 2 — Collectibles &amp; Feedback</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y10',
+        lessonId:       'galaxy-sprint01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

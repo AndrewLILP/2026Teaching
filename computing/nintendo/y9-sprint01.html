@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 1 &mdash; Movement &amp; Physics &middot; Nintendo Developer Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #E4000F;
+      --accent-dim:     #b30000;
+      --accent-bright:  #ff2233;
+      --accent-surface: rgba(228, 0, 15, 0.10);
+      --accent-border:  rgba(228, 0, 15, 0.28);
+      --n-gold:         #c9a700;
+      --n-gold-surface: rgba(201, 167, 0, 0.10);
+      --n-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      margin: var(--space-5) 0;
+    }
+
+    .sprint-step {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .sprint-step__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-surface-3);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .sprint-step__number {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: var(--text-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sprint-step__title {
+      font-weight: 700;
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      flex: 1;
+    }
+
+    .sprint-step__phase {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+      color: var(--color-phase-produce);
+      flex-shrink: 0;
+    }
+
+    .sprint-step__body { padding: var(--space-5); }
+
+    .sprint-step__body p,
+    .sprint-step__body ul,
+    .sprint-step__body ol {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--space-3);
+      max-width: none;
+    }
+
+    /* ── Code bridge (pseudocode → GDScript) ── */
+    .code-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .code-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .code-bridge-label--pseudo {
+      background: var(--n-gold-surface);
+      color: var(--n-gold);
+      border: 1px solid var(--n-gold-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-label--gd {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .code-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .gd-kw     { color: #4338ca; font-weight: 700; }
+    .gd-fn     { color: #15803d; }
+    .gd-str    { color: #b45309; }
+    .gd-cmt    { color: var(--color-text-muted); font-style: italic; }
+    .gd-num    { color: #be185d; }
+    .gd-type   { color: #007aa0; }
+
+    /* ── Scene tree diagram ── */
+    .scene-tree-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 2;
+      overflow-x: auto;
+      color: var(--color-text-secondary);
+      white-space: pre;
+    }
+
+    .scene-tree-block .node-root  { color: var(--accent); font-weight: 700; }
+    .scene-tree-block .node-type  { color: #007aa0; }
+    .scene-tree-block .node-name  { color: var(--color-text-primary); font-weight: 600; }
+
+    /* ── Test table ── */
+    .test-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      margin: var(--space-4) 0;
+    }
+
+    .test-table thead th {
+      background: var(--color-surface-3);
+      color: var(--color-text-secondary);
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      border-bottom: 2px solid var(--accent-border);
+    }
+
+    .test-table tbody td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    .test-table tbody td:first-child {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      width: 28%;
+    }
+
+    .test-table tbody td:last-child {
+      background: var(--color-surface-2);
+      color: var(--color-text-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Evaluate callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07);
+      border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+    }
+
+    .eval-callout__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: #15803d;
+      margin-bottom: var(--space-2);
+      display: block;
+    }
+
+    .eval-callout p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-2);
+      max-width: none;
+    }
+
+    .eval-callout p:last-child { margin-bottom: 0; }
+
+    .eval-callout ol, .eval-callout ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: var(--space-2) 0 0;
+      padding-left: var(--space-6);
+      max-width: none;
+    }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint {
+      background: var(--n-gold-surface);
+      border: 2px solid var(--n-gold-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      margin: var(--space-6) 0;
+    }
+
+    .sprint-checkpoint__label {
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-caps);
+      text-transform: uppercase;
+      color: var(--n-gold);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint h3 {
+      font-size: var(--text-base);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .sprint-checkpoint ul {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      max-width: none;
+      margin-bottom: 0;
+    }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+
+    .level-clear.is-visible { display: flex; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+
+    .level-clear-text p {
+      font-size: var(--text-sm); color: var(--color-text-secondary);
+      margin: 0; line-height: 1.55; max-width: none;
+    }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Nintendo</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 2 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Sprint 1</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Nintendo Developer Studio</a></li>
+      <li aria-current="page">Sprint 1 &mdash; Movement &amp; Physics</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Read the Starter Script First</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#testing">Test Your Movement</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Iterative design &amp; project management">CT5-DPM-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Player moves, jumps, and collides correctly with a real level &mdash; matching the first two lines of your GDD core loop.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 2 &nbsp;&middot;&nbsp; Level 2-3</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lessons 4&ndash;6 &middot; Sprint 1 of 3</div>
+        <h1>Movement &amp; Physics</h1>
+        <p class="page-intro">Your Game Design Document has a core loop written in structured English. Sprint 1 turns the first two lines of it into real GDScript: <em>"IF player presses movement key THEN move player horizontally"</em> and <em>"IF player presses jump AND player is on ground THEN apply upward velocity; apply gravity every frame."</em> By the end of this sprint your player will move, jump, and interact with solid level geometry &mdash; the foundation every later sprint builds on.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Design documents are cheap; working movement is not. Build the Player scene exactly the way you planned it in your Node/Scene Plan, then bring your core loop pseudocode to life one line at a time. Test after every step &mdash; don't stack three untested changes on top of each other and hope."
+        </div>
+
+        <p>Open your own project in Godot 4 (a new, empty project &mdash; not the starter project, which stays untouched as your reference). Have your Lesson 3 GDD open beside the editor. Every step below maps to a specific line of your core loop pseudocode.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. READ THE STARTER SCRIPT FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="analyse-heading">Read the Starter Script First</h2>
+        <p>Before writing your own movement code, reopen the starter project from Lessons 1&ndash;2 and find the Player's script again. You already identified <code>_physics_process(delta)</code> as the function that runs every physics frame &mdash; now read exactly how it handles movement, line by line, before you write your own version from scratch.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Trace the Starter Project's Movement Logic</h3>
+          <ol>
+            <li>What is the exact input method used to read left/right movement &mdash; is it <code>Input.get_axis()</code>, two separate <code>Input.is_action_pressed()</code> checks, or something else?</li>
+            <li>Where is the speed value stored &mdash; a plain number typed into the function, or a variable declared elsewhere in the script?</li>
+            <li>Does the script check <code>is_on_floor()</code> before allowing a jump? What happens if you (hypothetically) removed that check?</li>
+            <li>Is gravity applied as a fixed number, or does it reference a project-wide physics setting?</li>
+          </ol>
+        </div>
+
+        <p>You don't need to match the starter project's exact approach in your own game &mdash; but every difference should be a deliberate design choice, not an accident from not having read the reference first.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 1 &mdash; Five Steps</h2>
+        <p>Work through these steps in order. Test after each one &mdash; don't move on until the current step behaves correctly.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Build the Player Scene</div>
+              <span class="sprint-step__phase">Scene Setup</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Create a new scene with a <code>CharacterBody2D</code> as the root, named <code>Player</code>. Add a <code>Sprite2D</code> child for the artwork and a <code>CollisionShape2D</code> child sized to match it. This should match the Node/Scene Plan from your GDD &mdash; if it doesn't, update your GDD now rather than silently drifting from your own plan.</p>
+
+              <pre class="scene-tree-block" role="img" aria-label="Player scene node structure"><span class="node-root">Player</span> <span class="node-type">(CharacterBody2D)</span>
+├─ <span class="node-name">Sprite2D</span>
+└─ <span class="node-name">CollisionShape2D</span></pre>
+
+              <p>Attach a new script to the Player node. Before writing any functions, declare three <code>@export</code> variables so speed, jump strength, and gravity can be tuned from the Inspector without editing code &mdash; the same idea as the Export Variable you defined in Lessons 1&ndash;2's vocabulary.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">DECLARE</span> speed &larr; <span class="pseudo-kw">200</span>
+<span class="pseudo-kw">DECLARE</span> jumpStrength &larr; <span class="pseudo-kw">400</span>
+<span class="pseudo-kw">DECLARE</span> gravity &larr; <span class="pseudo-kw">900</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">extends</span> CharacterBody2D
+
+<span class="gd-kw">@export var</span> speed: <span class="gd-type">float</span> = <span class="gd-num">200.0</span>
+<span class="gd-kw">@export var</span> jump_strength: <span class="gd-type">float</span> = <span class="gd-num">400.0</span>
+<span class="gd-kw">@export var</span> gravity: <span class="gd-type">float</span> = <span class="gd-num">900.0</span></pre>
+                </div>
+              </div>
+
+              <p><strong>Test it</strong> &mdash; run the scene. Nothing should move yet, but the Inspector should now show Speed, Jump Strength, and Gravity as editable fields under your script's export variables.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Horizontal Movement</div>
+              <span class="sprint-step__phase">GDD Core Loop &mdash; Line 1</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>This step implements the first line of your core loop: <em>"IF player presses movement key THEN move player horizontally."</em> Add a <code>_physics_process(delta)</code> function &mdash; this is the exact built-in function you found in the starter project.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">EVERY</span> physics frame
+  direction &larr; GET horizontal input
+  <span class="pseudo-kw">IF</span> direction &ne; <span class="pseudo-kw">0</span> <span class="pseudo-kw">THEN</span>
+    SET velocity.x TO direction &times; speed
+  <span class="pseudo-kw">ELSE</span>
+    SET velocity.x TO <span class="pseudo-kw">0</span>
+  <span class="pseudo-kw">END IF</span></pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-kw">func</span> <span class="gd-fn">_physics_process</span>(delta):
+  <span class="gd-kw">var</span> direction = Input.<span class="gd-fn">get_axis</span>(<span class="gd-str">"move_left"</span>, <span class="gd-str">"move_right"</span>)
+  <span class="gd-kw">if</span> direction != <span class="gd-num">0</span>:
+    velocity.x = direction * speed
+  <span class="gd-kw">else</span>:
+    velocity.x = <span class="gd-num">0</span>
+  <span class="gd-fn">move_and_slide</span>()</pre>
+                </div>
+              </div>
+
+              <p>Before this works, define <code>move_left</code> and <code>move_right</code> as Input Actions in <strong>Project &rarr; Project Settings &rarr; Input Map</strong>, mapped to your arrow keys or A/D.</p>
+
+              <p><strong>Test it</strong> &mdash; the player should slide left and right smoothly, and stop immediately when you release the key.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Jump &amp; Gravity</div>
+              <span class="sprint-step__phase">GDD Core Loop &mdash; Lines 2&ndash;3</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>This step implements the next two lines of your core loop: <em>"IF player presses jump AND player is on ground THEN apply upward velocity"</em> and <em>"apply gravity every frame."</em> Add these lines inside the <strong>same</strong> <code>_physics_process(delta)</code> function from Step 2 &mdash; don't create a second one.</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">IF NOT</span> player is on ground <span class="pseudo-kw">THEN</span>
+  velocity.y &larr; velocity.y + gravity &times; delta
+<span class="pseudo-kw">IF</span> jump pressed <span class="pseudo-kw">AND</span> player is on ground <span class="pseudo-kw">THEN</span>
+  SET velocity.y TO -jumpStrength</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--gd">GDScript</span>
+                  <pre class="code-bridge-block"><span class="gd-cmt"># add inside _physics_process, after direction/velocity.x</span>
+  <span class="gd-kw">if not</span> <span class="gd-fn">is_on_floor</span>():
+    velocity.y += gravity * delta
+  <span class="gd-kw">if</span> Input.<span class="gd-fn">is_action_just_pressed</span>(<span class="gd-str">"jump"</span>) <span class="gd-kw">and</span> <span class="gd-fn">is_on_floor</span>():
+    velocity.y = -jump_strength</pre>
+                </div>
+              </div>
+
+              <p>Map a <code>jump</code> Input Action to the spacebar in the Input Map, the same way you mapped movement in Step 2. Note that <code>is_on_floor()</code> is checked <strong>twice</strong> &mdash; once to decide whether gravity should pull the player down, and again to stop mid-air jumping. This is exactly the check you should have found in the starter project's script.</p>
+
+              <p><strong>Test it</strong> &mdash; press jump while grounded and the player should rise then fall back down under gravity. Press jump while airborne and nothing should happen &mdash; no double-jumping unless you deliberately design for it.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Build the Level</div>
+              <span class="sprint-step__phase">Scene Setup</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Movement means nothing without something solid to stand on. Add a <code>TileMap</code> node to your main scene and paint a simple level: a floor, at least one raised platform, and one solid wall the player can't walk through.</p>
+              <ul>
+                <li>Set the TileMap's physics layer so its tiles register as solid collision, matching what you found in the starter project.</li>
+                <li>Make sure your Player's <code>CollisionShape2D</code> is sized correctly &mdash; too large and the player will appear to float above platforms; too small and it will visually clip into the floor.</li>
+                <li>Leave a gap or ledge somewhere in the level &mdash; you'll deliberately test falling off it in the next section.</li>
+              </ul>
+
+              <p><strong>Test it</strong> &mdash; the player should stand on the floor and platforms without sinking through them, and should be stopped by the wall rather than passing through it.</p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Camera &amp; Screen Boundaries</div>
+              <span class="sprint-step__phase">Polish</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add a <code>Camera2D</code> node as a child of Player and enable its <strong>Current</strong> property, so the view follows the player automatically as they move. If your level is larger than a single screen, set the camera's <strong>Limit</strong> properties (left, right, top, bottom) in the Inspector so the camera stops at the level's edges instead of showing empty space beyond it.</p>
+
+              <p><strong>Test it</strong> &mdash; walk to both ends of your level. The camera should follow smoothly and never show the void past the level boundary.</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. TEST YOUR MOVEMENT
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test Your Movement</h2>
+        <p>Complete this test table in your project notebook. Write the actual result you observed &mdash; not what you expected to happen.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected result</th>
+                <th>Your actual result (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Press left/right movement keys</td>
+                <td>Player slides smoothly in that direction</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Release movement keys</td>
+                <td>Player stops moving immediately</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Press jump while on the ground</td>
+                <td>Player rises then falls back under gravity</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Press jump while already airborne</td>
+                <td>Nothing happens &mdash; no mid-air jump</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Walk off the edge of a platform</td>
+                <td>Player falls under gravity, doesn't float or clip</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Walk into the solid wall</td>
+                <td>Player stops at the wall, doesn't pass through it</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">&#128269; Evaluation</span>
+          <p>For each test where the actual result didn't match the expected result, write:</p>
+          <ol>
+            <li>What went wrong (the <strong>bug</strong>)</li>
+            <li>What you changed to fix it (the <strong>fix</strong>)</li>
+            <li>Whether the fix introduced any new problems (a <strong>regression</strong>)</li>
+          </ol>
+          <p>A very common bug at this stage: gravity accumulates infinitely while grounded because <code>is_on_floor()</code> isn't resetting <code>velocity.y</code>. If your player sinks slightly into the floor or jumps feel inconsistent, this is the first place to check.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 1 Checkpoint</h2>
+        <p>Tick off every item in your project notebook. Your project must pass this checkpoint before Sprint 2 begins.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">&#10003; Sprint 1 &mdash; Checklist</div>
+          <h3>Your project must:</h3>
+          <ul>
+            <li>Have a Player scene matching your GDD's Node/Scene Plan (CharacterBody2D, Sprite2D, CollisionShape2D)</li>
+            <li>Move left and right smoothly in response to input, stopping immediately when keys are released</li>
+            <li>Jump only when grounded &mdash; no mid-air jumping</li>
+            <li>Fall under consistent gravity when walking off a platform edge</li>
+            <li>Have a level with a floor, at least one platform, and one solid wall the player can't pass through</li>
+            <li>Have a camera that follows the player and respects the level boundaries</li>
+            <li>Have a completed test table in your project notebook (all six tests attempted)</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">velocity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in property on CharacterBody2D storing the node's current speed and direction as an x and y value, used by move_and_slide() to actually move it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">delta</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The time, in seconds, since the last physics frame. Multiplying by delta keeps movement and gravity consistent regardless of frame rate.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Input Action</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named input mapping (like "jump" or "move_left") defined once in Project Settings and reused in code, instead of hardcoding specific keys.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">is_on_floor()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in CharacterBody2D function returning true if the body is currently touching the ground, used to gate jumping and gravity.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">gravity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A constant downward acceleration applied to velocity.y every frame the player isn't grounded, pulling them back down after a jump or fall.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">move_and_slide()</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in CharacterBody2D function that moves the body using its velocity while automatically handling collisions with solid geometry.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Camera2D</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A built-in node type that defines what part of the 2D world is visible on screen, often attached to the player so the view follows them.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">regression</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A new bug introduced by a fix to a different bug &mdash; something that used to work correctly, and now doesn't, because of a recent change.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">The same NESA Course Performance Descriptors used across World 2. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Sprint 1 is your first real evidence for the <em>algorithm</em> bullet &mdash; you've developed, tested, and implemented working GDScript in a general-purpose programming language. It also strengthens the <em>iterative processes</em> bullet, since you tested after every single step rather than writing all five steps before running anything.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="move_and_slide() doesn't read input — that's Input.get_axis()'s job. move_and_slide() takes the velocity that's already been calculated and actually moves the body."
+             data-feedback-b="Correct. move_and_slide() moves the CharacterBody2D according to its current velocity, and automatically handles collisions with solid geometry like walls, floors, and platforms."
+             data-feedback-c="This function doesn't apply gravity — gravity is added to velocity.y manually in the script. move_and_slide() only uses whatever velocity value already exists."
+             data-feedback-d="move_and_slide() isn't how Input Actions get defined — that happens in Project Settings. This function is about movement and collision, not input configuration.">
+          <div class="mcq-question">1. What does <code>move_and_slide()</code> actually do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Reads the player's keyboard input every frame</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Moves the body according to its velocity, automatically handling collisions with solid geometry</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Applies gravity to the player's velocity every frame</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Defines a new Input Action in the Project Settings</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="D"
+             data-feedback-a="delta doesn't count how many times a key is pressed — that's not related to its purpose in a physics function at all."
+             data-feedback-b="delta isn't the player's total score or lives — it's a timing value, unrelated to gameplay state like score."
+             data-feedback-c="delta isn't fixed at exactly one second — it's the actual, often much smaller, time elapsed since the previous frame, and it can vary slightly frame to frame."
+             data-feedback-d="Correct. delta is the time in seconds since the last physics frame. Multiplying values like gravity by delta keeps movement consistent whether the game runs at 30fps, 60fps, or any other frame rate.">
+          <div class="mcq-question">2. What does the <code>delta</code> parameter in <code>_physics_process(delta)</code> represent?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The number of times a key has been pressed this frame</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The player's current score or number of lives</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A fixed value of exactly one second, every frame</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> The time, in seconds, since the last physics frame — used to keep movement consistent across different frame rates</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="A"
+             data-feedback-a="Correct. Without checking is_on_floor(), the player could jump again immediately while still airborne — an unlimited mid-air jump, since nothing would stop the jump condition from triggering repeatedly."
+             data-feedback-b="Removing the check wouldn't make the player fall through the floor faster — floor collision is handled separately, by move_and_slide() and the CollisionShape2D, not by the jump condition."
+             data-feedback-c="This isn't about camera behaviour at all — is_on_floor() has no connection to how the Camera2D follows the player or its screen limits."
+             data-feedback-d="Removing this check wouldn't disable horizontal movement — direction and velocity.x are handled by a separate, unrelated part of the function.">
+          <div class="mcq-question">3. In Step 3, why does the jump code check <code>is_on_floor()</code> before applying upward velocity?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Without it, the player could jump repeatedly while still in mid-air — an unlimited mid-air jump</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Without it, the player would fall through the floor faster than intended</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Without it, the Camera2D would stop following the player correctly</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Without it, horizontal movement would stop working entirely</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 2 &middot; Level 2-3 Clear!</strong>
+            <p>All questions answered. Complete your test table and Sprint Checkpoint before Sprint 2 begins.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Sprint 1 &mdash; Notebook Entry</h2>
+        <p>Sprint 1 crosses two D&amp;P phases &mdash; Producing &amp; Implementing and Testing &amp; Evaluating. Your notebook entry needs evidence of both.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your sprint notebook entry must include:</p>
+          <ol>
+            <li><strong>Sprint log:</strong> for each of the five steps, one sentence on what you implemented and whether it worked first time.</li>
+            <li><strong>Test table:</strong> the completed test table from the Testing section, with actual results written in.</li>
+            <li><strong>Bug report:</strong> describe at least one thing that didn't work as expected, what you changed, and whether the fix caused any regressions.</li>
+            <li><strong>Design reflection:</strong> compare your finished movement to your GDD's core loop pseudocode. Does anything feel different from how you imagined it while writing the GDD? Would you change the pseudocode now that you've built it?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Sprint 1 notebook entry here — sprint log, test results, bug report, design reflection. Saves automatically."
+                  aria-label="Sprint 1 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring a working, tested build to Sprint 2 &mdash; enemies and collectibles are added on top of this movement, not instead of it.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y9-lesson03.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">Lesson 3 &mdash; Game Design Document</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y9-sprint02.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Sprint 2 &mdash; Enemies &amp; Collectibles</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'nintendo-y9',
+        lessonId:       'sprint01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>
