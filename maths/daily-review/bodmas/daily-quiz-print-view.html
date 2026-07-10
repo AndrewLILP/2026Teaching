@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Number Skills — Print / Display View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4EFE9;
+    --card:#FFFFFF;
+    --slate:#3D5A80;
+    --forest:#4A7C59;
+    --amber:#E89C2F;
+    --terracotta:#C1614F;
+    --ink:#2B2B2B;
+    --ink-soft:#5B5B5B;
+    --border:#E4DCD1;
+    --font-body: 'Nunito Sans', system-ui, sans-serif;
+    --font-display: 'Nunito', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body);
+    display:flex; flex-direction:column;
+    padding:18px 26px;
+  }
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:12px; flex-wrap:wrap; gap:10px;
+  }
+  .title-block h1{
+    font-family:var(--font-display); font-weight:800; font-size:1.3rem; margin:0;
+  }
+  .title-block .sub{ font-size:0.8rem; color:var(--ink-soft); margin-top:2px; }
+  .back-link{
+    font-family:var(--font-display); font-weight:700; font-size:0.78rem;
+    color:var(--slate); text-decoration:none; display:inline-block; margin-bottom:4px;
+  }
+  .back-link:hover{ text-decoration:underline; }
+
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  button{
+    font-family:var(--font-display); font-weight:700; font-size:0.82rem;
+    padding:9px 16px; border-radius:10px; cursor:pointer; border:2px solid transparent;
+  }
+  .btn-reveal{ background:var(--slate); color:#fff; border:none; }
+  .btn-reveal:hover{ filter:brightness(1.08); }
+  .btn-reveal.is-active{ background:var(--forest); }
+  .btn-new{ background:transparent; color:var(--slate); border:2px solid var(--slate); }
+  .btn-new:hover{ background:rgba(61,90,128,0.06); }
+  .btn-print{ background:transparent; color:var(--ink-soft); border:2px solid var(--border); }
+  .btn-print:hover{ background:rgba(0,0,0,0.03); }
+
+  .print-grid{
+    background:var(--card); border:1px solid var(--border); border-radius:16px;
+    padding:18px 22px; box-shadow:0 2px 10px rgba(60,50,40,0.06);
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:22px;
+    flex:1;
+  }
+  .col-header{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--font-display); font-weight:800; font-size:0.82rem;
+    text-transform:uppercase; letter-spacing:0.03em;
+    padding-bottom:8px; margin-bottom:8px; border-bottom:2px solid var(--border);
+  }
+  .col-dot{ width:9px; height:9px; border-radius:50%; }
+  .col-whole .col-dot{ background:var(--slate); }
+  .col-integers .col-dot{ background:var(--terracotta); }
+  .col-bodmas .col-dot{ background:var(--amber); }
+  .col-whole .col-header{ color:var(--slate); }
+  .col-integers .col-header{ color:var(--terracotta); }
+  .col-bodmas .col-header{ color:var(--amber); }
+  .col-tag{
+    font-size:0.65rem; font-weight:700; color:var(--ink-soft);
+    text-transform:none; letter-spacing:normal; margin-left:auto;
+  }
+
+  .q-row{
+    display:flex; align-items:baseline; gap:6px;
+    font-family:var(--font-display); font-size:0.98rem; font-weight:700;
+    padding:5px 0; border-bottom:1px dashed var(--border);
+  }
+  .q-num{ color:var(--ink-soft); font-weight:700; width:1.6em; flex-shrink:0; }
+  .q-text{ flex:1; white-space:nowrap; }
+  .q-answer{ color:var(--forest); visibility:hidden; }
+  .answers-visible .q-answer{ visibility:visible; }
+
+  .footer-note{
+    margin-top:12px; font-size:0.72rem; color:var(--ink-soft); text-align:center;
+  }
+
+  @media (max-width:900px){
+    .print-grid{ grid-template-columns:1fr; }
+  }
+
+  @media print{
+    body{ padding:10px 18px; background:#fff; }
+    .no-print{ display:none !important; }
+    .print-grid{ box-shadow:none; border:none; }
+    .q-row{ font-size:0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="top-row">
+    <div class="title-block">
+      <a class="back-link no-print" href="index.html">← All quizzes</a>
+      <h1>All 30 Questions — Display &amp; Print View</h1>
+      <div class="sub">10 Whole Numbers · 10 Integers · 10 Order of Operations</div>
+    </div>
+    <div class="actions no-print">
+      <button class="btn-reveal" id="reveal-btn">Reveal answers</button>
+      <button class="btn-new" id="new-set-btn">New set</button>
+      <button class="btn-print" id="print-questions-btn">Print questions</button>
+      <button class="btn-print" id="print-answers-btn">Print answer key</button>
+    </div>
+  </div>
+
+  <div class="print-grid" id="print-grid">
+    <div class="col-whole">
+      <div class="col-header"><span class="col-dot"></span> Whole Numbers <span class="col-tag">Foundation</span></div>
+      <div id="col-whole-list"></div>
+    </div>
+    <div class="col-integers">
+      <div class="col-header"><span class="col-dot"></span> Integers <span class="col-tag">Core</span></div>
+      <div id="col-integers-list"></div>
+    </div>
+    <div class="col-bodmas">
+      <div class="col-header"><span class="col-dot"></span> Order of Operations <span class="col-tag">Extension</span></div>
+      <div id="col-bodmas-list"></div>
+    </div>
+  </div>
+
+  <div class="footer-note no-print">Use "Print questions" for a student handout, or "Print answer key" for your own copy — either works independently of the on-screen toggle above.</div>
+
+<script>
+(function(){
+  function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function randSigned(minMag, maxMag){
+    const mag = randInt(minMag, maxMag);
+    return Math.random() < 0.5 ? -mag : mag;
+  }
+  const symbols = { add: '+', sub: '−', mul: '×', div: '÷' };
+  const ops = ['add', 'sub', 'mul', 'div'];
+  function randomOp(){ return ops[randInt(0, 3)]; }
+  function shuffle(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ---------- Whole Numbers ----------
+  function wholeSingle(op){
+    let a, b, answer, display;
+    if(op === 'add'){ a = randInt(10, 99); b = randInt(10, 99); answer = a + b; display = `${a} + ${b}`; }
+    else if(op === 'sub'){ a = randInt(20, 99); b = randInt(10, a - 1); answer = a - b; display = `${a} − ${b}`; }
+    else if(op === 'mul'){ a = randInt(2, 12); b = randInt(2, 12); answer = a * b; display = `${a} × ${b}`; }
+    else { const q = randInt(2, 12), d = randInt(2, 12); const dividend = q * d; answer = q; display = `${dividend} ÷ ${d}`; }
+    return { display, answer };
+  }
+  function wholeTwoStep(){
+    for(let attempt = 0; attempt < 50; attempt++){
+      const idx1 = randInt(0, 3); let idx2 = randInt(0, 3);
+      while(idx2 === idx1) idx2 = randInt(0, 3);
+      const op1 = ops[idx1], op2 = ops[idx2];
+      let a, b, r1;
+      if(op1 === 'add'){ a = randInt(10, 50); b = randInt(10, 50); r1 = a + b; }
+      else if(op1 === 'sub'){ a = randInt(20, 60); b = randInt(5, a - 1); r1 = a - b; }
+      else if(op1 === 'mul'){ a = randInt(2, 9); b = randInt(2, 9); r1 = a * b; }
+      else { const q = randInt(2, 9), d = randInt(2, 9); a = q * d; b = d; r1 = q; }
+      let c, answer, valid = true;
+      if(op2 === 'add'){ c = randInt(5, 30); answer = r1 + c; }
+      else if(op2 === 'sub'){ if(r1 < 1){ valid = false; } else { c = randInt(1, r1); answer = r1 - c; } }
+      else if(op2 === 'mul'){ c = randInt(2, 9); answer = r1 * c; }
+      else {
+        const divisors = [2,3,4,5,6,8,9,10,12].filter(d => r1 % d === 0);
+        if(divisors.length === 0){ valid = false; } else { c = divisors[randInt(0, divisors.length - 1)]; answer = r1 / c; }
+      }
+      if(!valid || !Number.isInteger(answer) || answer < 0 || answer > 500) continue;
+      const s1 = symbols[op1], s2 = symbols[op2];
+      return { display: `(${a} ${s1} ${b}) ${s2} ${c}`, answer };
+    }
+    return { display: '(12 + 8) × 2', answer: 40 };
+  }
+  function buildWholeSet(){
+    const pool = shuffle(['add','add','sub','sub','mul','mul','div','div','two','two']);
+    return pool.map(op => op === 'two' ? wholeTwoStep() : wholeSingle(op));
+  }
+
+  // ---------- Integers ----------
+  function firstOperand(n){ return n < 0 ? `−${Math.abs(n)}` : `${n}`; }
+  function trailingOperand(n){ return n < 0 ? `(−${Math.abs(n)})` : `${n}`; }
+  function intSingle(op){
+    let a, b, dividend, divisor, quotient, answer, display;
+    if(op === 'add'){ a = randInt(-50, 60); b = randInt(-50, 60); answer = a + b; display = `${firstOperand(a)} + ${trailingOperand(b)}`; }
+    else if(op === 'sub'){ a = randInt(-50, 60); b = randInt(-50, 60); answer = a - b; display = `${firstOperand(a)} − ${trailingOperand(b)}`; }
+    else if(op === 'mul'){ a = randSigned(2, 12); b = randSigned(2, 12); answer = a * b; display = `${firstOperand(a)} × ${trailingOperand(b)}`; }
+    else { quotient = randSigned(2, 12); divisor = randSigned(2, 12); dividend = quotient * divisor; answer = quotient; display = `${firstOperand(dividend)} ÷ ${trailingOperand(divisor)}`; }
+    return { display, answer };
+  }
+  function intTwoStep(){
+    for(let attempt = 0; attempt < 60; attempt++){
+      const idx1 = randInt(0, 3); let idx2 = randInt(0, 3);
+      while(idx2 === idx1) idx2 = randInt(0, 3);
+      const op1 = ops[idx1], op2 = ops[idx2];
+      let a, b, r1;
+      if(op1 === 'add'){ a = randInt(-30, 30); b = randInt(-30, 30); r1 = a + b; }
+      else if(op1 === 'sub'){ a = randInt(-30, 30); b = randInt(-30, 30); r1 = a - b; }
+      else if(op1 === 'mul'){ a = randSigned(2, 9); b = randSigned(2, 9); r1 = a * b; }
+      else { const q = randSigned(2, 9), d = randSigned(2, 9); a = q * d; b = d; r1 = q; }
+      let c, answer, valid = true;
+      if(op2 === 'add'){ c = randInt(-20, 20); answer = r1 + c; }
+      else if(op2 === 'sub'){ c = randInt(-20, 20); answer = r1 - c; }
+      else if(op2 === 'mul'){ c = randSigned(2, 9); answer = r1 * c; }
+      else {
+        if(r1 === 0){ c = randSigned(2, 9); answer = 0; }
+        else {
+          const candidates = [2,3,4,5,6,8,9,10,12].flatMap(d => [d, -d]).filter(d => r1 % d === 0);
+          if(candidates.length === 0){ valid = false; } else { c = candidates[randInt(0, candidates.length - 1)]; answer = r1 / c; }
+        }
+      }
+      if(!valid || !Number.isInteger(answer) || Math.abs(answer) > 500) continue;
+      const s1 = symbols[op1], s2 = symbols[op2];
+      return { display: `(${firstOperand(a)} ${s1} ${trailingOperand(b)}) ${s2} ${trailingOperand(c)}`, answer };
+    }
+    return { display: '(−12 + 8) × 2', answer: -8 };
+  }
+  function buildIntegerSet(){
+    const pool = shuffle(['add','add','sub','sub','mul','mul','div','div','two','two']);
+    return pool.map(op => op === 'two' ? intTwoStep() : intSingle(op));
+  }
+
+  // ---------- BODMAS ----------
+  function generatePair(op){
+    if(op === 'add'){ const p = randInt(5, 40), q = randInt(5, 40); return [p, q, p + q]; }
+    if(op === 'sub'){ const p = randInt(10, 50), q = randInt(1, p - 1); return [p, q, p - q]; }
+    if(op === 'mul'){ const p = randInt(2, 9), q = randInt(2, 9); return [p, q, p * q]; }
+    const d = randInt(2, 9), quo = randInt(2, 9);
+    return [d * quo, d, quo];
+  }
+  function bodmasQuestion(){
+    for(let attempt = 0; attempt < 80; attempt++){
+      const bracketFirst = Math.random() < 0.5;
+      const opIn = randomOp(), opOut = randomOp();
+      const [p, q, innerVal] = generatePair(opIn);
+      const useSquare = Math.random() < 0.35;
+      let outerRaw, outerVal, outerDisplay;
+      if(useSquare){ outerRaw = randInt(2, 9); outerVal = outerRaw * outerRaw; outerDisplay = `${outerRaw}²`; }
+      else { outerRaw = randInt(2, 25); outerVal = outerRaw; outerDisplay = `${outerRaw}`; }
+      const left = bracketFirst ? innerVal : outerVal;
+      const right = bracketFirst ? outerVal : innerVal;
+      let answer, valid = true;
+      if(opOut === 'add'){ answer = left + right; }
+      else if(opOut === 'sub'){ if(left < right){ valid = false; } else { answer = left - right; } }
+      else if(opOut === 'mul'){ answer = left * right; }
+      else { if(right === 0 || left % right !== 0){ valid = false; } else { answer = left / right; } }
+      if(!valid || !Number.isInteger(answer) || answer < 0 || answer > 500) continue;
+      const innerDisplay = `${p} ${symbols[opIn]} ${q}`;
+      const display = bracketFirst ? `(${innerDisplay}) ${symbols[opOut]} ${outerDisplay}` : `${outerDisplay} ${symbols[opOut]} (${innerDisplay})`;
+      return { display, answer };
+    }
+    return { display: '(12 + 8) × 3', answer: 60 };
+  }
+  function buildBodmasSet(){
+    const arr = [];
+    for(let i = 0; i < 10; i++) arr.push(bodmasQuestion());
+    return arr;
+  }
+
+  // ---------- Render ----------
+  function renderColumn(elId, questions, startNum){
+    const el = document.getElementById(elId);
+    el.innerHTML = questions.map((q, i) => `
+      <div class="q-row">
+        <span class="q-num">${startNum + i}.</span>
+        <span class="q-text">${q.display} = <span class="q-answer">${q.answer}</span></span>
+      </div>
+    `).join('');
+  }
+
+  function generateAll(){
+    renderColumn('col-whole-list', buildWholeSet(), 1);
+    renderColumn('col-integers-list', buildIntegerSet(), 11);
+    renderColumn('col-bodmas-list', buildBodmasSet(), 21);
+  }
+
+  const revealBtn = document.getElementById('reveal-btn');
+  const gridEl = document.getElementById('print-grid');
+  let revealed = false;
+
+  revealBtn.addEventListener('click', function(){
+    revealed = !revealed;
+    gridEl.classList.toggle('answers-visible', revealed);
+    revealBtn.textContent = revealed ? 'Hide answers' : 'Reveal answers';
+    revealBtn.classList.toggle('is-active', revealed);
+  });
+
+  document.getElementById('new-set-btn').addEventListener('click', function(){
+    generateAll();
+    revealed = false;
+    gridEl.classList.remove('answers-visible');
+    revealBtn.textContent = 'Reveal answers';
+    revealBtn.classList.remove('is-active');
+  });
+
+  document.getElementById('print-questions-btn').addEventListener('click', function(){
+    printWithAnswers(false);
+  });
+
+  document.getElementById('print-answers-btn').addEventListener('click', function(){
+    printWithAnswers(true);
+  });
+
+  function printWithAnswers(showAnswers){
+    const prevState = gridEl.classList.contains('answers-visible');
+    gridEl.classList.toggle('answers-visible', showAnswers);
+    function restore(){
+      gridEl.classList.toggle('answers-visible', prevState);
+      window.removeEventListener('afterprint', restore);
+    }
+    window.addEventListener('afterprint', restore);
+    window.print();
+  }
+
+  generateAll();
+})();
+</script>
+
+</body>
+</html>
