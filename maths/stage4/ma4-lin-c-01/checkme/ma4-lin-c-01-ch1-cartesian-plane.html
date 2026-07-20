@@ -534,6 +534,8 @@ textarea.journal{width:100%;min-height:110px;font-family:var(--font-b);font-size
     <div class="newman-stage" id="nm-5">
       <h4>Stage 5 — Encode</h4>
       <p>Write your final answer in a full sentence, e.g. "The picnic shelter is at (3, 2) and the lookout tower is at (&minus;2, &minus;4)."</p>
+      <button class="frame-toggle" onclick="toggleFrame('nmSolution')">Show worked solution</button>
+      <div class="sentence-frame" id="nmSolution">3 east, 2 north from (0,0) &rarr; shelter at (3, 2). 2 west, 4 south from (0,0) &rarr; tower at (&minus;2, &minus;4).<br><b>The picnic shelter is at (3, 2) and the lookout tower is at (&minus;2, &minus;4).</b></div>
     </div>
   </div>
 
@@ -595,6 +597,8 @@ function initPlane(svgId, range){
   const scale = usable / (range*2);
   const originPx = size/2;
   planeMeta[svgId] = {scale, originPx};
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  svg.insertBefore(defs, svg.firstChild);
   const gridLayer = svg.querySelector('.grid-layer');
   for(let i=-range; i<=range; i++){
     const gx = originPx + i*scale;
@@ -622,6 +626,27 @@ function initPlane(svgId, range){
       gridLayer.appendChild(yLabel);
     }
   }
+  // arrowheads on both ends of both axes
+  const markerId = 'arrow-'+svgId;
+  const marker = document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id',markerId); marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','8');
+  marker.setAttribute('refX','4'); marker.setAttribute('refY','4'); marker.setAttribute('orient','auto');
+  const arrowPath = document.createElementNS('http://www.w3.org/2000/svg','path');
+  arrowPath.setAttribute('d','M0,0 L8,4 L0,8 z'); arrowPath.setAttribute('fill','#3D5A80');
+  marker.appendChild(arrowPath); defs.appendChild(marker);
+  const axisExt = 10;
+  const xAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+  xAxis.setAttribute('x1', margin-axisExt); xAxis.setAttribute('y1', originPx);
+  xAxis.setAttribute('x2', size-margin+axisExt); xAxis.setAttribute('y2', originPx);
+  xAxis.setAttribute('stroke','#3D5A80'); xAxis.setAttribute('stroke-width','2');
+  xAxis.setAttribute('marker-start','url(#'+markerId+')'); xAxis.setAttribute('marker-end','url(#'+markerId+')');
+  gridLayer.appendChild(xAxis);
+  const yAxis = document.createElementNS('http://www.w3.org/2000/svg','line');
+  yAxis.setAttribute('x1', originPx); yAxis.setAttribute('y1', margin-axisExt);
+  yAxis.setAttribute('x2', originPx); yAxis.setAttribute('y2', size-margin+axisExt);
+  yAxis.setAttribute('stroke','#3D5A80'); yAxis.setAttribute('stroke-width','2');
+  yAxis.setAttribute('marker-start','url(#'+markerId+')'); yAxis.setAttribute('marker-end','url(#'+markerId+')');
+  gridLayer.appendChild(yAxis);
 }
 function planeToPx(svgId, x, y){
   const meta = planeMeta[svgId];
@@ -884,7 +909,6 @@ function toggleFrame(id){
   document.getElementById(id).classList.toggle('show');
 }
 function nmNext(stageNum){
-  document.getElementById('nm-'+stageNum).classList.remove('active');
   document.getElementById('nm-'+(stageNum+1)).classList.add('active');
 }
 function nmCheck(){
