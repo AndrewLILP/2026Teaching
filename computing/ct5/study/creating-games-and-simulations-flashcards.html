@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creating Games and Simulations — Flashcards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Nunito+Sans:wght@400;600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple-primary:#4C2E82;
+    --purple-active:#6B46C1;
+    --purple-hover:#3B2266;
+    --accent-bar:#7C3AED;
+    --card-bg:#F5F2FA;
+    --bg-outer:#EFEBF5;
+    --ink:#1E2A35;
+    --ink-soft:#4B4458;
+    --correct:#3F7D4F;
+    --wrong:#B23A48;
+    --amber:#D98A2B;
+    --border:#D8CFEA;
+    --radius-card:8px;
+    --radius-btn:4px;
+    --font-body:'Nunito Sans', sans-serif;
+    --font-head:'Nunito', sans-serif;
+  }
+  body.font-system{ --font-body: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; --font-head: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+  body.font-dyslexia{ --font-body:'Atkinson Hyperlegible', sans-serif; --font-head:'Atkinson Hyperlegible', sans-serif; }
+
+  body.theme-high-contrast{
+    --purple-primary:#2E1A54; --purple-active:#3D2170; --card-bg:#FFFFFF; --bg-outer:#FFFFFF;
+    --ink:#000000; --border:#3D2170; --correct:#1F5C2E; --wrong:#8B1F2B;
+  }
+  body.theme-soft{
+    --bg-outer:#F3EFE7; --card-bg:#FBF8F2; --ink:#2B2620;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-outer);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.75;
+    font-size:15px;
+  }
+  h1,h2,h3,.q-num-badge,.tab-btn,.toolbar-label,.page-nav-btn{font-family:var(--font-head);}
+
+  a{color:var(--purple-primary);}
+
+  .topbar{
+    background:var(--purple-primary);
+    color:#fff;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .topbar .title-block{display:flex; flex-direction:column; gap:2px;}
+  .back-link{
+    color:#EDE7F8;
+    text-decoration:none;
+    font-weight:700;
+    font-size:13px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .back-link:hover{text-decoration:underline;}
+  .topbar h1{margin:0; font-size:20px; font-weight:800;}
+  .topbar .subtitle{font-size:12.5px; color:#D9CDF2; margin:0;}
+
+  .toolbar-controls{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .toolbar-btn{
+    background:#fff;
+    color:var(--purple-primary);
+    border:2px solid #fff;
+    border-radius:var(--radius-btn);
+    padding:7px 12px;
+    font-family:var(--font-head);
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .toolbar-btn:focus-visible, button:focus-visible, .mcq-btn:focus-visible{
+    outline:3px solid var(--amber);
+    outline-offset:2px;
+  }
+  .toolbar-select{
+    border:none;
+    background:transparent;
+    font-family:var(--font-head);
+    font-weight:700;
+    font-size:13px;
+    color:var(--purple-primary);
+    cursor:pointer;
+  }
+
+  /* ===== Page-level navigation (four D&P phases) ===== */
+  .page-nav{
+    background:var(--purple-hover);
+    display:flex;
+    flex-wrap:wrap;
+    gap:0;
+  }
+  .page-nav-btn{
+    flex:1 1 200px;
+    background:transparent;
+    color:#D9CDF2;
+    border:none;
+    border-bottom:4px solid transparent;
+    padding:12px 14px;
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .page-nav-btn[aria-selected="true"]{
+    background:var(--purple-primary);
+    color:#fff;
+    border-bottom-color:var(--amber);
+  }
+
+  /* ===== Tier tabs ===== */
+  .tier-bar{
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    padding:12px 0 0;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .tab-btn{
+    background:#fff;
+    border:2px solid var(--border);
+    border-bottom:none;
+    border-radius:8px 8px 0 0;
+    padding:10px 18px;
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+  }
+  .tab-btn[aria-selected="true"]{
+    color:var(--purple-primary);
+    border-color:var(--purple-active);
+    background:var(--card-bg);
+    box-shadow:inset 0 3px 0 var(--purple-active);
+  }
+  .tab-btn .tier-code{
+    display:inline-block;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.03em;
+  }
+
+  main{max-width:920px; margin:0 auto; padding:24px 18px 60px;}
+
+  .page-intro{
+    background:#fff;
+    border:1px solid var(--border);
+    border-left:5px solid var(--accent-bar);
+    border-radius:var(--radius-card);
+    padding:16px 18px;
+    margin-bottom:22px;
+  }
+  .page-intro h2{margin:0 0 6px; font-size:18px; color:var(--purple-primary);}
+  .page-intro p{margin:4px 0; font-size:14px;}
+
+  .q-nav{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:18px 0 20px;
+    padding:10px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
+  }
+  .q-nav button{
+    width:34px; height:34px;
+    border-radius:6px;
+    border:2px solid var(--border);
+    background:#fff;
+    color:var(--purple-primary);
+    font-weight:800;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .q-nav button.answered{
+    border-color:var(--correct);
+    color:var(--correct);
+  }
+  .q-nav button.current{
+    background:var(--purple-primary);
+    color:#fff;
+    border-color:var(--purple-hover);
+  }
+
+  .page-section{display:none;}
+  .page-section.active{display:block;}
+  .tier-panel{display:none;}
+  .tier-panel.active{display:block;}
+
+  .q-card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-left:6px solid var(--accent-bar);
+    border-radius:var(--radius-card);
+    padding:18px 20px;
+    margin-bottom:18px;
+    scroll-margin-top:20px;
+  }
+  .q-card-head{display:flex; align-items:baseline; gap:8px; margin-bottom:10px;}
+  .q-num-badge{
+    background:var(--purple-primary);
+    color:#fff;
+    font-weight:800;
+    font-size:12px;
+    padding:3px 9px;
+    border-radius:20px;
+    flex-shrink:0;
+  }
+  .q-stem{font-weight:700; font-size:15.5px; margin:0;}
+
+  .options{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .mcq-btn{
+    text-align:left;
+    background:#fff;
+    border:2px solid var(--border);
+    border-radius:var(--radius-btn);
+    padding:11px 14px;
+    font-family:var(--font-body);
+    font-size:14.5px;
+    color:var(--ink);
+    cursor:pointer;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .mcq-btn .opt-letter{
+    font-weight:800;
+    color:var(--purple-primary);
+    flex-shrink:0;
+  }
+  .mcq-btn:hover{border-color:var(--purple-active);}
+  .mcq-btn.is-correct{border-color:var(--correct); background:#EAF4EC;}
+  .mcq-btn.is-wrong{border-color:var(--wrong); background:#FBEAEC;}
+  .mcq-btn[disabled]{cursor:default;}
+
+  .feedback{
+    margin-top:12px;
+    padding:10px 12px;
+    border-radius:var(--radius-btn);
+    font-size:13.5px;
+    display:none;
+  }
+  .feedback.show{display:block;}
+  .feedback.fb-correct{background:#EAF4EC; color:var(--correct); border:1px solid var(--correct);}
+  .feedback.fb-wrong{background:#FBEAEC; color:var(--wrong); border:1px solid var(--wrong);}
+
+  .typein-row{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center;}
+  .typein-row input{
+    border:2px solid var(--border);
+    border-radius:var(--radius-btn);
+    padding:9px 12px;
+    font-size:14.5px;
+    font-family:var(--font-body);
+    min-width:160px;
+  }
+  .typein-row input.locked{border-color:var(--correct); background:#EAF4EC;}
+  .typein-row button{
+    background:var(--purple-primary);
+    color:#fff;
+    border:none;
+    border-radius:var(--radius-btn);
+    padding:9px 16px;
+    font-weight:700;
+    font-family:var(--font-head);
+    cursor:pointer;
+  }
+  .typein-row button:hover{background:var(--purple-hover);}
+
+  .hint-toggle{
+    background:#fff !important;
+    color:var(--purple-primary) !important;
+    border:2px solid var(--purple-active) !important;
+    border-radius:var(--radius-btn);
+    padding:8px 14px;
+    font-weight:700;
+    font-family:var(--font-head);
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .hint-toggle:hover{background:var(--card-bg) !important;}
+
+  .hint-panel{
+    display:none;
+    margin-top:10px;
+    padding:12px 14px;
+    background:#FBF8FF;
+    border:1px dashed var(--purple-active);
+    border-radius:var(--radius-btn);
+  }
+  .hint-panel.show{display:block;}
+  .hint-panel-label{
+    margin:0 0 8px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .hint-chips{display:flex; flex-wrap:wrap; gap:8px;}
+  .hint-chip{
+    background:#fff;
+    border:2px solid var(--border);
+    border-radius:20px;
+    padding:6px 14px;
+    font-family:var(--font-body);
+    font-size:13.5px;
+    color:var(--purple-primary);
+    font-weight:700;
+    cursor:pointer;
+  }
+  .hint-chip:hover{border-color:var(--purple-active); background:var(--card-bg);}
+  .hint-chip.chip-used{opacity:0.55;}
+
+  pre.pseudo{
+    background:#2B1F45;
+    color:#EDE7F8;
+    border-radius:var(--radius-btn);
+    padding:14px 16px;
+    font-size:13.5px;
+    line-height:1.7;
+    overflow-x:auto;
+    margin:14px 0 4px;
+    white-space:pre;
+  }
+  .pseudo-line-btn{
+    display:block;
+    width:100%;
+    text-align:left;
+    background:transparent;
+    border:none;
+    color:inherit;
+    font:inherit;
+    padding:2px 6px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+
+  .shape-key{display:flex; gap:22px; justify-content:center; margin:10px 0 4px; flex-wrap:wrap;}
+  .shape-key figure{margin:0; text-align:center; font-size:12px;}
+  .shape-key figcaption{margin-top:4px; font-weight:700;}
+
+  .confidence{
+    margin-top:34px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:var(--radius-card);
+    padding:18px;
+    text-align:center;
+  }
+  .confidence h3{margin:0 0 10px; font-size:15px; color:var(--purple-primary);}
+  .confidence-btns{display:flex; justify-content:center; gap:14px; flex-wrap:wrap;}
+  .conf-btn{
+    background:#fff;
+    border:2px solid var(--border);
+    border-radius:10px;
+    padding:12px 18px;
+    font-size:26px;
+    cursor:pointer;
+  }
+  .conf-btn span.label{display:block; font-size:12px; font-family:var(--font-body); font-weight:700; color:var(--ink-soft); margin-top:4px;}
+  .conf-btn.selected{border-color:var(--purple-active); background:var(--card-bg);}
+  .confidence-saved{font-size:12.5px; color:var(--correct); font-weight:700; margin-top:10px; display:none;}
+  .confidence-saved.show{display:block;}
+
+  .spec-panel{
+    max-width:920px;
+    margin:0 auto 0;
+    padding:0 18px;
+  }
+  .spec-panel-inner{
+    background:#fff;
+    border:2px dashed var(--purple-active);
+    border-radius:var(--radius-card);
+    padding:14px 18px;
+    margin-top:18px;
+  }
+  .spec-panel-inner h2{
+    margin:0 0 8px;
+    font-size:15px;
+    color:var(--purple-primary);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .spec-panel-inner p.spec-note{
+    margin:0 0 10px;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-style:normal;
+  }
+  .spec-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:10px 20px;
+    font-size:13.5px;
+  }
+  .spec-grid dt{font-weight:800; color:var(--purple-primary); margin-top:6px;}
+  .spec-grid dd{margin:2px 0 0;}
+
+  @media (max-width:520px){
+    .topbar{flex-direction:column; align-items:flex-start;}
+    .q-stem{font-size:14.5px;}
+  }
+
+
+  .flip-card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:16px;
+  }
+  .flip-card{
+    perspective:1000px;
+    background:transparent;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    height:150px;
+  }
+  .flip-card-inner{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:block;
+    transition:transform 0.5s;
+    transform-style:preserve-3d;
+  }
+  .flip-card[aria-pressed="true"] .flip-card-inner{ transform:rotateY(180deg); }
+  @media (prefers-reduced-motion: reduce){
+    .flip-card-inner{ transition:none; }
+  }
+  .flip-card-face{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    border-radius:var(--radius-card);
+    border:2px solid var(--purple-active);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:14px;
+    text-align:center;
+    font-family:var(--font-body);
+  }
+  .flip-card-front{
+    background:var(--purple-primary);
+    color:#fff;
+    font-family:var(--font-head);
+    font-weight:800;
+    font-size:16px;
+  }
+  .flip-card-back{
+    background:var(--card-bg);
+    color:var(--ink);
+    transform:rotateY(180deg);
+    font-size:13px;
+    line-height:1.5;
+    gap:6px;
+  }
+  .flip-card-def{font-weight:700;}
+  .flip-card-example{font-size:12px; color:var(--ink-soft); font-style:normal;}
+  .flashcard-set{display:none;}
+  .flashcard-set.active{display:block;}
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="title-block">
+    <a class="back-link" href="creating-games-and-simulations-hub.html">&larr; Back to Study Hub</a>
+    <h1>Creating Games and Simulations — Flashcards</h1>
+    <p class="subtitle">Vocabulary review, one set per Design &amp; Production Framework phase</p>
+  </div>
+  <div class="toolbar-controls">
+    <label class="toolbar-btn" for="fontSelect">
+      <span aria-hidden="true">A</span>
+      <span class="toolbar-label">Font</span>
+      <select id="fontSelect" class="toolbar-select" aria-label="Choose font">
+        <option value="sans">Nunito Sans</option>
+        <option value="system">System default</option>
+        <option value="dyslexia">Atkinson Hyperlegible</option>
+      </select>
+    </label>
+    <label class="toolbar-btn" for="themeSelect">
+      <span aria-hidden="true">&#9680;</span>
+      <span class="toolbar-label">Colour</span>
+      <select id="themeSelect" class="toolbar-select" aria-label="Choose colour theme">
+        <option value="standard">Standard</option>
+        <option value="high-contrast">High contrast</option>
+        <option value="soft">Soft</option>
+      </select>
+    </label>
+  </div>
+</header>
+
+<nav class="page-nav" role="tablist" aria-label="Flashcard sets">
+    <button class="page-nav-btn" role="tab" aria-selected="true" aria-controls="cards-p1" data-page="p1">1. Identifying and Defining</button>
+    <button class="page-nav-btn" role="tab" aria-selected="false" aria-controls="cards-p2" data-page="p2">2. Researching and Planning</button>
+    <button class="page-nav-btn" role="tab" aria-selected="false" aria-controls="cards-p3" data-page="p3">3. Producing and Implementing</button>
+    <button class="page-nav-btn" role="tab" aria-selected="false" aria-controls="cards-p4" data-page="p4">4. Testing and Evaluating</button>
+</nav>
+
+<main>
+<section class="flashcard-set active" id="cards-p1">
+  <div class="page-intro">
+    <h2>Identifying and Defining</h2>
+    <p>Tap a card to flip it. Try to say the definition out loud <strong>before</strong> you flip — that's what makes flashcards work.</p>
+  </div>
+  <div class="flip-card-grid">
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Input</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Data that goes INTO a system.</span><span class="flip-card-example">e.g. the player pressing W to move.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Output</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Data the system produces and shows to the user.</span><span class="flip-card-example">e.g. the coins-collected counter on screen.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Branching</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A decision point where the program takes a different path depending on a condition.</span><span class="flip-card-example">e.g. IF player touches coin THEN collect it.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Iteration</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Repeating the same steps over and over.</span><span class="flip-card-example">e.g. the health bar ticking down every second.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Functional requirement</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A specific, testable feature the system must do.</span><span class="flip-card-example">e.g. “the player must collect coins to make a star appear”.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Non-functional requirement</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A quality of the system, like performance or reliability, rather than a specific feature.</span><span class="flip-card-example">e.g. “the game must run smoothly without lag”.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Storage</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Data the system needs to keep track of while it runs.</span><span class="flip-card-example">e.g. the number of coins collected so far.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Transmission</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Data moving from one part of a system to another.</span><span class="flip-card-example">e.g. the coin count moving from the game logic to the on-screen UI.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Test case</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A specific input paired with its expected output, used to check a requirement works.</span><span class="flip-card-example">e.g. Input: walk into a coin → Expected output: count +1.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Use case</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A description of how a specific type of user interacts with a system.</span><span class="flip-card-example">e.g. “a new player opens the game and plays Level 1 for the first time”.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">OOP class</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A blueprint that groups related data and behaviour together.</span><span class="flip-card-example">e.g. a Coin class with a position and a value.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Privacy</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A person's right to control their own personal information.</span><span class="flip-card-example">e.g. not collecting a player's photo without consent.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Diverse perspectives</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Considering the needs of different groups — culture, age, gender, disability — in design.</span><span class="flip-card-example">e.g. offering adjustable settings so more players can play comfortably.</span></span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<section class="flashcard-set" id="cards-p2">
+  <div class="page-intro">
+    <h2>Researching and Planning</h2>
+    <p>Tap a card to flip it. Try to say the definition out loud <strong>before</strong> you flip — that's what makes flashcards work.</p>
+  </div>
+  <div class="flip-card-grid">
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Predefined algorithm</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A fixed, set sequence of steps that always produces the same behaviour.</span><span class="flip-card-example">e.g. a traffic light's fixed on/off pattern.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Artificial Intelligence (AI)</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A system designed to mimic intelligent behaviour, often adapting rather than following fixed rules.</span><span class="flip-card-example">e.g. an opponent that adapts to how the player plays.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Virtual Reality (VR)</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Fully immersing the user in a computer-generated environment, usually with a headset.</span><span class="flip-card-example">Different from AR, which overlays digital images on the real world.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Mechanics</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The rules and systems that govern how a game works.</span><span class="flip-card-example">e.g. how many coins are needed to spawn the star.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Usability</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">How easy something is to understand and use.</span><span class="flip-card-example">e.g. feedback that the controls feel confusing to a new player.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Aesthetics</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">How a game looks and sounds.</span><span class="flip-card-example">Separate from mechanics (rules) and usability (ease of use).</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Integer</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A data type that stores a whole number, with no decimal point.</span><span class="flip-card-example">e.g. coins collected.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Flowchart decision (diamond)</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The flowchart shape used to show a branching/decision step.</span><span class="flip-card-example">Rectangles show a process; ovals show start/end.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Desk check</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Manually working through an algorithm step by step to check it behaves correctly, before it's coded.</span><span class="flip-card-example">Uses a trace table to record variable values.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Trace table</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The table used to record how variable values change at each step during a desk check.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Encryption</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Converting data into a form that can't be read without a key.</span><span class="flip-card-example">Used to help protect stored player data.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Data structure (array)</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A structure that holds many values of the same kind together.</span><span class="flip-card-example">e.g. an array of coin positions.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Cyber safety</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Protecting people and their data from online harm.</span><span class="flip-card-example">e.g. making sure players can't see each other's personal info in chat.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Alternative designs</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Generating more than one possible design and evaluating each against the requirements before choosing one.</span></span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<section class="flashcard-set" id="cards-p3">
+  <div class="page-intro">
+    <h2>Producing and Implementing</h2>
+    <p>Tap a card to flip it. Try to say the definition out loud <strong>before</strong> you flip — that's what makes flashcards work.</p>
+  </div>
+  <div class="flip-card-grid">
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">IPO chart</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A planning tool that maps out a system's Inputs, Processes and Outputs.</span><span class="flip-card-example">One of several program-development support tools, alongside flowcharts and pseudocode.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Variable</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A named piece of storage that can hold a value which may change while the program runs.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Event</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Something that happens — like a key press — that a program can respond to.</span><span class="flip-card-example">Core to event-driven programming.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">UI vs UX</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">UI is what the player sees and interacts with; UX is the overall feeling and experience of using it.</span><span class="flip-card-example">Related but not the same thing.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Prototype</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A simple mock-up used to communicate and test design ideas with users before full development.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Fixed time increment</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Updating a simulated world in small, equal steps of time.</span><span class="flip-card-example">e.g. every 1/60th of a second.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Game state</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Tracking which “mode” the game is currently in.</span><span class="flip-card-example">e.g. walking, cutscene, or paused.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Function (modular code)</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A reusable block of code that can be called from multiple places, avoiding repetition.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Syntax error</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">An error where code doesn't follow the rules of the programming language.</span><span class="flip-card-example">e.g. a missing bracket.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Logical error</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">An error where code runs without crashing, but produces the wrong result.</span><span class="flip-card-example">e.g. subtracting instead of adding to a counter.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Cellular automaton</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A simulation where each cell's next state is decided by its neighbouring cells' states.</span><span class="flip-card-example">e.g. Conway's Game of Life.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">ENDIF</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The pseudocode keyword that marks the end of an IF…THEN…ELSE decision structure.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">WHILE</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The pseudocode keyword commonly used to repeat steps while a condition remains true.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Project record</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Documentation (e.g. a notebook) showing each version of a design, what was tested, and what changed.</span><span class="flip-card-example">Evidence of an iterative design and evaluation process.</span></span>
+      </span>
+    </button>
+  </div>
+</section>
+
+<section class="flashcard-set" id="cards-p4">
+  <div class="page-intro">
+    <h2>Testing and Evaluating</h2>
+    <p>Tap a card to flip it. Try to say the definition out loud <strong>before</strong> you flip — that's what makes flashcards work.</p>
+  </div>
+  <div class="flip-card-grid">
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Tracing</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Following an algorithm through step by step to check how it behaves.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Validation</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Checking that a program produces the correct output for a range of test cases.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Debugging</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">The process of finding and fixing errors in a program.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Playtesting</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Testing done by real users outside the development team, to catch issues before release.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Vulnerability</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A software flaw that could be exploited to compromise a system's security.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Functional testing</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Checking that the game does what it's supposed to do.</span><span class="flip-card-example">e.g. does the star actually appear at 20 coins?</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Performance testing</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Checking a non-functional quality like frame rate, load time, or lag.</span><span class="flip-card-example">A game can pass every functional test and still fail this.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Boundary test case</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Testing values just below and just above a target, to check the boundary is implemented correctly.</span><span class="flip-card-example">e.g. testing at 19, 20 and 21 coins.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Game designer</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A professional who designs the rules, levels and challenges of a game.</span><span class="flip-card-example">Different from the coder or artist.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">QA tester</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A professional who systematically tests a game to find bugs and issues before release.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Technical/3D artist</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">A professional who designs believable 3D characters and world assets.</span></span>
+      </span>
+    </button>
+    <button type="button" class="flip-card" aria-pressed="false">
+      <span class="flip-card-inner">
+        <span class="flip-card-face flip-card-front">Ethical/legal responsibility</span>
+        <span class="flip-card-face flip-card-back"><span class="flip-card-def">Considering issues like copyright, privacy and fairness when evaluating a finished product.</span><span class="flip-card-example">e.g. checking no copyrighted music was used without permission.</span></span>
+      </span>
+    </button>
+  </div>
+</section>
+</main>
+
+<script>
+function init(){
+  var fontSelect = document.getElementById('fontSelect');
+  fontSelect.addEventListener('change', function(){
+    document.body.classList.remove('font-system','font-dyslexia');
+    if(this.value === 'system') document.body.classList.add('font-system');
+    if(this.value === 'dyslexia') document.body.classList.add('font-dyslexia');
+  });
+  var themeSelect = document.getElementById('themeSelect');
+  themeSelect.addEventListener('change', function(){
+    document.body.classList.remove('theme-high-contrast','theme-soft');
+    if(this.value === 'high-contrast') document.body.classList.add('theme-high-contrast');
+    if(this.value === 'soft') document.body.classList.add('theme-soft');
+  });
+
+  var pageNavBtns = document.querySelectorAll('.page-nav-btn');
+  var sets = document.querySelectorAll('.flashcard-set');
+  pageNavBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      pageNavBtns.forEach(function(b){ b.setAttribute('aria-selected','false'); });
+      sets.forEach(function(s){ s.classList.remove('active'); });
+      btn.setAttribute('aria-selected','true');
+      document.getElementById(btn.getAttribute('aria-controls')).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.flip-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      var flipped = card.getAttribute('aria-pressed') === 'true';
+      card.setAttribute('aria-pressed', flipped ? 'false' : 'true');
+    });
+  });
+
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+</body>
+</html>
