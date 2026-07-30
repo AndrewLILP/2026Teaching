@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Researching and Planning — E-Portfolio UX Topic Review</title>
+<style>
+  :root {
+    --header: #4C2E82;
+    --header-hover: #3B2266;
+    --active: #6B46C1;
+    --card-bg: #F5F2FA;
+    --accent-bar: #7C3AED;
+    --correct: #1D4E89;
+    --wrong: #B23A48;
+    --warm: #D98A2B;
+    --text: #1E2A35;
+    --outer-bg: #EFEBF5;
+    --font-body: 'Nunito Sans', 'Nunito', sans-serif;
+  }
+  [data-contrast="high"] {
+    --header: #000000; --active: #222222; --card-bg: #FFFFFF; --accent-bar: #000000;
+    --correct: #003366; --wrong: #990000; --text: #000000; --outer-bg: #FFFFFF;
+  }
+  [data-contrast="soft"] {
+    --card-bg: #FBF8F2; --outer-bg: #F3EFE7;
+  }
+  [data-font="system"] { --font-body: system-ui, -apple-system, sans-serif; }
+  [data-font="dyslexic"] { --font-body: 'Atkinson Hyperlegible', sans-serif; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--outer-bg); color: var(--text);
+    font-family: var(--font-body); line-height: 1.75; font-size: 16px;
+  }
+  a { color: var(--header); }
+  .skip-link {
+    position: absolute; left: -999px; top: 0; background: var(--header); color: #fff;
+    padding: 10px 16px; z-index: 100;
+  }
+  .skip-link:focus { left: 8px; top: 8px; }
+  .topbar {
+    background: var(--header); color: #fff; padding: 14px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px; justify-content: space-between;
+  }
+  .topbar h1 { font-size: 1.15rem; margin: 0; }
+  .topbar .back-link { color: #fff; text-decoration: underline; font-size: .9rem; white-space: nowrap; margin-right: 12px; }
+  .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle-group button {
+    background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.5);
+    border-radius: 6px; padding: 6px 10px; font-size: .8rem; cursor: pointer; font-family: var(--font-body);
+  }
+  .toggle-group button[aria-pressed="true"] { background: #fff; color: var(--header); font-weight: 700; }
+  .toggle-group button:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 3px solid var(--warm); outline-offset: 2px;
+  }
+
+  .spec-panel {
+    margin: 18px auto 0; max-width: 900px; border: 2px dashed var(--active);
+    border-radius: 10px; background: var(--card-bg); padding: 4px 20px 16px;
+  }
+  .spec-panel h2 { font-size: 1.05rem; color: var(--header); }
+  .spec-note { font-size: .92rem; font-style: italic; }
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 18px; margin: 0; }
+  .spec-grid dt { font-weight: 800; color: var(--header); font-size: .85rem; text-transform: uppercase; letter-spacing: .02em; }
+  .spec-grid dd { margin: 2px 0 0; font-size: .95rem; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  .page-intro h2 { color: var(--header); margin-bottom: 4px; }
+  .page-intro p { margin-top: 0; }
+
+  .tier-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 16px; border-bottom: 2px solid var(--active); padding-bottom: 0; }
+  .tab-btn {
+    background: var(--card-bg); border: 1px solid var(--active); border-bottom: none;
+    color: var(--header); padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: .95rem;
+  }
+  .tab-btn--active { background: var(--active); color: #fff; }
+
+  .tier-panel { display: none; }
+  .tier-panel--active { display: block; }
+
+  .q-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .qnav-pill {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--active);
+    background: #fff; color: var(--header); font-weight: 700; cursor: pointer; font-family: var(--font-body);
+  }
+  .qnav-pill.answered { background: var(--correct); color: #fff; border-color: var(--correct); }
+
+  .q-card {
+    background: var(--card-bg); border-left: 6px solid var(--accent-bar); border-radius: 8px;
+    padding: 16px 18px; margin-bottom: 18px; position: relative;
+  }
+  .q-card--closer { border-left-color: var(--warm); }
+  .q-closer-badge {
+    background: var(--warm); color: #fff; font-size: .7rem; font-weight: 800; padding: 2px 8px;
+    border-radius: 10px; margin-left: 8px; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .q-card-head { display: flex; align-items: center; margin-bottom: 6px; }
+  .q-num-badge { background: var(--header); color: #fff; font-size: .8rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
+  .q-stem { font-size: 1rem; margin: 8px 0 12px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .mcq-btn {
+    text-align: left; background: #fff; border: 2px solid var(--active); border-radius: 8px;
+    padding: 10px 14px; cursor: pointer; font-family: var(--font-body); font-size: .95rem; color: var(--text);
+  }
+  .mcq-btn:hover { background: #F0EBFA; }
+  .mcq-btn.correct { background: var(--correct); color: #fff; border-color: var(--correct); }
+  .mcq-btn.wrong { background: var(--wrong); color: #fff; border-color: var(--wrong); }
+  .mcq-btn[disabled] { cursor: default; }
+  .opt-letter { font-weight: 800; margin-right: 6px; }
+  .feedback { margin-top: 10px; font-size: .92rem; font-weight: 600; }
+  .feedback:empty { display: none; }
+
+  .typein-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .typein-row input {
+    flex: 1 1 220px; padding: 10px 12px; border: 2px solid var(--active); border-radius: 8px;
+    font-family: var(--font-body); font-size: .95rem;
+  }
+  .check-typein, .hint-toggle {
+    background: var(--header); color: #fff; border: none; border-radius: 8px; padding: 10px 14px;
+    cursor: pointer; font-family: var(--font-body); font-weight: 700; font-size: .9rem;
+  }
+  .hint-toggle { background: var(--warm); }
+  .check-typein:hover { background: var(--header-hover); }
+  .hint-panel { display: none; margin-top: 10px; }
+  .hint-panel.open { display: block; }
+  .hint-panel-label { font-size: .85rem; font-style: italic; margin: 6px 0; }
+  .hint-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hint-chip {
+    background: #fff; border: 1px solid var(--active); border-radius: 16px; padding: 6px 12px;
+    cursor: pointer; font-family: var(--font-body); font-size: .85rem;
+  }
+  .hint-chip:hover { background: #F0EBFA; }
+
+  .confidence {
+    margin-top: 30px; padding: 16px; background: var(--card-bg); border-radius: 10px; text-align: center;
+  }
+  .confidence-btns { display: flex; justify-content: center; gap: 14px; margin-top: 8px; }
+  .confidence-btns button {
+    font-size: 1.6rem; background: #fff; border: 2px solid var(--active); border-radius: 50%;
+    width: 54px; height: 54px; cursor: pointer;
+  }
+  .confidence-btns button[aria-pressed="true"] { background: var(--active); }
+  .confidence-status { font-size: .85rem; margin-top: 6px; min-height: 1.2em; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body data-font="nunito" data-contrast="standard">
+<a href="index.html" class="skip-link">Skip to main content</a>
+
+<header class="topbar">
+  <div>
+    <a href="index.html" class="back-link">← Site Hub</a>
+    <a href="eportfolio-ux-hub.html" class="back-link">Topic Hub</a>
+    <h1>E-Portfolio UX — Topic Review Notebook</h1>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Font style">
+    <button type="button" data-font-choice="nunito" aria-pressed="true">Nunito Sans</button>
+    <button type="button" data-font-choice="system" aria-pressed="false">System default</button>
+    <button type="button" data-font-choice="dyslexic" aria-pressed="false">Atkinson Hyperlegible</button>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Colour contrast">
+    <button type="button" data-contrast-choice="standard" aria-pressed="true">Standard</button>
+    <button type="button" data-contrast-choice="high" aria-pressed="false">High contrast</button>
+    <button type="button" data-contrast-choice="soft" aria-pressed="false">Soft</button>
+  </div>
+</header>
+
+<div class="spec-panel">
+  <div class="spec-panel-inner">
+    <h2>📋 Student Game Design e-portfolio — quick reference</h2>
+    <p class="spec-note">You don't need to memorise these details — refer back here any time. The questions are testing computing theory, not your memory of the project.</p>
+    <dl class="spec-grid">
+      <div><dt>Purpose</dt><dd>Showcases the student's shipped/prototype games and design journal, framed as a simulated job-application portfolio</dd></div>
+      <div><dt>Structure</dt><dd>Home, About, Project 1, Project 2, Reflections — simple nav bar (flexible per student)</dd></div>
+      <div><dt>Project page content</dt><dd>Screenshots, embedded video, written reflection, downloadable build, link to itch.io / Unity Play</dd></div>
+      <div><dt>Build tools</dt><dd>HTML + CSS; Figma (and/or AI-prompted prototypes) used for design first</dd></div>
+      <div><dt>Feedback survey</dt><dd>Anonymous playtest survey per project — 4 rating-scale questions (Fun, Controls, Difficulty, Retention, each 1–5, higher = better) + 4 short open-ended questions (Highlights, Frustrations, Expectations, Changes)</dd></div>
+      <div><dt>Data handling</dt><dd>Survey responses collected from playtesters; no names or emails collected — ratings and free text only</dd></div>
+      <div><dt>Accessibility</dt><dd>General UX/accessibility theory (alt text, colour contrast, responsive layout, consistent navigation)</dd></div>
+    </dl>
+  </div>
+</div>
+
+<main>
+  <section class="page-section page-section--active" id="page-2">
+    <div class="page-intro">
+      <h2>Researching and Planning</h2>
+      <p>These questions test the &quot;Researching and Planning&quot; phase — planning iteratively, researching how UIs evolve, evaluating existing interfaces, exploring design principles and immersive technology, and generating alternative designs.</p>
+    </div>
+
+    <div class="tier-bar" role="tablist" aria-label="Difficulty tier">
+    <button class="tab-btn tab-btn--active" id="tabbtn-p2-de" data-tier="p2-de" role="tab" aria-selected="true" aria-controls="tier-p2-de">Foundation (D–E)</button>
+    <button class="tab-btn" id="tabbtn-p2-c" data-tier="p2-c" role="tab" aria-selected="false" aria-controls="tier-p2-c">Core (C)</button>
+    <button class="tab-btn" id="tabbtn-p2-ba" data-tier="p2-ba" role="tab" aria-selected="false" aria-controls="tier-p2-ba">Extension (B–A)</button>
+    </div>
+
+    <div class="tier-panel tier-panel--active" id="tier-p2-de" role="tabpanel" aria-labelledby="tabbtn-p2-de">
+      <nav class="q-nav" id="qnav-p2-de" aria-label="Question navigation — Foundation (D–E)">
+        <button class="qnav-pill" data-target="p2-de-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p2-de-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p2-de-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p2-de-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p2-de-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p2-de-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p2-de-q7" aria-label="Go to question 7">7</button>
+        <button class="qnav-pill" data-target="p2-de-q8" aria-label="Go to question 8">8</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p2-de-q1" data-tier="p2-de" data-qid="p2-de-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student plans their portfolio in stages — draft layout, get feedback, revise, get feedback again — rather than building the whole site once and hoping it&#x27;s right. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="A functional requirement describes what the site must do, not how the project is managed.">
+            <span class="opt-letter">A.</span> A functional requirement
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — iterative means repeating cycles of build, review and revise, rather than doing it once.">
+            <span class="opt-letter">B.</span> An iterative approach
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about project planning, not a legal policy.">
+            <span class="opt-letter">C.</span> Terms of use
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This has nothing to do with reducing file size.">
+            <span class="opt-letter">D.</span> Data compression
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q2" data-tier="p2-de" data-qid="p2-de-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">Early websites were mostly static text pages. Modern portfolio sites often include interactive elements like embedded video and clickable galleries. This shows that UIs have:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The example describes a clear change over time, not sameness.">
+            <span class="opt-letter">A.</span> Stayed exactly the same since the 1990s
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The example is about technology and user needs, not law.">
+            <span class="opt-letter">B.</span> Only changed because of legal requirements
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — interfaces change over time as technology and user expectations develop.">
+            <span class="opt-letter">C.</span> Evolved in response to people&#x27;s needs and new opportunities
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The example describes added interactivity, not simplification.">
+            <span class="opt-letter">D.</span> Become simpler with fewer features
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q3" data-tier="p2-de" data-qid="p2-de-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">Asking a group of real visitors to try a portfolio site and note where they get confused is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is a way of testing the UI, not a requirement statement.">
+            <span class="opt-letter">A.</span> A non-functional requirement
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">B.</span> Data compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a testing activity, not a legal document.">
+            <span class="opt-letter">C.</span> A terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — observing real users interacting with the interface is a common UI evaluation technique.">
+            <span class="opt-letter">D.</span> A technique to evaluate a UI
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q4" data-tier="p2-de" data-qid="p2-de-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">Keeping the same font, colours and button style on every page of a portfolio site is an example of applying which design principle?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — using the same visual style throughout is the design principle of consistency.">
+            <span class="opt-letter">A.</span> Consistency
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is about file size, not visual style.">
+            <span class="opt-letter">B.</span> Compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a design choice, not a legal policy.">
+            <span class="opt-letter">C.</span> Terms of use
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Data validation checks whether data is correct, unrelated to visual style.">
+            <span class="opt-letter">D.</span> Data validation
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q5" data-tier="p2-de" data-qid="p2-de-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">A student looks at other students&#x27; portfolio sites from previous years to see what worked well before starting their own. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The site hasn&#x27;t been built yet — this is planning, not testing a finished product.">
+            <span class="opt-letter">A.</span> Testing and evaluating their own finished site
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — reviewing existing examples to assess what&#x27;s suitable is a planning technique.">
+            <span class="opt-letter">B.</span> Evaluating existing UIs to inform a new design
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is not a legal document.">
+            <span class="opt-letter">C.</span> Writing a terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">D.</span> Compressing images
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q6" data-tier="p2-de" data-qid="p2-de-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">A game studio&#x27;s portfolio uses a 360-degree virtual gallery visitors can &#x27;walk through&#x27; using their phone. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is a design feature, not a legal document.">
+            <span class="opt-letter">A.</span> A terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">B.</span> Data compression
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — 360-degree, explorable environments are an example of immersive interactive media.">
+            <span class="opt-letter">C.</span> An immersive experience using VR/AR-style technology
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This describes a specific feature, not a general quality standard.">
+            <span class="opt-letter">D.</span> A non-functional requirement only
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q7" data-tier="p2-de" data-qid="p2-de-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span></div>
+        <p class="q-stem">Before designing, a student writes: &quot;Employers need to quickly see what games I&#x27;ve made and judge my skill level.&quot; This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is a problem statement, not yet a specific requirement.">
+            <span class="opt-letter">A.</span> A finished functional requirement
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">B.</span> A terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">C.</span> Data compression
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this identifies who the site is for and what problem it solves for them.">
+            <span class="opt-letter">D.</span> Defining the real-world problem and describing the users
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-de-q8" data-tier="p2-de" data-qid="p2-de-q8">
+        <div class="q-card-head"><span class="q-num-badge">Q8</span></div>
+        <p class="q-stem">A student sketches three different homepage layouts before picking one to build. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — creating multiple options and comparing them is the definition of this process.">
+            <span class="opt-letter">A.</span> Generating alternative designs before selecting a preferred one
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Sketching layouts happens before anything is built or tested.">
+            <span class="opt-letter">B.</span> Testing a finished website
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">C.</span> Writing a terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a design activity, not a data-checking activity.">
+            <span class="opt-letter">D.</span> Validating data
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+    <div class="tier-panel" id="tier-p2-c" role="tabpanel" aria-labelledby="tabbtn-p2-c">
+      <nav class="q-nav" id="qnav-p2-c" aria-label="Question navigation — Core (C)">
+        <button class="qnav-pill" data-target="p2-c-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p2-c-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p2-c-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p2-c-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p2-c-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p2-c-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p2-c-q7" aria-label="Go to question 7">7</button>
+        <button class="qnav-pill" data-target="p2-c-q8" aria-label="Go to question 8">8</button>
+        <button class="qnav-pill" data-target="p2-c-q9" aria-label="Go to question 9">9</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p2-c-q1" data-tier="p2-c" data-qid="p2-c-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student builds their entire portfolio in one long session without showing anyone until it&#x27;s &quot;finished,&quot; then discovers major navigation problems too late to easily fix. What does this best illustrate?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is unrelated to when feedback is sought.">
+            <span class="opt-letter">A.</span> A problem with data compression
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — without repeated small cycles of feedback, problems aren&#x27;t caught until it&#x27;s harder to change them.">
+            <span class="opt-letter">B.</span> The risk of not using an iterative, feedback-driven approach
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This scenario is about project process, not legal terms.">
+            <span class="opt-letter">C.</span> A missing terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The issue is about process/timing of feedback, not a specific requirement being missing.">
+            <span class="opt-letter">D.</span> A missing non-functional requirement
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q2" data-tier="p2-c" data-qid="p2-c-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">Which of these is the strongest technique for evaluating whether a portfolio&#x27;s navigation is genuinely easy to use?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The builder is too familiar with the site to reliably judge first-time usability.">
+            <span class="opt-letter">A.</span> Asking the student who built it whether they think it&#x27;s good
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Page count doesn&#x27;t indicate whether navigation is easy to use.">
+            <span class="opt-letter">B.</span> Checking how many pages the site has
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — observing real task attempts reveals actual usability problems more reliably than opinion alone.">
+            <span class="opt-letter">C.</span> Watching real visitors attempt specific tasks and noting where they struggle
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="A legal policy doesn&#x27;t reveal anything about navigation usability.">
+            <span class="opt-letter">D.</span> Checking the site&#x27;s terms of use policy
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q3" data-tier="p2-c" data-qid="p2-c-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">A portfolio uses a bright red &#x27;Download&#x27; button that stands out clearly from the rest of the page, while low-priority links are small and grey. This applies which design principle?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is a visual design choice, not a check on data correctness.">
+            <span class="opt-letter">A.</span> Data validation
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This has nothing to do with file size.">
+            <span class="opt-letter">B.</span> Lossy compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal policy.">
+            <span class="opt-letter">C.</span> Terms of use
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — deliberately making important elements stand out more than less important ones is visual hierarchy.">
+            <span class="opt-letter">D.</span> Visual hierarchy
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q4" data-tier="p2-c" data-qid="p2-c-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">A student evaluates a well-known game studio&#x27;s press-kit website and decides one of its layout ideas (a filterable project grid) could be adapted for their own portfolio. What is this an example of?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this is exactly the process of evaluating an existing UI for suitability and adaptation.">
+            <span class="opt-letter">A.</span> Assessing whether an existing UI could be modified and reused elsewhere
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The student&#x27;s own portfolio isn&#x27;t built yet — this is research, not testing.">
+            <span class="opt-letter">B.</span> Testing a finished product
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about researching existing examples, not writing requirement statements.">
+            <span class="opt-letter">C.</span> Writing functional requirements
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This has nothing to do with survey data.">
+            <span class="opt-letter">D.</span> Validating survey data
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q5" data-tier="p2-c" data-qid="p2-c-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">Compared to a normal 2D screenshot, why might an AR or VR-style interactive preview of a game add value to a portfolio?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="AR/VR features don&#x27;t automatically reduce file size.">
+            <span class="opt-letter">A.</span> It automatically compresses the underlying game files to a smaller size
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — immersive technologies aim to create a more direct, experiential sense of the content.">
+            <span class="opt-letter">B.</span> It can let a visitor experience part of the game world more directly, rather than just viewing a static image
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Using AR/VR features doesn&#x27;t change legal requirements.">
+            <span class="opt-letter">C.</span> It removes the need for the site to have a terms of use policy at all
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Immersive technology is specifically intended to change the experience.">
+            <span class="opt-letter">D.</span> It has essentially no effect on how a visitor experiences the content
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q6" data-tier="p2-c" data-qid="p2-c-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">A student defines their real-world problem as: &quot;Employers can&#x27;t easily judge my skills from a resume alone; a portfolio lets me show, not just tell.&quot; Which part of this breaks the problem into a manageable part?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Colour scheme is a later design decision, not part of defining the problem.">
+            <span class="opt-letter">A.</span> Deciding on the final colour scheme
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a technical implementation choice, not part of defining the problem.">
+            <span class="opt-letter">B.</span> Choosing which web host to use
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this narrows a broad problem (proving skill) into a specific, addressable part (showing evidence).">
+            <span class="opt-letter">C.</span> Identifying that showing evidence (not just describing it) is the specific gap to solve
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t part of defining the real-world problem.">
+            <span class="opt-letter">D.</span> Writing the terms of use policy
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q7" data-tier="p2-c" data-qid="p2-c-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span></div>
+        <p class="q-stem">Creating several different possible design options and comparing them against the requirements before choosing one is called generating ___ designs.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="alternative" aria-label="Answer for p2-c-q7">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">alternative</button>
+            <button type="button" class="hint-chip">functional</button>
+            <button type="button" class="hint-chip">compressed</button>
+            <button type="button" class="hint-chip">encrypted</button>
+            <button type="button" class="hint-chip">final</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q8" data-tier="p2-c" data-qid="p2-c-q8">
+        <div class="q-card-head"><span class="q-num-badge">Q8</span></div>
+        <p class="q-stem">An approach to project work where you repeatedly plan, build, get feedback and revise in cycles (rather than doing everything once) is called an ___ approach.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="iterative" aria-label="Answer for p2-c-q8">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">iterative</button>
+            <button type="button" class="hint-chip">compressed</button>
+            <button type="button" class="hint-chip">functional</button>
+            <button type="button" class="hint-chip">encrypted</button>
+            <button type="button" class="hint-chip">linear</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-c-q9" data-tier="p2-c" data-qid="p2-c-q9">
+        <div class="q-card-head"><span class="q-num-badge">Q9</span></div>
+        <p class="q-stem">Deliberately making the most important element on a page (e.g. a call-to-action button) stand out more than less important elements is called visual ___.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="hierarchy" aria-label="Answer for p2-c-q9">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">hierarchy</button>
+            <button type="button" class="hint-chip">compression</button>
+            <button type="button" class="hint-chip">encryption</button>
+            <button type="button" class="hint-chip">validation</button>
+            <button type="button" class="hint-chip">transmission</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+    <div class="tier-panel" id="tier-p2-ba" role="tabpanel" aria-labelledby="tabbtn-p2-ba">
+      <nav class="q-nav" id="qnav-p2-ba" aria-label="Question navigation — Extension (B–A)">
+        <button class="qnav-pill" data-target="p2-ba-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p2-ba-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p2-ba-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p2-ba-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p2-ba-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p2-ba-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p2-ba-q7" aria-label="Go to question 7">7</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p2-ba-q1" data-tier="p2-ba" data-qid="p2-ba-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student defines their problem clearly (&quot;employers need fast evidence of skill&quot;) but then builds the whole site in one uninterrupted sprint with no check-ins. What is the most accurate critique?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The problem statement given is clear and well-scoped — the issue described is about process, not definition.">
+            <span class="opt-letter">A.</span> The problem definition itself was flawed
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — even a well-defined problem can lead to a poor solution if the build process skips feedback cycles.">
+            <span class="opt-letter">B.</span> A clear problem definition was undermined by not applying an iterative process during production
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Nothing in the scenario relates to immersive technology.">
+            <span class="opt-letter">C.</span> This shows AR/VR should have been used instead
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is unrelated to the iterative-process problem described.">
+            <span class="opt-letter">D.</span> This is purely a data compression issue
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-ba-q2" data-tier="p2-ba" data-qid="p2-ba-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">A student wants to evaluate whether their planned navigation structure will work before building it. Which is the strongest planning-stage technique?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Personal confidence isn&#x27;t a reliable evaluation technique, especially at the planning stage.">
+            <span class="opt-letter">A.</span> Assuming the navigation will work fine because the student personally finds it perfectly clear
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This defeats the purpose of evaluating at the planning stage, before investing in a full build.">
+            <span class="opt-letter">B.</span> Waiting until the entire site is fully built before asking anyone for feedback
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — combining prototype testing with earlier UI evaluation gives evidence before committing to a build.">
+            <span class="opt-letter">C.</span> Testing a low-fidelity prototype (e.g. a Figma clickthrough) with real users and comparing it against an existing UI they evaluated earlier
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Terms of use doesn&#x27;t evaluate navigation quality.">
+            <span class="opt-letter">D.</span> Checking the terms of use policy of the chosen hosting platform
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-ba-q3" data-tier="p2-ba" data-qid="p2-ba-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">A student generates three alternative homepage designs. Design A looks the most visually striking; Design B best matches the stated requirement that employers should find key projects within two clicks. Which should most influence the final choice, and why?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Visual appeal alone doesn&#x27;t satisfy a stated functional/UX requirement about ease of access.">
+            <span class="opt-letter">A.</span> Design A, because visual appeal always outweighs functional requirements
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This contradicts the entire point of generating and evaluating alternatives.">
+            <span class="opt-letter">B.</span> Neither — the first design idea should always be used
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Requirements are exactly what alternative designs should be evaluated against.">
+            <span class="opt-letter">C.</span> Both equally, since requirements don&#x27;t matter once designs exist
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — generating alternatives is only useful if they&#x27;re evaluated against the requirements, not just visual preference.">
+            <span class="opt-letter">D.</span> Design B, because it&#x27;s evaluated against the actual requirement rather than visual appeal alone
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-ba-q4" data-tier="p2-ba" data-qid="p2-ba-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">A student argues that adding a VR gallery to their portfolio is unnecessary because &quot;static screenshots have always worked fine.&quot; What is the strongest counter-argument grounded in how UIs evolve?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this directly reflects how UI evolution is driven by new opportunities, not just by past sufficiency.">
+            <span class="opt-letter">A.</span> UIs evolve as new technology creates new opportunities to meet user needs better, so &quot;always worked&quot; doesn&#x27;t mean it can&#x27;t be improved
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t an accurate or relevant justification.">
+            <span class="opt-letter">B.</span> VR is always required by NESA for every single student portfolio submitted
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is factually incorrect — static screenshots remain a valid, common choice.">
+            <span class="opt-letter">C.</span> Static screenshots have become technically impossible to include on a website anymore
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is unrelated to whether VR should be used.">
+            <span class="opt-letter">D.</span> Using compression somehow makes including VR content mandatory
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-ba-q5" data-tier="p2-ba" data-qid="p2-ba-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">Judging whether an existing interface design is appropriate to reuse, and identifying what would need to change, is called ___ an existing UI.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="evaluating|assessing" aria-label="Answer for p2-ba-q5">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">evaluating</button>
+            <button type="button" class="hint-chip">compressing</button>
+            <button type="button" class="hint-chip">encrypting</button>
+            <button type="button" class="hint-chip">validating</button>
+            <button type="button" class="hint-chip">transmitting</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p2-ba-q6" data-tier="p2-ba" data-qid="p2-ba-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">Splitting a large, real-world problem into smaller, addressable parts before designing a solution is called ___ the problem.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="defining|breaking down|decomposing" aria-label="Answer for p2-ba-q6">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">defining</button>
+            <button type="button" class="hint-chip">compressing</button>
+            <button type="button" class="hint-chip">validating</button>
+            <button type="button" class="hint-chip">encrypting</button>
+            <button type="button" class="hint-chip">transmitting</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card q-card--closer" id="p2-ba-q7" data-tier="p2-ba" data-qid="p2-ba-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span><span class="q-closer-badge">Non-routine</span></div>
+        <p class="q-stem">A student has 2 weeks left before their portfolio is due. They&#x27;ve generated three alternative homepage designs and evaluated an existing studio site for ideas, but haven&#x27;t started building anything yet. A peer says: &quot;just pick your favourite design and start building — there&#x27;s no time left to plan properly.&quot; What is the strongest response?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Random selection ignores the requirement-based evaluation work already done and risks a poor outcome.">
+            <span class="opt-letter">A.</span> Agree with the peer entirely and pick whichever design at random just to save time
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this keeps the benefit of requirement-based selection and iterative feedback, just compressed into a shorter timeframe, rather than abandoning planning entirely.">
+            <span class="opt-letter">B.</span> Quickly select the design that best meets the stated requirements (informed by the earlier evaluation), then build and test in short iterative cycles rather than skipping planning altogether
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This wastes the design and evaluation work already completed and worsens the time pressure.">
+            <span class="opt-letter">C.</span> Start over completely from scratch with a brand new design idea nobody has evaluated yet
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Even under time pressure, dropping feedback cycles entirely increases the risk of major late-stage problems.">
+            <span class="opt-letter">D.</span> Skip testing entirely once building starts, since there genuinely isn&#x27;t any time left for it
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+
+    <div class="confidence" data-conf-key="eportfolio-ux-trn-conf-p2">
+      <p><strong>How confident do you feel about Researching and Planning?</strong></p>
+      <div class="confidence-btns" role="group" aria-label="Confidence rating">
+        <button type="button" data-conf="1" aria-pressed="false" aria-label="Not confident">😐</button>
+        <button type="button" data-conf="2" aria-pressed="false" aria-label="Somewhat confident">🙂</button>
+        <button type="button" data-conf="3" aria-pressed="false" aria-label="Very confident">😊</button>
+      </div>
+      <p class="confidence-status" aria-live="polite"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function() {
+  "use strict";
+
+  function ready(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn);
+    } else {
+      fn();
+    }
+  }
+
+  ready(function() {
+
+    var body = document.body;
+    document.querySelectorAll("[data-font-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-font", btn.getAttribute("data-font-choice"));
+        document.querySelectorAll("[data-font-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+    document.querySelectorAll("[data-contrast-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-contrast", btn.getAttribute("data-contrast-choice"));
+        document.querySelectorAll("[data-contrast-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+
+    document.querySelectorAll(".page-section").forEach(function(section) {
+      var tabBtns = section.querySelectorAll(".tab-btn");
+      tabBtns.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+          var targetTier = tab.getAttribute("data-tier");
+          tabBtns.forEach(function(t) {
+            t.classList.remove("tab-btn--active");
+            t.setAttribute("aria-selected", "false");
+          });
+          tab.classList.add("tab-btn--active");
+          tab.setAttribute("aria-selected", "true");
+          section.querySelectorAll(".tier-panel").forEach(function(panel) {
+            panel.classList.toggle("tier-panel--active", panel.id === "tier-" + targetTier);
+          });
+        });
+      });
+    });
+
+    document.querySelectorAll(".qnav-pill").forEach(function(pill) {
+      pill.addEventListener("click", function() {
+        var target = document.getElementById(pill.getAttribute("data-target"));
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    });
+
+    function markPillAnswered(card) {
+      var pill = document.querySelector('.qnav-pill[data-target="' + card.id + '"]');
+      if (pill) pill.classList.add("answered");
+    }
+
+    document.querySelectorAll(".q-card").forEach(function(card) {
+      var mcqBtns = card.querySelectorAll(".mcq-btn");
+      if (!mcqBtns.length) return;
+      var fb = card.querySelector(".feedback");
+      mcqBtns.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          if (card.dataset.locked === "true") return;
+          var correct = btn.getAttribute("data-correct") === "true";
+          var msg = btn.getAttribute("data-fb") || "";
+          if (correct) {
+            btn.classList.add("correct");
+            fb.innerHTML = "✓ " + msg;
+            fb.style.color = "var(--correct)";
+            card.dataset.locked = "true";
+            mcqBtns.forEach(function(b) { b.disabled = true; });
+            markPillAnswered(card);
+          } else {
+            btn.classList.add("wrong");
+            fb.innerHTML = "✗ " + msg;
+            fb.style.color = "var(--wrong)";
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll(".q-card").forEach(function(card) {
+      var input = card.querySelector(".typein-row input");
+      if (!input) return;
+      var checkBtn = card.querySelector(".check-typein");
+      var hintToggle = card.querySelector(".hint-toggle");
+      var hintPanel = card.querySelector(".hint-panel");
+      var fb = card.querySelector(".feedback");
+
+      hintToggle.addEventListener("click", function() {
+        var open = hintPanel.classList.toggle("open");
+        hintToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      card.querySelectorAll(".hint-chip").forEach(function(chip) {
+        chip.addEventListener("click", function() {
+          input.value = chip.textContent;
+          input.focus();
+        });
+      });
+
+      function check() {
+        if (card.dataset.locked === "true") return;
+        var accepted = (input.getAttribute("data-answer") || "").split("|").map(function(s) {
+          return s.trim().toLowerCase();
+        });
+        var val = input.value.trim().toLowerCase();
+        if (accepted.indexOf(val) !== -1) {
+          fb.innerHTML = "✓ Correct!";
+          fb.style.color = "var(--correct)";
+          card.dataset.locked = "true";
+          input.disabled = true;
+          checkBtn.disabled = true;
+          markPillAnswered(card);
+        } else {
+          fb.innerHTML = "✗ Not quite — try again, or tap Show hint.";
+          fb.style.color = "var(--wrong)";
+        }
+      }
+      checkBtn.addEventListener("click", check);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") { e.preventDefault(); check(); }
+      });
+    });
+
+    document.querySelectorAll(".confidence").forEach(function(block) {
+      var key = block.getAttribute("data-conf-key");
+      var status = block.querySelector(".confidence-status");
+      var btns = block.querySelectorAll(".confidence-btns button");
+
+      function safeGet(k) {
+        try { return window.localStorage.getItem(k); } catch (e) { return null; }
+      }
+      function safeSet(k, v) {
+        try { window.localStorage.setItem(k, v); } catch (e) { /* ignore blocked storage */ }
+      }
+
+      var saved = safeGet(key);
+      if (saved) {
+        btns.forEach(function(b) {
+          b.setAttribute("aria-pressed", b.getAttribute("data-conf") === saved ? "true" : "false");
+        });
+        status.textContent = "Saved.";
+      }
+
+      btns.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var val = btn.getAttribute("data-conf");
+          safeSet(key, val);
+          btns.forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+          btn.setAttribute("aria-pressed", "true");
+          status.textContent = "Saved.";
+        });
+      });
+    });
+
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards — E-Portfolio UX Topic Review</title>
+<style>
+  :root {
+    --header: #4C2E82;
+    --header-hover: #3B2266;
+    --active: #6B46C1;
+    --card-bg: #F5F2FA;
+    --accent-bar: #7C3AED;
+    --correct: #1D4E89;
+    --wrong: #B23A48;
+    --warm: #D98A2B;
+    --text: #1E2A35;
+    --outer-bg: #EFEBF5;
+    --font-body: 'Nunito Sans', 'Nunito', sans-serif;
+  }
+  [data-contrast="high"] {
+    --header: #000000; --active: #222222; --card-bg: #FFFFFF; --accent-bar: #000000;
+    --correct: #003366; --wrong: #990000; --text: #000000; --outer-bg: #FFFFFF;
+  }
+  [data-contrast="soft"] { --card-bg: #FBF8F2; --outer-bg: #F3EFE7; }
+  [data-font="system"] { --font-body: system-ui, -apple-system, sans-serif; }
+  [data-font="dyslexic"] { --font-body: 'Atkinson Hyperlegible', sans-serif; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--outer-bg); color: var(--text);
+    font-family: var(--font-body); line-height: 1.75; font-size: 16px;
+  }
+  a { color: var(--header); }
+  .skip-link {
+    position: absolute; left: -999px; top: 0; background: var(--header); color: #fff;
+    padding: 10px 16px; z-index: 100;
+  }
+  .skip-link:focus { left: 8px; top: 8px; }
+  .topbar {
+    background: var(--header); color: #fff; padding: 14px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px; justify-content: space-between;
+  }
+  .topbar h1 { font-size: 1.15rem; margin: 0; }
+  .topbar .back-link { color: #fff; text-decoration: underline; font-size: .9rem; white-space: nowrap; margin-right: 12px; }
+  .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle-group button {
+    background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.5);
+    border-radius: 6px; padding: 6px 10px; font-size: .8rem; cursor: pointer; font-family: var(--font-body);
+  }
+  .toggle-group button[aria-pressed="true"] { background: #fff; color: var(--header); font-weight: 700; }
+  .toggle-group button:focus-visible, button:focus-visible {
+    outline: 3px solid var(--warm); outline-offset: 2px;
+  }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 20px 60px; }
+  .fc-intro {
+    background: var(--card-bg); border: 2px dashed var(--active); border-radius: 10px;
+    padding: 14px 20px; margin-bottom: 20px; font-size: .95rem;
+  }
+
+  .fc-tabbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 2px solid var(--active); }
+  .fc-tab {
+    background: var(--card-bg); border: 1px solid var(--active); border-bottom: none;
+    color: var(--header); padding: 10px 14px; border-radius: 8px 8px 0 0; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: .9rem;
+  }
+  .fc-tab--active { background: var(--active); color: #fff; }
+
+  .fc-set { display: none; }
+  .fc-set--active { display: block; }
+  .fc-set-count { font-size: .85rem; opacity: .75; margin-top: 0; }
+
+  .flip-card-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+  }
+  .flip-card {
+    background: transparent; border: none; padding: 0; cursor: pointer; perspective: 1000px;
+    height: 160px; font-family: var(--font-body);
+  }
+  .flip-card-inner {
+    position: relative; width: 100%; height: 100%; display: block;
+    transform-style: preserve-3d; transition: transform .5s;
+  }
+  .flip-card[aria-pressed="true"] .flip-card-inner { transform: rotateY(180deg); }
+  .flip-card-face {
+    position: absolute; inset: 0; backface-visibility: hidden; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 14px; text-align: center;
+  }
+  .flip-card-front {
+    background: var(--header); color: #fff; font-weight: 800; font-size: 1.05rem;
+    border-left: 6px solid var(--accent-bar);
+  }
+  .flip-card-back {
+    background: var(--card-bg); color: var(--text); transform: rotateY(180deg);
+    border-left: 6px solid var(--warm); overflow-y: auto;
+  }
+  .flip-card-def { font-size: .88rem; font-weight: 700; margin-bottom: 6px; }
+  .flip-card-example { font-size: .8rem; font-style: italic; opacity: .9; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .flip-card-inner { transition: none; }
+  }
+</style>
+</head>
+<body data-font="nunito" data-contrast="standard">
+<a href="index.html" class="skip-link">Skip to main content</a>
+
+<header class="topbar">
+  <div>
+    <a href="index.html" class="back-link">← Site Hub</a>
+    <a href="eportfolio-ux-hub.html" class="back-link">Topic Hub</a>
+    <h1>E-Portfolio UX — Flashcards</h1>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Font style">
+    <button type="button" data-font-choice="nunito" aria-pressed="true">Nunito Sans</button>
+    <button type="button" data-font-choice="system" aria-pressed="false">System default</button>
+    <button type="button" data-font-choice="dyslexic" aria-pressed="false">Atkinson Hyperlegible</button>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Colour contrast">
+    <button type="button" data-contrast-choice="standard" aria-pressed="true">Standard</button>
+    <button type="button" data-contrast-choice="high" aria-pressed="false">High contrast</button>
+    <button type="button" data-contrast-choice="soft" aria-pressed="false">Soft</button>
+  </div>
+</header>
+
+<main>
+  <div class="fc-intro">
+    <strong>52 key terms across all four Design &amp; Production Framework phases.</strong>
+    Tap a card to flip it and check the definition. Each definition includes a tie-in to the student e-portfolio worked example.
+  </div>
+
+  <div class="fc-tabbar" role="tablist" aria-label="Flashcard set">
+    <button class="fc-tab fc-tab--active" id="fc-tab-1" data-target="fc-set-1" role="tab" aria-selected="true" aria-controls="fc-set-1">1. Identifying and Defining</button>
+    <button class="fc-tab" id="fc-tab-2" data-target="fc-set-2" role="tab" aria-selected="false" aria-controls="fc-set-2">2. Researching and Planning</button>
+    <button class="fc-tab" id="fc-tab-3" data-target="fc-set-3" role="tab" aria-selected="false" aria-controls="fc-set-3">3. Producing and Implementing</button>
+    <button class="fc-tab" id="fc-tab-4" data-target="fc-set-4" role="tab" aria-selected="false" aria-controls="fc-set-4">4. Testing and Evaluating</button>
+  </div>
+
+    <div class="fc-set fc-set--active" id="fc-set-1" role="tabpanel" aria-labelledby="fc-tab-1">
+      <p class="fc-set-count">14 terms</p>
+      <div class="flip-card-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">User Experience (UX)</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">How effective, easy and enjoyable it is for someone to use a product.</span>
+            <span class="flip-card-example">A confusing portfolio nav bar gives a poor UX, even if every link technically works.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">User Interface (UI)</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">The visual and interactive parts of a product a person actually sees and uses.</span>
+            <span class="flip-card-example">The nav bar, buttons and project thumbnails on the portfolio are all part of its UI.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Functional requirement</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A statement of something a system must be able to do.</span>
+            <span class="flip-card-example">&quot;Visitors must be able to click a thumbnail to open the full project page.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Non-functional requirement</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A statement about a quality of the system, like speed, ease of use or reliability.</span>
+            <span class="flip-card-example">&quot;Pages should load in under 3 seconds on a school laptop.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Use case</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A description of a specific way a user interacts with a system to achieve a goal.</span>
+            <span class="flip-card-example">&quot;An employer clicks Project 1 to view the student&#x27;s best game.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Test case</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A statement of a specific input and the output expected, used to check something works.</span>
+            <span class="flip-card-example">&quot;Clicking the Project 1 thumbnail should open the Project 1 page.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Terms of use</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">The rules and responsibilities set out for using a website or platform and its data.</span>
+            <span class="flip-card-example">Checking whether a free hosting platform&#x27;s terms of use let it reuse uploaded content.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">EULA</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">End User License Agreement — a legal agreement about how software or a platform may be used.</span>
+            <span class="flip-card-example">Reading a game engine&#x27;s EULA before publishing a WebGL build.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Inclusive design</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Designing content so people with a wide range of needs and abilities can use it.</span>
+            <span class="flip-card-example">Adding alt text and captions so the portfolio works for a wider range of visitors.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Lossy compression</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A compression method that permanently discards some data to shrink file size.</span>
+            <span class="flip-card-example">Saving screenshots as compressed JPEGs so the portfolio loads faster.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Lossless compression</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A compression method where the file can be restored to its exact original with no data lost.</span>
+            <span class="flip-card-example">Compressing a downloadable game build without losing any quality.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Input</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Data entered into a system.</span>
+            <span class="flip-card-example">A visitor typing a rating into the playtest survey.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Output</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Data or a result a system produces and shows to the user.</span>
+            <span class="flip-card-example">A summary chart of survey ratings shown on the reflections page.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Ethical responsibility</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">The duty to act fairly and considerately, especially around consent and other people&#x27;s content.</span>
+            <span class="flip-card-example">Asking permission before publishing a playtester&#x27;s quote or image.</span>
+          </span>
+        </span>
+      </button>
+      </div>
+    </div>
+    <div class="fc-set" id="fc-set-2" role="tabpanel" aria-labelledby="fc-tab-2">
+      <p class="fc-set-count">13 terms</p>
+      <div class="flip-card-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Iterative approach</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Repeating cycles of plan, build, test and revise, rather than doing it once.</span>
+            <span class="flip-card-example">Drafting a homepage layout, getting feedback, then revising it before building the rest.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">UI evaluation technique</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A method used to judge how well an interface works for real users.</span>
+            <span class="flip-card-example">Watching a visitor try to find a specific project and noting where they get stuck.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Design principle</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A general rule that guides good interface design, like consistency or hierarchy.</span>
+            <span class="flip-card-example">Using the same fonts and colours on every page of the portfolio.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Visual hierarchy</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Deliberately making the most important elements stand out more than less important ones.</span>
+            <span class="flip-card-example">A bright &#x27;Download&#x27; button standing out against small, grey secondary links.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Existing UI evaluation</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Judging whether an existing interface is well designed and could be adapted or reused.</span>
+            <span class="flip-card-example">Studying a game studio&#x27;s press-kit site for layout ideas before designing your own.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Augmented Reality (AR)</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Technology that overlays digital content onto the real world.</span>
+            <span class="flip-card-example">An AR filter that lets a visitor &#x27;place&#x27; a game character in their room.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Virtual Reality (VR)</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Technology that creates a fully immersive digital environment.</span>
+            <span class="flip-card-example">A 360° virtual gallery visitors can &#x27;walk through&#x27; to see a game showcase.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Real-world problem definition</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Clearly identifying a genuine problem or need, and who it affects, before designing a solution.</span>
+            <span class="flip-card-example">&quot;Employers can&#x27;t easily judge my skills from a resume alone.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Alternative designs</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Multiple different design options created and compared before choosing one.</span>
+            <span class="flip-card-example">Sketching three different homepage layouts before picking one to build.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Wireframe</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A simple, low-detail sketch of a page&#x27;s layout, used before visual design begins.</span>
+            <span class="flip-card-example">Blocking out where the nav bar, project grid and footer will sit before styling anything.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Prototype</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">An early, testable version of a design used to gather feedback before full production.</span>
+            <span class="flip-card-example">A clickable Figma mockup tested with classmates before any HTML is written.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">User needs</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">What the people using a product actually require from it to achieve their goals.</span>
+            <span class="flip-card-example">Employers need to quickly judge skill level — that&#x27;s the core user need the portfolio serves.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Immersive experience</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">An experience that makes the user feel present inside the content, not just viewing it.</span>
+            <span class="flip-card-example">A VR game preview feels more immersive than a static screenshot.</span>
+          </span>
+        </span>
+      </button>
+      </div>
+    </div>
+    <div class="fc-set" id="fc-set-3" role="tabpanel" aria-labelledby="fc-tab-3">
+      <p class="fc-set-count">13 terms</p>
+      <div class="flip-card-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Information architecture</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">How a site&#x27;s content is organised and structured into pages, menus and categories.</span>
+            <span class="flip-card-example">Grouping the portfolio into Home, About, Project 1, Project 2 and Reflections.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Data type</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A category that defines what kind of value is stored, like a whole number or text.</span>
+            <span class="flip-card-example">Storing a survey rating as a number and a comment as text.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Data modelling</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Defining what pieces of information (attributes) belong to something being recorded.</span>
+            <span class="flip-card-example">Deciding a survey response needs a rating value, a question type and a project ID.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Specialist terminology</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Accurate, subject-specific vocabulary used correctly in context.</span>
+            <span class="flip-card-example">Using terms like &#x27;wireframe&#x27;, &#x27;functional requirement&#x27; and &#x27;UX&#x27; correctly in a design journal.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Privacy</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Protecting a person&#x27;s personal information from being collected or shared without good reason.</span>
+            <span class="flip-card-example">Deciding not to collect names or emails in the playtest survey.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Cybersecurity</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Practices that protect systems and data from unauthorised access or misuse.</span>
+            <span class="flip-card-example">Making sure survey data can&#x27;t be accessed or edited by anyone outside the class.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Personally Identifiable Information</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Personal details that could identify an individual, like a name or email address.</span>
+            <span class="flip-card-example">The playtest survey deliberately avoids collecting this — only ratings and comments.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Data validation</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Checking that entered data falls within an expected range or format before accepting it.</span>
+            <span class="flip-card-example">Flagging a survey rating of &quot;7&quot; as invalid, since ratings should only be 1–5.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Invalid data</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Data that is incorrect, out of range, or doesn&#x27;t match the expected format.</span>
+            <span class="flip-card-example">A duplicate test entry accidentally left in the survey results.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Aggregate function</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A spreadsheet function that calculates a single value, like an average, from a range of cells.</span>
+            <span class="flip-card-example">Calculating the average &quot;Fun&quot; rating across all survey responses.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Project development record</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A documented log of design decisions and how a project changed over time.</span>
+            <span class="flip-card-example">A design journal entry: &quot;Simplified the difficulty curve after playtest feedback.&quot;</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Collaborative work practices</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Documented evidence of how individuals worked with others during a project.</span>
+            <span class="flip-card-example">Noting that a teammate suggested a difficulty change during game development.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Structured data</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Data organised in a consistent, predictable format so it can be processed reliably.</span>
+            <span class="flip-card-example">Every survey response stored with the same fields: rating, question type, project.</span>
+          </span>
+        </span>
+      </button>
+      </div>
+    </div>
+    <div class="fc-set" id="fc-set-4" role="tabpanel" aria-labelledby="fc-tab-4">
+      <p class="fc-set-count">12 terms</p>
+      <div class="flip-card-grid">
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Usability</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">How easily and comfortably real users can complete tasks with an interface.</span>
+            <span class="flip-card-example">Testing whether a visitor can find a specific project without getting lost.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Efficiency (UI)</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">How quickly and smoothly an interface performs, such as page load time.</span>
+            <span class="flip-card-example">A homepage taking 8 seconds to load due to large, uncompressed images.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Ethical and legal responsibility</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Obligations around consent, privacy, attribution and following the law.</span>
+            <span class="flip-card-example">Checking that an embedded image is properly credited to its original creator.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Cybersecurity principles</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Standards and practices that keep systems and data safe from misuse.</span>
+            <span class="flip-card-example">Checking that anonymous survey data hasn&#x27;t accidentally logged extra identifying details.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Variety of audiences</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">The range of different people, backgrounds and needs a product should be usable by.</span>
+            <span class="flip-card-example">Checking the portfolio still makes sense to a non-technical visitor, not just a fellow game designer.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Evaluation criteria</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">The standards a finished product is measured against, based on its original requirements.</span>
+            <span class="flip-card-example">Checking the finished site against the functional and non-functional requirements written earlier.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Peer evaluation</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Feedback and evaluation input provided by a fellow student.</span>
+            <span class="flip-card-example">A teammate testing the survey link on mobile and catching a broken link.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Attribution</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Properly crediting the original creator of content that isn&#x27;t your own.</span>
+            <span class="flip-card-example">Adding a credit line for an image sourced from another website.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Career pathway</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A possible professional role and progression connected to a field of study.</span>
+            <span class="flip-card-example">Comparing a &quot;UX Designer&quot; role to a &quot;Front-End Developer&quot; role at a game studio.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Requirement evaluation</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Comparing a finished product against the requirements written for it earlier.</span>
+            <span class="flip-card-example">Confirming the 3-second load-time requirement was actually met once the site was finished.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Non-routine evaluation</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">Evaluation that requires weighing up several issues together, not just checking one thing.</span>
+            <span class="flip-card-example">Deciding how to respond when a site has both a missing image credit and missing alt text.</span>
+          </span>
+        </span>
+      </button>
+      <button type="button" class="flip-card" aria-pressed="false">
+        <span class="flip-card-inner">
+          <span class="flip-card-face flip-card-front">Accessibility gap</span>
+          <span class="flip-card-face flip-card-back">
+            <span class="flip-card-def">A specific way a product fails to be usable by a particular group of people.</span>
+            <span class="flip-card-example">Missing alt text meaning screen reader users can&#x27;t access image content.</span>
+          </span>
+        </span>
+      </button>
+      </div>
+    </div>
+</main>
+
+<script>
+(function() {
+  "use strict";
+  function ready(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn);
+    } else {
+      fn();
+    }
+  }
+  ready(function() {
+    var body = document.body;
+    document.querySelectorAll("[data-font-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-font", btn.getAttribute("data-font-choice"));
+        document.querySelectorAll("[data-font-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+    document.querySelectorAll("[data-contrast-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-contrast", btn.getAttribute("data-contrast-choice"));
+        document.querySelectorAll("[data-contrast-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+
+    var tabs = document.querySelectorAll(".fc-tab");
+    tabs.forEach(function(tab) {
+      tab.addEventListener("click", function() {
+        var target = tab.getAttribute("data-target");
+        tabs.forEach(function(t) {
+          t.classList.remove("fc-tab--active");
+          t.setAttribute("aria-selected", "false");
+        });
+        tab.classList.add("fc-tab--active");
+        tab.setAttribute("aria-selected", "true");
+        document.querySelectorAll(".fc-set").forEach(function(set) {
+          set.classList.toggle("fc-set--active", set.id === target);
+        });
+      });
+    });
+
+    document.querySelectorAll(".flip-card").forEach(function(card) {
+      card.addEventListener("click", function() {
+        var pressed = card.getAttribute("aria-pressed") === "true";
+        card.setAttribute("aria-pressed", pressed ? "false" : "true");
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

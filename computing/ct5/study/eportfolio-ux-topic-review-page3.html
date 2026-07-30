@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Producing and Implementing — E-Portfolio UX Topic Review</title>
+<style>
+  :root {
+    --header: #4C2E82;
+    --header-hover: #3B2266;
+    --active: #6B46C1;
+    --card-bg: #F5F2FA;
+    --accent-bar: #7C3AED;
+    --correct: #1D4E89;
+    --wrong: #B23A48;
+    --warm: #D98A2B;
+    --text: #1E2A35;
+    --outer-bg: #EFEBF5;
+    --font-body: 'Nunito Sans', 'Nunito', sans-serif;
+  }
+  [data-contrast="high"] {
+    --header: #000000; --active: #222222; --card-bg: #FFFFFF; --accent-bar: #000000;
+    --correct: #003366; --wrong: #990000; --text: #000000; --outer-bg: #FFFFFF;
+  }
+  [data-contrast="soft"] {
+    --card-bg: #FBF8F2; --outer-bg: #F3EFE7;
+  }
+  [data-font="system"] { --font-body: system-ui, -apple-system, sans-serif; }
+  [data-font="dyslexic"] { --font-body: 'Atkinson Hyperlegible', sans-serif; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--outer-bg); color: var(--text);
+    font-family: var(--font-body); line-height: 1.75; font-size: 16px;
+  }
+  a { color: var(--header); }
+  .skip-link {
+    position: absolute; left: -999px; top: 0; background: var(--header); color: #fff;
+    padding: 10px 16px; z-index: 100;
+  }
+  .skip-link:focus { left: 8px; top: 8px; }
+  .topbar {
+    background: var(--header); color: #fff; padding: 14px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px; justify-content: space-between;
+  }
+  .topbar h1 { font-size: 1.15rem; margin: 0; }
+  .topbar .back-link { color: #fff; text-decoration: underline; font-size: .9rem; white-space: nowrap; margin-right: 12px; }
+  .toggle-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .toggle-group button {
+    background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.5);
+    border-radius: 6px; padding: 6px 10px; font-size: .8rem; cursor: pointer; font-family: var(--font-body);
+  }
+  .toggle-group button[aria-pressed="true"] { background: #fff; color: var(--header); font-weight: 700; }
+  .toggle-group button:focus-visible, button:focus-visible, input:focus-visible {
+    outline: 3px solid var(--warm); outline-offset: 2px;
+  }
+
+  .spec-panel {
+    margin: 18px auto 0; max-width: 900px; border: 2px dashed var(--active);
+    border-radius: 10px; background: var(--card-bg); padding: 4px 20px 16px;
+  }
+  .spec-panel h2 { font-size: 1.05rem; color: var(--header); }
+  .spec-note { font-size: .92rem; font-style: italic; }
+  .spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 18px; margin: 0; }
+  .spec-grid dt { font-weight: 800; color: var(--header); font-size: .85rem; text-transform: uppercase; letter-spacing: .02em; }
+  .spec-grid dd { margin: 2px 0 0; font-size: .95rem; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px 60px; }
+  .page-intro h2 { color: var(--header); margin-bottom: 4px; }
+  .page-intro p { margin-top: 0; }
+
+  .tier-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 16px; border-bottom: 2px solid var(--active); padding-bottom: 0; }
+  .tab-btn {
+    background: var(--card-bg); border: 1px solid var(--active); border-bottom: none;
+    color: var(--header); padding: 10px 16px; border-radius: 8px 8px 0 0; cursor: pointer;
+    font-family: var(--font-body); font-weight: 700; font-size: .95rem;
+  }
+  .tab-btn--active { background: var(--active); color: #fff; }
+
+  .tier-panel { display: none; }
+  .tier-panel--active { display: block; }
+
+  .q-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .qnav-pill {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--active);
+    background: #fff; color: var(--header); font-weight: 700; cursor: pointer; font-family: var(--font-body);
+  }
+  .qnav-pill.answered { background: var(--correct); color: #fff; border-color: var(--correct); }
+
+  .q-card {
+    background: var(--card-bg); border-left: 6px solid var(--accent-bar); border-radius: 8px;
+    padding: 16px 18px; margin-bottom: 18px; position: relative;
+  }
+  .q-card--closer { border-left-color: var(--warm); }
+  .q-closer-badge {
+    background: var(--warm); color: #fff; font-size: .7rem; font-weight: 800; padding: 2px 8px;
+    border-radius: 10px; margin-left: 8px; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .q-card-head { display: flex; align-items: center; margin-bottom: 6px; }
+  .q-num-badge { background: var(--header); color: #fff; font-size: .8rem; font-weight: 800; padding: 3px 10px; border-radius: 12px; }
+  .q-stem { font-size: 1rem; margin: 8px 0 12px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .mcq-btn {
+    text-align: left; background: #fff; border: 2px solid var(--active); border-radius: 8px;
+    padding: 10px 14px; cursor: pointer; font-family: var(--font-body); font-size: .95rem; color: var(--text);
+  }
+  .mcq-btn:hover { background: #F0EBFA; }
+  .mcq-btn.correct { background: var(--correct); color: #fff; border-color: var(--correct); }
+  .mcq-btn.wrong { background: var(--wrong); color: #fff; border-color: var(--wrong); }
+  .mcq-btn[disabled] { cursor: default; }
+  .opt-letter { font-weight: 800; margin-right: 6px; }
+  .feedback { margin-top: 10px; font-size: .92rem; font-weight: 600; }
+  .feedback:empty { display: none; }
+
+  .typein-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .typein-row input {
+    flex: 1 1 220px; padding: 10px 12px; border: 2px solid var(--active); border-radius: 8px;
+    font-family: var(--font-body); font-size: .95rem;
+  }
+  .check-typein, .hint-toggle {
+    background: var(--header); color: #fff; border: none; border-radius: 8px; padding: 10px 14px;
+    cursor: pointer; font-family: var(--font-body); font-weight: 700; font-size: .9rem;
+  }
+  .hint-toggle { background: var(--warm); }
+  .check-typein:hover { background: var(--header-hover); }
+  .hint-panel { display: none; margin-top: 10px; }
+  .hint-panel.open { display: block; }
+  .hint-panel-label { font-size: .85rem; font-style: italic; margin: 6px 0; }
+  .hint-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hint-chip {
+    background: #fff; border: 1px solid var(--active); border-radius: 16px; padding: 6px 12px;
+    cursor: pointer; font-family: var(--font-body); font-size: .85rem;
+  }
+  .hint-chip:hover { background: #F0EBFA; }
+
+  .confidence {
+    margin-top: 30px; padding: 16px; background: var(--card-bg); border-radius: 10px; text-align: center;
+  }
+  .confidence-btns { display: flex; justify-content: center; gap: 14px; margin-top: 8px; }
+  .confidence-btns button {
+    font-size: 1.6rem; background: #fff; border: 2px solid var(--active); border-radius: 50%;
+    width: 54px; height: 54px; cursor: pointer;
+  }
+  .confidence-btns button[aria-pressed="true"] { background: var(--active); }
+  .confidence-status { font-size: .85rem; margin-top: 6px; min-height: 1.2em; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body data-font="nunito" data-contrast="standard">
+<a href="index.html" class="skip-link">Skip to main content</a>
+
+<header class="topbar">
+  <div>
+    <a href="index.html" class="back-link">← Site Hub</a>
+    <a href="eportfolio-ux-hub.html" class="back-link">Topic Hub</a>
+    <h1>E-Portfolio UX — Topic Review Notebook</h1>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Font style">
+    <button type="button" data-font-choice="nunito" aria-pressed="true">Nunito Sans</button>
+    <button type="button" data-font-choice="system" aria-pressed="false">System default</button>
+    <button type="button" data-font-choice="dyslexic" aria-pressed="false">Atkinson Hyperlegible</button>
+  </div>
+  <div class="toggle-group" role="group" aria-label="Colour contrast">
+    <button type="button" data-contrast-choice="standard" aria-pressed="true">Standard</button>
+    <button type="button" data-contrast-choice="high" aria-pressed="false">High contrast</button>
+    <button type="button" data-contrast-choice="soft" aria-pressed="false">Soft</button>
+  </div>
+</header>
+
+<div class="spec-panel">
+  <div class="spec-panel-inner">
+    <h2>📋 Student Game Design e-portfolio — quick reference</h2>
+    <p class="spec-note">You don't need to memorise these details — refer back here any time. The questions are testing computing theory, not your memory of the project.</p>
+    <dl class="spec-grid">
+      <div><dt>Purpose</dt><dd>Showcases the student's shipped/prototype games and design journal, framed as a simulated job-application portfolio</dd></div>
+      <div><dt>Structure</dt><dd>Home, About, Project 1, Project 2, Reflections — simple nav bar (flexible per student)</dd></div>
+      <div><dt>Project page content</dt><dd>Screenshots, embedded video, written reflection, downloadable build, link to itch.io / Unity Play</dd></div>
+      <div><dt>Build tools</dt><dd>HTML + CSS; Figma (and/or AI-prompted prototypes) used for design first</dd></div>
+      <div><dt>Feedback survey</dt><dd>Anonymous playtest survey per project — 4 rating-scale questions (Fun, Controls, Difficulty, Retention, each 1–5, higher = better) + 4 short open-ended questions (Highlights, Frustrations, Expectations, Changes)</dd></div>
+      <div><dt>Data handling</dt><dd>Survey responses collected from playtesters; no names or emails collected — ratings and free text only</dd></div>
+      <div><dt>Accessibility</dt><dd>General UX/accessibility theory (alt text, colour contrast, responsive layout, consistent navigation)</dd></div>
+    </dl>
+  </div>
+</div>
+
+<main>
+  <section class="page-section page-section--active" id="page-3">
+    <div class="page-intro">
+      <h2>Producing and Implementing</h2>
+      <p>These questions test the &quot;Producing and Implementing&quot; phase — building the UI, structuring information and data (including the anonymous playtest survey), using specialist terminology, and documenting individual and collaborative development.</p>
+    </div>
+
+    <div class="tier-bar" role="tablist" aria-label="Difficulty tier">
+    <button class="tab-btn tab-btn--active" id="tabbtn-p3-de" data-tier="p3-de" role="tab" aria-selected="true" aria-controls="tier-p3-de">Foundation (D–E)</button>
+    <button class="tab-btn" id="tabbtn-p3-c" data-tier="p3-c" role="tab" aria-selected="false" aria-controls="tier-p3-c">Core (C)</button>
+    <button class="tab-btn" id="tabbtn-p3-ba" data-tier="p3-ba" role="tab" aria-selected="false" aria-controls="tier-p3-ba">Extension (B–A)</button>
+    </div>
+
+    <div class="tier-panel tier-panel--active" id="tier-p3-de" role="tabpanel" aria-labelledby="tabbtn-p3-de">
+      <nav class="q-nav" id="qnav-p3-de" aria-label="Question navigation — Foundation (D–E)">
+        <button class="qnav-pill" data-target="p3-de-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p3-de-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p3-de-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p3-de-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p3-de-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p3-de-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p3-de-q7" aria-label="Go to question 7">7</button>
+        <button class="qnav-pill" data-target="p3-de-q8" aria-label="Go to question 8">8</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p3-de-q1" data-tier="p3-de" data-qid="p3-de-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student builds their About page with a clear heading, a short paragraph, and a profile photo with alt text. This is best described as:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="No survey or data collection is described here.">
+            <span class="opt-letter">A.</span> Collecting survey data
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this combines a working page (functionality), an accessible feature (alt text), and visual design (aesthetics).">
+            <span class="opt-letter">B.</span> Designing and implementing a UI with functionality, accessibility and aesthetics in mind
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">C.</span> Writing a terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="No data-checking process is described here.">
+            <span class="opt-letter">D.</span> Validating data
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q2" data-tier="p3-de" data-qid="p3-de-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">A student organises their site into clear sections — Home, About, Projects, Reflections — each with a consistent menu. This is an example of applying:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is about content organisation, not file size.">
+            <span class="opt-letter">A.</span> Data compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal policy.">
+            <span class="opt-letter">B.</span> Terms of use
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — organising content into a logical, navigable structure is information architecture.">
+            <span class="opt-letter">C.</span> Information architecture
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to checking data correctness.">
+            <span class="opt-letter">D.</span> Data validation
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q3" data-tier="p3-de" data-qid="p3-de-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">Before adding the playtest survey to their site, a student decides not to collect names or emails, only ratings and comments. This shows they are considering:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This decision is about data collection, not visual layout.">
+            <span class="opt-letter">A.</span> Visual design principles
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">B.</span> Lossy compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about data collection choices, not site structure.">
+            <span class="opt-letter">C.</span> Information architecture
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — deliberately limiting collected data to protect privacy is exactly this consideration.">
+            <span class="opt-letter">D.</span> Privacy and what data should be collected
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q4" data-tier="p3-de" data-qid="p3-de-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">A survey rating (1–5) is stored as a whole number, while a written comment is stored as text. This shows the student is thinking about:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — choosing whole numbers for ratings and text for comments matches the data to an appropriate type.">
+            <span class="opt-letter">A.</span> Selecting appropriate data types
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal policy.">
+            <span class="opt-letter">B.</span> Terms of use
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about data types, not page/menu structure.">
+            <span class="opt-letter">C.</span> Information architecture
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size or compression.">
+            <span class="opt-letter">D.</span> Lossy compression
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q5" data-tier="p3-de" data-qid="p3-de-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">In their design journal, a student correctly uses terms like &quot;functional requirement,&quot; &quot;wireframe&quot; and &quot;user experience.&quot; This demonstrates:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Using correct terminology isn&#x27;t the same as checking data correctness.">
+            <span class="opt-letter">A.</span> Data validation
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — using the correct technical vocabulary accurately is exactly this skill.">
+            <span class="opt-letter">B.</span> Selecting and using specialist terminology in context
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">C.</span> Lossy compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">D.</span> Terms of use
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q6" data-tier="p3-de" data-qid="p3-de-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">A student keeps a design journal noting design decisions, feedback from a teammate during game development, and how the site changed as a result. This is best described as:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">A.</span> A terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a development record, not a requirement statement.">
+            <span class="opt-letter">B.</span> A functional requirement
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this documents both the iterative process and input from working with others.">
+            <span class="opt-letter">C.</span> A record of project development showing iterative and collaborative work
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">D.</span> A compression technique
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q7" data-tier="p3-de" data-qid="p3-de-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span></div>
+        <p class="q-stem">A student adds a link to their anonymous playtest survey on each project page so visitors can leave feedback. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">A.</span> Writing a terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about data collection, not site structure.">
+            <span class="opt-letter">B.</span> Applying information architecture
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Adding the survey is part of building the site, not testing it afterwards.">
+            <span class="opt-letter">C.</span> Testing the finished site
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — gathering feedback anonymously (no names/emails) shows privacy has been considered.">
+            <span class="opt-letter">D.</span> Collecting data from users while considering privacy
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-de-q8" data-tier="p3-de" data-qid="p3-de-q8">
+        <div class="q-card-head"><span class="q-num-badge">Q8</span></div>
+        <p class="q-stem">A playtest survey response has &quot;7&quot; entered for a rating that should only be 1–5. What should happen to this response?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — a value outside the valid range is invalid data and shouldn&#x27;t be treated as a normal, correct response.">
+            <span class="opt-letter">A.</span> It should be flagged as invalid and not included in the summary as-is
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Including invalid data would distort the summary of genuine responses.">
+            <span class="opt-letter">B.</span> It should be included normally, since more data is always better
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This doesn&#x27;t address the invalid rating value at all.">
+            <span class="opt-letter">C.</span> It should be changed to a name and email address
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression doesn&#x27;t fix an invalid data value.">
+            <span class="opt-letter">D.</span> It should be compressed
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+    <div class="tier-panel" id="tier-p3-c" role="tabpanel" aria-labelledby="tabbtn-p3-c">
+      <nav class="q-nav" id="qnav-p3-c" aria-label="Question navigation — Core (C)">
+        <button class="qnav-pill" data-target="p3-c-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p3-c-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p3-c-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p3-c-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p3-c-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p3-c-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p3-c-q7" aria-label="Go to question 7">7</button>
+        <button class="qnav-pill" data-target="p3-c-q8" aria-label="Go to question 8">8</button>
+        <button class="qnav-pill" data-target="p3-c-q9" aria-label="Go to question 9">9</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p3-c-q1" data-tier="p3-c" data-qid="p3-c-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student&#x27;s project page displays correctly and all links work, but visitors say the small grey text on a light grey background is hard to read. This is a failure of which UI/UX quality?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The page working correctly (links, structure) is functionality, and that&#x27;s not the issue described.">
+            <span class="opt-letter">A.</span> Functionality
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — poor colour contrast is a well-known accessibility issue, separate from whether the page functions correctly.">
+            <span class="opt-letter">B.</span> Accessibility (specifically, colour contrast)
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is a contrast/readability issue, not a page-organisation issue.">
+            <span class="opt-letter">C.</span> Information architecture
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to whether data is correct.">
+            <span class="opt-letter">D.</span> Data validation
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q2" data-tier="p3-c" data-qid="p3-c-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">A student&#x27;s site has projects scattered across random pages with no consistent menu, so visitors get lost. Which is the most accurate diagnosis?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="No data is being checked or entered here — this is a structural/navigation problem.">
+            <span class="opt-letter">A.</span> Poor data validation
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="A missing legal policy wouldn&#x27;t cause visitors to get lost navigating.">
+            <span class="opt-letter">B.</span> Missing terms of use
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — the underlying content organisation and navigation structure is the issue, not the visual style of any one page.">
+            <span class="opt-letter">C.</span> Poor information architecture
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression doesn&#x27;t affect site navigation or structure.">
+            <span class="opt-letter">D.</span> Lossy compression
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q3" data-tier="p3-c" data-qid="p3-c-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">A student wants to add a feedback survey but is unsure whether it&#x27;s ethical to store visitors&#x27; IP addresses alongside their comments without saying so. What should guide this decision?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This ignores privacy and data-minimisation principles.">
+            <span class="opt-letter">A.</span> Collecting as much data as is technically possible, since some of it might turn out useful later
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Forcing data collection doesn&#x27;t address the ethical/privacy concern about IP addresses.">
+            <span class="opt-letter">B.</span> Making the survey compulsory to complete before visitors can view any project page
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression doesn&#x27;t resolve the privacy/consent issue.">
+            <span class="opt-letter">C.</span> Compressing the stored IP address data so it simply takes up less storage space
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — privacy-conscious data collection means being clear about, and minimising, what personal data is gathered.">
+            <span class="opt-letter">D.</span> Being transparent about what data is collected and why, and avoiding unnecessary personally identifying data
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q4" data-tier="p3-c" data-qid="p3-c-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">A student is structuring their survey data so each response records: rating value, question type, and which project it relates to. This is an example of:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — defining what information belongs to each response (entity) and its properties is data modelling.">
+            <span class="opt-letter">A.</span> Modelling entities and their attributes using structured data
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t a legal document.">
+            <span class="opt-letter">B.</span> Writing a terms of use policy
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is about structuring data during production, not testing afterwards.">
+            <span class="opt-letter">C.</span> Testing the finished UI
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is unrelated to file size.">
+            <span class="opt-letter">D.</span> Lossy compression
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q5" data-tier="p3-c" data-qid="p3-c-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">A student&#x27;s design journal shows: &quot;Teammate suggested simplifying the difficulty curve after our first playtest — implemented in build 2, retested, feedback improved.&quot; This entry most clearly demonstrates:</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="This is a development log entry, not a requirement statement.">
+            <span class="opt-letter">A.</span> Only a functional requirement
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — it shows a repeat cycle (build, test, revise, retest) driven partly by a teammate&#x27;s input.">
+            <span class="opt-letter">B.</span> Both iterative development and documented collaborative input
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This isn&#x27;t related to legal terms.">
+            <span class="opt-letter">C.</span> A terms of use consideration
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This has nothing to do with file size.">
+            <span class="opt-letter">D.</span> A compression decision
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q6" data-tier="p3-c" data-qid="p3-c-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">A summary of survey ratings shows an average &quot;Fun&quot; score of 3.4, but one response was actually &quot;N/A&quot; typed into a numeric field and got counted as 0 by mistake. What is the main risk this shows?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Collecting names wouldn&#x27;t fix a numeric data-handling error.">
+            <span class="opt-letter">A.</span> The survey should have collected names instead
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is unrelated to whether data is validated correctly.">
+            <span class="opt-letter">B.</span> Compression would have prevented this
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — an incorrectly counted invalid entry pulls the average down inaccurately, which is exactly why validation matters.">
+            <span class="opt-letter">C.</span> Invalid or incorrectly handled data can distort a summary and lead to a misleading conclusion
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="An incorrectly counted value directly changes the calculated average.">
+            <span class="opt-letter">D.</span> This has no effect on the summary
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q7" data-tier="p3-c" data-qid="p3-c-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span></div>
+        <p class="q-stem">The way a website&#x27;s content is organised and structured into pages, menus and categories so users can find things is called ___ architecture.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="information" aria-label="Answer for p3-c-q7">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">information</button>
+            <button type="button" class="hint-chip">compression</button>
+            <button type="button" class="hint-chip">validation</button>
+            <button type="button" class="hint-chip">encryption</button>
+            <button type="button" class="hint-chip">transmission</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q8" data-tier="p3-c" data-qid="p3-c-q8">
+        <div class="q-card-head"><span class="q-num-badge">Q8</span></div>
+        <p class="q-stem">Defining what pieces of information (attributes) belong to a particular thing being recorded, like a survey response, is called ___ the data.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="modelling|structuring" aria-label="Answer for p3-c-q8">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">modelling</button>
+            <button type="button" class="hint-chip">compressing</button>
+            <button type="button" class="hint-chip">encrypting</button>
+            <button type="button" class="hint-chip">transmitting</button>
+            <button type="button" class="hint-chip">validating</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-c-q9" data-tier="p3-c" data-qid="p3-c-q9">
+        <div class="q-card-head"><span class="q-num-badge">Q9</span></div>
+        <p class="q-stem">Checking that entered data falls within an expected range or format before it&#x27;s accepted is called data ___.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="validation" aria-label="Answer for p3-c-q9">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">validation</button>
+            <button type="button" class="hint-chip">compression</button>
+            <button type="button" class="hint-chip">encryption</button>
+            <button type="button" class="hint-chip">transmission</button>
+            <button type="button" class="hint-chip">modelling</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+    <div class="tier-panel" id="tier-p3-ba" role="tabpanel" aria-labelledby="tabbtn-p3-ba">
+      <nav class="q-nav" id="qnav-p3-ba" aria-label="Question navigation — Extension (B–A)">
+        <button class="qnav-pill" data-target="p3-ba-q1" aria-label="Go to question 1">1</button>
+        <button class="qnav-pill" data-target="p3-ba-q2" aria-label="Go to question 2">2</button>
+        <button class="qnav-pill" data-target="p3-ba-q3" aria-label="Go to question 3">3</button>
+        <button class="qnav-pill" data-target="p3-ba-q4" aria-label="Go to question 4">4</button>
+        <button class="qnav-pill" data-target="p3-ba-q5" aria-label="Go to question 5">5</button>
+        <button class="qnav-pill" data-target="p3-ba-q6" aria-label="Go to question 6">6</button>
+        <button class="qnav-pill" data-target="p3-ba-q7" aria-label="Go to question 7">7</button>
+      </nav>
+      <div class="q-list">
+      <article class="q-card" id="p3-ba-q1" data-tier="p3-ba" data-qid="p3-ba-q1">
+        <div class="q-card-head"><span class="q-num-badge">Q1</span></div>
+        <p class="q-stem">A student&#x27;s site is technically functional and well-organised (clear information architecture), but user testing shows visitors still can&#x27;t tell which project is the student&#x27;s &quot;best&quot; work. What is the most accurate diagnosis?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="The scenario states the site works correctly — the issue is about guiding attention, not broken functionality.">
+            <span class="opt-letter">A.</span> A functional requirement has not been met
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — good organisation doesn&#x27;t automatically mean the design communicates priority or emphasis to the user.">
+            <span class="opt-letter">B.</span> A UX/design gap — structure is not the same as effectively guiding attention to what matters most
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="No data entry or checking is involved in this scenario.">
+            <span class="opt-letter">C.</span> A data validation error
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This scenario has nothing to do with legal terms.">
+            <span class="opt-letter">D.</span> A terms of use violation
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-ba-q2" data-tier="p3-ba" data-qid="p3-ba-q2">
+        <div class="q-card-head"><span class="q-num-badge">Q2</span></div>
+        <p class="q-stem">A student&#x27;s anonymous survey unintentionally logs visitors&#x27; browser type and approximate location alongside their ratings, without telling visitors. What is the most significant issue here?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Browser/location data can still be identifying or at least undisclosed, so &#x27;no name collected&#x27; doesn&#x27;t fully resolve the issue.">
+            <span class="opt-letter">A.</span> There is no real issue at all, since visitors&#x27; names still aren&#x27;t being collected anywhere
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The rating values aren&#x27;t affected by what metadata is logged alongside them.">
+            <span class="opt-letter">B.</span> The rating values themselves have now become invalid and unusable
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — even without a name, extra data collected without disclosure conflicts with informed, minimal data collection principles.">
+            <span class="opt-letter">C.</span> Data is being collected beyond what was disclosed, undermining the &#x27;anonymous, no Personally Identifiable Information&#x27; privacy intent
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Compression is unrelated to what metadata is being collected.">
+            <span class="opt-letter">D.</span> This is purely a file compression issue rather than a data-collection one
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-ba-q3" data-tier="p3-ba" data-qid="p3-ba-q3">
+        <div class="q-card-head"><span class="q-num-badge">Q3</span></div>
+        <p class="q-stem">A student stores survey ratings as text (e.g. &quot;3 stars&quot;) instead of numbers. What problem does this most directly cause later?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Data type choice for stored ratings doesn&#x27;t meaningfully affect site load speed.">
+            <span class="opt-letter">A.</span> It makes the website load faster
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Data type has no automatic connection to file compression.">
+            <span class="opt-letter">B.</span> It automatically applies lossless compression
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Choosing the wrong data type does affect how easily the data can be processed later.">
+            <span class="opt-letter">C.</span> It has no effect on later processing
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — text-based ratings can&#x27;t easily be checked as in-range numbers or averaged without extra processing.">
+            <span class="opt-letter">D.</span> It becomes harder to validate, summarise or calculate an average from the data
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-ba-q4" data-tier="p3-ba" data-qid="p3-ba-q4">
+        <div class="q-card-head"><span class="q-num-badge">Q4</span></div>
+        <p class="q-stem">Two students worked together on the same game, but only one documents any collaborative decisions in their design journal — the other&#x27;s journal reads only &quot;I did X, I did Y.&quot; What is the strongest critique of the second student&#x27;s record?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — a development record should show how working with others influenced decisions, not just list individual actions.">
+            <span class="opt-letter">A.</span> It doesn&#x27;t demonstrate how collaborative input shaped the iterative development, even if collaboration happened
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The outcome is meant to assess both individual and collaborative work practices, not individual work alone.">
+            <span class="opt-letter">B.</span> It is perfectly fine, since only a student&#x27;s own individual actions ever need to be documented
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="The record&#x27;s content doesn&#x27;t necessarily reflect what actually happened — it reflects what was documented.">
+            <span class="opt-letter">C.</span> It proves conclusively that no real collaboration took place between the two students
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="Terms of use is unrelated to documenting collaborative work.">
+            <span class="opt-letter">D.</span> It should instead focus entirely on the hosting platform&#x27;s terms of use policy
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-ba-q5" data-tier="p3-ba" data-qid="p3-ba-q5">
+        <div class="q-card-head"><span class="q-num-badge">Q5</span></div>
+        <p class="q-stem">Personal details that could identify an individual, such as a name or email address, are referred to as ___.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="personally identifiable information" aria-label="Answer for p3-ba-q5">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">personally identifiable information</button>
+            <button type="button" class="hint-chip">aggregate data</button>
+            <button type="button" class="hint-chip">metadata</button>
+            <button type="button" class="hint-chip">cybersecurity</button>
+            <button type="button" class="hint-chip">encryption</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card" id="p3-ba-q6" data-tier="p3-ba" data-qid="p3-ba-q6">
+        <div class="q-card-head"><span class="q-num-badge">Q6</span></div>
+        <p class="q-stem">A spreadsheet feature that automatically calculates a single value (like an average or total) from a range of cells is called an ___ function.</p>
+        <div class="typein-row">
+          <input type="text" data-answer="aggregate" aria-label="Answer for p3-ba-q6">
+          <button type="button" class="check-typein">Check</button>
+          <button type="button" class="hint-toggle" aria-expanded="false">💡 Show hint</button>
+        </div>
+        <div class="hint-panel">
+          <p class="hint-panel-label">Tap a word if it might be the answer — then press Check.</p>
+          <div class="hint-chips">
+            <button type="button" class="hint-chip">aggregate</button>
+            <button type="button" class="hint-chip">lookup</button>
+            <button type="button" class="hint-chip">compression</button>
+            <button type="button" class="hint-chip">validation</button>
+            <button type="button" class="hint-chip">encryption</button>
+          </div>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      <article class="q-card q-card--closer" id="p3-ba-q7" data-tier="p3-ba" data-qid="p3-ba-q7">
+        <div class="q-card-head"><span class="q-num-badge">Q7</span><span class="q-closer-badge">Non-routine</span></div>
+        <p class="q-stem">A student&#x27;s survey is meant to be anonymous, but a review of the data shows: (1) browser/location metadata was logged without disclosure, (2) one rating value is out of the valid 1–5 range, and (3) two free-text responses appear to be duplicate test entries. A teammate says: &quot;it&#x27;s fine, just publish the average scores as they are.&quot; What is the strongest response?</p>
+        <div class="options">
+          <button class="mcq-btn" data-correct="false" data-fb="Excluding invalid, duplicate or improperly disclosed data isn&#x27;t hiding genuine results — it&#x27;s producing an accurate, ethically collected summary.">
+            <span class="opt-letter">A.</span> Publish the averages exactly as they currently are, since removing any data at all feels like hiding results
+          </button>
+          <button class="mcq-btn" data-correct="true" data-fb="Correct — this addresses the privacy issue (undisclosed data), the validity issue (out-of-range value) and the data-quality issue (test/duplicate entries) before the summary is trusted and published.">
+            <span class="opt-letter">B.</span> Remove or disclose the undisclosed metadata, exclude the invalid and duplicate/test entries from the summary, then recalculate before publishing
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This leaves a genuine privacy problem and duplicate/test data uncorrected, both of which affect the summary&#x27;s accuracy and ethics.">
+            <span class="opt-letter">C.</span> Only fix the single out-of-range rating and leave the other two issues completely untouched
+          </button>
+          <button class="mcq-btn" data-correct="false" data-fb="This is an overcorrection that discards genuine, useful feedback instead of fixing the specific identified problems.">
+            <span class="opt-letter">D.</span> Delete the entire survey dataset and simply collect no feedback data at all going forward
+          </button>
+        </div>
+        <div class="feedback"></div>
+      </article>
+      </div>
+    </div>
+
+    <div class="confidence" data-conf-key="eportfolio-ux-trn-conf-p3">
+      <p><strong>How confident do you feel about Producing and Implementing?</strong></p>
+      <div class="confidence-btns" role="group" aria-label="Confidence rating">
+        <button type="button" data-conf="1" aria-pressed="false" aria-label="Not confident">😐</button>
+        <button type="button" data-conf="2" aria-pressed="false" aria-label="Somewhat confident">🙂</button>
+        <button type="button" data-conf="3" aria-pressed="false" aria-label="Very confident">😊</button>
+      </div>
+      <p class="confidence-status" aria-live="polite"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function() {
+  "use strict";
+
+  function ready(fn) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", fn);
+    } else {
+      fn();
+    }
+  }
+
+  ready(function() {
+
+    var body = document.body;
+    document.querySelectorAll("[data-font-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-font", btn.getAttribute("data-font-choice"));
+        document.querySelectorAll("[data-font-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+    document.querySelectorAll("[data-contrast-choice]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        body.setAttribute("data-contrast", btn.getAttribute("data-contrast-choice"));
+        document.querySelectorAll("[data-contrast-choice]").forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+      });
+    });
+
+    document.querySelectorAll(".page-section").forEach(function(section) {
+      var tabBtns = section.querySelectorAll(".tab-btn");
+      tabBtns.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+          var targetTier = tab.getAttribute("data-tier");
+          tabBtns.forEach(function(t) {
+            t.classList.remove("tab-btn--active");
+            t.setAttribute("aria-selected", "false");
+          });
+          tab.classList.add("tab-btn--active");
+          tab.setAttribute("aria-selected", "true");
+          section.querySelectorAll(".tier-panel").forEach(function(panel) {
+            panel.classList.toggle("tier-panel--active", panel.id === "tier-" + targetTier);
+          });
+        });
+      });
+    });
+
+    document.querySelectorAll(".qnav-pill").forEach(function(pill) {
+      pill.addEventListener("click", function() {
+        var target = document.getElementById(pill.getAttribute("data-target"));
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    });
+
+    function markPillAnswered(card) {
+      var pill = document.querySelector('.qnav-pill[data-target="' + card.id + '"]');
+      if (pill) pill.classList.add("answered");
+    }
+
+    document.querySelectorAll(".q-card").forEach(function(card) {
+      var mcqBtns = card.querySelectorAll(".mcq-btn");
+      if (!mcqBtns.length) return;
+      var fb = card.querySelector(".feedback");
+      mcqBtns.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          if (card.dataset.locked === "true") return;
+          var correct = btn.getAttribute("data-correct") === "true";
+          var msg = btn.getAttribute("data-fb") || "";
+          if (correct) {
+            btn.classList.add("correct");
+            fb.innerHTML = "✓ " + msg;
+            fb.style.color = "var(--correct)";
+            card.dataset.locked = "true";
+            mcqBtns.forEach(function(b) { b.disabled = true; });
+            markPillAnswered(card);
+          } else {
+            btn.classList.add("wrong");
+            fb.innerHTML = "✗ " + msg;
+            fb.style.color = "var(--wrong)";
+          }
+        });
+      });
+    });
+
+    document.querySelectorAll(".q-card").forEach(function(card) {
+      var input = card.querySelector(".typein-row input");
+      if (!input) return;
+      var checkBtn = card.querySelector(".check-typein");
+      var hintToggle = card.querySelector(".hint-toggle");
+      var hintPanel = card.querySelector(".hint-panel");
+      var fb = card.querySelector(".feedback");
+
+      hintToggle.addEventListener("click", function() {
+        var open = hintPanel.classList.toggle("open");
+        hintToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      card.querySelectorAll(".hint-chip").forEach(function(chip) {
+        chip.addEventListener("click", function() {
+          input.value = chip.textContent;
+          input.focus();
+        });
+      });
+
+      function check() {
+        if (card.dataset.locked === "true") return;
+        var accepted = (input.getAttribute("data-answer") || "").split("|").map(function(s) {
+          return s.trim().toLowerCase();
+        });
+        var val = input.value.trim().toLowerCase();
+        if (accepted.indexOf(val) !== -1) {
+          fb.innerHTML = "✓ Correct!";
+          fb.style.color = "var(--correct)";
+          card.dataset.locked = "true";
+          input.disabled = true;
+          checkBtn.disabled = true;
+          markPillAnswered(card);
+        } else {
+          fb.innerHTML = "✗ Not quite — try again, or tap Show hint.";
+          fb.style.color = "var(--wrong)";
+        }
+      }
+      checkBtn.addEventListener("click", check);
+      input.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") { e.preventDefault(); check(); }
+      });
+    });
+
+    document.querySelectorAll(".confidence").forEach(function(block) {
+      var key = block.getAttribute("data-conf-key");
+      var status = block.querySelector(".confidence-status");
+      var btns = block.querySelectorAll(".confidence-btns button");
+
+      function safeGet(k) {
+        try { return window.localStorage.getItem(k); } catch (e) { return null; }
+      }
+      function safeSet(k, v) {
+        try { window.localStorage.setItem(k, v); } catch (e) { /* ignore blocked storage */ }
+      }
+
+      var saved = safeGet(key);
+      if (saved) {
+        btns.forEach(function(b) {
+          b.setAttribute("aria-pressed", b.getAttribute("data-conf") === saved ? "true" : "false");
+        });
+        status.textContent = "Saved.";
+      }
+
+      btns.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var val = btn.getAttribute("data-conf");
+          safeSet(key, val);
+          btns.forEach(function(b) { b.setAttribute("aria-pressed", "false"); });
+          btn.setAttribute("aria-pressed", "true");
+          status.textContent = "Saved.";
+        });
+      });
+    });
+
+  });
+})();
+</script>
+</body>
+</html>
