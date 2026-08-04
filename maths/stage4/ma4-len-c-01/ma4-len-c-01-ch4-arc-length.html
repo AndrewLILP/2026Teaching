@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4 — Arc Length | MA4-LEN-C-01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Nunito+Sans:wght@400;600;700&family=Caveat:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EFE9; --card:#FFFFFF; --text:#1E2A35;
+  --slate:#3D5A80; --amber:#E89C2F; --forest:#4A7C59; --terracotta:#C1614F;
+  --border:#E4DCD0;
+  --font-head:'Nunito',sans-serif; --font-body:'Nunito Sans',sans-serif; --font-hand:'Caveat',cursive;
+
+  --accent:#3A6548;            /* Ch4 accent — dark */
+  --text-on-accent:#FFFFFF;    /* white text, since accent is dark */
+  --dark-fallback:#2C4260;     /* used wherever white text is required in chrome */
+}
+*{box-sizing:border-box;}
+body.font-system{ --font-head:system-ui,sans-serif; --font-body:system-ui,sans-serif; }
+body.font-atkinson{ --font-head:'Atkinson Hyperlegible',sans-serif; --font-body:'Atkinson Hyperlegible',sans-serif; }
+
+body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.65; font-size:15px; }
+h1,h2,h3,h4{ font-family:var(--font-head); }
+
+header.top-bar{ background:var(--dark-fallback); color:#fff; padding:14px 20px; }
+.top-bar-inner{ max-width:980px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.top-bar a.back-link{ color:#fff; text-decoration:none; font-size:13px; font-weight:700; opacity:0.9; }
+.top-bar a.back-link:hover{ text-decoration:underline; }
+.chapter-tag{ font-family:var(--font-head); font-weight:800; font-size:12px; background:rgba(255,255,255,0.18); padding:3px 10px; border-radius:999px; }
+
+.font-toggle{ display:flex; gap:6px; }
+.font-toggle button{ font-family:var(--font-body); font-size:11.5px; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid rgba(255,255,255,0.5); background:transparent; color:#fff; cursor:pointer; }
+.font-toggle button.active{ background:#fff; color:var(--dark-fallback); border-color:#fff; }
+
+.title-block{ max-width:980px; margin:0 auto; padding:18px 20px 6px; }
+.title-block .num{ font-family:var(--font-head); font-weight:800; font-size:13px; color:var(--forest); }
+.title-block h1{ font-size:23px; font-weight:900; margin:4px 0 0; }
+
+nav.tabs{ max-width:980px; margin:14px auto 0; padding:0 20px; display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--border); }
+nav.tabs button{
+  font-family:var(--font-head); font-weight:800; font-size:13.5px; color:var(--text);
+  background:none; border:none; border-bottom:3px solid transparent; padding:10px 14px; cursor:pointer;
+}
+nav.tabs button.active{ border-bottom-color:var(--accent); color:var(--text); }
+nav.tabs button:hover{ color:var(--forest); }
+
+main{ max-width:980px; margin:0 auto; padding:22px 20px 70px; }
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; }
+
+.card{ background:var(--card); border:1px solid var(--border); border-radius:8px; padding:20px 22px; margin-bottom:18px; }
+
+.phase-label{ display:inline-block; font-family:var(--font-head); font-weight:800; font-size:11.5px; color:#fff; padding:4px 12px; border-radius:999px; margin-bottom:14px; }
+.phase-ido{ background:var(--slate); }
+.phase-wedo{ background:var(--forest); }
+.phase-youdo{ background:var(--terracotta); }
+
+.hook-scene h2{ font-size:19px; margin:0 0 10px; color:var(--dark-fallback); }
+.hook-scene p{ margin:0 0 4px; }
+.hook-question{ margin-top:14px; padding:14px 16px; background:#F4EFE9; border-left:4px solid var(--forest); border-radius:4px; font-weight:700; }
+
+.tier-select{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.tier-btn{ font-family:var(--font-head); font-weight:800; font-size:13px; padding:7px 16px; border-radius:999px; border:2px solid var(--accent); background:#fff; color:var(--text); cursor:pointer; }
+.tier-btn.active{ background:var(--accent); color:var(--text-on-accent); }
+
+.step-block{ display:none; padding:12px 0; border-top:1px dashed var(--border); }
+.step-block.shown{ display:block; }
+.step-block:first-of-type{ border-top:none; }
+.btn-reveal{ font-family:var(--font-head); font-weight:800; font-size:13px; background:var(--dark-fallback); color:#fff; border:none; padding:9px 18px; border-radius:6px; cursor:pointer; margin-top:8px; }
+.btn-reveal:hover{ opacity:0.9; }
+.worked-tier{ display:none; }
+.worked-tier.active{ display:block; }
+
+.frayer-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:16px 0 8px; }
+.frayer-card{ perspective:1200px; height:280px; min-width:200px; }
+.frayer-inner{ position:relative; width:100%; height:100%; transition:transform 0.5s; transform-style:preserve-3d; cursor:pointer; }
+.frayer-card.flipped .frayer-inner{ transform:rotateY(180deg); }
+.frayer-face{ position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:8px; padding:16px; overflow:auto; }
+.frayer-front{ background:var(--accent); color:var(--text-on-accent); display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--font-head); font-weight:900; font-size:19px; }
+.frayer-back{ background:#F4EFE9; color:var(--text); transform:rotateY(180deg); font-size:12.5px; }
+.frayer-back .fb-block{ margin-bottom:8px; }
+.frayer-back .fb-label{ font-weight:800; color:var(--dark-fallback); display:block; margin-bottom:2px; }
+.frayer-back svg{ display:block; margin:4px auto; }
+.frayer-hint{ text-align:center; font-size:11px; color:#8A8377; margin-top:10px; }
+
+.guided-item{ border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px; }
+.guided-item h4{ margin:0 0 6px; font-size:14px; }
+.cue-tag{ font-size:11px; font-weight:800; color:var(--forest); text-transform:uppercase; letter-spacing:0.03em; }
+
+.q-card{ border:1px solid var(--border); border-radius:8px; padding:16px 18px; margin-bottom:16px; }
+.q-stem{ font-weight:700; margin-bottom:10px; }
+.mcq-options{ display:grid; gap:8px; }
+.mcq-btn{ text-align:left; font-family:var(--font-body); font-size:14px; padding:10px 14px; border-radius:6px; border:1.5px solid var(--border); background:#fff; cursor:pointer; }
+.mcq-btn:hover{ border-color:var(--accent); }
+.mcq-btn.correct-pick{ border-color:var(--forest); background:#EAF3EC; }
+.mcq-btn.wrong-pick{ border-color:var(--terracotta); background:#FBEEEC; }
+.mcq-group.locked .mcq-btn{ pointer-events:none; opacity:0.75; }
+.mcq-group.locked .mcq-btn.correct-pick{ opacity:1; }
+.mcq-feedback{ display:none; margin-top:10px; padding:10px 12px; border-radius:6px; font-size:13.5px; font-weight:600; }
+.mcq-feedback.show{ display:block; }
+.mcq-feedback.correct{ background:#EAF3EC; color:var(--forest); border:1px solid var(--forest); }
+.mcq-feedback.wrong{ background:#FBEEEC; color:var(--terracotta); border:1px solid var(--terracotta); }
+
+.typein-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.typein-row input{ font-family:var(--font-body); font-size:14px; padding:8px 10px; border:1.5px solid var(--border); border-radius:6px; width:160px; }
+.btn-check{ font-family:var(--font-head); font-weight:800; font-size:13px; background:var(--dark-fallback); color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
+
+svg text{ font-family:var(--font-body); }
+
+.ed-step{ display:block; width:100%; text-align:left; padding:12px 14px; border:1.5px solid var(--border); border-radius:6px; background:#fff; margin-bottom:8px; cursor:pointer; font-family:var(--font-body); font-size:14px; }
+.ed-step:hover{ border-color:var(--accent); }
+.ed-step.correct-pick{ border-color:var(--forest); background:#EAF3EC; }
+.ed-step.wrong-pick{ border-color:var(--terracotta); background:#FBEEEC; }
+.ed-step.locked{ pointer-events:none; }
+.ed-step.locked.correct-pick{ opacity:1; }
+
+.newman-stage{ display:none; border-top:1px dashed var(--border); padding-top:14px; margin-top:14px; }
+.newman-stage.active{ display:block; }
+.newman-stage:first-of-type{ border-top:none; margin-top:0; padding-top:0; }
+.newman-stage h4{ margin:0 0 6px; color:var(--dark-fallback); font-size:14.5px; }
+.frame-toggle{ font-family:var(--font-head); font-weight:800; font-size:12.5px; background:none; border:1.5px solid var(--forest); color:var(--forest); padding:5px 12px; border-radius:999px; cursor:pointer; margin-top:6px; }
+.sentence-frame{ display:none; margin-top:8px; padding:10px 12px; background:#F4EFE9; border-radius:6px; font-size:13.5px; }
+.sentence-frame.show{ display:block; }
+.nm-input{ width:100%; max-width:400px; font-family:var(--font-body); font-size:14px; padding:8px 10px; border:1.5px solid var(--border); border-radius:6px; margin-top:8px; }
+
+.journal-box textarea{
+  width:100%; min-height:120px; font-family:var(--font-hand); font-size:18px; padding:14px;
+  border:1px solid var(--border); border-radius:6px;
+  background-image:repeating-linear-gradient(#F7F4EE 0px, #F7F4EE 27px, var(--border) 28px);
+  line-height:28px; color:var(--text); resize:vertical;
+}
+.journal-saved{ font-size:12px; color:var(--forest); font-weight:700; margin-top:6px; display:none; }
+.journal-saved.show{ display:block; }
+
+.tier-note{ font-size:12.5px; color:#5A6672; margin-bottom:14px; }
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 2px;font-size:0.9em;line-height:1.2;}
+.frac .num{border-bottom:1.5px solid currentColor;padding:0 3px 1px;text-align:center;}
+.frac .den{padding:1px 3px 0;text-align:center;}
+footer.page-footer{ text-align:center; font-size:12px; color:#8A8377; padding:20px; }
+</style>
+</head>
+<body>
+
+<header class="top-bar">
+  <div class="top-bar-inner">
+    <a class="back-link" href="index.html">&larr; Back to Length hub</a>
+    <span class="chapter-tag">MA4-LEN-C-01 &middot; Chapter 4 of 5</span>
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button type="button" class="active" data-font="default" onclick="setFont('default', this)" aria-label="Use default font Nunito Sans">Nunito Sans</button>
+      <button type="button" data-font="system" onclick="setFont('system', this)" aria-label="Use system default font">System</button>
+      <button type="button" data-font="atkinson" onclick="setFont('atkinson', this)" aria-label="Use Atkinson Hyperlegible font">Atkinson</button>
+    </div>
+  </div>
+</header>
+
+<div class="title-block">
+  <div class="num">Chapter 4</div>
+  <h1>Arc Length</h1>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Chapter sections">
+  <button type="button" id="navBtn-hook" class="active" onclick="showTab('hook')" role="tab" aria-selected="true">Hook</button>
+  <button type="button" id="navBtn-learn" onclick="showTab('learn')" role="tab" aria-selected="false">Learn</button>
+  <button type="button" id="navBtn-practise" onclick="showTab('practise')" role="tab" aria-selected="false">Practise</button>
+  <button type="button" id="navBtn-reflect" onclick="showTab('reflect')" role="tab" aria-selected="false">Reflect</button>
+</nav>
+
+<main>
+
+<!-- ============ HOOK ============ -->
+<section id="tab-hook" class="tab-panel active">
+  <div class="card hook-scene">
+    <h2>Which Hand Travels Further?</h2>
+    <p>Look at an analogue clock.</p>
+    <p>In one hour, the tip of the minute hand sweeps all the way around the clock face &mdash; but the tip of the hour hand barely moves.</p>
+    <p>Both hands sweep for the same amount of time.</p>
+
+    <svg viewBox="0 0 320 220" width="100%" height="220" style="max-width:340px;display:block;margin:16px auto;" role="img" aria-label="Clock face showing the minute hand sweeping a full circle and the hour hand sweeping a short arc, both in one hour">
+      <circle cx="130" cy="110" r="90" fill="#F4EFE9" stroke="var(--dark-fallback)" stroke-width="2.5"/>
+      <circle cx="130" cy="110" r="90" fill="none" stroke="var(--forest)" stroke-width="4"/>
+      <text x="130" y="13" font-size="12" fill="var(--forest)" text-anchor="middle" font-weight="700">Minute hand&#8217;s path (full circle)</text>
+      <path d="M 130 110 L 130 40 L 145 41.4 L 159.6 45.4 L 173.2 51.9 L 185.4 60.9" stroke="var(--terracotta)" stroke-width="4" fill="none"/>
+      <text x="195" y="58" font-size="12" fill="var(--terracotta)" font-weight="700">Hour hand&#8217;s path</text>
+      <circle cx="130" cy="110" r="3" fill="var(--dark-fallback)"/>
+    </svg>
+
+    <div class="hook-question">In one hour, the tip of the minute hand travels much further than the tip of the hour hand &mdash; but how much further, exactly?</div>
+  </div>
+</section>
+
+<!-- ============ LEARN ============ -->
+<section id="tab-learn" class="tab-panel">
+
+  <div class="card">
+    <span class="phase-label phase-ido">I Do &mdash; Worked Examples</span>
+    <h2 style="margin-top:0;">Watch how it&#8217;s done</h2>
+
+    <div class="tier-select" role="group" aria-label="Choose a worked example difficulty">
+      <button type="button" class="tier-btn active" id="weTierBtn-f" onclick="setWorkedTier('f')">Foundation</button>
+      <button type="button" class="tier-btn" id="weTierBtn-c" onclick="setWorkedTier('c')">Core</button>
+      <button type="button" class="tier-btn" id="weTierBtn-e" onclick="setWorkedTier('e')">Extension</button>
+    </div>
+
+    <!-- FOUNDATION -->
+    <div class="worked-tier active" id="worked-f">
+      <p><strong>A sprinkler covers a quarter-circle (90&deg;) sector with radius 8 m.</strong></p>
+      <p>Find the length of the curved edge (the arc).</p>
+      <svg viewBox="0 0 180 180" width="100%" height="180" style="max-width:200px;">
+        <circle cx="90" cy="90" r="70" fill="#fff" stroke="var(--dark-fallback)" stroke-width="2"/>
+        <path d="M 90 90 L 90.0 20.0 L 103.7 21.3 L 116.8 25.3 L 128.9 31.8 L 139.5 40.5 L 148.2 51.1 L 154.7 63.2 L 158.7 76.3 L 160.0 90.0 Z" fill="var(--amber)" fill-opacity="0.35" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <text x="120" y="55" font-size="12" fill="var(--dark-fallback)" font-weight="700">90&deg;</text>
+        <text x="100" y="85" font-size="11">r = 8 m</text>
+      </svg>
+
+      <div class="step-block shown" id="wf-step1">
+        <p>A full circle is 360&deg;.</p>
+        <p>This sector is 90&deg;, which is exactly <span class="frac"><span class="num">1</span><span class="den">4</span></span> of the full circle: 90 &divide; 360 = 0.25.</p>
+        <button class="btn-reveal" onclick="revealStep('wf',2)">Show next step</button>
+      </div>
+      <div class="step-block" id="wf-step2">
+        <p>So the arc length is <span class="frac"><span class="num">1</span><span class="den">4</span></span> of the full circumference.</p>
+        <p>l = (<span class="frac"><span class="num">90</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 8</p>
+        <button class="btn-reveal" onclick="revealStep('wf',3)">Show next step</button>
+      </div>
+      <div class="step-block" id="wf-step3">
+        <p><strong>l &asymp; 12.6 m</strong> (to 1 decimal place)</p>
+      </div>
+    </div>
+
+    <!-- CORE -->
+    <div class="worked-tier" id="worked-c">
+      <p><strong>A sector has angle 120&deg; and radius 6 cm.</strong><br>Find the arc length.</p>
+      <svg viewBox="0 0 180 180" width="100%" height="180" style="max-width:200px;">
+        <circle cx="90" cy="90" r="70" fill="#fff" stroke="var(--dark-fallback)" stroke-width="2"/>
+        <path d="M 90 90 L 90.0 20.0 L 108.1 22.4 L 125.0 29.4 L 139.5 40.5 L 150.6 55.0 L 157.6 71.9 L 160.0 90.0 L 157.6 108.1 L 150.6 125.0 Z" fill="var(--amber)" fill-opacity="0.35" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <text x="126" y="74" font-size="12" fill="var(--dark-fallback)" font-weight="700">120&deg;</text>
+        <line x1="90" y1="90" x2="90" y2="20" stroke="var(--terracotta)" stroke-width="2"/>
+        <text x="84" y="55" font-size="11" text-anchor="end">r = 6 cm</text>
+      </svg>
+
+      <div class="step-block shown" id="wc-step1">
+        <p>l = (<span class="frac"><span class="num">&theta;</span><span class="den">360</span></span>) &times; 2&pi;&middot;r</p>
+        <button class="btn-reveal" onclick="revealStep('wc',2)">Show next step</button>
+      </div>
+      <div class="step-block" id="wc-step2">
+        <p>l = (<span class="frac"><span class="num">120</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 6</p>
+        <button class="btn-reveal" onclick="revealStep('wc',3)">Show next step</button>
+      </div>
+      <div class="step-block" id="wc-step3">
+        <p><strong>l &asymp; 12.6 cm</strong> (to 1 decimal place)</p>
+      </div>
+    </div>
+
+    <!-- EXTENSION -->
+    <div class="worked-tier" id="worked-e">
+      <p><strong>An arc has length 15.7 cm on a circle with radius 12 cm.</strong></p>
+      <p>Find the angle &theta; that the arc subtends at the centre.</p>
+
+      <div class="step-block shown" id="we-step1">
+        <p>Rearrange l = (<span class="frac"><span class="num">&theta;</span><span class="den">360</span></span>) &times; 2&pi;&middot;r to make &theta; the subject.</p>
+        <button class="btn-reveal" onclick="revealStep('we',2)">Show next step</button>
+      </div>
+      <div class="step-block" id="we-step2">
+        <p>&theta; = (l &divide; 2&pi;&middot;r) &times; 360</p>
+        <button class="btn-reveal" onclick="revealStep('we',3)">Show next step</button>
+      </div>
+      <div class="step-block" id="we-step3">
+        <p>&theta; = (15.7 &divide; (2 &times; &pi; &times; 12)) &times; 360</p>
+        <button class="btn-reveal" onclick="revealStep('we',4)">Show next step</button>
+      </div>
+      <div class="step-block" id="we-step4">
+        <p><strong>&theta; &asymp; 75.0&deg;</strong> (to 1 decimal place)</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Key vocabulary</h2>
+    <p style="font-size:13.5px;color:#5A6672;">Tap each card to flip it and see the definition, an example, and a non-example.</p>
+    <div class="frayer-grid" id="frayerGrid"></div>
+  </div>
+
+  <div class="card">
+    <span class="phase-label phase-wedo">We Do &mdash; Guided Practice</span>
+    <h2 style="margin-top:0;">Let&#8217;s try these together</h2>
+
+    <div class="guided-item">
+      <span class="cue-tag">Full cue</span>
+      <h4>A sector has angle 60&deg; and radius 10 cm.</h4>
+      <svg viewBox="0 0 140 140" width="100%" height="140" style="max-width:150px;">
+        <circle cx="70" cy="70" r="55" fill="#fff" stroke="var(--dark-fallback)" stroke-width="2"/>
+        <path d="M 70 70 L 70.0 15.0 L 77.2 15.5 L 84.2 16.9 L 91.0 19.2 L 97.5 22.4 L 103.5 26.4 L 108.9 31.1 L 113.6 36.5 L 117.6 42.5 Z" fill="var(--amber)" fill-opacity="0.35" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <text x="88" y="35" font-size="11" fill="var(--dark-fallback)" font-weight="700">60&deg;</text>
+      </svg>
+      <p>l = (<span class="frac"><span class="num">60</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 10 = ?</p>
+      <button class="btn-reveal" onclick="revealAnswer('g1')">Show answer</button>
+      <p class="step-block" id="g1-answer"><strong>l &asymp; 10.5 cm</strong> (to 1 decimal place)</p>
+    </div>
+
+    <div class="guided-item">
+      <span class="cue-tag">Partial cue</span>
+      <h4>A sector has angle 45&deg; and radius 9 cm.</h4>
+      <svg viewBox="0 0 140 140" width="100%" height="140" style="max-width:150px;">
+        <circle cx="70" cy="70" r="55" fill="#fff" stroke="var(--dark-fallback)" stroke-width="2"/>
+        <path d="M 70 70 L 70.0 15.0 L 75.4 15.3 L 80.7 16.1 L 86.0 17.4 L 91.0 19.2 L 95.9 21.5 L 100.6 24.3 L 104.9 27.5 L 108.9 31.1 Z" fill="var(--amber)" fill-opacity="0.35" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <text x="83" y="32" font-size="11" fill="var(--dark-fallback)" font-weight="700">45&deg;</text>
+      </svg>
+      <p><strong>Hint:</strong> what fraction of the full circle is 45&deg;?</p>
+      <button class="btn-reveal" onclick="revealAnswer('g2')">Show answer</button>
+      <p class="step-block" id="g2-answer">45 &divide; 360 = <span class="frac"><span class="num">1</span><span class="den">8</span></span> of the circle.<br><strong>l &asymp; 7.1 cm</strong> (to 1 decimal place)</p>
+    </div>
+
+    <div class="guided-item">
+      <span class="cue-tag">Minimal cue</span>
+      <h4>A sector has angle 100&deg; and radius 7 cm.<br>Find the arc length.</h4>
+      <svg viewBox="0 0 140 140" width="100%" height="140" style="max-width:150px;">
+        <circle cx="70" cy="70" r="55" fill="#fff" stroke="var(--dark-fallback)" stroke-width="2"/>
+        <path d="M 70 70 L 70.0 15.0 L 81.9 16.3 L 93.2 20.2 L 103.5 26.4 L 112.1 34.6 L 118.8 44.6 L 123.1 55.8 L 124.9 67.6 L 124.2 79.6 Z" fill="var(--amber)" fill-opacity="0.35" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/>
+        <text x="95" y="45" font-size="11" fill="var(--dark-fallback)" font-weight="700">100&deg;</text>
+      </svg>
+      <button class="btn-reveal" onclick="revealAnswer('g3')">Show answer</button>
+      <p class="step-block" id="g3-answer"><strong>l &asymp; 12.2 cm</strong> (to 1 decimal place)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRACTISE ============ -->
+<section id="tab-practise" class="tab-panel">
+  <div class="card">
+    <span class="phase-label phase-youdo">You Do &mdash; Independent Practice</span>
+    <h2 style="margin-top:0;">Choose your level</h2>
+
+    <div class="tier-select" role="group" aria-label="Choose a practice tier">
+      <button type="button" class="tier-btn active" id="pracTierBtn-f" onclick="setPracTier('f')">Foundation</button>
+      <button type="button" class="tier-btn" id="pracTierBtn-c" onclick="setPracTier('c')">Core</button>
+      <button type="button" class="tier-btn" id="pracTierBtn-e" onclick="setPracTier('e')">Extension</button>
+    </div>
+
+    <!-- FOUNDATION -->
+    <div class="worked-tier active" id="prac-f">
+      <p class="tier-note">4 multiple-choice questions.<br>Round to 1 decimal place.</p>
+
+      <div class="q-card">
+        <p class="q-stem">1. A sector has angle 90&deg; and radius 5 cm.<br>Find the arc length.</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s the full circumference &mdash; the &theta; &divide; 360 fraction hasn&#8217;t been applied." onclick="mcqAns(this)">A. 31.4 cm</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! (90 &divide; 360) &times; 2 &times; &pi; &times; 5 &asymp; 7.9 cm." onclick="mcqAns(this)">B. 7.9 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That uses 1 &divide; 2 of the circle instead of 1 &divide; 4 &mdash; check 90 &divide; 360 again." onclick="mcqAns(this)">C. 15.7 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s half the correct arc length &mdash; check the fraction calculation." onclick="mcqAns(this)">D. 3.9 cm</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">2. A semicircular arc (180&deg;) has radius 6 cm.<br>Find its arc length.</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s the full circumference &mdash; the &theta; &divide; 360 fraction hasn&#8217;t been applied." onclick="mcqAns(this)">A. 37.7 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That uses 1 &divide; 4 of the circle instead of 1 &divide; 2 &mdash; check 180 &divide; 360 again." onclick="mcqAns(this)">B. 9.4 cm</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! (180 &divide; 360) &times; 2 &times; &pi; &times; 6 &asymp; 18.8 cm." onclick="mcqAns(this)">C. 18.8 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s just the radius &mdash; no formula has been applied here." onclick="mcqAns(this)">D. 6.0 cm</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">3. A sector has angle 45&deg; and radius 8 cm.<br>Find the arc length.</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s the full circumference &mdash; the &theta; &divide; 360 fraction hasn&#8217;t been applied." onclick="mcqAns(this)">A. 50.3 cm</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! (45 &divide; 360) &times; 2 &times; &pi; &times; 8 &asymp; 6.3 cm." onclick="mcqAns(this)">B. 6.3 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s double the correct arc length &mdash; check the fraction calculation." onclick="mcqAns(this)">C. 12.6 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That uses 1 &divide; 4 of the circle instead of 1 &divide; 8 &mdash; check 45 &divide; 360 again." onclick="mcqAns(this)">D. 12.0 cm</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">4. A sector has angle 270&deg; and radius 4 cm.<br>Find the arc length.</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="That uses 3 &divide; 4 twice over &mdash; check the fraction 270 &divide; 360 again." onclick="mcqAns(this)">A. 28.3 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s just the full circumference &mdash; 270&deg; is 3 &divide; 4 of the circle, not the whole thing." onclick="mcqAns(this)">B. 25.1 cm</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! (270 &divide; 360) &times; 2 &times; &pi; &times; 4 &asymp; 18.8 cm." onclick="mcqAns(this)">C. 18.8 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s only 1 &divide; 4 of the circle &mdash; check the fraction 270 &divide; 360 again." onclick="mcqAns(this)">D. 6.3 cm</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CORE -->
+    <div class="worked-tier" id="prac-c">
+      <p class="tier-note">4 questions &mdash; a mix of multiple-choice and type-in.<br>Round to 1 decimal place.</p>
+
+      <div class="q-card">
+        <p class="q-stem">1. A sector has angle 150&deg; and radius 9 cm.<br>Find the arc length. (cm)</p>
+        <div class="typein-row">
+          <input type="text" id="c1" placeholder="Enter your answer" aria-label="Arc length in centimetres">
+          <button class="btn-check" onclick="checkTypein('c1', 23.6, 0.1, 'Correct! (150 &divide; 360) &times; 2 &times; &pi; &times; 9 &asymp; 23.6 cm.', 'Find 150 &divide; 360 as a fraction first, then multiply by the full circumference.')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="c1-fb"></div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">2. A sector has angle 200&deg; and radius 5 cm.<br>Find the arc length.</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s the full circumference &mdash; the &theta; &divide; 360 fraction hasn&#8217;t been applied." onclick="mcqAns(this)">A. 31.4 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s roughly double the correct value &mdash; check the fraction calculation." onclick="mcqAns(this)">B. 34.9 cm</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! (200 &divide; 360) &times; 2 &times; &pi; &times; 5 &asymp; 17.5 cm." onclick="mcqAns(this)">C. 17.5 cm</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s roughly half the correct value &mdash; check the fraction calculation." onclick="mcqAns(this)">D. 8.7 cm</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">3. A sector has angle 72&deg; and radius 15 cm.<br>Find the arc length. (cm)</p>
+        <div class="typein-row">
+          <input type="text" id="c3" placeholder="Enter your answer" aria-label="Arc length in centimetres">
+          <button class="btn-check" onclick="checkTypein('c3', 18.8, 0.1, 'Correct! (72 &divide; 360) &times; 2 &times; &pi; &times; 15 &asymp; 18.8 cm.', 'Find 72 &divide; 360 as a fraction first, then multiply by the full circumference.')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="c3-fb"></div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">4. Two sectors have the <strong>same radius</strong>, but Sector A has a larger angle than Sector B.<br>Which sector has the longer arc length?</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="A smaller angle covers a smaller fraction of the circle, giving a shorter arc, not a longer one." onclick="mcqAns(this)">A. Sector B &mdash; smaller angles always give longer arcs.</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="Since the radius is the same but the angles differ, the arc lengths must be different too." onclick="mcqAns(this)">B. Both the same &mdash; the radius is what determines arc length, not the angle.</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! For a fixed radius, a larger angle covers a larger fraction of the circle, giving a longer arc." onclick="mcqAns(this)">C. Sector A &mdash; the larger angle covers more of the circle&#8217;s circumference.</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="The angle does matter here &mdash; it directly changes what fraction of the circle the arc covers." onclick="mcqAns(this)">D. It&#8217;s impossible to tell without knowing the exact radius.</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXTENSION -->
+    <div class="worked-tier" id="prac-e">
+      <p class="tier-note">4 questions &mdash; multiple-choice, type-in, and one multi-step problem.</p>
+
+      <div class="q-card">
+        <p class="q-stem">1. An arc has length 10.5 cm on a circle with radius 6 cm.<br>What is the angle &theta;, correct to the nearest degree?</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="Dividing by 2&pi;&middot;r alone isn&#8217;t enough &mdash; the result still needs multiplying by 360 to become a proper angle." onclick="mcqAns(this)">A. 0.3&deg;</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! &theta; = (10.5 &divide; (2 &times; &pi; &times; 6)) &times; 360 &asymp; 100&deg;." onclick="mcqAns(this)">B. 100&deg;</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That&#8217;s what you get by forgetting the factor of 2 in 2&pi;&middot;r &mdash; roughly double the correct angle." onclick="mcqAns(this)">C. 201&deg;</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="That comes from dropping &pi; entirely from the formula &mdash; check the full rearrangement." onclick="mcqAns(this)">D. 630&deg;</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">2. An arc has length 9.4 cm on a circle with radius 4 cm.<br>Find angle &theta;, correct to the nearest degree.</p>
+        <div class="typein-row">
+          <input type="text" id="e2" placeholder="Enter your answer" aria-label="Angle in degrees">
+          <button class="btn-check" onclick="checkTypein('e2', 135, 2, 'Correct! &theta; = (9.4 &divide; (2 &times; &pi; &times; 4)) &times; 360 &asymp; 135&deg;.', 'Rearrange l = (&theta; &divide; 360) &times; 2&pi;&middot;r to make &theta; the subject: &theta; = (l &divide; 2&pi;&middot;r) &times; 360.')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="e2-fb"></div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">3. Two sectors have the <strong>same angle</strong> &theta;, but one has a larger radius than the other.<br>Which sector has the longer arc length?</p>
+        <div class="mcq-group">
+          <div class="mcq-options">
+            <button class="mcq-btn" data-result="wrong" data-msg="Arc length depends on both the angle AND the radius &mdash; for a fixed angle, a larger radius gives a longer arc." onclick="mcqAns(this)">A. The sector with the smaller radius &mdash; arc length depends only on the angle, not the radius.</button>
+            <button class="mcq-btn" data-result="correct" data-msg="Correct! For a fixed angle, arc length is directly proportional to radius." onclick="mcqAns(this)">B. The sector with the larger radius &mdash; for a fixed angle, arc length is directly proportional to radius.</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="Since the radii are different, the arc lengths must be different too, even with the same angle." onclick="mcqAns(this)">C. Both have the same arc length, since the angle is the same.</button>
+            <button class="mcq-btn" data-result="wrong" data-msg="The angle is already given as fixed and equal &mdash; the radius is what makes the difference here." onclick="mcqAns(this)">D. It&#8217;s impossible to tell without knowing the angle exactly.</button>
+          </div>
+          <div class="mcq-feedback"></div>
+        </div>
+      </div>
+
+      <div class="q-card">
+        <p class="q-stem">4. <strong>Multi-step:</strong> A garden sprinkler sweeps out a 40&deg; sector with radius 20 m, watering the curved edge of grass.<br>The sprinkler makes 3 complete sweeps, each covering the same 40&deg; sector.<br>What is the TOTAL arc length watered across all 3 sweeps combined? (m)</p>
+        <div class="typein-row">
+          <input type="text" id="e4" placeholder="Enter your answer" aria-label="Total arc length in metres">
+          <button class="btn-check" onclick="checkTypein('e4', 42.0, 0.3, 'Correct! One sweep: (40 &divide; 360) &times; 2 &times; &pi; &times; 20 &asymp; 14.0 m. Three sweeps: 14.0 &times; 3 = 42.0 m.', 'Find the arc length for ONE sweep first, then multiply by 3 for all three sweeps combined.')">Check</button>
+        </div>
+        <div class="mcq-feedback" id="e4-fb"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFLECT ============ -->
+<section id="tab-reflect" class="tab-panel">
+
+  <div class="card">
+    <h2 style="margin-top:0;">🔍 Error Detective</h2>
+    <p>Someone has worked through this problem below.<br>Exactly one step contains an error &mdash; click the step you think is wrong.</p>
+    <p class="q-stem">A sector has radius 9 cm and angle 60&deg;.<br>Find the arc length.</p>
+
+    <button class="ed-step" data-step="1" onclick="edPick(this)">Step 1: The sector has radius 9 cm and angle 60&deg;.</button>
+    <button class="ed-step" data-step="2" onclick="edPick(this)">Step 2: The formula to use is l = (<span class="frac"><span class="num">&theta;</span><span class="den">360</span></span>) &times; 2&pi;&middot;r.</button>
+    <button class="ed-step" data-step="3" onclick="edPick(this)">Step 3: Substituting, l = 60 &times; 2 &times; &pi; &times; 9 = 1080&pi; &asymp; 3392.9 cm.</button>
+    <button class="ed-step" data-step="4" onclick="edPick(this)">Step 4: Final answer: 3392.9 cm.</button>
+
+    <div class="mcq-feedback" id="edFeedback"></div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">Newman&#8217;s Word Problem</h2>
+    <p class="q-stem">A large circular clock has a radius of 40 cm.<br>The minute hand moves from the 12 to the 4 in 20 minutes.<br>What distance does the tip of the minute hand travel during this time?<br>Give your answer correct to 1 decimal place.</p>
+
+    <div class="tier-select" role="group" aria-label="Choose sentence frame support level">
+      <button type="button" class="tier-btn active" id="nmTierBtn-f" onclick="setNmTier('f')">Foundation support</button>
+      <button type="button" class="tier-btn" id="nmTierBtn-c" onclick="setNmTier('c')">Core support</button>
+      <button type="button" class="tier-btn" id="nmTierBtn-e" onclick="setNmTier('e')">Extension (no frames)</button>
+    </div>
+
+    <div class="newman-stage active" id="nm-1">
+      <h4>Stage 1 &mdash; Read</h4>
+      <p>Read the problem carefully.<br>Reread it if anything is unclear.</p>
+      <button class="btn-reveal" onclick="nmNext(1)">I&#8217;ve read it &mdash; next stage</button>
+    </div>
+
+    <div class="newman-stage" id="nm-2">
+      <h4>Stage 2 &mdash; Comprehend</h4>
+      <p>What is the problem actually asking you to find?</p>
+      <div class="nm-frame" data-tier="f c">
+        <button class="frame-toggle" onclick="toggleFrame('nmFrame2')">Show sentence starter</button>
+        <div class="sentence-frame" id="nmFrame2">Sentence starter: "The problem is asking me to find the distance &hellip;"</div>
+      </div>
+      <input class="nm-input" type="text" placeholder="Type what you're finding&hellip;">
+      <br><button class="btn-reveal" onclick="nmNext(2)">Next stage</button>
+    </div>
+
+    <div class="newman-stage" id="nm-3">
+      <h4>Stage 3 &mdash; Transform</h4>
+      <p>The clock positions need to become an angle before you can use the arc length formula.</p>
+      <div class="nm-frame" data-tier="f c">
+        <button class="frame-toggle" onclick="toggleFrame('nmFrame3')">Show sentence starter</button>
+        <div class="sentence-frame" id="nmFrame3">Sentence starter: "From 12 to 4 is &hellip; out of 12 clock positions, so the angle is &hellip; &times; 30&deg; = &hellip;"</div>
+      </div>
+      <input class="nm-input" type="text" placeholder="Type your angle conversion&hellip;">
+      <br><button class="btn-reveal" onclick="nmNext(3)">Next stage</button>
+    </div>
+
+    <div class="newman-stage" id="nm-4">
+      <h4>Stage 4 &mdash; Process</h4>
+      <p>Carry out the arc length calculation.</p>
+      <div class="nm-frame" data-tier="f">
+        <button class="frame-toggle" onclick="toggleFrame('nmFrame4')">Show sentence starter</button>
+        <div class="sentence-frame" id="nmFrame4">Sentence starter: "l = (<span class="frac"><span class="num">120</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 40 = &hellip;"</div>
+      </div>
+      <input class="nm-input" type="text" placeholder="Type your working and answer&hellip;">
+      <br><button class="btn-reveal" onclick="nmNext(4)">Next stage</button>
+    </div>
+
+    <div class="newman-stage" id="nm-5">
+      <h4>Stage 5 &mdash; Encode</h4>
+      <p>Write your final answer in a full sentence.</p>
+      <button class="frame-toggle" onclick="toggleFrame('nmSolution')">Show worked solution</button>
+      <div class="sentence-frame" id="nmSolution">From 12 to 4 is 4 out of 12 clock positions: 4 &times; 30&deg; = 120&deg;.<br>l = (<span class="frac"><span class="num">120</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 40 &asymp; 83.8 cm.<br><b>The tip of the minute hand travels approximately 83.8 cm.</b></div>
+    </div>
+  </div>
+
+  <div class="card journal-box">
+    <h2 style="margin-top:0;">📓 Journal</h2>
+    <p>Why does the <span class="frac"><span class="num">&theta;</span><span class="den">360</span></span> fraction matter so much in the arc length formula, and what happens if you forget it?</p>
+    <textarea id="journalText" placeholder="Write your thoughts here&hellip;" aria-label="Journal entry"></textarea>
+    <div class="journal-saved" id="journalSaved">Saved to this device.</div>
+  </div>
+
+</section>
+
+</main>
+
+<footer class="page-footer">MA4-LEN-C-01 &middot; Chapter 4 &middot; Stage 4 Mathematics &middot; NSW Mathematics 7&ndash;10 Syllabus (NESA 2022)</footer>
+
+<script>
+/* ---------- Font toggle ---------- */
+function setFont(mode, btn){
+  document.body.classList.remove('font-system','font-atkinson');
+  if(mode==='system') document.body.classList.add('font-system');
+  if(mode==='atkinson') document.body.classList.add('font-atkinson');
+  document.querySelectorAll('.font-toggle button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  try{ localStorage.setItem('len-font-pref', mode); }catch(e){}
+}
+function loadFontPref(){
+  let pref;
+  try{ pref = localStorage.getItem('len-font-pref'); }catch(e){ pref = null; }
+  if(!pref) return;
+  const btn = document.querySelector('.font-toggle button[data-font="'+pref+'"]');
+  if(btn) setFont(pref, btn);
+}
+
+/* ---------- Tab switching (explicit ID match, no currentTarget) ---------- */
+const tabIds = ['hook','learn','practise','reflect'];
+function showTab(id){
+  tabIds.forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+    document.getElementById('navBtn-'+t).classList.toggle('active', t===id);
+    document.getElementById('navBtn-'+t).setAttribute('aria-selected', t===id ? 'true':'false');
+  });
+  if(id==='reflect'){
+    try{ localStorage.setItem('len-ch4-complete','true'); }catch(e){}
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ---------- Worked example tier selector ---------- */
+function setWorkedTier(tier){
+  ['f','c','e'].forEach(t=>{
+    document.getElementById('worked-'+t).classList.toggle('active', t===tier);
+    document.getElementById('weTierBtn-'+t).classList.toggle('active', t===tier);
+  });
+}
+
+/* ---------- Practice tier selector ---------- */
+function setPracTier(tier){
+  ['f','c','e'].forEach(t=>{
+    document.getElementById('prac-'+t).classList.toggle('active', t===tier);
+    document.getElementById('pracTierBtn-'+t).classList.toggle('active', t===tier);
+  });
+}
+
+/* ---------- Newman's tier (sentence frame support) selector ---------- */
+function setNmTier(tier){
+  ['f','c','e'].forEach(t=>{
+    document.getElementById('nmTierBtn-'+t).classList.toggle('active', t===tier);
+  });
+  document.querySelectorAll('.nm-frame').forEach(el=>{
+    const toggle = el.querySelector('.frame-toggle');
+    const frame = el.querySelector('.sentence-frame');
+    if(tier==='e'){
+      el.style.display='none';
+    } else {
+      el.style.display='block';
+      if(tier==='f'){
+        frame.classList.add('show');
+        toggle.style.display='none';
+      } else {
+        toggle.style.display='inline-block';
+        frame.classList.remove('show');
+      }
+    }
+  });
+}
+
+/* ---------- Step reveal (I Do worked examples) ---------- */
+function revealStep(prefix, stepNum){
+  const el = document.getElementById(prefix+'-step'+stepNum);
+  if(el) el.classList.add('shown');
+}
+
+/* ---------- Guided practice answer reveal ---------- */
+function revealAnswer(id){
+  const el = document.getElementById(id+'-answer');
+  if(el) el.classList.add('shown');
+}
+
+/* ---------- MCQ pattern (mandatory) ---------- */
+function mcqAns(btn){
+  const group = btn.closest('.mcq-group');
+  if(group.classList.contains('locked')) return;
+  const fb = group.querySelector('.mcq-feedback');
+  const result = btn.getAttribute('data-result');
+  const msg = btn.getAttribute('data-msg');
+  if(result==='correct'){
+    group.classList.add('locked');
+    btn.classList.add('correct-pick');
+    fb.innerHTML = '&#10003; ' + msg;
+    fb.className = 'mcq-feedback show correct';
+  } else {
+    btn.classList.add('wrong-pick');
+    fb.innerHTML = '&#10007; ' + msg;
+    fb.className = 'mcq-feedback show wrong';
+    /* stays visible until corrected — no auto-clear timeout */
+  }
+}
+
+/* ---------- Type-in checker (canonical numeric-tolerance pattern) ---------- */
+function checkTypein(id, correct, tolerance, correctMsg, wrongMsg){
+  const input = document.getElementById(id);
+  const val = parseFloat(input.value);
+  const fb = document.getElementById(id+'-fb');
+  if(isNaN(val)){ fb.innerHTML='Enter a number first.'; fb.className='mcq-feedback show wrong'; return; }
+  if(Math.abs(val-correct)<=tolerance){
+    fb.innerHTML='&#10003; '+correctMsg; fb.className='mcq-feedback show correct'; input.disabled=true;
+  } else {
+    fb.innerHTML='&#10007; '+wrongMsg; fb.className='mcq-feedback show wrong';
+    /* stays visible until corrected — no auto-clear timeout */
+  }
+}
+
+/* ---------- Error Detective ---------- */
+function edPick(el){
+  if(document.querySelector('.ed-step.locked')) return;
+  const step = el.getAttribute('data-step');
+  const fb = document.getElementById('edFeedback');
+  if(step==='3'){
+    document.querySelectorAll('.ed-step').forEach(s=>s.classList.add('locked'));
+    el.classList.add('correct-pick');
+    fb.className='mcq-feedback show correct';
+    fb.innerHTML='&#10003; Correct &mdash; Step 3 is wrong. The <span class="frac"><span class="num">&theta;</span><span class="den">360</span></span> fraction was dropped &mdash; &theta; was used as a straight multiplier instead of first being turned into a fraction of the full circle. The correct working is l = (<span class="frac"><span class="num">60</span><span class="den">360</span></span>) &times; 2 &times; &pi; &times; 9 &asymp; 9.4 cm.';
+  } else if(step==='1'){
+    el.classList.add('wrong-pick');
+    fb.className='mcq-feedback show wrong';
+    fb.innerHTML='&#10007; Step 1 is correct &mdash; it&#8217;s just stating the given values. Look for the step where the formula is applied incorrectly.';
+  } else if(step==='2'){
+    el.classList.add('wrong-pick');
+    fb.className='mcq-feedback show wrong';
+    fb.innerHTML='&#10007; Step 2 is correct &mdash; that is the right formula. Look at how it&#8217;s substituted in the next step.';
+  } else if(step==='4'){
+    el.classList.add('wrong-pick');
+    fb.className='mcq-feedback show wrong';
+    fb.innerHTML='&#10007; Step 4 just restates the final answer from Step 3 &mdash; the real error happened earlier. Look at Step 3 again.';
+  }
+}
+
+/* ---------- Newman's stage accumulation (must not remove previous stage) ---------- */
+function nmNext(stageNum){
+  document.getElementById('nm-'+(stageNum+1)).classList.add('active');
+}
+function toggleFrame(id){
+  document.getElementById(id).classList.toggle('show');
+}
+
+/* ---------- Journal autosave ---------- */
+function loadJournal(){
+  let saved;
+  try{ saved = localStorage.getItem('len-ch4-journal'); }catch(e){ saved = null; }
+  if(saved) document.getElementById('journalText').value = saved;
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const ta = document.getElementById('journalText');
+  ta.addEventListener('input', function(){
+    try{ localStorage.setItem('len-ch4-journal', ta.value); }catch(e){}
+    const s = document.getElementById('journalSaved');
+    s.classList.add('show');
+    clearTimeout(window._jSaveMsgTimer);
+    window._jSaveMsgTimer = setTimeout(()=>{ s.classList.remove('show'); }, 2000);
+  });
+});
+
+/* ---------- Frayer cards (built via JS — innerHTML used throughout) ---------- */
+const frayerTerms = [
+  {
+    term:'Arc length',
+    def:'The distance along a curved part of a circle&#8217;s edge, found using l = (<span class="frac"><span class="num">&theta;</span><span class="den">360</span></span>) &times; 2&pi;&middot;r.',
+    ex:'A sprinkler covering 90&deg; of a circle with radius 8 m has arc length &asymp; 12.6 m.',
+    nonex:'The straight-line distance between the two arc endpoints is a chord, not the arc length.',
+    svg:'<svg viewBox="0 0 100 100" width="60" height="60"><circle cx="50" cy="50" r="35" fill="none" stroke="#EEE7DA" stroke-width="3"/><path d="M 15 50 L 15.6 45.4 L 17.2 41.0 L 19.9 37.1 L 23.4 33.9 L 27.6 31.6 L 32.2 30.2 L 37.1 29.8" fill="none" stroke="var(--amber)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  },
+  {
+    term:'Subtend',
+    def:'The angle an arc &#8220;subtends&#8221; is the angle it forms at the centre of the circle.',
+    ex:'A semicircular arc subtends an angle of 180&deg; at the centre.',
+    nonex:'The angle between a tangent and the circle&#8217;s edge is not what &#8220;subtend&#8221; refers to here.',
+    svg:'<svg viewBox="0 0 100 100" width="60" height="60"><circle cx="50" cy="50" r="35" fill="none" stroke="var(--dark-fallback)" stroke-width="2"/><line x1="50" y1="50" x2="50" y2="15" stroke="var(--terracotta)" stroke-width="2"/><line x1="50" y1="50" x2="80.3" y2="32.5" stroke="var(--terracotta)" stroke-width="2"/><text x="58" y="30" font-size="13" fill="var(--terracotta)">&theta;</text></svg>'
+  },
+  {
+    term:'Sector angle (&theta;)',
+    def:'The angle at the centre of a circle between the two radii bounding a sector.',
+    ex:'A quarter-circle sector has a sector angle of 90&deg;.',
+    nonex:'The angle between an arc and a chord is not the sector angle.',
+    svg:'<svg viewBox="0 0 100 100" width="60" height="60"><circle cx="50" cy="50" r="35" fill="none" stroke="var(--dark-fallback)" stroke-width="2"/><path d="M 50 50 L 50 15 L 54.6 15.3 L 59.1 16.2 L 63.4 17.7 L 67.5 19.7 L 71.3 22.2 L 74.7 25.3 L 77.8 28.7 L 80.3 32.5 Z" fill="var(--amber)" fill-opacity="0.4" stroke="var(--amber)" stroke-width="1.5" stroke-linejoin="round"/></svg>'
+  },
+  {
+    term:'Proportion of a full turn',
+    def:'The fraction <span class="frac"><span class="num">&theta;</span><span class="den">360</span></span> represents how much of the full circle&#8217;s rotation the sector angle covers.',
+    ex:'A 90&deg; sector covers <span class="frac"><span class="num">90</span><span class="den">360</span></span> = <span class="frac"><span class="num">1</span><span class="den">4</span></span> of the full circle.',
+    nonex:'Using &theta; alone without dividing by 360 doesn&#8217;t tell you what fraction of the circle is covered.',
+    svg:'<svg viewBox="0 0 100 100" width="60" height="60"><circle cx="50" cy="50" r="35" fill="none" stroke="var(--dark-fallback)" stroke-width="2"/><text x="50" y="58" font-size="16" text-anchor="middle" fill="var(--forest)" font-weight="700"><span class="frac"><span class="num">&theta;</span><span class="den">360</span></span></text></svg>'
+  }
+];
+
+function buildFrayerCards(){
+  const grid = document.getElementById('frayerGrid');
+  let html = '';
+  frayerTerms.forEach((t, i)=>{
+    html += '<div class="frayer-card" id="frayer-'+i+'" onclick="flipFrayer('+i+')" role="button" tabindex="0" aria-label="Flip card for '+t.term+'">'
+      + '<div class="frayer-inner">'
+      + '<div class="frayer-face frayer-front">'+t.term+'</div>'
+      + '<div class="frayer-face frayer-back">'
+      + '<div class="fb-block"><span class="fb-label">Definition</span>'+t.def+'</div>'
+      + '<div class="fb-block fb-shape"><span class="fb-label">Shape</span>'+t.svg+'</div>'
+      + '<div class="fb-block"><span class="fb-label">Example</span>'+t.ex+'</div>'
+      + '<div class="fb-block"><span class="fb-label">Non-example</span>'+t.nonex+'</div>'
+      + '</div></div>'
+      + '<div class="frayer-hint">Tap to flip</div>'
+      + '</div>';
+  });
+  grid.innerHTML = html;
+}
+function flipFrayer(i){
+  document.getElementById('frayer-'+i).classList.toggle('flipped');
+}
+
+/* ---------- Init ---------- */
+loadFontPref();
+loadJournal();
+buildFrayerCards();
+</script>
+
+</body>
+</html>
