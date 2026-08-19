@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 11&ndash;12 &mdash; Sleep &amp; the Forever Loop &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #EA7317;
+      --accent-dim:     #B85B12;
+      --accent-bright:  #FF9145;
+      --accent-surface: rgba(234, 115, 23, 0.10);
+      --accent-border:  rgba(234, 115, 23, 0.28);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    .mkcd-block {
+      display: block;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 3px;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+    .mkcd-block--nested { margin-left: 18px; background: var(--accent-dim); }
+    .mkcd-block--event   { background: #1d4ed8; }
+    .mkcd-block--logic   { background: #b45309; }
+
+    .walkthrough-step__blocks { padding: var(--space-4) var(--space-5); background: var(--color-surface); }
+
+    .blocks-bridge { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin: var(--space-4) 0; }
+    @media (max-width: 680px) { .blocks-bridge { grid-template-columns: 1fr; } }
+    .blocks-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+    .blocks-bridge-label {
+      display: block; padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs); font-weight: 800;
+      letter-spacing: var(--letter-spacing-label); text-transform: uppercase;
+    }
+    .blocks-bridge-label--pseudo { background: rgba(201,167,0,0.10); color: #c9a700; border: 1px solid rgba(201,167,0,0.30); border-bottom: none; }
+    .blocks-bridge-label--mkcd   { background: var(--accent-surface); color: var(--accent); border: 1px solid var(--accent-border); border-bottom: none; }
+    .blocks-bridge-block {
+      background: var(--color-surface-3); border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: var(--text-sm);
+      line-height: 1.85; color: var(--color-text-primary); margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md); overflow-x: auto;
+    }
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 1 &mdash; Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 11&ndash;12</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 11&ndash;12 &mdash; Sleep &amp; the Forever Loop</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sleep">Building the Sleep Action</a>
+          <a href="#test-sleep">Testing the Sleep Action</a>
+          <a href="#forever">Building the Forever Loop</a>
+          <a href="#test-forever">Testing the Full Loop</a>
+          <a href="#recap">Why the Loop Runs Separately</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Finish your third event-driven action, then build the forever loop that ties every stat together &mdash; the piece of code that makes your pet need you even when you're not pressing anything.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 1 &nbsp;&middot;&nbsp; Level 1-6</span>
+        <div class="page-eyebrow">Year 7 &middot; Stage 4 &middot; Lessons 11&ndash;12 &middot; Build</div>
+        <h1>Sleep &amp; the Forever Loop</h1>
+        <p class="page-intro">Lesson 11 finishes your set of three event-driven actions with Sleep. Lesson 12 is the most important build in this World: the forever loop that makes hunger, energy and happiness drift on their own, and checks your lose condition continuously in the background. Once this loop is running, your pet needs you even when you're doing nothing &mdash; which is the whole point of a virtual pet.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "The forever loop is the one piece of code every other part of your pet depends on. Build it carefully, test it patiently &mdash; five seconds feels slow when you're waiting to see a number change, but rushing this block is the single most common cause of a broken pitch."
+        </div>
+
+        <p>Reminder from Lesson 7&ndash;8: <code>hunger</code> represents how <em>fed</em> your pet is. Feed raises it, the forever loop lowers it over time, and it hitting 0 means your pet has gone unfed for too long &mdash; that's the direction every block below follows.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. BUILDING THE SLEEP ACTION
+      ══════════════════════════════════════ -->
+      <section id="sleep" class="content-section" aria-labelledby="sleep-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sleep-heading">Building the Sleep Action</h2>
+        <p>Buttons A and B are already taken by Feed and Play, so Sleep binds to a directional button instead &mdash; <code>on button up pressed</code>. Sleep is also your first action with a genuine cost even though it's mostly a benefit: it restores energy, but costs a small amount of hunger, since resting doesn't feed your pet.</p>
+
+        <div class="blocks-bridge">
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--pseudo">Your Notebook Pseudocode</span>
+            <pre class="blocks-bridge-block"><span class="pseudo-kw">WHEN</span> Sleep button pressed
+  SET energy TO energy + 30
+  IF energy &gt; 100 THEN
+    SET energy TO 100
+  <span class="pseudo-kw">END IF</span>
+  SET hunger TO hunger &minus; 5
+  IF hunger &lt; 0 THEN
+    SET hunger TO 0
+  <span class="pseudo-kw">END IF</span></pre>
+          </div>
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--mkcd">Sleep Action Blocks</span>
+            <div class="blocks-bridge-block" style="font-family:var(--font-body);">
+              <span class="mkcd-block mkcd-block--event">on button up pressed</span>
+              <span class="mkcd-block mkcd-block--nested">change energy by 30</span>
+              <span class="mkcd-block mkcd-block--nested">set energy to Math.min(100, energy)</span>
+              <span class="mkcd-block mkcd-block--nested">change hunger by &minus;5</span>
+              <span class="mkcd-block mkcd-block--nested">set hunger to Math.max(0, hunger)</span>
+              <span class="mkcd-block mkcd-block--nested">mySprite.say(energy, 1)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>Build the Sleep action using the pattern above. Notice it follows exactly the same shape as Play &mdash; two changes, two clamps &mdash; just with different numbers and a different button. If your brief gave Sleep different values, use those instead of 30 and 5.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. TESTING THE SLEEP ACTION
+      ══════════════════════════════════════ -->
+      <section id="test-sleep" class="content-section" aria-labelledby="test-sleep-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="test-sleep-heading">Testing the Sleep Action</h2>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Test It Now</p>
+          <p>Press Play. Press the up button once &mdash; energy should rise from 50 to 80, and hunger should quietly drop from 50 to 45 (watch the hunger variable in the debugger panel, since the speech bubble is only showing energy). Press up repeatedly until energy hits 100 and confirm it doesn't go higher.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. BUILDING THE FOREVER LOOP
+      ══════════════════════════════════════ -->
+      <section id="forever" class="content-section" aria-labelledby="forever-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="forever-heading">Building the Forever Loop</h2>
+        <p>This is the block your entire pet has been designed around since Lesson 1&ndash;2. It runs continuously, lowers all three core stats a little every five seconds, and checks your lose condition &mdash; all in one place.</p>
+
+        <div class="blocks-bridge">
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--pseudo">Your Notebook Pseudocode</span>
+            <pre class="blocks-bridge-block"><span class="pseudo-kw">REPEAT FOREVER</span>
+  WAIT 5 seconds
+  SET hunger TO hunger &minus; 1
+  IF hunger &lt; 0 THEN
+    SET hunger TO 0
+  <span class="pseudo-kw">END IF</span>
+  SET energy TO energy &minus; 1
+  IF energy &lt; 0 THEN
+    SET energy TO 0
+  <span class="pseudo-kw">END IF</span>
+  SET happiness TO happiness &minus; 1
+  IF happiness &lt; 0 THEN
+    SET happiness TO 0
+  <span class="pseudo-kw">END IF</span>
+  IF hunger &le; 0 THEN
+    SET gameState TO "gameOver"
+  <span class="pseudo-kw">END IF</span>
+<span class="pseudo-kw">END REPEAT</span></pre>
+          </div>
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--mkcd">Forever Loop Blocks</span>
+            <div class="blocks-bridge-block" style="font-family:var(--font-body);">
+              <span class="mkcd-block mkcd-block--event">forever</span>
+              <span class="mkcd-block mkcd-block--nested">pause 5000 ms</span>
+              <span class="mkcd-block mkcd-block--nested">change hunger by &minus;1</span>
+              <span class="mkcd-block mkcd-block--nested">set hunger to Math.max(0, hunger)</span>
+              <span class="mkcd-block mkcd-block--nested">change energy by &minus;1</span>
+              <span class="mkcd-block mkcd-block--nested">set energy to Math.max(0, energy)</span>
+              <span class="mkcd-block mkcd-block--nested">change happiness by &minus;1</span>
+              <span class="mkcd-block mkcd-block--nested">set happiness to Math.max(0, happiness)</span>
+              <span class="mkcd-block mkcd-block--logic">if hunger &le; 0 then</span>
+              <span class="mkcd-block mkcd-block--nested">set gameState to "gameOver"</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">STEP 1</span>
+              <span class="step-label">Add the forever block</span>
+            </div>
+            <div class="step-explain">From the <strong>Loops</strong> category, drag a fresh <code>forever</code> block onto an empty part of the canvas &mdash; a separate block from <code>on start</code>, <code>on button A pressed</code> and the others. Inside it, add <code>pause (ms) 5000</code> from <strong>Loops</strong> as the very first block.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">STEP 2</span>
+              <span class="step-label">Drift the three core stats</span>
+            </div>
+            <div class="step-explain">Underneath <code>pause</code>, add three <code>change [stat] by &minus;1</code> blocks, one for hunger, one for energy, one for happiness &mdash; each immediately followed by its own <code>set [stat] to Math.max(0, [stat])</code> clamp. Six blocks in total, in three matching pairs.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header">
+              <span class="step-number">STEP 3</span>
+              <span class="step-label">Add the lose-condition check</span>
+            </div>
+            <div class="step-explain">From <strong>Logic</strong>, add an <code>if hunger &le; 0 then</code> block as the last thing inside <code>forever</code>. Inside it, add <code>set gameState to "gameOver"</code> from <strong>Variables</strong>. This doesn't end the game yet &mdash; that's Lesson 17&ndash;18 &mdash; it just raises the flag the moment it becomes true.</div>
+          </div>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>If you chose a standalone custom stat (Cleanliness, Social or Curiosity), add its own drift pair here, following the same change-then-clamp pattern. If you chose Health, its logic is different &mdash; a reaction to hunger and energy, not a direct drift &mdash; so build it from your Lesson 5&ndash;6 Health pseudocode instead of copying this pattern directly.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. TESTING THE FULL LOOP
+      ══════════════════════════════════════ -->
+      <section id="test-forever" class="content-section" aria-labelledby="test-forever-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="test-forever-heading">Testing the Full Loop</h2>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Test It Now &mdash; Two Checks</p>
+          <p><strong>Check 1, the drift:</strong> press Play and don't touch any button. Watch hunger in the debugger panel &mdash; it should drop by 1 roughly every 5 seconds. If it's not moving at all, your <code>forever</code> block probably isn't connected to the <code>pause</code> block correctly.</p>
+          <p><strong>Check 2, the lose condition:</strong> this one takes patience &mdash; at 1 per 5 seconds, hunger takes over four minutes to fall from 50 to 0. Rather than waiting, temporarily change your <code>on start</code> block so hunger starts at 3 instead of 50, run the game, and confirm <code>gameState</code> switches to <code>"gameOver"</code> within about 15 seconds. Change the starting value back to 50 once you've confirmed it works.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. WHY THE LOOP RUNS SEPARATELY
+      ══════════════════════════════════════ -->
+      <section id="recap" class="content-section" aria-labelledby="recap-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="recap-heading">Why the Loop Runs Separately</h2>
+        <p>You now have four separate top-level blocks on your canvas: <code>on start</code>, <code>on button A pressed</code>, <code>on button B pressed</code>, <code>on button up pressed</code>, and <code>forever</code>. None of them are nested inside each other &mdash; they all run independently, and MakeCode Arcade manages when each one fires. This is the event-driven-plus-continuous split from Lesson 5&ndash;6, now fully real: your actions wait for the player, and the loop never waits for anyone.</p>
+
+        <div class="example-box">
+          <strong>Why this matters for testing</strong>
+          Because these blocks are independent, a bug in Play can't break Feed, and a bug in the forever loop can't break either action &mdash; but it also means each one needs testing on its own, exactly like you did with Feed and Play in Lesson 9&ndash;10. You'll get a dedicated pass at testing everything together in Lessons 15&ndash;18.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Directional Button</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One of the four D-pad inputs (up, down, left, right) in MakeCode Arcade, available for events beyond the main A and B buttons.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Drift Rate</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How much a stat changes per cycle of the forever loop &mdash; here, &minus;1 every 5 seconds for each core stat.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Passive Decay</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A stat falling on its own over time without any player action &mdash; the effect the forever loop produces for every core stat.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Game State Check</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An IF block that tests whether a lose (or win) condition has been met, and updates gameState if it has &mdash; placed where it can run continuously.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Top-Level Block</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An event block sitting directly on the canvas, not nested inside another block &mdash; on start, each button event, and forever are all top-level.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. Stage 4 work (Years 7&ndash;8) is pitched toward these same descriptors, adjusted for your year level. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 11&ndash;12 complete your core algorithm evidence &mdash; three tested actions plus a working continuous loop with a functioning lose-condition check is a genuinely complete small system. This is strong Grade C/B evidence for the algorithm bullet, and the independent-blocks structure is solid systems-thinking evidence too.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="Testing in isolation matters for every action, not just Sleep, and isn't the reason a directional button was chosen specifically here."
+             data-feedback-b="Correct. Buttons A and B are already bound to Feed and Play, so Sleep needs a different, unused input to avoid two actions firing off the same button."
+             data-feedback-c="MakeCode Arcade doesn't restrict directional buttons to special uses — they're ordinary event triggers, just like A and B."
+             data-feedback-d="Directional button events still need an on [button] pressed block, exactly like A and B — they don't run continuously on their own.">
+          <div class="mcq-question">1. Why does Sleep bind to a directional button instead of A or B?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It makes the action easier to test on its own</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Buttons A and B are already bound to Feed and Play</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> MakeCode Arcade reserves directional buttons for special actions</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Directional buttons run continuously without needing an event block</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="This describes on start, not the forever loop — forever is specifically the block that keeps running for the whole game, not just once at launch."
+             data-feedback-b="IF blocks can appear inside any event block, not just forever — this isn't a MakeCode Arcade restriction."
+             data-feedback-c="Correct. Hunger can reach 0 purely from drift, with no player action involved at all — so the check has to sit somewhere that runs continuously, which only the forever loop does."
+             data-feedback-d="gameState can be changed from inside any block, including button events — nothing restricts it to loops specifically.">
+          <div class="mcq-question">2. Why does the lose-condition check sit inside the forever loop rather than inside a single action?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Because it only needs to check once, right when the game starts</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Because only a forever loop is technically allowed to contain an IF block</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Hunger can reach 0 purely from drift, without any action</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Because gameState can only ever be changed inside a loop</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="It isn't a bug — a small, deliberate cost on an otherwise beneficial action is a valid design choice, matching the trade-off idea introduced with Play in Lesson 9–10."
+             data-feedback-b="Sleep's hunger cost isn't conditional on whether the player fed the pet earlier — it happens every time Sleep runs, regardless."
+             data-feedback-c="MakeCode Arcade has no rule requiring an action to change more than one variable to compile correctly."
+             data-feedback-d="Correct. Low hunger is still bad in the corrected model, so resting causing a small hunger cost is a genuine, deliberate trade-off — not a leftover from the old, backwards version.">
+          <div class="mcq-question">3. Sleep raises energy but still lowers hunger a little. Is that a leftover bug from the old backwards hunger direction?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Yes — an action that helps should never cost anything at all</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It only happens when the player forgot to feed the pet earlier on</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It's required so that MakeCode Arcade allows the action to compile</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> No — it's a deliberate trade-off, same idea as Play</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 1 &middot; Level 1-6 Clear!</strong>
+            <p>All questions answered. Make sure Sleep and the forever loop are both tested and screenshotted in your notebook before Lesson 13.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           10. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 11&ndash;12 &mdash; Build Evidence</h2>
+        <p>By the end of this entry, every core mechanic in your brief should be built and tested &mdash; only the visual stat display (Lesson 13) and your final sprite polish remain before testing begins in earnest.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Two annotated screenshots</strong> &mdash; your Sleep action and your full forever loop &mdash; with each clamp and the lose-condition check labelled.</li>
+            <li><strong>Drift test result:</strong> how long did you actually observe hunger falling by 1, and did it match the 5-second rate?</li>
+            <li><strong>Lose-condition test result:</strong> confirm gameState correctly switched to "gameOver" during your temporary low-starting-value test, and that you changed the value back afterward.</li>
+            <li><strong>Custom stat status:</strong> is your custom stat's drift or interaction logic built yet? If not, note it as an open item for Lesson 13&ndash;14.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="9"
+                  placeholder="Write your Lessons 11–12 notebook entry here — screenshots, drift test result, lose-condition test result, and custom stat status. Saves automatically."
+                  aria-label="Lessons 11–12 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Save your project &mdash; Lesson 13&ndash;14 builds the real stat display and finishes your custom stat on top of everything you have now.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson09.html">
+          <span class="lesson-nav__dir">&larr; Back to</span>
+          <span class="lesson-nav__title">Lessons 9&ndash;10 &mdash; Feed &amp; Play Actions</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson13.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 13&ndash;14 &mdash; Status Display &amp; Your Custom Stat</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y7',
+        lessonId:       'lesson11',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

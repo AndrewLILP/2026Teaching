@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 1&ndash;2 &mdash; Meet the Virtual Pet &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #EA7317;
+      --accent-dim:     #B85B12;
+      --accent-bright:  #FF9145;
+      --accent-surface: rgba(234, 115, 23, 0.10);
+      --accent-border:  rgba(234, 115, 23, 0.28);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── Blocks vs pseudocode bridge (mirrors code-bridge pattern) ── */
+    .blocks-bridge {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin: var(--space-4) 0;
+    }
+    @media (max-width: 680px) { .blocks-bridge { grid-template-columns: 1fr; } }
+
+    .blocks-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+
+    .blocks-bridge-label {
+      display: block;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 800;
+      letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase;
+    }
+
+    .blocks-bridge-label--pseudo {
+      background: rgba(201, 167, 0, 0.10);
+      color: #c9a700;
+      border: 1px solid rgba(201, 167, 0, 0.30);
+      border-bottom: none;
+    }
+
+    .blocks-bridge-label--mkcd {
+      background: var(--accent-surface);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-bottom: none;
+    }
+
+    .blocks-bridge-block {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.85;
+      color: var(--color-text-primary);
+      margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      overflow-x: auto;
+    }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+
+    /* Simple stacked-block mock for the MakeCode side — not real drag blocks,
+       just enough visual shape to read as "blocks" rather than a code file */
+    .mkcd-block {
+      display: block;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 10px;
+      margin-bottom: 3px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+    .mkcd-block--nested { margin-left: 18px; background: var(--accent-dim); }
+    .mkcd-block--event   { background: #1d4ed8; }
+
+    /* ── Download box (mirrors Y9 pattern) ── */
+    .download-box {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      background: rgba(201, 167, 0, 0.10);
+      border: 2px dashed rgba(201, 167, 0, 0.30);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin: var(--space-5) 0;
+    }
+    .download-box__icon { font-size: 2rem; flex-shrink: 0; }
+    .download-box__body p { font-size: var(--text-sm); margin-bottom: var(--space-2); max-width: none; }
+    .download-box__body p:last-child { margin-bottom: 0; }
+    .download-box__link { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 700; font-size: var(--text-sm); }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 1 &mdash; Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 1&ndash;2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 1&ndash;2 &mdash; Meet the Virtual Pet</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#anatomy">Anatomy of a Pet System</a>
+          <a href="#blocks">Blocks at a Glance</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Iterative design &amp; project management">CT5-DPM-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Read a working virtual pet system before designing your own. Every question you answer becomes evidence in your notebook.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 1 &nbsp;&middot;&nbsp; Level 1-1</span>
+        <div class="page-eyebrow">Year 7 &middot; Stage 4 &middot; Lessons 1&ndash;2 &middot; Analyse</div>
+        <h1>Meet the Virtual Pet</h1>
+        <p class="page-intro">PixelPals is scouting original virtual-companion concepts from student developers &mdash; and every strong pitch starts the same way: understanding how an existing pet system actually works before you build your own. Over these two lessons you won't place a single block yet. You'll read someone else's design, trace how it behaves, and record what you find. Lesson 3 is where your own pet brief begins.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Before PixelPals takes any pitch seriously, we want proof your team understands what makes a digital companion feel alive &mdash; not just that you can draw a sprite. Play the demo pet below. Question every decision the designer made. Your own Pet Brief in Lesson 3 needs to be built on evidence, not guesswork."
+        </div>
+
+        <p>Over this term you'll design and build your own virtual pet in <strong>MakeCode Arcade</strong> &mdash; a block-based game engine you may already have used. A virtual pet is a small system: a sprite that represents a living thing, a handful of <strong>attributes</strong> that change over time, and a set of actions the player can take to keep those attributes healthy. Simple rules, but they only feel alive when the numbers underneath are designed carefully.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="analyse-heading">Analyse First &mdash; Play Before You Build</h2>
+        <p>Open the demo pet project below in MakeCode Arcade. It's a small but complete pet &mdash; three attributes, three actions, and a sprite that reacts when something goes wrong. Don't edit anything yet. Your job is to understand it.</p>
+
+        <div class="download-box">
+          <span class="download-box__icon" aria-hidden="true">&#128230;</span>
+          <div class="download-box__body">
+            <p><strong>Demo project:</strong> <code>petlab-y7-demo</code> (MakeCode Arcade share link)</p>
+            <p class="download-box__link"><a href="#">&#11015; Open the demo pet project</a></p>
+            <p>Ask your teacher if this link isn't live yet &mdash; the project is distributed separately from this page.</p>
+          </div>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Play the Demo Like a Reviewer</h3>
+          <p>Open the demo and play it for at least five minutes. Answer every question below in your project notebook. Use full sentences &mdash; this is your evidence, not a checklist.</p>
+          <ol>
+            <li>What are the pet's <strong>attributes</strong> (the numbers that change over time)? Name all of them.</li>
+            <li>What <strong>actions</strong> can the player take, and which attribute does each one change?</li>
+            <li>Watch one attribute closely. Does it drift on its own over time, or does it only change when the player acts?</li>
+            <li>What happens to the sprite when an attribute gets very low or very high? Describe exactly what you see.</li>
+            <li>Try to break it &mdash; keep pressing one action over and over. Does any number go below 0 or above 100? What happens if it tries to?</li>
+            <li>Look at the variables list in the code editor. How many variables are there, and do their names make sense to someone who didn't build the project?</li>
+            <li>Note one design decision in this pet you disagree with, or would do differently in your own. Explain why.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. ANATOMY OF A PET SYSTEM
+      ══════════════════════════════════════ -->
+      <section id="anatomy" class="content-section" aria-labelledby="anatomy-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="anatomy-heading">Anatomy of a Pet System</h2>
+        <p>Every virtual pet, no matter how simple or complex, is built from the same three ingredients: <strong>variables</strong> that store the pet's current state, <strong>events</strong> that let the player change that state, and a <strong>critical value</strong> &mdash; a threshold the pet reacts to.</p>
+
+        <div class="ipo-flow" role="img" aria-label="Input process output flow for a pet attribute">
+          <div class="ipo-step">
+            <span class="ipo-step__label">Input</span>
+            <p>Player presses the Feed button</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">&rarr;</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Process</span>
+            <p>hunger variable increases, clamped so it never goes above 100</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">&rarr;</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Output</span>
+            <p>Sprite image and stat bar update on screen</p>
+          </div>
+        </div>
+
+        <p>A <strong>variable</strong> stores a number &mdash; hunger, energy, happiness. Every one of these should live somewhere between two limits, usually 0 (a critical need) and 100 (fully satisfied). Without a lower and upper limit a variable can drift into meaningless territory: hunger of &minus;40 or happiness of 900 doesn't mean anything to the player. Keeping a variable inside its limits is called <strong>clamping</strong>, and you'll build it into every action you write.</p>
+
+        <div class="example-box">
+          <strong>Variables as a systems-thinking idea</strong>
+          Three separate variables &mdash; hunger, energy, happiness &mdash; don't act alone. In a well-designed pet, one attribute getting critically low affects another: a starving pet loses energy faster, or a tired pet can't stay happy. Recognising that attributes influence each other, not just the player, is a systems-thinking skill you'll build on through every World of this studio.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. BLOCKS AT A GLANCE
+      ══════════════════════════════════════ -->
+      <section id="blocks" class="content-section" aria-labelledby="blocks-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="blocks-heading">Blocks at a Glance</h2>
+        <p>You won't place blocks until Lesson 7 &mdash; but reading structured English side by side with what the MakeCode blocks will look like now will make the demo project's logic make sense.</p>
+
+        <h3>Reading a feed action</h3>
+        <div class="blocks-bridge">
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--pseudo">Structured English</span>
+            <pre class="blocks-bridge-block"><span class="pseudo-kw">WHEN</span> Feed button pressed
+  SET hunger TO hunger + 20
+  IF hunger &gt; 100 THEN
+    SET hunger TO 100
+  <span class="pseudo-kw">END IF</span>
+  UPDATE stat display</pre>
+          </div>
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--mkcd">MakeCode Blocks</span>
+            <div class="blocks-bridge-block" style="font-family:var(--font-body);">
+              <span class="mkcd-block mkcd-block--event">on button A pressed</span>
+              <span class="mkcd-block mkcd-block--nested">change hunger by 20</span>
+              <span class="mkcd-block mkcd-block--nested">set hunger to Math.min(100, hunger)</span>
+              <span class="mkcd-block mkcd-block--nested">call updateStatDisplay()</span>
+            </div>
+          </div>
+        </div>
+
+        <p>The <code>Math.min(100, hunger)</code> block is doing the clamping you read about above &mdash; it compares two numbers and keeps the smaller one, which stops hunger ever going above 100. Find this exact pattern in the demo project's Feed script now &mdash; you already noticed what happens at the limit in Question 5.</p>
+
+        <h3>Reading the drift-over-time loop</h3>
+        <div class="blocks-bridge">
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--pseudo">Structured English</span>
+            <pre class="blocks-bridge-block"><span class="pseudo-kw">REPEAT FOREVER</span>
+  WAIT 5 seconds
+  SET hunger TO hunger &minus; 1
+  IF hunger &lt; 0 THEN
+    SET hunger TO 0
+  <span class="pseudo-kw">END IF</span>
+<span class="pseudo-kw">END REPEAT</span></pre>
+          </div>
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--mkcd">MakeCode Blocks</span>
+            <div class="blocks-bridge-block" style="font-family:var(--font-body);">
+              <span class="mkcd-block mkcd-block--event">forever</span>
+              <span class="mkcd-block mkcd-block--nested">pause 5000 ms</span>
+              <span class="mkcd-block mkcd-block--nested">change hunger by &minus;1</span>
+              <span class="mkcd-block mkcd-block--nested">set hunger to Math.max(0, hunger)</span>
+            </div>
+          </div>
+        </div>
+
+        <p>This is why hunger falls on its own even if the player does nothing &mdash; the <code>forever</code> block runs continuously in the background, exactly like the answer you gave in Question 3.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Attribute</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A property of the pet that changes over time and is stored as a number, such as hunger, energy or happiness.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Variable</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named container in code that stores a value which can change while the program runs &mdash; each attribute is stored in one.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Critical Value</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A threshold (often 0 or 100) that triggers a special reaction when an attribute reaches it, such as the pet becoming sick or the game ending.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Clamp</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Forcing a variable to stay within a minimum and maximum limit, usually with Math.min and Math.max blocks.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Event Block</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A block like "on button A pressed" that runs its contents automatically when something specific happens, without you calling it yourself.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Forever Loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A block that repeats its contents continuously for as long as the game runs &mdash; used here to make attributes drift automatically over time.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Sprite</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The image on screen that represents the pet &mdash; its appearance can change to reflect the pet's current attribute values.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">State</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The combined current values of every attribute at one moment &mdash; the pet's overall condition right now.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. Stage 4 work (Years 7&ndash;8) is pitched toward these same descriptors, adjusted for your year level. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 1&ndash;2 build the <em>understanding</em> and <em>thinking</em> bullets &mdash; you're not producing an algorithm or interface yet. The evidence for those two bullets is your seven answered analysis questions. Lessons 7&ndash;14 are where the algorithm and interface bullets come into play.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="C"
+             data-feedback-a="A sprite is the pet's on-screen image, not the number that changes over time — that's an attribute. The two work together but they aren't the same thing."
+             data-feedback-b="An event block is what lets the player change an attribute, but it isn't the attribute itself — it's the trigger, not the value."
+             data-feedback-c="Correct. An attribute is a property of the pet — like hunger or happiness — stored as a number that changes over time in response to events and the passage of time."
+             data-feedback-d="A critical value is a threshold an attribute reacts to, not the attribute itself. Hunger reaching 0 is a critical value; hunger itself is the attribute.">
+          <div class="mcq-question">1. What is an "attribute" in a virtual pet system?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The image on screen that represents the pet</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The block that runs when the player presses a button</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A property of the pet, stored as a number, that changes over time</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A threshold that triggers a reaction, such as 0 or 100</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="B"
+             data-feedback-a="Clamping doesn't slow the drift down — hunger would still rise or fall at the same rate. It stops the value crossing its limits, not the speed it changes at."
+             data-feedback-b="Correct. Clamping with Math.min and Math.max keeps a variable inside its intended range — usually 0 to 100 — so it can never fall below or rise above a meaningful limit."
+             data-feedback-c="Clamping isn't about the sprite image — that's a separate step (updating the stat display), triggered after the variable is changed and clamped."
+             data-feedback-d="This isn't about save data — clamping happens every time an attribute changes during play, not just when the game is saved or loaded.">
+          <div class="mcq-question">2. Why does the demo project clamp the hunger variable with Math.min and Math.max?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> To slow down how fast hunger drifts over time</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> To keep hunger inside a meaningful range, usually 0 to 100</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> To change which sprite image is shown</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> To save the pet's data when the game closes</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="A forever block doesn't require button presses — the whole point is that it runs continuously in the background without the player doing anything."
+             data-feedback-b="Nothing about a forever block limits it to running only once — it's the opposite of a one-off action."
+             data-feedback-c="A forever block isn't triggered by another event — it starts running as soon as the game starts and never stops on its own."
+             data-feedback-d="Correct. A forever block repeats its contents continuously for as long as the game runs — it's how an attribute like hunger can drift on its own even if the player never presses anything.">
+          <div class="mcq-question">3. What does a "forever" block let a MakeCode Arcade pet project do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Run its contents only when a button is pressed</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Run its contents exactly once, when the game starts</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Run its contents only when triggered by another event block</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Run its contents continuously in the background for as long as the game runs</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 1 &middot; Level 1-1 Clear!</strong>
+            <p>All questions answered. Make sure all seven analysis questions are recorded in your notebook before Lesson 3.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 1&ndash;2 &mdash; Notebook Entry</h2>
+        <p>There's no code to write yet, so this entry is entirely analysis evidence. It's what you'll refer back to when you start your Pet Brief in Lesson 3.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>All seven analysis answers</strong> from the Analyse First task, in full sentences.</li>
+            <li><strong>One annotated screenshot</strong> of the demo project's variables list, with two or three variables labelled in your own words.</li>
+            <li><strong>Design decisions summary:</strong> list three specific choices the original designer made that you'll deliberately reuse or adapt in your own pet.</li>
+            <li><strong>One change:</strong> the design decision you'd do differently, and a one-sentence reason why.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Lessons 1–2 notebook entry here — analysis answers, variable notes, design decisions summary. Saves automatically."
+                  aria-label="Lessons 1–2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring your printed or digital variables-list screenshot to Lesson 3 &mdash; you'll reference it directly while writing your Pet Brief.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="index.html">
+          <span class="lesson-nav__dir">&larr; Studio Hub</span>
+          <span class="lesson-nav__title">World 1 &mdash; Pet Lab</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson03.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 3&ndash;4 &mdash; Define Your Pet Brief</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y7',
+        lessonId:       'lesson01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

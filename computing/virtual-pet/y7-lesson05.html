@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 5&ndash;6 &mdash; Planning the Action Loop &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #EA7317;
+      --accent-dim:     #B85B12;
+      --accent-bright:  #FF9145;
+      --accent-surface: rgba(234, 115, 23, 0.10);
+      --accent-border:  rgba(234, 115, 23, 0.28);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    /* ── CPD section ── */
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    /* ── Level clear ── */
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    /* ── Reflection ── */
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    /* ── Custom stat choice grid ── */
+    .stat-choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin: var(--space-5) 0;
+    }
+    @media (max-width: 700px) { .stat-choice-grid { grid-template-columns: 1fr; } }
+
+    .stat-choice-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .stat-choice-card.is-recommended { border-color: var(--accent-border); background: color-mix(in srgb, var(--accent) 6%, var(--color-surface-2)); }
+
+    .stat-choice-card__name {
+      font-size: var(--text-base);
+      font-weight: 800;
+      color: var(--color-text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .stat-choice-card__badge {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-label);
+      color: var(--accent-bright);
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-full);
+      padding: 1px var(--space-2);
+    }
+    .stat-choice-card p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; max-width: none; line-height: 1.6; }
+    .stat-choice-card__interaction { font-size: var(--text-xs); color: var(--color-text-muted); font-style: italic; margin-top: var(--space-1); }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 1 &mdash; Year 7</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 5&ndash;6</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 5&ndash;6 &mdash; Planning the Action Loop</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#action-loop">Event-Driven vs Continuous</a>
+          <a href="#loop-pseudocode">Pseudocode for the Full Loop</a>
+          <a href="#custom-stat">Choose Your Custom Stat</a>
+          <a href="#custom-interaction">Planning Its Interaction</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Investigating, defining and planning">CT5-DPM-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Plan every moving part of your pet's action loop in pseudocode, then choose the one custom stat that makes your pet different from everyone else's.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 1 &nbsp;&middot;&nbsp; Level 1-3</span>
+        <div class="page-eyebrow">Year 7 &middot; Stage 4 &middot; Lessons 5&ndash;6 &middot; Plan</div>
+        <h1>Planning the Action Loop</h1>
+        <p class="page-intro">Your brief defines what your pet needs. This page plans exactly how it gets there. Lesson 5 turns Feed, Play and Sleep &mdash; plus the passive drift you met in Lesson 1&ndash;2 &mdash; into one complete pseudocode plan. Lesson 6 is where your pet stops looking like everyone else's: you'll choose one custom stat from a curated list and plan how it connects to your three core stats, before a single block gets placed in Lesson 7.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "A brief with a win condition and a lose condition isn't a full plan &mdash; it's missing everything that happens in between. Before Lesson 7, PixelPals needs to see every action your player can take, written out in full, plus the one thing that makes your pet worth pitching over anyone else's."
+        </div>
+
+        <p>So far your pseudocode has covered single threshold reactions in isolation. A real pet system runs several things <em>at the same time</em>: the player can act whenever they choose, while the game itself keeps ticking along in the background. Planning both together, and getting the order right, is what today is about.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. EVENT-DRIVEN VS CONTINUOUS
+      ══════════════════════════════════════ -->
+      <section id="action-loop" class="content-section" aria-labelledby="action-loop-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="action-loop-heading">Event-Driven vs Continuous</h2>
+        <p>Your pet's logic runs in two different rhythms at once. <strong>Event-driven</strong> logic only runs when something specific happens &mdash; the player pressing Feed, Play or Sleep. <strong>Continuous</strong> logic runs constantly in the background, with or without the player doing anything &mdash; the drift loop that slowly lowers hunger and energy over time.</p>
+
+        <div class="ipo-flow" role="img" aria-label="Two parallel rhythms in a pet system">
+          <div class="ipo-step">
+            <span class="ipo-step__label">Event-Driven</span>
+            <p>Runs only when the player presses a button &mdash; Feed, Play, Sleep</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">+</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Continuous</span>
+            <p>Runs constantly in the background &mdash; the forever drift loop</p>
+          </div>
+          <span class="ipo-arrow" aria-hidden="true">&rarr;</span>
+          <div class="ipo-step">
+            <span class="ipo-step__label">Combined State</span>
+            <p>The pet's attributes at any moment reflect both at once</p>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <strong>Why this matters for planning</strong>
+          If you only plan the event-driven actions, your pet will feel static &mdash; nothing changes unless the player acts. If you only plan the continuous drift, the player has no way to help their pet. Every attribute in your brief needs at least one event-driven action <em>and</em> the continuous drift working against each other &mdash; that tension is what makes the game worth playing.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. PSEUDOCODE FOR THE FULL LOOP
+      ══════════════════════════════════════ -->
+      <section id="loop-pseudocode" class="content-section" aria-labelledby="loop-pseudocode-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="loop-pseudocode-heading">Pseudocode for the Full Loop</h2>
+        <p>Here's a complete plan for one attribute, hunger, showing both rhythms together. Notice the two sections are written separately &mdash; they don't run inside each other, they run alongside each other.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">Worked Example &mdash; Hunger, Fully Planned</p>
+          <pre>BEGIN
+
+  // Event-driven: runs only when the player presses Feed
+  WHEN Feed button pressed
+    SET hunger TO hunger + 20
+    IF hunger &gt; 100 THEN
+      SET hunger TO 100
+    ENDIF
+    UPDATE stat display
+
+  // Continuous: runs constantly, regardless of player input
+  REPEAT FOREVER
+    WAIT 5 seconds
+    SET hunger TO hunger &minus; 1
+    IF hunger &lt; 0 THEN
+      SET hunger TO 0
+    ENDIF
+    IF hunger &le; 0 THEN
+      SET gameState TO "gameOver"
+    ENDIF
+  ENDREPEAT
+
+END</pre>
+        </div>
+
+        <p>Two things to notice: the <code>IF hunger &le; 0</code> lose-condition check lives <em>inside</em> the continuous loop, not the event-driven action &mdash; because hunger can reach 0 either from drifting down over time or from the player simply not feeding the pet often enough, and the game needs to catch both. Comments (the lines starting with <code>//</code>) aren't executed &mdash; they're notes for your future self, explaining <em>why</em> a section exists.</p>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>Using this worked example as your model, write the same two-part pseudocode (event-driven action + continuous drift) for your other two core stats &mdash; energy and happiness, or whatever you named them in your brief. Reuse the exact structure; only the numbers, variable names and action names should change.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. CHOOSE YOUR CUSTOM STAT
+      ══════════════════════════════════════ -->
+      <section id="custom-stat" class="content-section" aria-labelledby="custom-stat-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="custom-stat-heading">Choose Your Custom Stat</h2>
+        <p>Every pet in this studio shares the same three core stats &mdash; your custom stat is what makes yours yours. Pick <strong>one</strong> from the four options below.</p>
+
+        <div class="stat-choice-grid">
+          <div class="stat-choice-card">
+            <div class="stat-choice-card__name">Cleanliness <span class="stat-choice-card__badge">Standalone</span></div>
+            <p>Drops slowly over time. A Wash action restores it. When it's very low, the sprite looks visibly grubby and happiness drifts down faster.</p>
+            <p class="stat-choice-card__interaction">Interaction: mild &mdash; affects happiness's drift rate only.</p>
+          </div>
+
+          <div class="stat-choice-card">
+            <div class="stat-choice-card__name">Social <span class="stat-choice-card__badge">Standalone</span></div>
+            <p>Drops when the pet is left alone for a while. A Visit Friend action restores it, on a short cooldown timer so it can't be spammed.</p>
+            <p class="stat-choice-card__interaction">Interaction: mild &mdash; introduces a cooldown, a new pattern you haven't used yet.</p>
+          </div>
+
+          <div class="stat-choice-card">
+            <div class="stat-choice-card__name">Curiosity <span class="stat-choice-card__badge">Standalone</span></div>
+            <p>Rises with a new Explore action rather than falling over time. High curiosity unlocks a bonus animation or sprite variant.</p>
+            <p class="stat-choice-card__interaction">Interaction: mild &mdash; the only stat in this list that rises by default instead of falling.</p>
+          </div>
+
+          <div class="stat-choice-card is-recommended">
+            <div class="stat-choice-card__name">Health <span class="stat-choice-card__badge">Systems Thinking</span></div>
+            <p>Doesn't have its own player action. Instead it falls automatically whenever hunger or energy stay critically low for too long, and is restored by a Vet action.</p>
+            <p class="stat-choice-card__interaction">Interaction: strong &mdash; the only option that reacts to your other stats rather than standing alone. Best choice if you want to demonstrate systems thinking clearly.</p>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <strong>Why Health is flagged, not required</strong>
+          Cleanliness, Social and Curiosity are each self-contained &mdash; good, testable choices that add variety without much extra complexity. Health is different: it only exists <em>because</em> your other stats exist, which is exactly the systems-thinking idea from Lesson 1&ndash;2 (attributes influencing each other, not just the player). Choose it if you're ready for a slightly harder plan; choose any of the other three if you'd rather keep this World's build simpler.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. PLANNING ITS INTERACTION
+      ══════════════════════════════════════ -->
+      <section id="custom-interaction" class="content-section" aria-labelledby="custom-interaction-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="custom-interaction-heading">Planning Its Interaction</h2>
+        <p>Whichever stat you chose, it needs the same two-part treatment as your core three: an event-driven action, and a continuous rule. If you chose Health, the "event" is different &mdash; it's triggered by another stat's threshold, not a button press.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">Worked Example &mdash; Health (if you chose the systems-thinking option)</p>
+          <pre>BEGIN
+
+  // Event-driven: runs only when the player presses Vet
+  WHEN Vet button pressed
+    SET health TO health + 30
+    IF health &gt; 100 THEN
+      SET health TO 100
+    ENDIF
+
+  // Continuous: reacts to OTHER stats, not player input directly
+  REPEAT FOREVER
+    WAIT 5 seconds
+    IF hunger &le; 10 OR energy &le; 10 THEN
+      SET health TO health &minus; 5
+      IF health &lt; 0 THEN
+        SET health TO 0
+      ENDIF
+    ENDIF
+  ENDREPEAT
+
+END</pre>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>Write the two-part pseudocode for your chosen custom stat. If you chose Cleanliness, Social or Curiosity, follow the Lesson 5 hunger example instead of the Health example above &mdash; those three behave like a fourth core stat, not like Health's dependent relationship.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Event-Driven</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Logic that runs only when a specific trigger happens, such as a button press &mdash; it stays inactive the rest of the time.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Continuous</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Logic that runs constantly in the background for as long as the game is active, regardless of player input.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Action Loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The combined set of event-driven actions and continuous drift that together define how a pet's state changes over time.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Custom Stat</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A fourth attribute, chosen by the student, added on top of the shared core three to make each pet in the studio distinct.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Comment</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A note in code or pseudocode, marked with // in this studio, that explains the code but is never executed by the program.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Dependent Attribute</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An attribute, like Health, whose value changes in reaction to a different attribute rather than from its own direct player action.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. Stage 4 work (Years 7&ndash;8) is pitched toward these same descriptors, adjusted for your year level. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 5&ndash;6 push hardest on the <em>iterative process</em> and <em>systems thinking</em> bullets &mdash; planning all four attributes together, with a dependent stat if you chose Health, is exactly the kind of interacting-parts thinking Grade A/B descriptors are looking for. It's still planning evidence, not working blocks &mdash; that starts Lesson 7.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="A"
+             data-feedback-a="Correct. Event-driven logic only runs when its specific trigger happens — like a button press — and stays inactive the rest of the time. The continuous forever loop runs regardless of player input."
+             data-feedback-b="This is backwards — a forever loop is the continuous logic, running constantly. A button-press action is the event-driven side, only running when triggered."
+             data-feedback-c="Both kinds of logic can change the same variable — hunger is changed by both the Feed action and the drift loop in the worked example. The difference is what triggers each one, not which variables they touch."
+             data-feedback-d="Clamping with Math.min/Math.max can appear in either kind of logic — it's not what separates event-driven from continuous.">
+          <div class="mcq-question">1. What's the key difference between an event-driven action and the continuous drift loop?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Event-driven only runs when triggered by something specific, like a button press; continuous runs constantly regardless of input</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Event-driven runs constantly; continuous only runs on a button press</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Event-driven changes different variables than continuous logic ever can</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Only continuous logic can use clamping with Math.min and Math.max</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="MakeCode Arcade doesn't require every stat to depend on another one — this is a design choice, not a technical requirement."
+             data-feedback-b="This isn't primarily about the CPD strip — planning interactions first is a general design discipline that applies whether or not you're tracking descriptors."
+             data-feedback-c="Correct. Planning the interaction first tells you exactly which variables need to read or change each other, and in what order — avoiding a custom stat that's bolted on without a real connection to the rest of the system."
+             data-feedback-d="Nothing about saving a MakeCode Arcade project requires every custom stat to be planned as dependent on another stat first.">
+          <div class="mcq-question">2. Why plan your custom stat's interaction with the core three before building it?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> MakeCode Arcade requires every custom stat to depend on another stat</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It's required to appear on the CPD grade strip</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It defines exactly which variables need to read or change each other, and in what order</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Projects can't be saved unless every stat is dependent on another</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Cleanliness is a self-contained stat with its own Wash action — it doesn't react to the other stats, so it doesn't demonstrate this particular idea as clearly."
+             data-feedback-b="Social is also self-contained, changed by its own Visit Friend action — a good stat, but not one that reacts to the other three."
+             data-feedback-c="Curiosity rises through its own Explore action and doesn't depend on hunger, energy or happiness — it's standalone, like Cleanliness and Social."
+             data-feedback-d="Correct. Health is the only curated option that changes in reaction to the other stats — falling when hunger or energy stay critically low — which is exactly the systems-thinking idea of attributes influencing each other.">
+          <div class="mcq-question">3. Which curated custom stat best demonstrates systems thinking, because it reacts to the other stats rather than standing alone?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Cleanliness</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Social</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Curiosity</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Health</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 1 &middot; Level 1-3 Clear!</strong>
+            <p>All questions answered. Make sure all four attributes' pseudocode (three core plus your custom stat) is complete in your notebook before Lesson 7.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 5&ndash;6 &mdash; Full Loop Pseudocode</h2>
+        <p>This is your last planning entry before you start placing blocks in Lesson 7 &mdash; make it complete. You should be able to read straight from this entry while building, without having to redesign anything on the fly.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Full two-part pseudocode</strong> (event-driven action + continuous drift) for all <strong>three core stats</strong>, following the hunger worked example.</li>
+            <li><strong>Which custom stat</strong> you chose, and one sentence on why.</li>
+            <li><strong>Full two-part pseudocode</strong> for your custom stat's interaction, following the correct worked example for your choice.</li>
+            <li><strong>One risk:</strong> which part of this plan are you least sure will work once it's real blocks? Name it now so you can test it deliberately in Lessons 15&ndash;18.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="14"
+                  placeholder="Write your full action-loop pseudocode here — all three core stats, your custom stat choice and its interaction pseudocode, and your one flagged risk. Saves automatically."
+                  aria-label="Lessons 5–6 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring this notebook entry (printed or on a second device) to Lesson 7 &mdash; you'll be translating it into MakeCode blocks line by line.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y7-lesson03.html">
+          <span class="lesson-nav__dir">&larr; Back to</span>
+          <span class="lesson-nav__title">Lessons 3&ndash;4 &mdash; Define Your Pet Brief</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y7-lesson07.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 7&ndash;8 &mdash; Build the Sprite &amp; Variables</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y7',
+        lessonId:       'lesson05',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

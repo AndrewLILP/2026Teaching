@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pet Lab — Computing Technology</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+
+  <style>
+    /* ── Pet Lab accent override (five canonical tokens) — World 1 default ── */
+    :root {
+      --accent:         #EA7317;
+      --accent-dim:     #B85B12;
+      --accent-bright:  #FF9145;
+      --accent-surface: rgba(234, 115, 23, 0.10);
+      --accent-border:  rgba(234, 115, 23, 0.28);
+
+      /* Extended Pet Lab palette — one accent per World, local to this hub only */
+      --w2-green:         #16A34A;
+      --w2-green-dim:     #15803D;
+      --w2-green-surface: rgba(22, 163, 74, 0.10);
+      --w2-green-border:  rgba(22, 163, 74, 0.28);
+      --w3-indigo:         #4F46E5;
+      --w3-indigo-dim:     #4338CA;
+      --w3-indigo-surface: rgba(79, 70, 229, 0.10);
+      --w3-indigo-border:  rgba(79, 70, 229, 0.28);
+      --w4-fuchsia:         #C026D3;
+      --w4-fuchsia-dim:     #A21CAF;
+      --w4-fuchsia-surface: rgba(192, 38, 211, 0.10);
+      --w4-fuchsia-border:  rgba(192, 38, 211, 0.28);
+    }
+
+    /* ── Full-width hub layout (no page-wrap / no sidebar) ── */
+    .hub-wrap {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* ── Hero ── */
+    .petlab-hero {
+      padding: 3.5rem 2rem 3rem;
+      text-align: center;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .studio-eyebrow {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.9rem;
+    }
+
+    .petlab-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 900;
+      color: var(--color-text-primary);
+      margin: 0 0 0.85rem;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+    }
+
+    .petlab-hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .petlab-hero p {
+      max-width: 620px;
+      margin: 0 auto;
+      color: var(--color-text-secondary);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    /* CPD reference pills */
+    .cpd-ref-strip {
+      display: flex;
+      justify-content: center;
+      gap: 0.35rem;
+      margin-top: 1.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .cpd-ref-label {
+      font-size: 0.65rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      margin-right: 0.25rem;
+    }
+
+    .cpd-ref-pill {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      padding: 0.3em 0.7em;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .cpd-ref-pill--e { background: rgba(156,163,175,0.15); color: #9ca3af; }
+    .cpd-ref-pill--d { background: rgba(234,115,23,0.12);  color: var(--accent-dim); }
+    .cpd-ref-pill--c { background: rgba(79,70,229,0.12);   color: var(--w3-indigo); }
+    .cpd-ref-pill--b { background: rgba(22,163,74,0.14);   color: var(--w2-green-dim); }
+    .cpd-ref-pill--a { background: rgba(192,38,211,0.16);  color: var(--w4-fuchsia); border: 1px solid var(--w4-fuchsia); }
+
+    /* ── Dashed path connector ── */
+    .world-connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0.25rem 0;
+    }
+
+    .world-connector-line {
+      width: 2px;
+      height: 2.5rem;
+      background: repeating-linear-gradient(
+        to bottom,
+        var(--accent-dim)  0, var(--accent-dim)  5px,
+        transparent    5px, transparent   11px
+      );
+    }
+
+    .world-connector-star {
+      font-size: 1rem;
+      color: var(--accent-dim);
+      line-height: 1;
+    }
+
+    /* ── World section card ── */
+    .world-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .world-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1.25rem;
+      padding: 1.5rem 1.5rem 1.25rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    /* World badge node */
+    .world-node {
+      flex-shrink: 0;
+      width: 3.75rem;
+      height: 3.75rem;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .world-node-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .world-node-number {
+      font-size: 1.5rem;
+      line-height: 1.1;
+    }
+
+    .world-node--1 { background: var(--accent-surface);       border: 2px solid var(--accent);      color: var(--accent); }
+    .world-node--2 { background: var(--w2-green-surface);     border: 2px solid var(--w2-green);    color: var(--w2-green-dim); }
+    .world-node--3 { background: var(--w3-indigo-surface);    border: 2px solid var(--w3-indigo);   color: var(--w3-indigo); }
+    .world-node--4 { background: var(--w4-fuchsia-surface);   border: 2px solid var(--w4-fuchsia);  color: var(--w4-fuchsia); }
+
+    .world-meta { flex: 1; min-width: 0; }
+
+    .world-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.2em 0.6em;
+      border-radius: 3px;
+      margin-bottom: 0.45rem;
+    }
+
+    .world-tag--1 { background: var(--accent-surface);      color: var(--accent); }
+    .world-tag--2 { background: var(--w2-green-surface);    color: var(--w2-green-dim); }
+    .world-tag--3 { background: var(--w3-indigo-surface);   color: var(--w3-indigo); }
+    .world-tag--4 { background: var(--w4-fuchsia-surface);  color: var(--w4-fuchsia); }
+
+    .world-meta h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--color-text-primary);
+      margin: 0 0 0.35rem;
+      line-height: 1.2;
+    }
+
+    .world-meta p {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+      margin: 0 0 0.65rem;
+    }
+
+    .tool-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+    .tool-chip {
+      font-size: 0.65rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 0.2em 0.5em;
+      border-radius: 3px;
+      background: var(--color-surface-3);
+      color: var(--color-text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Topic card grid ── */
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 1px;
+      background: var(--color-border);
+    }
+
+    .topic-card {
+      display: block;
+      text-decoration: none;
+      padding: 1.1rem 1.25rem 1.15rem;
+      background: var(--color-surface);
+      transition: background 0.15s;
+      position: relative;
+    }
+
+    .topic-card:hover { background: var(--color-surface-2); text-decoration: none; }
+
+    /* Accent top-bar on hover — colour per world */
+    .topic-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .topic-card:hover::before  { opacity: 1; }
+    .world-section--1 .topic-card::before { background: var(--accent); }
+    .world-section--2 .topic-card::before { background: var(--w2-green); }
+    .world-section--3 .topic-card::before { background: var(--w3-indigo); }
+    .world-section--4 .topic-card::before { background: var(--w4-fuchsia); }
+
+    .topic-icon {
+      font-size: 1.4rem;
+      display: block;
+      margin-bottom: 0.5rem;
+      line-height: 1;
+    }
+
+    .topic-eyebrow {
+      font-size: 0.63rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 0.3rem;
+      display: block;
+    }
+
+    .topic-card h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 0.3rem;
+      line-height: 1.3;
+    }
+
+    .topic-card p {
+      font-size: 0.78rem;
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.6;
+      max-width: none;
+    }
+
+    /* ── Design continuity aside ── */
+    .continuity-note {
+      max-width: 720px;
+      margin: 2.5rem auto 3.5rem;
+      padding: 1rem 1.25rem;
+      border-left: 3px solid var(--accent);
+      background: var(--accent-surface);
+      border-radius: 0 6px 6px 0;
+      font-size: 0.83rem;
+      color: var(--color-text-secondary);
+      line-height: 1.7;
+    }
+
+    .continuity-note strong {
+      color: var(--color-text-primary);
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .world-header      { flex-direction: column; gap: 0.85rem; }
+      .world-node        { width: 3rem; height: 3rem; }
+      .world-node-number { font-size: 1.2rem; }
+      .topic-grid        { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 420px) { .topic-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Navigation -->
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Virtual Pet Studio</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="teachers.html" class="ct-nav-btn">For Teachers &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li aria-current="page">Pet Lab</li>
+    </ol>
+  </nav>
+
+  <!-- Hero -->
+  <header class="petlab-hero">
+    <p class="studio-eyebrow">&#9733; Computing Technology 7&ndash;10 &nbsp;&middot;&nbsp; Stage 4 &amp; Stage 5 &#9733;</p>
+    <h1>Pet <em>Lab</em></h1>
+    <p>You build a virtual companion every year from Year 7 to Year 10 &mdash; a fresh project each time, on a new platform, with the same three core stats holding it all together. Four worlds. One idea, growing harder every year.</p>
+
+    <div class="cpd-ref-strip" aria-label="Stage 5 CPD grade reference">
+      <span class="cpd-ref-label">Stage 5 CPD</span>
+      <span class="cpd-ref-pill cpd-ref-pill--e">E &mdash; Identifies</span>
+      <span class="cpd-ref-pill cpd-ref-pill--d">D &mdash; Basic</span>
+      <span class="cpd-ref-pill cpd-ref-pill--c">C &mdash; Sound</span>
+      <span class="cpd-ref-pill cpd-ref-pill--b">B &mdash; Thorough</span>
+      <span class="cpd-ref-pill cpd-ref-pill--a">A &mdash; Extensive</span>
+    </div>
+  </header>
+
+  <!-- World map -->
+  <main class="hub-wrap" id="main-content">
+
+    <!-- ══ WORLD 1 — Year 7 ══ -->
+    <section class="world-section world-section--1" aria-labelledby="world1-heading">
+      <div class="world-header">
+        <div class="world-node world-node--1" aria-hidden="true">
+          <span class="world-node-label">World</span>
+          <span class="world-node-number">1</span>
+        </div>
+        <div class="world-meta">
+          <span class="world-tag world-tag--1">Year 7 &middot; Stage 4 &middot; CT5 Outcomes (Adjusted) &middot; 1 Term</span>
+          <h2 id="world1-heading">MakeCode Arcade &mdash; Blocks &amp; Beginnings</h2>
+          <p>Design and build a complete virtual pet in MakeCode Arcade &mdash; variables, event-driven actions, a continuous drift loop, and a real status display, all built from your own written brief and NSW pseudocode.</p>
+          <div class="tool-chips">
+            <span class="tool-chip">MakeCode Arcade</span>
+            <span class="tool-chip">Blocks</span>
+            <span class="tool-chip">NSW Pseudocode</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-grid" role="list">
+        <a href="y7-lesson01.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128054;</span>
+          <span class="topic-eyebrow">Lessons 1&ndash;2 &middot; Analyse</span>
+          <h3>Meet the Virtual Pet</h3>
+          <p>Play and analyse an existing pet system before designing your own. Attributes, variables, clamping and critical values.</p>
+        </a>
+        <a href="y7-lesson03.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128221;</span>
+          <span class="topic-eyebrow">Lessons 3&ndash;4 &middot; Design</span>
+          <h3>Define Your Pet Brief</h3>
+          <p>Write your own concept, three core stats, win and lose conditions &mdash; then turn your lose condition into NSW pseudocode.</p>
+        </a>
+        <a href="y7-lesson05.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128260;</span>
+          <span class="topic-eyebrow">Lessons 5&ndash;6 &middot; Plan</span>
+          <h3>Planning the Action Loop</h3>
+          <p>Event-driven actions versus continuous drift, planned together in full pseudocode &mdash; plus choosing your custom stat.</p>
+        </a>
+        <a href="y7-lesson07.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127959;&#65039;</span>
+          <span class="topic-eyebrow">Lessons 7&ndash;8 &middot; Build</span>
+          <h3>Build the Sprite &amp; Variables</h3>
+          <p>Your first real blocks &mdash; sprite setup, every variable declared, and the on start script that sets initial values.</p>
+        </a>
+        <a href="y7-lesson09.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127869;&#65039;</span>
+          <span class="topic-eyebrow">Lessons 9&ndash;10 &middot; Build</span>
+          <h3>Feed &amp; Play Actions</h3>
+          <p>Two event-driven actions, tested in isolation &mdash; and a deliberate trade-off that gives the player a real decision.</p>
+        </a>
+        <a href="y7-lesson11.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128564;</span>
+          <span class="topic-eyebrow">Lessons 11&ndash;12 &middot; Build</span>
+          <h3>Sleep &amp; the Forever Loop</h3>
+          <p>Your third action, plus the loop that makes every stat drift on its own and checks your lose condition continuously.</p>
+        </a>
+        <a href="y7-lesson13.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128202;</span>
+          <span class="topic-eyebrow">Lessons 13&ndash;14 &middot; Build</span>
+          <h3>Status Display &amp; Your Custom Stat</h3>
+          <p>Replace every debug block with a permanent on-screen readout, a reactive sprite costume, and your finished custom stat.</p>
+        </a>
+        <a href="y7-lesson15.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#129514;</span>
+          <span class="topic-eyebrow">Lessons 15&ndash;16 &middot; Test</span>
+          <h3>Boundary &amp; Peer Testing</h3>
+          <p>Push every clamp to its limit, then swap projects with a partner and run a structured test pass on their pet.</p>
+        </a>
+        <a href="y7-lesson17.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128295;</span>
+          <span class="topic-eyebrow">Lessons 17&ndash;18 &middot; Test</span>
+          <h3>Debug, Refine &amp; End Condition</h3>
+          <p>Fix what testing found, then build the real game-over screen and evaluate your finished pet against your Lesson 3&ndash;4 brief.</p>
+        </a>
+        <a href="y7-lesson19.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127942;</span>
+          <span class="topic-eyebrow">Lessons 19&ndash;20 &middot; Showcase</span>
+          <h3>Showcase &amp; Reflect</h3>
+          <p>Present your pet to the studio, then reflect on your build against every CPD grade descriptor for your portfolio.</p>
+        </a>
+      </div>
+    </section>
+
+    <div class="world-connector" aria-hidden="true">
+      <div class="world-connector-line"></div>
+      <span class="world-connector-star">&#9733;</span>
+      <div class="world-connector-line"></div>
+    </div>
+
+    <!-- ══ WORLD 2 — Year 8 ══ -->
+    <section class="world-section world-section--2" aria-labelledby="world2-heading">
+      <div class="world-header">
+        <div class="world-node world-node--2" aria-hidden="true">
+          <span class="world-node-label">World</span>
+          <span class="world-node-number">2</span>
+        </div>
+        <div class="world-meta">
+          <span class="world-tag world-tag--2">Year 8 &middot; Stage 4 &middot; CT5 Outcomes (Adjusted) &middot; 1 Term</span>
+          <h2 id="world2-heading">Python &mdash; From Blocks to Text</h2>
+          <p>Rebuild your pet from scratch as a text-based Python program &mdash; functions, boolean logic, and file save/load so your pet's state survives being closed and reopened.</p>
+          <div class="tool-chips">
+            <span class="tool-chip">Python</span>
+            <span class="tool-chip">Functions</span>
+            <span class="tool-chip">File I/O</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-grid" role="list">
+        <a href="y8-lesson01.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128269;</span>
+          <span class="topic-eyebrow">Lessons 1&ndash;4 &middot; Analyse &amp; Design</span>
+          <h3>From Blocks to Text</h3>
+          <p>Read a working Python pet program line by line, then write your own updated brief for a text-based build.</p>
+        </a>
+        <a href="y8-lesson05.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#9881;&#65039;</span>
+          <span class="topic-eyebrow">Lessons 5&ndash;10 &middot; Build</span>
+          <h3>Functions &amp; the Game Loop</h3>
+          <p>Every action becomes a function. Boolean logic replaces click-together blocks. The same forever loop, now real Python.</p>
+        </a>
+        <a href="y8-lesson11.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128190;</span>
+          <span class="topic-eyebrow">Lessons 11&ndash;14 &middot; Build</span>
+          <h3>Save &amp; Load</h3>
+          <p>Write your pet's state to a file and read it back &mdash; your pet survives being closed, for the first time in this studio.</p>
+        </a>
+        <a href="y8-lesson15.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127942;</span>
+          <span class="topic-eyebrow">Lessons 15&ndash;20 &middot; Test &amp; Showcase</span>
+          <h3>Test, Debug &amp; Present</h3>
+          <p>Boundary-test your save file, fix what breaks, and present a pet that now genuinely remembers.</p>
+        </a>
+      </div>
+    </section>
+
+    <div class="world-connector" aria-hidden="true">
+      <div class="world-connector-line"></div>
+      <span class="world-connector-star">&#9733;</span>
+      <div class="world-connector-line"></div>
+    </div>
+
+    <!-- ══ WORLD 3 — Year 9 ══ -->
+    <section class="world-section world-section--3" aria-labelledby="world3-heading">
+      <div class="world-header">
+        <div class="world-node world-node--3" aria-hidden="true">
+          <span class="world-node-label">World</span>
+          <span class="world-node-number">3</span>
+        </div>
+        <div class="world-meta">
+          <span class="world-tag world-tag--3">Year 9 &middot; Stage 5 &middot; CT5 Outcomes &middot; 1 Term</span>
+          <h2 id="world3-heading">Python OOP &mdash; The Pet Class</h2>
+          <p>Formalise everything you know about pets into a real Pet class &mdash; attributes, methods, encapsulation, random events, and multiple pets built from the same blueprint.</p>
+          <div class="tool-chips">
+            <span class="tool-chip">Python</span>
+            <span class="tool-chip">OOP</span>
+            <span class="tool-chip">Classes</span>
+            <span class="tool-chip">random</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-grid" role="list">
+        <a href="y9-lesson01.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128203;</span>
+          <span class="topic-eyebrow">Lessons 1&ndash;4 &middot; Analyse &amp; Design</span>
+          <h3>Objects, Attributes &amp; Methods</h3>
+          <p>Read a Pet class built by someone else, then design your own &mdash; attributes as data, methods as behaviour.</p>
+        </a>
+        <a href="y9-lesson05.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#128378;</span>
+          <span class="topic-eyebrow">Lessons 5&ndash;10 &middot; Build</span>
+          <h3>Build the Pet Class</h3>
+          <p>__init__, methods for every action, desk-checked and tested &mdash; the same logic as World 1, now properly encapsulated.</p>
+        </a>
+        <a href="y9-lesson11.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127866;</span>
+          <span class="topic-eyebrow">Lessons 11&ndash;14 &middot; Build</span>
+          <h3>Random Events &amp; Multiple Pets</h3>
+          <p>Random illness and gifts using the random module, plus instancing several pets from one class definition.</p>
+        </a>
+        <a href="y9-lesson15.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127942;</span>
+          <span class="topic-eyebrow">Lessons 15&ndash;20 &middot; Test &amp; Showcase</span>
+          <h3>Desk-Check, Test &amp; Present</h3>
+          <p>Trace tables for every method, boundary testing across multiple pet instances, and a studio showcase.</p>
+        </a>
+      </div>
+    </section>
+
+    <div class="world-connector" aria-hidden="true">
+      <div class="world-connector-line"></div>
+      <span class="world-connector-star">&#9733;</span>
+      <div class="world-connector-line"></div>
+    </div>
+
+    <!-- ══ WORLD 4 — Year 10 ══ -->
+    <section class="world-section world-section--4" aria-labelledby="world4-heading">
+      <div class="world-header">
+        <div class="world-node world-node--4" aria-hidden="true">
+          <span class="world-node-label">World</span>
+          <span class="world-node-number">4</span>
+        </div>
+        <div class="world-meta">
+          <span class="world-tag world-tag--4">Year 10 &middot; Stage 5 &middot; CT5 Outcomes &middot; 1 Term</span>
+          <h2 id="world4-heading">Unity &mdash; A Pet With a Face</h2>
+          <p>Your pet gets a real GUI in Unity 6 &mdash; animated sprites, UI panels, stat bars the player can actually see, and a full playable build ready to pitch.</p>
+          <div class="tool-chips">
+            <span class="tool-chip">Unity 6</span>
+            <span class="tool-chip">C#</span>
+            <span class="tool-chip">UI Toolkit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-grid" role="list">
+        <a href="y10-lesson01.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127917;</span>
+          <span class="topic-eyebrow">Lessons 1&ndash;4 &middot; Analyse &amp; Design</span>
+          <h3>Deconstruct a Unity Pet Prototype</h3>
+          <p>Trace an existing Unity pet's UI hierarchy and C# scripts, then design your own screen layout and interactions.</p>
+        </a>
+        <a href="y10-lesson05.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127912;</span>
+          <span class="topic-eyebrow">Lessons 5&ndash;10 &middot; Build</span>
+          <h3>UI Panels &amp; Stat Bars</h3>
+          <p>Real progress bars, buttons, and animated sprite states &mdash; C# scripts wired to UI Toolkit elements the player can see and click.</p>
+        </a>
+        <a href="y10-lesson11.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#9889;</span>
+          <span class="topic-eyebrow">Lessons 11&ndash;14 &middot; Build</span>
+          <h3>Events, Polish &amp; Class Inheritance</h3>
+          <p>Event-driven UI updates, animation polish, and an inheritance-based approach to multiple pet species.</p>
+        </a>
+        <a href="y10-lesson15.html" class="topic-card" role="listitem">
+          <span class="topic-icon">&#127942;</span>
+          <span class="topic-eyebrow">Lessons 15&ndash;20 &middot; Test &amp; Showcase</span>
+          <h3>Playtesting, Polish &amp; Pitch</h3>
+          <p>Usability testing with real players, final polish, and a pitch presentation across four years of design decisions.</p>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Design continuity note -->
+  <aside class="continuity-note" role="note" aria-label="Design continuity note">
+    <strong>Design Continuity Across All Four Worlds</strong>
+    Every World is a fresh, independent build &mdash; no pet or save file carries over &mdash; but the same three core stats (hunger, energy, happiness) and the same event-driven-plus-continuous-loop pattern appear every year. What changes is the platform and the technical depth: blocks become Python, Python becomes a class, and a class gets a real GUI. Students should notice the pattern repeating, not just the tools changing.
+  </aside>
+
+  <script src="../assets/js/ct-core.js"></script>
+</body>
+</html>
