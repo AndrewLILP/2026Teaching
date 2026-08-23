@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 11&ndash;12 &mdash; Sleep &amp; the Main Loop &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #16A34A;
+      --accent-dim:     #15803D;
+      --accent-bright:  #22C55E;
+      --accent-surface: rgba(22, 163, 74, 0.10);
+      --accent-border:  rgba(22, 163, 74, 0.28);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .py-kw   { color: #4338ca; font-weight: 700; }
+    .py-fn   { color: #15803d; }
+    .py-str  { color: #b45309; }
+    .py-num  { color: #be185d; }
+    .py-cmt  { color: var(--color-text-muted); font-style: italic; }
+    .py-strike { text-decoration: line-through; opacity: 0.5; }
+
+    .console-preview {
+      background: #0b0d12;
+      border: 3px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #d1fae5;
+      line-height: 1.7;
+      margin: var(--space-4) 0;
+    }
+    .console-preview .prompt { color: #6ee7b7; }
+    .console-preview .typed  { color: #fef08a; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 2 &mdash; Year 8</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 11&ndash;12</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 11&ndash;12 &mdash; Sleep &amp; the Main Loop</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sleep">Building sleep()</a>
+          <a href="#assemble">Assembling the Main Loop</a>
+          <a href="#cleanup">Removing the Test Calls</a>
+          <a href="#test">Testing the Full Loop</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Build your third action, then assemble every function from this term into one real, playable command loop.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 2 &nbsp;&middot;&nbsp; Level 2-6</span>
+        <div class="page-eyebrow">Year 8 &middot; Stage 4 &middot; Lessons 11&ndash;12 &middot; Build</div>
+        <h1>Sleep &amp; the Main Loop</h1>
+        <p class="page-intro">Lesson 11 finishes your set of three actions with sleep(), following the exact guard clause pattern from Lesson 9&ndash;10. Lesson 12 is the payoff for everything built so far: the real command loop, using the True/False return values from every action to give the player actual feedback &mdash; not just silence. Every temporary test call since Lesson 7&ndash;8 gets deleted today.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Today your pet becomes genuinely playable for the first time &mdash; typed commands, real feedback, an actual ending. Build sleep() first and test it in isolation exactly like feed() and play(), before touching the loop. A loop built on an untested function just hides the bug somewhere harder to find."
+        </div>
+
+        <p>Reminder: every action function this term returns <code>True</code> or <code>False</code>. Today that finally matters to the player, not just to your own testing.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. BUILDING SLEEP()
+      ══════════════════════════════════════ -->
+      <section id="sleep" class="content-section" aria-labelledby="sleep-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sleep-heading">Building sleep()</h2>
+        <p>sleep()'s guard: if energy is already at 100, there's nothing to gain from resting.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">sleep() — Same Shape as feed() and play()</p>
+          <pre><span class="py-kw">def</span> <span class="py-fn">sleep</span>():
+    <span class="py-kw">global</span> energy, hunger
+
+    <span class="py-kw">if</span> energy &gt;= <span class="py-num">100</span>:
+        <span class="py-kw">return</span> <span class="py-kw">False</span>   <span class="py-cmt"># guard — already fully rested</span>
+
+    energy = <span class="py-fn">change_stat</span>(energy, <span class="py-num">30</span>)
+    hunger = <span class="py-fn">change_stat</span>(hunger, <span class="py-num">-5</span>)
+    <span class="py-kw">return</span> <span class="py-kw">True</span></pre>
+        </div>
+
+        <p>Two things to notice. First, <code>hunger = change_stat(hunger, -5)</code> is a real cost, not a bug &mdash; resting doesn't feed your pet, so a small hunger drop is the same deliberate trade-off Year 7's Sleep action had. Second, <code>change_stat</code>'s default minimum of 0 means hunger can never go negative from this line, even without writing a separate clamp here.</p>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>Add a temporary test call for sleep(), exactly like you did for feed() and play() in Lesson 9&ndash;10. Confirm it returns True and changes both stats correctly, then confirm it returns False when energy starts at 100.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. ASSEMBLING THE MAIN LOOP
+      ══════════════════════════════════════ -->
+      <section id="assemble" class="content-section" aria-labelledby="assemble-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="assemble-heading">Assembling the Main Loop</h2>
+        <p>This is the plan from Lesson 5&ndash;6, finished &mdash; now using every action's return value to choose what to print.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">Full Main Loop</p>
+          <pre><span class="py-kw">while</span> running:
+    command = <span class="py-fn">input</span>(<span class="py-str">"&gt; "</span>)
+
+    <span class="py-kw">if</span> command == <span class="py-str">"feed"</span>:
+        success = <span class="py-fn">feed</span>()
+        <span class="py-kw">if</span> success:
+            <span class="py-fn">print</span>(<span class="py-str">"You fed your pet."</span>)
+        <span class="py-kw">else</span>:
+            <span class="py-fn">print</span>(<span class="py-str">"Your pet is already full."</span>)
+
+    <span class="py-kw">elif</span> command == <span class="py-str">"play"</span>:
+        success = <span class="py-fn">play</span>()
+        <span class="py-kw">if</span> success:
+            <span class="py-fn">print</span>(<span class="py-str">"You played with your pet."</span>)
+        <span class="py-kw">else</span>:
+            <span class="py-fn">print</span>(<span class="py-str">"Your pet is too tired to play."</span>)
+
+    <span class="py-kw">elif</span> command == <span class="py-str">"sleep"</span>:
+        success = <span class="py-fn">sleep</span>()
+        <span class="py-kw">if</span> success:
+            <span class="py-fn">print</span>(<span class="py-str">"Your pet had a nice rest."</span>)
+        <span class="py-kw">else</span>:
+            <span class="py-fn">print</span>(<span class="py-str">"Your pet is already fully rested."</span>)
+
+    <span class="py-kw">elif</span> command == <span class="py-str">"status"</span>:
+        <span class="py-fn">print_status</span>()
+
+    <span class="py-kw">elif</span> command == <span class="py-str">"quit"</span>:
+        running = <span class="py-kw">False</span>
+
+    <span class="py-kw">else</span>:
+        <span class="py-fn">print</span>(<span class="py-str">"I don't understand that command."</span>)
+
+    <span class="py-kw">if</span> hunger &lt;= <span class="py-num">0</span>:
+        <span class="py-fn">print</span>(<span class="py-str">"Your pet is starving. Game over."</span>)
+        running = <span class="py-kw">False</span></pre>
+        </div>
+
+        <p>Every action branch follows the identical shape: call the function, store the result, then print one of two messages depending on whether it's <code>True</code> or <code>False</code>. This is the direct payoff of Lesson 9&ndash;10's work &mdash; without a boolean return value, there'd be no way to tell a wasted command from a successful one.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. REMOVING THE TEMPORARY TEST CALLS
+      ══════════════════════════════════════ -->
+      <section id="cleanup" class="content-section" aria-labelledby="cleanup-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="cleanup-heading">Removing the Temporary Test Calls</h2>
+        <p>Every direct function call you added purely for testing &mdash; back to Lesson 7&ndash;8's <code>print_status()</code> &mdash; is now redundant. The real loop calls every function properly, through typed commands.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">Delete these — replaced by the loop above</p>
+          <pre><span class="py-strike">print_status()</span>
+<span class="py-strike">result = feed()</span>
+<span class="py-strike">print(f"feed() returned {result}")</span>
+<span class="py-strike"># sleep() test call from earlier in this lesson</span></pre>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Your Turn</p>
+          <p>Delete every temporary test call from Lesson 7&ndash;8, Lesson 9&ndash;10, and the sleep() test you just added &mdash; your file's structure should now be exactly variables, then functions, then the <code>while</code> loop, with nothing left over.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. TESTING THE FULL LOOP
+      ══════════════════════════════════════ -->
+      <section id="test" class="content-section" aria-labelledby="test-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="test-heading">Testing the Full Loop</h2>
+        <p>Run your file and type each command at least once, then type something that isn't a command at all.</p>
+
+        <div class="console-preview">
+<span class="prompt">&gt;</span> <span class="typed">feed</span><br>
+You fed your pet.<br>
+<span class="prompt">&gt;</span> <span class="typed">dance</span><br>
+I don't understand that command.<br>
+<span class="prompt">&gt;</span> <span class="typed">quit</span>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Test It Now &mdash; Two Checks</p>
+          <p><strong>Check 1, the feedback:</strong> type <code>feed</code> repeatedly until hunger hits 100, and confirm the message switches from "You fed your pet." to "Your pet is already full." exactly when it should.</p>
+          <p><strong>Check 2, the lose condition:</strong> temporarily change your starting hunger to a low number like <code>3</code>, run the file, and type any command that doesn't raise hunger &mdash; confirm "Your pet is starving. Game over." prints and the loop actually stops. Change the starting value back to your brief's number afterward.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Main Loop</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The single while loop that keeps a program running, reading player input and reacting to it every cycle until a stop condition is met.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Boolean-Driven Feedback</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Choosing which message to display based on a True/False result from a function, rather than always showing the same response.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Dead Code</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Code left in a file that no longer serves a purpose, like a temporary test call made redundant by later, more complete code.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Program Termination</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A program ending deliberately, either because the player quit or because a lose condition set the loop's controlling boolean to False.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. Stage 4 work (Years 7&ndash;8) is pitched toward these same descriptors, adjusted for your year level. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 11&ndash;12 complete your core algorithm evidence for this World &mdash; three tested actions plus a working main loop with a functioning lose-condition check is a genuinely complete small system, matching the equivalent milestone in Year 7. This is strong Grade C/B evidence, and the boolean-driven feedback is a real step toward engaging user experience for Grade B/A.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="Storing feed()'s result has no effect on its guard condition — that's fixed inside feed() itself and doesn't change based on how the loop calls it."
+             data-feedback-b="Correct. Storing the result in success lets the loop decide which of the two print messages to show, based on whether the action actually happened."
+             data-feedback-c="Calling feed() and checking its result doesn't disable any other command — play and sleep work completely independently of this."
+             data-feedback-d="Storing a function's return value in a variable doesn't save anything to a file — that's a separate feature, not related to this pattern."
+             >
+          <div class="mcq-question">1. Why does the loop write "success = feed()" and check the result, instead of just calling feed()?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It changes feed()'s guard condition each time</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It decides which message to print</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It permanently disables the play command</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It saves the pet's current state to a file</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="feed() checks its own guard condition internally — it has no access to what commands the player has typed, and doesn't need to."
+             data-feedback-b="The lose-condition check needs running to already exist as True, so it can't run before the while loop starts — it has to sit inside the loop."
+             data-feedback-c="Correct. Placing the check inside the loop, after the command handling, means it's tested every single cycle — whichever command ran, or even if none matched at all."
+             data-feedback-d="Restricting the check to only the quit command would miss every other way hunger could reach 0, including from repeatedly choosing the wrong command.">
+          <div class="mcq-question">2. Where does the lose-condition check sit in the full loop, and why there specifically?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Only inside the feed() function itself</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Before the while loop starts running at all</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Inside the loop, every cycle</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Only when the player types the word quit</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Leaving it running unchanged would mean the file still has two separate, conflicting ways of showing the pet's status — one temporary, one real."
+             data-feedback-b="A temporary print_status() test call doesn't become sleep() — the two are unrelated pieces of code with completely different purposes."
+             data-feedback-c="Moving a test call inside a guard clause doesn't make sense structurally — guard clauses belong inside the action functions, not around leftover test code."
+             data-feedback-d="Correct. Once the loop exists, typing status calls print_status() properly through the elif chain — the old temporary call is now redundant and should be deleted.">
+          <div class="mcq-question">3. What should happen to the temporary print_status() test call from Lesson 7&ndash;8, now that the full loop exists?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It keeps running exactly as it did before</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It automatically becomes the sleep() function</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It moves inside the guard clause of feed()</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It gets deleted, replaced by status</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 2 &middot; Level 2-6 Clear!</strong>
+            <p>All questions answered. Make sure your full loop, cleaned-up file, and both test checks are recorded in your notebook before Lesson 13.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           9. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 11&ndash;12 &mdash; Build Evidence</h2>
+        <p>By the end of this entry, your pet should be genuinely playable start to finish &mdash; only save/load (Lesson 13&ndash;14) remains before testing begins in earnest.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Two annotated screenshots</strong> &mdash; your sleep() function and your full main loop &mdash; with the guard clause and the lose-condition check labelled.</li>
+            <li><strong>Feedback test result:</strong> confirm the message switched correctly from success to failure for at least one action.</li>
+            <li><strong>Lose-condition test result:</strong> confirm the game correctly stopped during your temporary low-starting-hunger test, and that you changed the value back afterward.</li>
+            <li><strong>Cleanup confirmation:</strong> every temporary test call from Lessons 7&ndash;10 has been deleted.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="9"
+                  placeholder="Write your Lessons 11–12 notebook entry here — screenshots, feedback test result, lose-condition test result, and cleanup confirmation. Saves automatically."
+                  aria-label="Lessons 11–12 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Save your file &mdash; Lesson 13&ndash;14 adds save and load on top of everything you have now, so your pet can survive being closed.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y8-lesson09.html">
+          <span class="lesson-nav__dir">&larr; Back to</span>
+          <span class="lesson-nav__title">Lessons 9&ndash;10 &mdash; Feed &amp; Play Functions</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y8-lesson13.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 13&ndash;14 &mdash; Save &amp; Load</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y8',
+        lessonId:       'lesson11',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

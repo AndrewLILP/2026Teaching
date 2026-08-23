@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 13 &mdash; Design Your Own Pet Type &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #4F46E5;
+      --accent-dim:     #4338CA;
+      --accent-bright:  #6366F1;
+      --accent-surface: rgba(79, 70, 229, 0.10);
+      --accent-border:  rgba(79, 70, 229, 0.28);
+      --pseudo-gold:         #c9a700;
+      --pseudo-gold-surface: rgba(201, 167, 0, 0.10);
+      --pseudo-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--accent-surface); border: 1px solid var(--accent-border);
+      border-radius: 4px; padding: 0.28em 0.8em; font-size: 0.68rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem;
+    }
+
+    /* ── Independent build checklist ── */
+    .sprint-checkpoint { background: var(--pseudo-gold-surface); border: 2px solid var(--pseudo-gold-border); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); margin: var(--space-6) 0; }
+    .sprint-checkpoint__label { font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-caps); text-transform: uppercase; color: var(--pseudo-gold); margin-bottom: var(--space-3); }
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    /* ── Tiered task cards ── */
+    .tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin: var(--space-5) 0; }
+    @media (max-width: 900px) { .tier-grid { grid-template-columns: 1fr; } }
+    .tier-card { background: var(--color-surface-2); border: 1px solid var(--color-border-mid); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+    .tier-card__label {
+      font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase; margin-bottom: var(--space-2); display: block;
+    }
+    .tier-card--foundation { border-color: var(--color-border-mid); }
+    .tier-card--foundation .tier-card__label { color: var(--color-text-muted); }
+    .tier-card--core { border-color: var(--accent-border); }
+    .tier-card--core .tier-card__label { color: var(--accent); }
+    .tier-card--extension { border-color: var(--pseudo-gold-border); }
+    .tier-card--extension .tier-card__label { color: var(--pseudo-gold); }
+    .tier-card h3 { font-size: var(--text-base); margin-bottom: var(--space-2); }
+    .tier-card p { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: var(--space-2); }
+    .tier-card ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin: 0; padding-left: var(--space-5); }
+    .tier-card li { margin-bottom: var(--space-1); }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none; align-items: center; gap: 1rem;
+      background: var(--accent-surface); border: 2px solid var(--accent-border); border-radius: 8px;
+      padding: 1rem 1.25rem; margin-top: var(--space-5); animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong { display: block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.2rem; }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box { background: var(--color-surface-2); border: 1px solid var(--color-border-mid); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-4); }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 3 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lesson 13</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lesson 13 &mdash; Design Your Own Pet Type</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#challenge">The Challenge</a>
+          <a href="#checklist">Independent Build Checklist</a>
+          <a href="#tiers">Choose Your Path</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">A third pet type, designed and built with no new taught content &mdash; proof the pattern from Lessons 5&ndash;10 is genuinely yours now.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 3 &nbsp;&middot;&nbsp; Level 3-7</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lesson 13 &middot; Extension</div>
+        <h1>Design Your Own Pet Type</h1>
+        <p class="page-intro">No new GDScript is taught today. Everything you need &mdash; <code>class_name</code>, <code>extends</code>, guard clauses, overriding with <code>super</code>, wiring signals &mdash; you've already built twice, in Lessons 7&ndash;8 and 9&ndash;10. This lesson asks you to run the whole cycle once more, on your own: identify what this pet type needs, plan it briefly, build it, test it. Your own notebook is the only reference you get.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+          <span class="phase-pill phase-research">Researching &amp; Planning</span>
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "PixelPals wants proof this pattern is actually yours, not just something you followed with a worked example open beside you. Design and build a third pet type. No scaffolded steps this time &mdash; just a checklist of what it needs to do, and three ways to approach it depending on how much of a stretch you're ready for."
+        </div>
+
+        <p>You already have a small pet family: <strong>Pet</strong>, and two subclasses. This lesson adds a third branch to that same tree.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. THE CHALLENGE
+      ══════════════════════════════════════ -->
+      <section id="challenge" class="content-section" aria-labelledby="challenge-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Researching &amp; Planning
+        </div>
+        <h2 id="challenge-heading">The Challenge</h2>
+        <p>Before opening Godot, spend five minutes identifying and planning &mdash; the same two D&amp;P phases you used back in Lessons 3&ndash;4, just condensed:</p>
+        <ul>
+          <li><strong>Identify:</strong> what is this pet type, and what's the one thing about it that's genuinely different from Dog and your second type?</li>
+          <li><strong>Plan:</strong> which inherited method will you override &mdash; pick whichever one Dog and your second pet type <em>haven't</em> already overridden between them, so your pet family covers all three.</li>
+        </ul>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. INDEPENDENT BUILD CHECKLIST
+      ══════════════════════════════════════ -->
+      <section id="checklist" class="content-section" aria-labelledby="checklist-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="checklist-heading">Independent Build Checklist</h2>
+        <p>This is a target, not a set of steps &mdash; you decide the order. Tick each one off in your notebook as you go.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">&#10003; Lesson 13 &mdash; Checklist</div>
+          <h3>Your third pet type must:</h3>
+          <ul>
+            <li>Have its own script declaring <code>class_name ... extends Pet</code>, with its own scene and artwork</li>
+            <li>Have one new unique attribute and one new unique method, guard clause first</li>
+            <li>Override one inherited method &mdash; a different one than Dog and your second pet type each chose</li>
+            <li>Have its new button and bar wired, via an overridden <code>_update_ui()</code></li>
+            <li>Leave Pet and every existing subclass working exactly as they did before</li>
+            <li>Have a test table of your own design, following the same format as Lessons 5&ndash;12</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. CHOOSE YOUR PATH
+      ══════════════════════════════════════ -->
+      <section id="tiers" class="content-section" aria-labelledby="tiers-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="tiers-heading">Choose Your Path</h2>
+        <p>All three paths build the same checklist above &mdash; they differ in how much support you use, and whether you go beyond it.</p>
+
+        <div class="tier-grid">
+          <div class="tier-card tier-card--foundation">
+            <span class="tier-card__label">Foundation</span>
+            <h3>Follow the Pattern</h3>
+            <p>Keep your Lessons 7&ndash;8 notebook entry open the whole time. Build your third pet type by directly matching its shape, line by line, swapping in your own attribute and method names.</p>
+          </div>
+          <div class="tier-card tier-card--core">
+            <span class="tier-card__label">Core</span>
+            <h3>Build Independently</h3>
+            <p>Work from the checklist alone. Only open your notebook from Lessons 7&ndash;10 if you get genuinely stuck on syntax, not to copy the whole shape.</p>
+          </div>
+          <div class="tier-card tier-card--extension">
+            <span class="tier-card__label">Extension</span>
+            <h3>Add Something New</h3>
+            <p>Complete Core, then add one thing not explicitly taught this term. Some starting ideas:</p>
+            <ul>
+              <li>Override a <em>second</em> inherited method on the same pet type</li>
+              <li>A small mood system using <code>match</code> on an enum of states</li>
+              <li>A second <code>Timer</code> driving a different kind of change over time</li>
+              <li>Your own idea &mdash; justify the design decision in your notebook</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lesson 13 is the clearest evidence this term for the top of every strand at once &mdash; a skilfully, independently developed algorithm, without a worked example to lean on, is exactly what separates Grade A from Grade C on paper.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="A"
+             data-feedback-a="Correct. Assuming no subclass has overridden feed(), all three pet types call the exact same inherited method — fix it once in Pet, and the fix applies everywhere automatically."
+             data-feedback-b="This misses the entire point of inheritance — Pet, Dog, and your third pet type all share the same feed() unless one of them specifically overrides it."
+             data-feedback-c="Godot doesn't apply fixes selectively based on which scene you happen to be testing — inheritance works the same regardless of what's currently open."
+             data-feedback-d="Subclasses don't keep separate copies of an inherited method — that's exactly what inheritance avoids, unless a subclass explicitly overrides it.">
+          <div class="mcq-question">1. You fix a bug inside Pet's <code>feed()</code> method. Assuming no subclass overrides <code>feed()</code>, which pet types are affected by the fix?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> All three pet types, since each inherits feed() directly</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Only Pet itself &mdash; each subclass needs its own separate fix</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Only whichever subclass scene happens to be open right now</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> None &mdash; every subclass keeps its own separate copy of feed()</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="Lessons 9–10 didn't cover a different set of topics — extending, adding, overriding and wiring were exactly the same skills as Lessons 7–8."
+             data-feedback-b="The second subclass wasn't treated as less important — it appears throughout the formal test plan and evaluation in Lessons 11–12, same as the first."
+             data-feedback-c="Correct. The five-step pattern — duplicate, extend, add unique, override, wire UI — is identical both times, so once it's genuinely learned, it doesn't need re-teaching in full detail."
+             data-feedback-d="This isn't about time pressure in the lesson plan — the reduced scaffolding is a deliberate teaching choice, not a scheduling one.">
+          <div class="mcq-question">2. Why did Lessons 9&ndash;10 need less step-by-step instruction than Lessons 7&ndash;8, even though both built a subclass?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> They actually covered a completely different set of GDScript topics</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The second subclass mattered less for the final evaluation</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The same underlying pattern only needed teaching once</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> There simply wasn't enough lesson time to repeat every step</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Guard clauses aren't optional at any tier — every method that changes pet state still needs one, regardless of which path you're following today."
+             data-feedback-b="All three paths use the same GDScript inside the same Godot project — the language and engine don't change between tiers."
+             data-feedback-c="Testing is required at every tier, not just Extension — the checklist's test table applies to Foundation and Core builds too."
+             data-feedback-d="Correct. Foundation, Core and Extension all build the exact same checklist using the exact same pattern — what changes is how much support is used, and whether Extension adds something genuinely new on top.">
+          <div class="mcq-question">3. What's the actual difference between building this pet type at Foundation tier versus Extension tier?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Foundation tier is allowed to skip writing any guard clauses</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Extension tier uses a completely different programming language</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Only Extension tier is actually required to test its build</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Support differs; Extension also adds something new</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 3 &middot; Level 3-7 Clear!</strong>
+            <p>All questions answered. World 3 is complete once your third pet type is checked off and your notebook entry is finished.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lesson 13 &mdash; World 3 Wrap-Up</h2>
+        <p>This is your final notebook entry for World 3 &mdash; part build log, part portfolio summary of the whole pet family.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Which path you chose</strong> &mdash; Foundation, Core, or Extension &mdash; and, if Extension, what you added beyond the checklist and why.</li>
+            <li><strong>Completed test table</strong> for your third pet type, in the same format as every previous sprint.</li>
+            <li><strong>Pet family summary:</strong> a short table listing Pet, and all three subclasses, with each one's unique attribute and which method it overrides.</li>
+            <li><strong>Forward-looking reflection:</strong> if you built a fourth pet type next term, what would you do differently in the base <code>Pet</code> class, now that you've seen three subclasses extend it?</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="12"
+                  placeholder="Write your Lesson 13 / World 3 wrap-up entry here — path chosen, test table, pet family summary, forward-looking reflection. Saves automatically."
+                  aria-label="Lesson 13 World 3 wrap-up entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">World 3 is complete. Your pet family &mdash; one base class, three subclasses, all tested and evaluated &mdash; is genuine evidence for CT5-OPL-01 and CT5-THI-01 at whichever grade band your notebook shows.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y9-lesson11.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">Lessons 11&ndash;12 &mdash; Test &amp; Evaluate Your Pet Family</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="index.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Studio Hub &mdash; World 3 Complete</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y9',
+        lessonId:       'lesson13',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

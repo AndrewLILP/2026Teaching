@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 1&ndash;2 &mdash; Meet the Class-Based Pet &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #4F46E5;
+      --accent-dim:     #4338CA;
+      --accent-bright:  #6366F1;
+      --accent-surface: rgba(79, 70, 229, 0.10);
+      --accent-border:  rgba(79, 70, 229, 0.28);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-surface);
+      border: 1px solid var(--accent-border);
+      border-radius: 4px;
+      padding: 0.28em 0.8em;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.85rem;
+    }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      background: var(--accent-surface);
+      border: 2px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: var(--space-5);
+      animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong {
+      display: block; font-size: 0.78rem; font-weight: 800;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 0.2rem;
+    }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    /* ── Y8 (functions) vs Y9 (class) bridge ── */
+    .blocks-bridge { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin: var(--space-4) 0; }
+    @media (max-width: 680px) { .blocks-bridge { grid-template-columns: 1fr; } }
+    .blocks-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+    .blocks-bridge-label {
+      display: block; padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs); font-weight: 800;
+      letter-spacing: var(--letter-spacing-label); text-transform: uppercase;
+    }
+    .blocks-bridge-label--y8 { background: rgba(22,163,74,0.10); color: #16A34A; border: 1px solid rgba(22,163,74,0.28); border-bottom: none; }
+    .blocks-bridge-label--y9 { background: var(--accent-surface); color: var(--accent); border: 1px solid var(--accent-border); border-bottom: none; }
+    .blocks-bridge-block {
+      background: var(--color-surface-3); border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: var(--text-sm);
+      line-height: 1.85; color: var(--color-text-primary); margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md); overflow-x: auto;
+    }
+    .py-kw   { color: #4338ca; font-weight: 700; }
+    .py-fn   { color: #15803d; }
+    .py-str  { color: #b45309; }
+    .py-cmt  { color: var(--color-text-muted); font-style: italic; }
+    .py-self { color: #b91c1c; font-weight: 700; }
+
+    .download-box {
+      display: flex; align-items: center; gap: var(--space-4);
+      background: rgba(201,167,0,0.10); border: 2px dashed rgba(201,167,0,0.30);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin: var(--space-5) 0;
+    }
+    .download-box__icon { font-size: 2rem; flex-shrink: 0; }
+    .download-box__body p { font-size: var(--text-sm); margin-bottom: var(--space-2); max-width: none; }
+    .download-box__body p:last-child { margin-bottom: 0; }
+    .download-box__link { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 700; font-size: var(--text-sm); }
+
+    .full-class-block {
+      background: var(--color-surface-3); border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md); padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono); font-size: var(--text-sm); line-height: 1.85;
+      color: var(--color-text-primary); margin: var(--space-4) 0; overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 3 &mdash; Year 9</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 1&ndash;2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 1&ndash;2 &mdash; Meet the Class-Based Pet</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#bridge">From Functions to Methods</a>
+          <a href="#structure">Reading the Class Structure</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Designing, producing and evaluating algorithms in an OOP language">CT5-OPL-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Studio Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Read a working, class-based Python pet program before writing your own &mdash; and see exactly how your Year 8 functions map onto a Python class.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 3 &nbsp;&middot;&nbsp; Level 3-1</span>
+        <div class="page-eyebrow">Year 9 &middot; Stage 5 &middot; Lessons 1&ndash;2 &middot; Analyse</div>
+        <h1>Meet the Class-Based Pet</h1>
+        <p class="page-intro">Same idea, new structure. In Year 8 you built a pet using stand-alone functions and the <code>global</code> keyword. This term, you'll rebuild that same idea using a <strong>class</strong> &mdash; a blueprint that bundles your pet's data and its actions together in one place. Before you write a single line, you'll read a working, single-class demo and see exactly how your Year 8 functions map onto Python's class syntax.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "PixelPals wants every pet in the studio catalogue to share the same reliable core behaviour, no matter which pet type a player eventually picks. Before your team builds a whole family of pet types next lesson, prove you can read a program built around a single class. Open the attached demo, trace exactly what <code>__init__</code> does, and be ready to explain how it relates to the functions you built last year."
+        </div>
+
+        <p>Nothing about the <em>design</em> changes this term &mdash; you'll still track hunger, cleanliness, social, curiosity and health, and your pet will still respond to typed commands in a console loop. What changes is entirely how the code is organised: the variables you used to write <code>global hunger</code> for now live <em>inside</em> a class, and every action you used to write as a stand-alone function becomes a <strong>method</strong> &mdash; a function that belongs to the class and works on that class's own data.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="analyse-heading">Analyse First &mdash; Read Before You Build</h2>
+        <p>Open the demo program below in a Python editor (Thonny, VS Code, or your class's usual tool) and run it. Type a few commands, watch what happens, then read the source code line by line. Don't change anything yet.</p>
+
+        <div class="download-box">
+          <span class="download-box__icon" aria-hidden="true">&#128230;</span>
+          <div class="download-box__body">
+            <p><strong>Demo program:</strong> <code>petlab_y9_demo.py</code></p>
+            <p class="download-box__link"><a href="#">&#11015; Download the demo program</a></p>
+            <p>Ask your teacher if this link isn't live yet &mdash; the file is distributed separately from this page.</p>
+          </div>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Read the Program Like a Reviewer</h3>
+          <p>Run the program and type each command at least once. Then answer every question below in your project notebook, in full sentences.</p>
+          <ol>
+            <li>How many methods does the <code>Pet</code> class define, not counting <code>__init__</code>, and what does each one do in one sentence?</li>
+            <li>Find <code>__init__</code>. What attributes does it create, and what starting value does each one get?</li>
+            <li>Call <code>fido.feed()</code> twice in a row. What happens to hunger the second time, and which line is responsible?</li>
+            <li>Every method's first parameter is <code>self</code>. Find one line inside a method that uses <code>self.</code>. What would go wrong if that <code>self.</code> was removed?</li>
+            <li>Find the line near the bottom of the file that looks like <code>fido = Pet("Fido")</code>. What is <code>fido</code> an instance of?</li>
+            <li>Compare <code>feed()</code> here to your Year 8 <code>feed()</code> function. Which line replaced <code>global hunger</code>, and what job does it do instead?</li>
+            <li>Note one design decision in this program you disagree with, or would do differently. Explain why.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. FROM FUNCTIONS TO METHODS
+      ══════════════════════════════════════ -->
+      <section id="bridge" class="content-section" aria-labelledby="bridge-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="bridge-heading">From Functions to Methods</h2>
+        <p>Here's the exact Feed action from your Year 8 project, next to the Python that does the same job inside a class. Read both sides together &mdash; every line has a direct equivalent.</p>
+
+        <div class="blocks-bridge">
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--y8">Year 8 &mdash; Function + global</span>
+            <pre class="blocks-bridge-block"><span class="py-kw">def</span> <span class="py-fn">feed</span>():
+    <span class="py-kw">global</span> hunger
+    hunger = hunger + 20
+    hunger = <span class="py-fn">min</span>(100, hunger)</pre>
+          </div>
+          <div class="blocks-bridge-panel">
+            <span class="blocks-bridge-label blocks-bridge-label--y9">Year 9 &mdash; Method inside a class</span>
+            <pre class="blocks-bridge-block"><span class="py-kw">class</span> <span class="py-fn">Pet</span>:
+    <span class="py-cmt"># ...</span>
+    <span class="py-kw">def</span> <span class="py-fn">feed</span>(<span class="py-self">self</span>):
+        <span class="py-self">self</span>.hunger = <span class="py-self">self</span>.hunger + 20
+        <span class="py-self">self</span>.hunger = <span class="py-fn">min</span>(100, <span class="py-self">self</span>.hunger)</pre>
+          </div>
+        </div>
+
+        <p>Three things map directly: the stand-alone function <code>def feed():</code> becomes a Python <strong>method</strong>, written <code>def feed(self):</code> inside a class. The line <code>global hunger</code> disappears entirely &mdash; there's no shared, program-wide variable to reach out to any more. In its place, every reference to <code>hunger</code> becomes <code>self.hunger</code>, which always means "the hunger belonging to <em>this particular pet</em>."</p>
+
+        <div class="example-box">
+          <strong>Where did <code>global</code> go?</strong>
+          In Year 8, <code>hunger</code> was one single variable shared by the whole program &mdash; <code>global</code> was needed so a function could reach out and change it. In Year 9, each pet object stores its own <code>hunger</code> as an <strong>attribute</strong>, and <code>self</code> is simply how a method says "the copy that belongs to me." There's nothing to reach out to any more, because the data already lives right where the method is.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. READING THE CLASS STRUCTURE
+      ══════════════════════════════════════ -->
+      <section id="structure" class="content-section" aria-labelledby="structure-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="structure-heading">Reading the Class Structure</h2>
+        <p>Here's a trimmed-down version of the full demo, showing the class definition and how one pet object is created and used. This is the shape you'll be reading in full when you open the demo file.</p>
+
+        <pre class="full-class-block"><span class="py-kw">class</span> <span class="py-fn">Pet</span>:
+    <span class="py-kw">def</span> <span class="py-fn">__init__</span>(<span class="py-self">self</span>, name):
+        <span class="py-self">self</span>.name = name
+        <span class="py-self">self</span>.hunger = 50
+        <span class="py-self">self</span>.social = 50
+
+    <span class="py-kw">def</span> <span class="py-fn">feed</span>(<span class="py-self">self</span>):
+        <span class="py-self">self</span>.hunger = <span class="py-fn">min</span>(100, <span class="py-self">self</span>.hunger + 20)
+        <span class="py-fn">print</span>(<span class="py-self">self</span>.name, <span class="py-str">"was fed."</span>)
+
+    <span class="py-kw">def</span> <span class="py-fn">play</span>(<span class="py-self">self</span>):
+        <span class="py-self">self</span>.social = <span class="py-fn">min</span>(100, <span class="py-self">self</span>.social + 15)
+        <span class="py-fn">print</span>(<span class="py-self">self</span>.name, <span class="py-str">"had fun playing."</span>)
+
+<span class="py-cmt"># Creating one pet object from the Pet class</span>
+fido = <span class="py-fn">Pet</span>(<span class="py-str">"Fido"</span>)
+fido.feed()
+fido.play()</pre>
+
+        <p>Read this in two layers. The <code>class Pet:</code> block is the <strong>blueprint</strong> &mdash; it describes what every pet will have (a name, hunger, social) and what every pet can do (feed, play), but it isn't a pet itself. The line <code>fido = Pet("Fido")</code> is where an actual pet gets built from that blueprint: <code>fido</code> is an <strong>object</strong>, or an <strong>instance</strong>, of the <code>Pet</code> class.</p>
+
+        <p><code>__init__</code> is a special method that runs automatically the moment an object is created, and its job is to set up that object's starting attributes. You never call <code>fido.__init__()</code> yourself &mdash; writing <code>Pet("Fido")</code> is what triggers it. Notice too that when you call <code>fido.feed()</code>, you don't type the <code>self</code> in &mdash; Python fills it in for you, and it always refers back to <code>fido</code>.</p>
+
+        <div class="example-box">
+          <strong>One class, one pet &mdash; for now</strong>
+          This demo only ever creates a single <code>Pet</code> object. Starting next lesson, you'll create several objects from the same class, and after that, build different <em>types</em> of pet that share this same structure but behave a little differently. Both of those ideas build directly on what you're reading here.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Class</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A blueprint that defines what attributes and methods every object built from it will have. Written with the <code>class</code> keyword.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Object / Instance</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One actual thing built from a class, with its own copy of the class's attributes. <code>fido</code> is an instance of <code>Pet</code>.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Attribute</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A piece of data that belongs to an object, such as <code>self.hunger</code>. Set up inside <code>__init__</code> and accessed with <code>self.</code>.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Method</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A function defined inside a class that acts on an object's own attributes, such as <code>feed(self)</code>.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">self</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The parameter every method uses to refer back to the specific object it was called on. Filled in automatically &mdash; you never type it in yourself when calling a method.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Constructor (__init__)</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The special method that runs automatically when a new object is created, setting up its starting attributes.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 1&ndash;2 build the <em>understanding</em> and <em>thinking</em> bullets &mdash; your seven answered analysis questions are the evidence. Explaining how <code>self.hunger</code> replaced <code>global hunger</code> is itself strong evidence of computational thinking transferring across representations, not just repeating in a new tool.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="global is a Year 8 concept for sharing one program-wide variable — it has no role inside a class method."
+             data-feedback-b="Correct. self is how a method refers back to the exact object it was called on — it's how fido.feed() knows to change fido's hunger and nobody else's."
+             data-feedback-c="Python never creates objects automatically — an object only exists once you write a line like fido = Pet(&quot;Fido&quot;)."
+             data-feedback-d="A boolean is a True/False value used to control a loop — self is a completely different kind of thing, a reference to an object.">
+          <div class="mcq-question">1. What is <code>self</code> inside a <code>Pet</code> method?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> A global keyword that shares one variable across the whole program</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A reference to the object the method belongs to</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A built-in function that creates a brand new object automatically</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> A boolean flag that controls whether the main loop keeps running</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="A"
+             data-feedback-a="Correct. __init__ runs the moment Pet(&quot;Fido&quot;) is called, and its job is to set up fido's starting attributes — name, hunger and social."
+             data-feedback-b="__init__ only runs once, when the object is first created — later calls like fido.feed() run feed's own code, not __init__ again."
+             data-feedback-c="Python attributes can always be changed later, such as fido.hunger = 80 — __init__ doesn't lock anything."
+             data-feedback-d="The object stays in memory until the program ends or it's no longer needed — __init__ is about setup, not deletion.">
+          <div class="mcq-question">2. What does <code>__init__</code> do when the line <code>fido = Pet("Fido")</code> runs?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It runs automatically and sets up Fido's starting attributes</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It runs every time any method on Fido is later called</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It permanently locks Fido's attributes so they can never change</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It deletes Fido from memory once the program finishes running</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="C"
+             data-feedback-a="Python didn't remove global from the language — it's still used outside classes. Classes simply give you a different way to store shared-feeling data."
+             data-feedback-b="self doesn't make anything global — it does the opposite, keeping each object's data separate and private to that one object."
+             data-feedback-c="Correct. self.hunger already points at this specific pet's own stored attribute, so there's no separate program-wide variable to reach out to with global."
+             data-feedback-d="global still works fine inside a class if you truly needed a program-wide variable — the point here is that this attribute doesn't need one.">
+          <div class="mcq-question">3. In Year 8, <code>feed()</code> needed <code>global hunger</code>. In Year 9, <code>feed(self)</code> doesn't use <code>global</code> at all. Why not?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Python automatically makes every method variable global by default</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> hunger became a constant, so it no longer needs a keyword</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> self.hunger points straight at that pet's own stored attribute</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Classes are not allowed to use the global keyword at all</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 3 &middot; Level 3-1 Clear!</strong>
+            <p>All questions answered. Make sure all seven analysis questions are recorded in your notebook before Lesson 3.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 1&ndash;2 &mdash; Notebook Entry</h2>
+        <p>There's no code to write yet, so this entry is entirely analysis evidence &mdash; it's what you'll refer back to when you start defining your Year 9 Pet Brief in Lesson 3.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>All seven analysis answers</strong> from the Analyse First task, in full sentences.</li>
+            <li><strong>A function-to-method translation table:</strong> list three functions from your Year 8 project and the class-method equivalent of each, using the Feed example above as a model.</li>
+            <li><strong>One design decision</strong> from the demo you'll deliberately reuse or adapt in your own program.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Lessons 1–2 notebook entry here — analysis answers, function-to-method table, design decision notes. Saves automatically."
+                  aria-label="Lessons 1–2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring your translation table to Lesson 3 &mdash; you'll use the same mapping process for every action in your own Pet Brief.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="index.html">
+          <span class="lesson-nav__dir">&larr; Studio Hub</span>
+          <span class="lesson-nav__title">World 3 &mdash; Year 9 Python OOP</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y9-lesson03.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 3&ndash;4 &mdash; Define Your Y9 Pet Brief</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y9',
+        lessonId:       'lesson01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>
