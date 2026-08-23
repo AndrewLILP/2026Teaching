@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 1&ndash;2 &mdash; Deconstruct a Unity 3D Pet Project &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #C026D3;
+      --accent-dim:     #A21CAF;
+      --accent-bright:  #E048F0;
+      --accent-surface: rgba(192, 38, 211, 0.10);
+      --accent-border:  rgba(192, 38, 211, 0.28);
+      --pseudo-gold:         #c9a700;
+      --pseudo-gold-surface: rgba(201, 167, 0, 0.10);
+      --pseudo-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--accent-surface); border: 1px solid var(--accent-border);
+      border-radius: 4px; padding: 0.28em 0.8em; font-size: 0.68rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem;
+    }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none; align-items: center; gap: 1rem;
+      background: var(--accent-surface); border: 2px solid var(--accent-border); border-radius: 8px;
+      padding: 1rem 1.25rem; margin-top: var(--space-5); animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong { display: block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.2rem; }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box { background: var(--color-surface-2); border: 1px solid var(--color-border-mid); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-4); }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+
+    /* ── Code bridge (structured English → C#) ── */
+    .code-bridge { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin: var(--space-4) 0; }
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+    .code-bridge-label {
+      display: block; padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-label); text-transform: uppercase;
+    }
+    .code-bridge-label--pseudo { background: var(--pseudo-gold-surface); color: var(--pseudo-gold); border: 1px solid var(--pseudo-gold-border); border-bottom: none; }
+    .code-bridge-label--csharp { background: var(--accent-surface); color: var(--accent); border: 1px solid var(--accent-border); border-bottom: none; }
+    .code-bridge-block {
+      background: var(--color-surface-3); border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: var(--text-sm);
+      line-height: 1.85; color: var(--color-text-primary); margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md); overflow-x: auto; white-space: pre;
+    }
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .cs-kw   { color: #1d4ed8; font-weight: 700; }
+    .cs-type { color: #007aa0; }
+    .cs-fn   { color: #15803d; }
+    .cs-str  { color: #b45309; }
+    .cs-num  { color: #be185d; }
+    .cs-cmt  { color: var(--color-text-muted); font-style: italic; }
+    .cs-attr { color: var(--accent-dim); font-weight: 700; }
+
+    /* ── Unity scene hierarchy tree ── */
+    .scene-tree {
+      background: var(--color-surface-2); border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6);
+      margin: var(--space-4) 0; font-family: var(--font-mono); font-size: var(--text-sm);
+      line-height: 2; color: var(--color-text-secondary);
+    }
+    .scene-tree .node-scene { color: var(--color-text-primary); font-weight: 700; }
+    .scene-tree .node-go    { color: var(--accent-bright); }
+    .scene-tree .node-comp  { color: var(--accent); padding-left: var(--space-4); display: block; }
+    .scene-tree .node-note  { color: var(--color-text-muted); font-style: italic; font-family: var(--font-body); }
+    .scene-tree ul { list-style: none; margin: 0; padding-left: var(--space-5); }
+    .scene-tree > ul { padding-left: 0; }
+
+    /* ── Download box ── */
+    .download-box {
+      display: flex; align-items: center; gap: var(--space-4);
+      background: var(--pseudo-gold-surface); border: 2px dashed var(--pseudo-gold-border);
+      border-radius: var(--radius-lg); padding: var(--space-5); margin: var(--space-5) 0;
+    }
+    .download-box__icon { font-size: 2rem; flex-shrink: 0; }
+    .download-box__body p { font-size: var(--text-sm); margin-bottom: var(--space-2); max-width: none; }
+    .download-box__body p:last-child { margin-bottom: 0; }
+    .download-box__link { display: inline-flex; align-items: center; gap: 0.4em; font-weight: 700; font-size: var(--text-sm); }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 4 &mdash; Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 1&ndash;2</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 1&ndash;2 &mdash; Deconstruct a Unity 3D Pet Project</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#analyse">Analyse First</a>
+          <a href="#hierarchy">Scene Hierarchy</a>
+          <a href="#csharp">C# at a Glance</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+          <span class="outcome-tag" title="Iterative design &amp; project management">CT5-DPM-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Analysis Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">Read a complete, working Unity 6 pet project before designing your own. Every question you answer becomes evidence in your notebook.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 4 &nbsp;&middot;&nbsp; Level 4-1</span>
+        <div class="page-eyebrow">Year 10 &middot; Stage 5 &middot; Lessons 1&ndash;2 &middot; Analyse</div>
+        <h1>Deconstruct a Unity 3D Pet Project</h1>
+        <p class="page-intro">This world moves from a 2D Godot game (Year 9) to a real 3D game in <strong>Unity 6</strong> and <strong>C#</strong>. Your pet gets a body in 3D space, and instead of clicking buttons on screen, a player-controlled character walks up to it and presses a key to interact &mdash; the same idea as Godot's <code>ClickArea</code>, expressed through a completely different mechanism. Over these two lessons you won't write a single line of C#. You'll read someone else's, trace how the project is organised, and record what you find. Lesson 3 is where your own Y10 Pet Brief begins.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Investigating &amp; Researching</span>
+          <span class="phase-pill phase-identify">Identifying &amp; Defining</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "PixelPals is moving its pet catalogue into full 3D. Before your team pitches a design of your own, we want proof you understand how a working Unity pet project is actually put together &mdash; the scene structure, the interaction system, and how the C# handles it. Open the attached starter project in Unity 6. Trace it. Question every decision. Your Y10 Pet Brief in Lesson 3 needs to be built on evidence, not guesswork."
+        </div>
+
+        <p>The class-and-inheritance thinking you already know from Year 9 still applies here &mdash; a base <code>Pet</code> class, subclasses extending it, guard clauses at the top of every method. What's new this year is <strong>interfaces</strong>: a way of guaranteeing that several different objects &mdash; the pet, a food bowl, a toy &mdash; all respond to the same interaction, even though each one does something completely different underneath.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. ANALYSE FIRST
+      ══════════════════════════════════════ -->
+      <section id="analyse" class="content-section" aria-labelledby="analyse-heading">
+        <div class="section-phase-tag research">
+          <span class="dot"></span>Investigating &amp; Researching
+        </div>
+        <h2 id="analyse-heading">Analyse First &mdash; Read Before You Build</h2>
+        <p>Download the starter project below and open it in Unity 6. It's a small but complete 3D scene &mdash; a player character who can walk around, a pet that reacts when approached and interacted with, and a food bowl that does something different when interacted with the same way. Don't change anything yet. Your job is to understand it.</p>
+
+        <div class="download-box">
+          <span class="download-box__icon" aria-hidden="true">&#128230;</span>
+          <div class="download-box__body">
+            <p><strong>Starter project:</strong> <code>unity6-y10-petlab-starter.zip</code></p>
+            <p class="download-box__link"><a href="assets/downloads/unity6-y10-petlab-starter.zip">&#11015; Download the starter project</a></p>
+            <p>Ask your teacher if this link isn't live yet &mdash; the project file is distributed separately from this page.</p>
+          </div>
+        </div>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis Task</p>
+          <h3>Read the Project Like a Reviewer</h3>
+          <p>Open the project in Unity 6 and answer every question below in your project notebook. Use full sentences &mdash; this is your evidence, not a checklist.</p>
+          <ol>
+            <li>Open the <strong>Player</strong> GameObject in the Hierarchy. What script is attached, and what happens when the player presses the interact key near an object?</li>
+            <li>Find the <code>IInteractable</code> interface script. How many methods does it declare, and what do they return?</li>
+            <li>Open <code>Pet.cs</code>. Which fields have <code>[SerializeField] private</code> in front of them? What does adding <code>[SerializeField]</code> to a private field actually change in the Unity Editor?</li>
+            <li>Trace what happens when <code>Interact()</code> is called on the Pet. Which private method does it call, and what guard clause runs first inside it?</li>
+            <li>Open <code>FoodBowl.cs</code>. It also implements <code>IInteractable</code>. Does its <code>Interact()</code> method do the same thing as the Pet's? What does that tell you about what an interface actually guarantees?</li>
+            <li>Find the TextMeshPro element in the Canvas. What script updates its text, and when does that update happen?</li>
+            <li>Note one design decision in this project you disagree with, or would do differently. Explain why.</li>
+          </ol>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. SCENE HIERARCHY
+      ══════════════════════════════════════ -->
+      <section id="hierarchy" class="content-section" aria-labelledby="hierarchy-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="hierarchy-heading">Scene Hierarchy</h2>
+        <p>Unity organises a scene as GameObjects, and everything a GameObject can do comes from the <strong>Components</strong> attached to it &mdash; a Collider doesn't know how to update a stat, and a script doesn't know how to render a mesh. Each component does one job. Here's the hierarchy you should find in the starter project's main scene:</p>
+
+        <div class="scene-tree" aria-label="Unity scene hierarchy for the starter pet project">
+          <ul>
+            <li><span class="node-scene">&#9662; SampleScene</span>
+              <ul>
+                <li><span class="node-go">&#9656; Player</span>
+                  <span class="node-comp">Character Controller</span>
+                  <span class="node-comp">PlayerMovement.cs <span class="node-note">&mdash; reads input, moves the character</span></span>
+                  <span class="node-comp">PlayerInteractor.cs <span class="node-note">&mdash; detects nearby IInteractable objects, calls Interact()</span></span>
+                </li>
+                <li><span class="node-go">&#9656; Pet (Prefab)</span>
+                  <span class="node-comp">Capsule Collider <span class="node-note">&mdash; "Is Trigger" ticked</span></span>
+                  <span class="node-comp">Animator</span>
+                  <span class="node-comp">Pet.cs <span class="node-note">&mdash; implements IInteractable, holds stats</span></span>
+                </li>
+                <li><span class="node-go">&#9656; FoodBowl (Prefab)</span>
+                  <span class="node-comp">Box Collider <span class="node-note">&mdash; "Is Trigger" ticked</span></span>
+                  <span class="node-comp">FoodBowl.cs <span class="node-note">&mdash; also implements IInteractable</span></span>
+                </li>
+                <li><span class="node-go">&#9656; Canvas</span>
+                  <span class="node-comp">HungerBar <span class="node-note">&mdash; UI Slider</span></span>
+                  <span class="node-comp">StatusText <span class="node-note">&mdash; TextMeshPro &ndash; Text (UI)</span></span>
+                </li>
+                <li><span class="node-go">&#9656; Main Camera</span>
+                  <span class="node-comp">CameraFollow.cs <span class="node-note">&mdash; tracks Player transform each frame</span></span>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+
+        <p>Notice that <strong>Pet</strong> and <strong>FoodBowl</strong> are two completely different GameObjects, with different components and different scripts &mdash; but both have a script that implements <code>IInteractable</code>. <code>PlayerInteractor.cs</code> doesn't need to know which one it's looking at; it just calls <code>Interact()</code> on whatever's nearby, and each object handles that call in its own way.</p>
+
+        <div class="example-box">
+          <strong>Interfaces as a systems-thinking idea</strong>
+          A component is a bit like a class in general programming &mdash; it defines a set of built-in behaviours and properties. An interface goes one step further: it's a promise that any class implementing it will provide certain methods, without saying anything about how. Recognising that <code>PlayerInteractor</code> can treat a pet and a food bowl identically, purely because both promise an <code>Interact()</code> method, is exactly the kind of systems-thinking pattern that only comes from reading other people's projects &mdash; which is exactly what you're doing right now.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. C# AT A GLANCE
+      ══════════════════════════════════════ -->
+      <section id="csharp" class="content-section" aria-labelledby="csharp-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="csharp-heading">C# at a Glance</h2>
+        <p>You won't write C# until Lesson 5 &mdash; but reading it now, side by side with NSW structured English, will make the starter project's scripts make sense. C# looks different from GDScript on the surface &mdash; curly braces, semicolons, explicit types &mdash; but the underlying ideas are the same ones you already know.</p>
+
+        <h3>Reading the interface</h3>
+        <div class="code-bridge">
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+            <pre class="code-bridge-block"><span class="pseudo-kw">INTERFACE</span> IInteractable
+  <span class="pseudo-kw">FUNCTION</span> Interact()</pre>
+          </div>
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--csharp">C#</span>
+            <pre class="code-bridge-block"><span class="cs-kw">public interface</span> <span class="cs-type">IInteractable</span>
+{
+    <span class="cs-type">void</span> <span class="cs-fn">Interact</span>();
+}</pre>
+          </div>
+        </div>
+
+        <p>An interface never contains a method's actual logic &mdash; only its name and what it returns. It's a contract: anything that says <code>: IInteractable</code> after its class name <em>must</em> provide its own <code>Interact()</code> method, or the project won't compile.</p>
+
+        <h3>Reading Pet's Interact() and Feed()</h3>
+        <div class="code-bridge">
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+            <pre class="code-bridge-block"><span class="pseudo-kw">CLASS</span> Pet <span class="pseudo-kw">IMPLEMENTS</span> IInteractable
+  hunger, alive
+
+  <span class="pseudo-kw">FUNCTION</span> Interact()
+    CALL Feed()
+
+  <span class="pseudo-kw">FUNCTION</span> Feed()
+    <span class="pseudo-kw">IF NOT</span> alive <span class="pseudo-kw">THEN</span>
+      RETURN
+    <span class="pseudo-kw">END IF</span>
+    SET hunger TO hunger + 20, max 100</pre>
+          </div>
+          <div class="code-bridge-panel">
+            <span class="code-bridge-label code-bridge-label--csharp">C#</span>
+            <pre class="code-bridge-block"><span class="cs-kw">public class</span> <span class="cs-type">Pet</span> : MonoBehaviour, IInteractable
+{
+    <span class="cs-attr">[SerializeField]</span> <span class="cs-kw">private</span> <span class="cs-type">int</span> hunger = <span class="cs-num">50</span>;
+    <span class="cs-attr">[SerializeField]</span> <span class="cs-kw">private</span> <span class="cs-type">bool</span> alive = <span class="cs-kw">true</span>;
+
+    <span class="cs-kw">public void</span> <span class="cs-fn">Interact</span>()
+    {
+        <span class="cs-fn">Feed</span>();
+    }
+
+    <span class="cs-kw">private void</span> <span class="cs-fn">Feed</span>()
+    {
+        <span class="cs-kw">if</span> (!alive) <span class="cs-kw">return</span>;
+        hunger = Mathf.<span class="cs-fn">Min</span>(<span class="cs-num">100</span>, hunger + <span class="cs-num">20</span>);
+    }
+}</pre>
+          </div>
+        </div>
+
+        <p>Two things worth annotating in your notebook. First, <code>if (!alive) return;</code> is exactly the same <strong>guard clause</strong> pattern from Year 9, just written on one line instead of across several &mdash; C# allows a single-line body without curly braces when there's only one statement. Second, notice <code>[SerializeField] private</code>: the field stays <code>private</code>, so no other script can reach in and change <code>hunger</code> directly, but <code>[SerializeField]</code> tells Unity to still show it in the Inspector so you can tune starting values without editing code. That's the real encapsulation step this year &mdash; Year 9's public attributes are gone.</p>
+
+        <div class="example-box">
+          <strong>Where does <code>hunger</code> actually change from outside?</strong>
+          If <code>hunger</code> is private, how does the HungerBar know what value to show? It doesn't reach in and read the field directly &mdash; instead, <code>Pet.cs</code> exposes a small public method or property that returns the current value. You'll build exactly this in Lesson 5, but it's worth watching for as you read <code>Pet.cs</code> now: private data, with a deliberate, narrow public doorway to it.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag identify">
+          <span class="dot"></span>Identifying &amp; Defining
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">GameObject</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The basic container for anything in a Unity scene &mdash; on its own it does nothing until Components are attached to it.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Component</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A single piece of behaviour or data attached to a GameObject, like a Collider or a script &mdash; each component does one job.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">MonoBehaviour</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The base class every Unity script extends, giving it access to built-in methods like Start() and Update() that Unity calls automatically.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Interface</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A contract listing method names any implementing class must provide, with no logic of its own &mdash; like <code>IInteractable</code>'s <code>Interact()</code>.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">[SerializeField]</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An attribute that shows a private field in the Unity Inspector, so its starting value can be tuned without touching code or losing encapsulation.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Prefab</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A saved, reusable GameObject template &mdash; the Pet and FoodBowl in this scene are both prefabs, ready to be placed multiple times.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">TextMeshPro</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Unity's advanced text rendering system for UI, used here to display the pet's status &mdash; sharper and more flexible than the older legacy Text component.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Trigger Collider</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A Collider with "Is Trigger" enabled, which detects overlap without physically blocking movement &mdash; used to detect when the player is close enough to interact.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 1&ndash;2 build the <em>understanding</em> and <em>thinking</em> bullets &mdash; you're not producing an algorithm or interface of your own yet. The evidence for those two bullets is your seven answered analysis questions. Lessons 5 onward are where the algorithm and interface bullets come into play.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="An interface never contains any actual logic — no if statements, no loops, nothing that runs. It only lists what a method is called and what it returns."
+             data-feedback-b="Correct. An interface is a contract: any class that implements IInteractable must provide its own working version of every method it declares, such as Interact()."
+             data-feedback-c="Interfaces don't automatically create objects — a GameObject and its components still have to be built and placed in the scene as normal."
+             data-feedback-d="Nothing about implementing an interface deletes a class's own methods — Pet and FoodBowl each keep their own separate logic underneath Interact().">
+          <div class="mcq-question">1. What does an interface like <code>IInteractable</code> actually guarantee?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> That every implementing class shares one identical block of logic</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Every implementing class provides its own version</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> That Unity automatically creates a GameObject for each implementer</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> That any class implementing it loses access to its own other methods</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="A public field would be visible in the Inspector too, but any other script could also reach in and change it directly — that's exactly what private is protecting against."
+             data-feedback-b="[SerializeField] doesn't hide a field from Unity's own Inspector — quite the opposite, it's specifically what makes a private field visible there."
+             data-feedback-c="Correct. [SerializeField] private keeps hunger inaccessible to other scripts directly, while still showing it in the Inspector so its starting value can be tuned without touching code."
+             data-feedback-d="This has nothing to do with save files — SerializeField controls Inspector visibility during editing, not how data is saved or loaded at runtime.">
+          <div class="mcq-question">2. Why does <code>Pet.cs</code> use <code>[SerializeField] private int hunger</code> instead of just <code>public int hunger</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> public fields cannot be shown in the Unity Inspector at all</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> SerializeField hides the field from the Inspector entirely</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It stays private but tunable in the Inspector</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It's required before Unity will let the project save to a file</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="Both scripts genuinely do implement IInteractable correctly — a compile error would only happen if one of them failed to provide an Interact() method at all."
+             data-feedback-b="This isn't a bug — Pet and FoodBowl behaving differently under the same method call is exactly the intended, correct behaviour of an interface."
+             data-feedback-c="PlayerInteractor doesn't need to check which class it's talking to — that's precisely the point of coding against the interface rather than each specific class."
+             data-feedback-d="Correct. This is polymorphism — calling Interact() produces different behaviour depending on which class actually implements it, without the caller needing to know which one it is.">
+          <div class="mcq-question">3. Pet and FoodBowl both implement <code>IInteractable</code>, but do different things when <code>Interact()</code> is called. What does this demonstrate?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> A compile error, since both must behave identically to satisfy the interface</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> A bug that should be fixed so both scripts behave the same way</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> That PlayerInteractor secretly checks which specific class it's calling</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Polymorphism &mdash; the same method call, different behaviour per class</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 4 &middot; Level 4-1 Clear!</strong>
+            <p>All questions answered. Make sure all seven analysis questions are recorded in your notebook before Lesson 3.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 1&ndash;2 &mdash; Notebook Entry</h2>
+        <p>There's no code to write yet, so this entry is entirely analysis evidence &mdash; it's what you'll refer back to when you start your Y10 Pet Brief in Lesson 3.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>All seven analysis answers</strong> from the Analyse First task, in full sentences.</li>
+            <li><strong>One annotated screenshot</strong> of the scene Hierarchy from the starter project, with two or three GameObjects and their components labelled in your own words.</li>
+            <li><strong>Design decisions summary:</strong> list three specific choices the original developer made that you'll deliberately reuse or adapt in your own project.</li>
+            <li><strong>One change:</strong> the design decision you'd do differently, and a one-sentence reason why.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Lessons 1–2 notebook entry here — analysis answers, hierarchy notes, design decisions summary. Saves automatically."
+                  aria-label="Lessons 1–2 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring your annotated Hierarchy screenshot to Lesson 3 &mdash; you'll reference it directly while writing your Y10 Pet Brief.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="index.html">
+          <span class="lesson-nav__dir">&larr; Studio Hub</span>
+          <span class="lesson-nav__title">World 4 &mdash; Year 10 Unity Pet Lab</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-lesson03.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 3&ndash;4 &mdash; Write Your Y10 Pet Brief</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y10',
+        lessonId:       'lesson01',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>

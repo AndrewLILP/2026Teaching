@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lessons 9&ndash;10 &mdash; Your Second Pet Subclass &middot; Pet Lab</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400..800;1,400..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../assets/css/ct-lessons.css">
+
+  <style>
+    :root {
+      --accent:         #C026D3;
+      --accent-dim:     #A21CAF;
+      --accent-bright:  #E048F0;
+      --accent-surface: rgba(192, 38, 211, 0.10);
+      --accent-border:  rgba(192, 38, 211, 0.28);
+      --pseudo-gold:         #c9a700;
+      --pseudo-gold-surface: rgba(201, 167, 0, 0.10);
+      --pseudo-gold-border:  rgba(201, 167, 0, 0.30);
+    }
+
+    section { scroll-margin-top: calc(var(--nav-height) + 16px); }
+
+    .world-level-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--accent-surface); border: 1px solid var(--accent-border);
+      border-radius: 4px; padding: 0.28em 0.8em; font-size: 0.68rem; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.85rem;
+    }
+
+    /* ── Sprint step cards ── */
+    .sprint-steps { display: flex; flex-direction: column; gap: var(--space-6); margin: var(--space-5) 0; }
+    .sprint-step { background: var(--color-surface-2); border: 1px solid var(--color-border-mid); border-radius: var(--radius-lg); overflow: hidden; }
+    .sprint-step__header {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-4) var(--space-5); background: var(--color-surface-3); border-bottom: 1px solid var(--color-border);
+    }
+    .sprint-step__number {
+      flex-shrink: 0; width: 2rem; height: 2rem; border-radius: 50%;
+      background: var(--accent-surface); border: 2px solid var(--accent-border); color: var(--accent);
+      font-weight: 800; font-size: var(--text-sm); display: flex; align-items: center; justify-content: center;
+    }
+    .sprint-step__title { font-weight: 700; font-size: var(--text-base); color: var(--color-text-primary); flex: 1; }
+    .sprint-step__phase {
+      font-size: var(--text-xs); font-weight: 700; letter-spacing: var(--letter-spacing-label);
+      text-transform: uppercase; color: var(--color-phase-produce); flex-shrink: 0;
+    }
+    .sprint-step__phase--new { color: var(--accent); }
+    .sprint-step__body { padding: var(--space-5); }
+    .sprint-step__body p, .sprint-step__body ul, .sprint-step__body ol {
+      font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none;
+    }
+
+    /* ── Code bridge (structured English → C#) ── */
+    .code-bridge { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin: var(--space-4) 0; }
+    @media (max-width: 680px) { .code-bridge { grid-template-columns: 1fr; } }
+    .code-bridge-panel { border-radius: var(--radius-md); overflow: hidden; }
+    .code-bridge-label {
+      display: block; padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-label); text-transform: uppercase;
+    }
+    .code-bridge-label--pseudo { background: var(--pseudo-gold-surface); color: var(--pseudo-gold); border: 1px solid var(--pseudo-gold-border); border-bottom: none; }
+    .code-bridge-label--csharp { background: var(--accent-surface); color: var(--accent); border: 1px solid var(--accent-border); border-bottom: none; }
+    .code-bridge-block {
+      background: var(--color-surface-3); border: 1px solid var(--color-border-mid);
+      padding: var(--space-3) var(--space-4); font-family: var(--font-mono); font-size: var(--text-sm);
+      line-height: 1.85; color: var(--color-text-primary); margin: 0;
+      border-radius: 0 0 var(--radius-md) var(--radius-md); overflow-x: auto; white-space: pre;
+    }
+    .pseudo-kw { color: #4338ca; font-weight: 700; }
+    .cs-kw   { color: #1d4ed8; font-weight: 700; }
+    .cs-type { color: #007aa0; }
+    .cs-fn   { color: #15803d; }
+    .cs-str  { color: #b45309; }
+    .cs-num  { color: #be185d; }
+    .cs-cmt  { color: var(--color-text-muted); font-style: italic; }
+    .cs-attr { color: var(--accent-dim); font-weight: 700; }
+
+    /* ── Test table ── */
+    .test-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); margin: var(--space-4) 0; }
+    .test-table thead th {
+      background: var(--color-surface-3); color: var(--color-text-secondary); font-size: 0.67rem; font-weight: 700;
+      letter-spacing: 0.09em; text-transform: uppercase; padding: var(--space-3) var(--space-4);
+      text-align: left; border-bottom: 2px solid var(--accent-border);
+    }
+    .test-table tbody td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary); vertical-align: top; line-height: 1.6; }
+    .test-table tbody td:first-child { font-weight: 600; color: var(--color-text-primary); width: 26%; }
+    .test-table tbody td:last-child { background: var(--color-surface-2); color: var(--color-text-muted); font-style: italic; font-size: var(--text-xs); }
+    .test-table-wrap { overflow-x: auto; margin: var(--space-4) 0; }
+
+    /* ── Evaluate callout ── */
+    .eval-callout {
+      background: rgba(21, 128, 61, 0.07); border: 1px solid rgba(21, 128, 61, 0.25);
+      border-left: 4px solid #15803d; border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin: var(--space-4) 0;
+    }
+    .eval-callout__label { font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-caps); text-transform: uppercase; color: #15803d; margin-bottom: var(--space-2); display: block; }
+    .eval-callout p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0 0 var(--space-2); max-width: none; }
+    .eval-callout p:last-child { margin-bottom: 0; }
+    .eval-callout ol, .eval-callout ul { font-size: var(--text-sm); color: var(--color-text-secondary); margin: var(--space-2) 0 0; padding-left: var(--space-6); max-width: none; }
+
+    /* ── Sprint checkpoint ── */
+    .sprint-checkpoint { background: var(--pseudo-gold-surface); border: 2px solid var(--pseudo-gold-border); border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6); margin: var(--space-6) 0; }
+    .sprint-checkpoint__label { font-size: var(--text-xs); font-weight: 800; letter-spacing: var(--letter-spacing-caps); text-transform: uppercase; color: var(--pseudo-gold); margin-bottom: var(--space-3); }
+    .sprint-checkpoint h3 { font-size: var(--text-base); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-3); }
+    .sprint-checkpoint ul { font-size: var(--text-sm); color: var(--color-text-secondary); max-width: none; margin-bottom: 0; }
+
+    .cpd-section h2 { margin-bottom: var(--space-2); }
+
+    .level-clear {
+      display: none; align-items: center; gap: 1rem;
+      background: var(--accent-surface); border: 2px solid var(--accent-border); border-radius: 8px;
+      padding: 1rem 1.25rem; margin-top: var(--space-5); animation: fadeSlideIn 0.35s ease;
+    }
+    .level-clear.is-visible { display: flex; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .level-clear-icon { font-size: 2rem; flex-shrink: 0; }
+    .level-clear-text strong { display: block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.2rem; }
+    .level-clear-text p { font-size: var(--text-sm); color: var(--color-text-secondary); margin: 0; line-height: 1.55; max-width: none; }
+
+    .reflection-prompts-box { background: var(--color-surface-2); border: 1px solid var(--color-border-mid); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-4); }
+    .reflection-prompts-box p  { font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-3); max-width: none; }
+    .reflection-prompts-box ol { margin: 0; padding-left: var(--space-6); color: var(--color-text-secondary); font-size: var(--text-sm); line-height: 1.75; max-width: none; }
+    .reflection-prompts-box li { margin-bottom: var(--space-2); }
+    .reflection-hint { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <nav class="ct-nav" aria-label="Site navigation">
+    <a href="../index.html" class="ct-logo" aria-label="Computing home">
+      <span>[</span><em>CT</em><span>/]</span>
+    </a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Pet Lab</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>World 4 &mdash; Year 10</span>
+      <span class="ct-nav-sep" aria-hidden="true">&middot;</span>
+      <span>Lessons 9&ndash;10</span>
+    </div>
+    <div class="ct-nav-actions">
+      <a href="index.html" class="ct-nav-btn">Studio Hub &rarr;</a>
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" data-font="nunito"   aria-pressed="true">Aa</button>
+        <button class="font-btn" data-font="system"   aria-pressed="false">Sys</button>
+        <button class="font-btn" data-font="dyslexia" aria-pressed="false">Dy</button>
+      </div>
+    </div>
+  </nav>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../index.html">Computing Technology</a></li>
+      <li><a href="index.html">Pet Lab</a></li>
+      <li aria-current="page">Lessons 9&ndash;10 &mdash; Your Second Pet Subclass</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Page navigation">
+
+      <div class="paper-binder-holes" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">On this page</div>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#brief">Your Brief</a>
+          <a href="#sprint">Sprint Steps</a>
+          <a href="#testing">Test the Pet Family</a>
+          <a href="#checkpoint">Sprint Checkpoint</a>
+          <a href="#vocabulary">Vocabulary</a>
+          <a href="#cpd">CPD Grade Descriptors</a>
+          <a href="#check">Check Your Understanding</a>
+          <a href="#notebook">Notebook Prompt</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">CT5 Outcomes</div>
+        <div class="outcome-tags">
+          <span class="outcome-tag" title="Algorithms in a general-purpose programming language">CT5-OPL-01</span>
+          <span class="outcome-tag" title="Computational, design and systems thinking">CT5-THI-01</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">D&amp;P Phases</div>
+        <div class="phase-pills" style="flex-direction:column;">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Sprint Goal</div>
+        <p style="font-size:var(--text-xs);color:var(--color-text-secondary);line-height:1.6;margin:0;">A second pet-type subclass, built with far less scaffolding, plus a second IInteractable object that doesn't inherit from Pet at all.</p>
+      </div>
+
+    </aside>
+
+    <main id="main-content" class="main-col" tabindex="-1">
+
+      <header class="page-hero">
+        <span class="world-level-badge">&#9733; World 4 &nbsp;&middot;&nbsp; Level 4-5</span>
+        <div class="page-eyebrow">Year 10 &middot; Stage 5 &middot; Lessons 9&ndash;10 &middot; Sprint 3</div>
+        <h1>Your Second Pet Subclass</h1>
+        <p class="page-intro">You already know this shape from Sprint 2: duplicate, extend, add something unique, override something inherited, wire the UI. This time you're doing most of it independently &mdash; the steps below are shorter on purpose. The one genuinely new idea is building your <strong>second interactable object from Lesson 3&ndash;4's Interaction Design section</strong> &mdash; one that implements <code>IInteractable</code> directly, with no inheritance from <code>Pet</code> at all.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; Evaluating</span>
+        </div>
+      </header>
+
+
+      <!-- ══════════════════════════════════════
+           1. BRIEF
+      ══════════════════════════════════════ -->
+      <section id="brief" class="content-section" aria-labelledby="brief-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="brief-heading">Your Brief</h2>
+
+        <div class="info-box">
+          <strong>Studio memo:</strong> "Sprint 2 must be fully working before you start. Pick your second pet type from Lessons 3&ndash;4's Shared vs Unique planning, and revisit the second object you planned in Interaction Design &mdash; the one that isn't the pet itself. This sprint has less hand-holding than the last one; PixelPals expects you to apply the pattern yourself now."
+        </div>
+
+        <p>By the end of this sprint you'll have a small <strong>pet family</strong> &mdash; one base class, two subclasses &mdash; plus proof that <code>IInteractable</code> works even for an object with no relationship to <code>Pet</code> whatsoever.</p>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           2. SPRINT STEPS
+      ══════════════════════════════════════ -->
+      <section id="sprint" class="content-section" aria-labelledby="sprint-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="sprint-heading">Sprint 3 &mdash; Five Steps</h2>
+        <p>Work through these steps in order. Test after each one. Steps 1&ndash;4 follow the exact shape from Sprint 2 &mdash; the code isn't repeated here, only what's different.</p>
+
+        <div class="sprint-steps">
+
+          <!-- Step 1 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">1</div>
+              <div class="sprint-step__title">Duplicate &amp; Extend</div>
+              <span class="sprint-step__phase">Scene + Class Setup</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Duplicate <code>Pet</code>'s prefab as your second pet type's prefab, swap the artwork. Create its own script with <code>public class ... : Pet</code>. Remove any leftover <code>Pet.cs</code> reference first.</p>
+              <p><strong>Test it</strong> &mdash; before adding anything new, confirm Feed, Play and Clean already work, exactly as they did on Dog. Fix this before Step 2 if they don't.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">2</div>
+              <div class="sprint-step__title">Add Your Unique Attribute &amp; Method</div>
+              <span class="sprint-step__phase">Extending</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>From your Shared vs Unique plan, add one new <code>[SerializeField] private</code> attribute and one new public method &mdash; guard clause first, stat change, then <code>NotifyStatChanged();</code> last, exactly like <code>Fetch()</code> on Dog. Add a matching public read-only property too.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">3</div>
+              <div class="sprint-step__title">Override a Different Method</div>
+              <span class="sprint-step__phase">virtual / override</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Dog overrode <code>Play()</code>. Choose a <strong>different</strong> inherited method to override this time &mdash; <code>Feed()</code> or <code>Clean()</code>. Remember <code>virtual</code> is set per-method, not per-class: whichever one you pick still needs <code>virtual</code> added to it in <code>Pet.cs</code> first, exactly as you did for <code>Play()</code> in Sprint 2, even though <code>Play()</code> is already virtual. Then use <code>base.MethodName()</code> plus one extra line, following the same shape.</p>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">4</div>
+              <div class="sprint-step__title">Wire the New Button &amp; Bar</div>
+              <span class="sprint-step__phase">UI Binding</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Add the button and bar for your new attribute. Wire the button's <strong>On Click ()</strong> in the Inspector, and create a new UI subclass &mdash; <code>: PetUI</code>, overriding <code>UpdateUI()</code> with <code>base.UpdateUI()</code> plus your new bar's line, the same pattern <code>DogUI</code> used.</p>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="sprint-step">
+            <div class="sprint-step__header">
+              <div class="sprint-step__number">5</div>
+              <div class="sprint-step__title">Build a Second IInteractable Object</div>
+              <span class="sprint-step__phase sprint-step__phase--new">Interface Polymorphism</span>
+            </div>
+            <div class="sprint-step__body">
+              <p>Every interactable so far has been a <code>Pet</code> or a subclass of it. <code>IInteractable</code> doesn't require that &mdash; <em>any</em> class can implement it, related to <code>Pet</code> or not. Create a <code>FoodBowl</code> GameObject with a trigger collider, and script it from scratch:</p>
+
+              <div class="code-bridge">
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--pseudo">Structured English</span>
+                  <pre class="code-bridge-block"><span class="pseudo-kw">CLASS</span> FoodBowl <span class="pseudo-kw">IMPLEMENTS</span> IInteractable
+  isFull
+
+  <span class="pseudo-kw">FUNCTION</span> Interact()
+    <span class="pseudo-kw">IF NOT</span> isFull <span class="pseudo-kw">THEN</span>
+      RETURN
+    <span class="pseudo-kw">END IF</span>
+    SET isFull TO False</pre>
+                </div>
+                <div class="code-bridge-panel">
+                  <span class="code-bridge-label code-bridge-label--csharp">C#</span>
+                  <pre class="code-bridge-block"><span class="cs-kw">public class</span> <span class="cs-type">FoodBowl</span> : MonoBehaviour, IInteractable
+{
+    <span class="cs-attr">[SerializeField]</span> <span class="cs-kw">private</span> <span class="cs-type">bool</span> isFull = <span class="cs-kw">true</span>;
+
+    <span class="cs-kw">public void</span> <span class="cs-fn">Interact</span>()
+    {
+        <span class="cs-kw">if</span> (!isFull) <span class="cs-kw">return</span>;
+        isFull = <span class="cs-kw">false</span>;
+        Debug.<span class="cs-fn">Log</span>(<span class="cs-str">"Bowl emptied!"</span>);
+    }
+}</pre>
+                </div>
+              </div>
+
+              <p>Notice <code>FoodBowl</code> doesn't extend <code>Pet</code> &mdash; it only implements <code>IInteractable</code>, and it has to write its own guard clause from scratch since it inherits nothing. That's the point: <code>PlayerInteractor.cs</code> can call <code>Interact()</code> on either a Pet, a subclass, or this completely unrelated <code>FoodBowl</code>, and it never needs to know or care which one it's actually looking at.</p>
+
+              <p><strong>Test it</strong> &mdash; interact with the bowl once and confirm the Console logs the message; interact again immediately and confirm nothing happens the second time.</p>
+            </div>
+          </div>
+
+        </div><!-- /sprint-steps -->
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           3. TEST THE PET FAMILY
+      ══════════════════════════════════════ -->
+      <section id="testing" class="content-section" aria-labelledby="testing-heading">
+        <div class="section-phase-tag test">
+          <span class="dot"></span>Testing &amp; Evaluating
+        </div>
+        <h2 id="testing-heading">Test the Pet Family</h2>
+        <p>Complete this test table in your project notebook. Include your Sprint 1 and Sprint 2 tests too &mdash; confirm nothing on Pet or Dog has broken.</p>
+
+        <div class="test-table-wrap">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Test case</th>
+                <th>Expected result</th>
+                <th>Your actual result (write in notebook)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Feed, Play and Clean on your new pet type</td>
+                <td>All work exactly as they do on the base Pet</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Trigger your new unique method</td>
+                <td>New stat increases correctly, capped, event fires, bar updates</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Trigger your overridden method</td>
+                <td>Both the inherited change and the new extra line happen from one call</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Interact with the FoodBowl once</td>
+                <td>Console logs "Bowl emptied!"; no pet stat changes at all</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Interact with the FoodBowl a second time immediately</td>
+                <td>Nothing happens &mdash; guard clause blocks it</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+              <tr>
+                <td>Open the Dog prefab from Sprint 2 again</td>
+                <td>Still runs exactly as before, unaffected by FoodBowl existing</td>
+                <td>Record actual result &rarr;</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="eval-callout">
+          <span class="eval-callout__label">&#128269; Evaluation</span>
+          <p>For each test where the actual result didn't match the expected result, write:</p>
+          <ol>
+            <li>What went wrong (the <strong>bug</strong>)</li>
+            <li>What you changed to fix it (the <strong>fix</strong>)</li>
+            <li>Whether the fix introduced any new problems (a <strong>regression</strong>)</li>
+          </ol>
+          <p>A common bug at this stage: interacting with the FoodBowl throws a <code>NullReferenceException</code> in the Console. This usually means <code>PlayerInteractor</code> found the trigger collider but the <code>FoodBowl</code> script itself wasn't actually attached to that GameObject &mdash; check the Inspector, not the collider settings, first.</p>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           4. SPRINT CHECKPOINT
+      ══════════════════════════════════════ -->
+      <section id="checkpoint" class="content-section" aria-labelledby="checkpoint-heading">
+        <h2 id="checkpoint-heading">Sprint 3 Checkpoint</h2>
+        <p>Tick off every item in your project notebook. Your project must pass this checkpoint before Lesson 11 begins.</p>
+
+        <div class="sprint-checkpoint">
+          <div class="sprint-checkpoint__label">&#10003; Sprint 3 &mdash; Checklist</div>
+          <h3>Your project must:</h3>
+          <ul>
+            <li>Have a second pet-type script declaring <code>public class ... : Pet</code>, with its own prefab and artwork</li>
+            <li>Have one new unique attribute and method with its own guard clause</li>
+            <li>Override a <strong>different</strong> inherited method than Dog overrode, marked <code>virtual</code> in Pet.cs and <code>override</code> in the subclass, using <code>base.MethodName()</code></li>
+            <li>Have its new button and bar wired and working, via an overridden <code>UpdateUI()</code></li>
+            <li>Have a <code>FoodBowl</code> class implementing <code>IInteractable</code> directly, with no inheritance from Pet</li>
+            <li>Have the FoodBowl's guard clause correctly blocking repeated interaction</li>
+            <li>Have all Sprint 1 and Sprint 2 behaviours still working unchanged on Pet and Dog</li>
+            <li>Have a completed test table in your project notebook (all six tests attempted)</li>
+          </ul>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           5. VOCABULARY
+      ══════════════════════════════════════ -->
+      <section id="vocabulary" class="content-section" aria-labelledby="vocabulary-heading">
+        <div class="section-phase-tag produce">
+          <span class="dot"></span>Producing &amp; Implementing
+        </div>
+        <h2 id="vocabulary-heading">Vocabulary</h2>
+        <p>Tap each card to reveal the definition.</p>
+
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Interface Polymorphism</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Different, unrelated classes each implementing the same interface, so code calling that interface's method never needs to know which class it's actually talking to.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Inheritance Polymorphism</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Subclasses of the same base class each overriding a method differently &mdash; like Dog and your second pet type each overriding a different Pet method.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Pet Family</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One base class and every subclass that extends it &mdash; Pet, Dog, and your second pet type together, all sharing one common ancestor.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Override</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Replacing a virtual method's behaviour in a subclass &mdash; each subclass in your family can override a different method, as long as it's marked virtual first.</span>
+              </span>
+            </span>
+          </button>
+
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Regression Testing</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Re-testing existing behaviour after a change, to confirm it still works &mdash; exactly why Pet and Dog get retested alongside every new addition.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           6. CPD GRADE DESCRIPTORS
+      ══════════════════════════════════════ -->
+      <section id="cpd" class="content-section cpd-section" aria-labelledby="cpd-heading">
+        <h2 id="cpd-heading">CPD Grade Descriptors &mdash; Stage 5</h2>
+        <p class="cpd-intro">These are the NESA Course Performance Descriptors for Stage 5 Computing Technology, used to report your achievement at the end of Year 10. They apply across every lesson in Pet Lab &mdash; not just this one. Tap a grade to expand it.</p>
+
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">A</span>
+            <p>Demonstrates an <strong>extensive</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; skilfully applies appropriate iterative processes to produce computing solutions; develops highly effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language; demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to effectively communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">B</span>
+            <p>Demonstrates a <strong>thorough</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies appropriate iterative processes to produce computing solutions; develops effective computing solutions using computational, design and systems thinking skills; selects and applies safe, secure and ethical practices in the use of data; develops, tests and implements functional algorithms in a general-purpose programming language; demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences; selects relevant data, media and processes to communicate appropriate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">C</span>
+            <p>Demonstrates a <strong>sound</strong> understanding of the influence of enterprise, innovation and automation on the evolution of computing technology; applies iterative processes to produce computing solutions; develops sound computing solutions using computational, design and systems thinking skills; applies safe, secure and ethical practices in the use of data; develops common algorithms and implements them in a general-purpose programming language; designs and implements user interfaces to create user experiences; selects appropriate data, media and processes to communicate information in a range of contexts.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">D</span>
+            <p>Demonstrates a <strong>basic</strong> understanding of the influence of enterprise and innovation on the evolution of computing technology; uses processes to produce computing solutions; develops basic computing solutions using computational or design or systems thinking skills; uses data safely and responsibly; develops basic algorithms and/or implements them in a general-purpose programming language; implements basic elements of user interface design to support user experiences; uses data to communicate basic information.</p>
+          </div>
+
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies</strong> the evolution of, and/or innovations in, computing technology; identifies processes that may produce a computing solution; works safely with data; follows algorithms and/or partially implements them in a general-purpose programming language; identifies elements of user interfaces that contribute to user experiences; uses data to communicate information in a very limited way.</p>
+          </div>
+        </div>
+
+        <div class="example-box" style="margin-top:var(--space-5);">
+          <strong>Where this lesson sits</strong>
+          Lessons 9&ndash;10 push toward the top of the algorithm and thinking bullets &mdash; building a second subclass with far less scaffolding, and recognising two distinct kinds of polymorphism working side by side, is the kind of skilful, independent application these descriptors describe at Grade A and B.
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           7. CHECK YOUR UNDERSTANDING
+      ══════════════════════════════════════ -->
+      <section id="check" class="content-section" aria-labelledby="check-heading">
+        <h2 id="check-heading">Check Your Understanding</h2>
+        <p>Select your answer, then read the feedback before moving on.</p>
+
+        <!-- MCQ 1 -->
+        <div class="mcq-card"
+             data-q="q1"
+             data-correct="B"
+             data-feedback-a="FoodBowl doesn't need to be marked virtual or override anything — that inheritance-based system is separate from what makes FoodBowl work here."
+             data-feedback-b="Correct. FoodBowl proves an interface works across completely unrelated classes — it inherits nothing from Pet, and only needs to implement IInteractable's method itself."
+             data-feedback-c="FoodBowl's guard clause doesn't rely on anything from Pet — it's written entirely from scratch, checking its own isFull field."
+             data-feedback-d="PlayerInteractor doesn't need any special-case code for FoodBowl — that's exactly the point of coding against the interface rather than a specific class.">
+          <div class="mcq-question">1. What does building <code>FoodBowl</code> prove about how <code>IInteractable</code> actually works?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Every IInteractable object must still be marked virtual somewhere</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It works across totally unrelated classes</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> FoodBowl's guard clause secretly reuses logic from Pet.cs</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> PlayerInteractor needs special-case code to handle FoodBowl</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q1"></div>
+          <button class="mcq-reset" id="mcq-reset-q1">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 2 -->
+        <div class="mcq-card"
+             data-q="q2"
+             data-correct="C"
+             data-feedback-a="Marking one method virtual doesn't extend automatically to others — Play() being virtual has no effect on whether Clean() or Feed() can be overridden."
+             data-feedback-b="A class-level setting isn't how this works in C# — there's no single switch that makes every method in a class overridable at once."
+             data-feedback-c="Correct. virtual is applied to one method at a time — Play() already being virtual has no bearing on Clean() or Feed(), which each need their own explicit virtual keyword."
+             data-feedback-d="This has nothing to do with events specifically — the same per-method rule applies whether or not a method happens to fire an event.">
+          <div class="mcq-question">2. Why did <code>Clean()</code> need <code>virtual</code> added, even though <code>Play()</code> already had it from Sprint 2?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Marking one method virtual automatically applies it to the others</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> virtual is really a class-level setting, not a per-method one</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> virtual only applies to the method it's written on</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Only methods that fire an event are allowed to be virtual</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q2"></div>
+          <button class="mcq-reset" id="mcq-reset-q2">&#8617; Try again</button>
+        </div>
+
+        <!-- MCQ 3 -->
+        <div class="mcq-card"
+             data-q="q3"
+             data-correct="D"
+             data-feedback-a="PlayerInteractor's own code doesn't need to change at all between Pet and FoodBowl — that consistency is the actual point being tested here."
+             data-feedback-b="This isn't a bug — Pet and FoodBowl doing different things under the same method call is exactly the intended, correct behaviour of an interface."
+             data-feedback-c="FoodBowl.cs still compiles and runs correctly — nothing here causes a build error, since FoodBowl properly implements every method IInteractable requires."
+             data-feedback-d="Correct. Completely different code runs in each case — Feed() and stat changes for Pet, an isFull toggle for FoodBowl — even though PlayerInteractor's own code never changes at all.">
+          <div class="mcq-question">3. What actually happens when <code>PlayerInteractor</code> calls <code>Interact()</code> on <code>FoodBowl</code> versus on <code>Pet</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> PlayerInteractor runs different code depending on which one it is</button>
+            <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> This is a bug that should be fixed so both behave identically</button>
+            <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> FoodBowl.cs fails to compile without inheriting from Pet</button>
+            <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Different code runs, though the caller stays the same</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-q3"></div>
+          <button class="mcq-reset" id="mcq-reset-q3">&#8617; Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+
+        <div class="level-clear" id="level-clear" role="status" aria-live="polite">
+          <span class="level-clear-icon">&#11088;</span>
+          <div class="level-clear-text">
+            <strong>World 4 &middot; Level 4-5 Clear!</strong>
+            <p>All questions answered. Your Sprint 3 checkpoint and test table must be complete before Lesson 11.</p>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ══════════════════════════════════════
+           8. NOTEBOOK PROMPT
+      ══════════════════════════════════════ -->
+      <section id="notebook" class="content-section" aria-labelledby="notebook-heading">
+        <h2 id="notebook-heading">Lessons 9&ndash;10 &mdash; Notebook Entry</h2>
+        <p>Your notebook entry today is a sprint log, recording how the second, more independent build went.</p>
+
+        <div class="reflection-prompts-box">
+          <p>Your notebook entry must include:</p>
+          <ol>
+            <li><strong>Completed test table</strong> from Test the Pet Family, with actual results recorded for all six tests.</li>
+            <li><strong>Bug report</strong> for anything that didn't match its expected result &mdash; the bug, the fix, and any regression it caused.</li>
+            <li><strong>Reflection:</strong> your pet family now demonstrates two different kinds of polymorphism &mdash; inheritance-based (Dog and your second pet type overriding different methods) and interface-based (Pet and FoodBowl both implementing IInteractable independently). Explain the difference between them in your own words, using your own project as the example.</li>
+          </ol>
+        </div>
+
+        <textarea class="reflection-textarea"
+                  data-progress-reflection
+                  rows="10"
+                  placeholder="Write your Lessons 9–10 notebook entry here — sprint log, test results, bug report, design reflection. Saves automatically."
+                  aria-label="Lessons 9–10 notebook entry"></textarea>
+
+        <span class="reflection-status" data-progress-reflection-status></span>
+        <p class="reflection-hint">Bring your full pet family &mdash; Pet, Dog, your second pet type, and FoodBowl &mdash; to Lesson 11, tested and working, for formal evaluation.</p>
+      </section>
+
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="y10-lesson07.html">
+          <span class="lesson-nav__dir">&larr; Previous</span>
+          <span class="lesson-nav__title">Lessons 7&ndash;8 &mdash; Your First Pet Subclass</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="y10-lesson11.html">
+          <span class="lesson-nav__dir">Next &rarr;</span>
+          <span class="lesson-nav__title">Lessons 11&ndash;12 &mdash; Test &amp; Evaluate Your Pet Family</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../assets/js/ct-core.js"></script>
+  <script src="../assets/js/ct-interactive.js"></script>
+  <script src="../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      var cards  = document.querySelectorAll('.mcq-card');
+      var banner = document.getElementById('level-clear');
+      if (!cards.length || !banner) return;
+
+      function checkAllAnswered() {
+        var done = Array.from(cards).every(function (c) {
+          return c.classList.contains('mcq-answered');
+        });
+        if (done) banner.classList.add('is-visible');
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function (e) {
+          if (e.target.classList.contains('mcq-option')) {
+            setTimeout(checkAllAnswered, 80);
+          }
+        });
+      });
+    }());
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProgress);
+    } else {
+      initProgress();
+    }
+
+    function initProgress() {
+      CTProgress.initLessonPage({
+        unitId:         'petlab-y10',
+        lessonId:       'lesson09',
+        totalQuestions: 3
+      });
+    }
+  </script>
+
+</body>
+</html>
