@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 4: Everything That Can Go Wrong — Overland Studio</title>
+<link rel="stylesheet" href="../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:          #4d7c0f;
+    --accent-dim:      #3a5a0c;
+    --accent-bright:   #3f6212;
+    --accent-surface:  rgba(63, 98, 18, 0.10);
+    --accent-border:   rgba(63, 98, 18, 0.28);
+  }
+  .code-bridge { margin: var(--space-6) 0; }
+  .code-bridge__pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+  .code-bridge-label {
+    font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: var(--space-2) var(--space-4); border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .code-bridge-label--pseudo {
+    background: var(--accent-surface); color: var(--accent-bright);
+    border: 1px solid var(--accent-border); border-bottom: none;
+  }
+  .code-bridge-label--python {
+    background: rgba(29,78,216,0.10); color: #1d4ed8;
+    border: 1px solid rgba(29,78,216,0.25); border-bottom: none;
+  }
+  .code-bridge pre { margin: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+  @media (max-width: 700px) { .code-bridge__pair { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="font-nunito">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="ct-nav">
+  <a class="ct-logo" href="../index.html">ct<span>::</span><em>overland</em></a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">Overland Studio</span>
+    <span class="ct-nav-sep">/</span>
+    <span>Lesson 4</span>
+  </div>
+  <div class="ct-nav-actions">
+    <a class="ct-nav-btn" href="../notebook/project-notebook.html">Project Notebook</a>
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system">Aa</button>
+      <button class="font-btn" data-font="dyslexia">Aa</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ct-breadcrumb">
+  <ol>
+    <li><a href="../index.html">Overland Studio</a></li>
+    <li aria-current="page">Lesson 4 · Producing &amp; Implementing — Sprint B</li>
+  </ol>
+</div>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <div class="sidebar-section">
+      <p class="sidebar-label">On this page</p>
+      <nav class="sidebar-toc" id="sidebar-toc">
+        <a href="#hook">A boring, predictable trail</a>
+        <a href="#random-module">The random module</a>
+        <a href="#events">Write the events</a>
+        <a href="#wire">Wire events into the loop</a>
+        <a href="#feedback">Designing clear feedback</a>
+        <a href="#validate">Validating player input</a>
+        <a href="#bug">Bug detective</a>
+        <a href="#vocabulary">Key vocabulary</a>
+        <a href="#check">Quick check</a>
+        <a href="#tasks">Your task</a>
+        <a href="#cpd">How this is graded</a>
+        <a href="#notebook">Notebook</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Phase</p>
+      <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main" tabindex="-1">
+
+    <header class="page-hero">
+      <p class="page-eyebrow">Lesson 4 of 6 · Sprint B</p>
+      <h1>Everything that can go wrong</h1>
+      <p class="page-intro">Sprint A's wagon travels the same way every single run — predictable, and a little boring. Today you add randomness, give the player a real choice each day, and make sure the game never crashes on bad input.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">CT5-DPM-01</span>
+        <span class="outcome-tag">CT5-DES-01</span>
+        <span class="outcome-tag">CT5-SAF-01</span>
+      </div>
+    </header>
+
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag produce"><span class="dot"></span>Warm-up</span>
+      <h2>A boring, predictable trail</h2>
+      <p>Run your Sprint A build a few times. Notice anything? Every playthrough is identical — same food loss, same distance gained, same number of days. There's nothing to react to and no reason to play twice.</p>
+      <p>Two things fix that: <strong>random events</strong> that interrupt the routine, and a genuine <strong>player choice</strong> each day that changes the outcome. Both need code that can misbehave in new ways, so today also covers keeping that code safe when things don't go to plan.</p>
+    </section>
+
+    <section class="content-section" id="random-module">
+      <span class="section-phase-tag produce"><span class="dot"></span>Concept</span>
+      <h2>The random module</h2>
+      <p>Python's <code>random</code> module needs importing once, at the top of the file, before it can be used.</p>
+      <div class="example-box">
+        <strong>Example</strong>
+        <pre><code>import random
+
+roll = random.randint(1, 10)   # a whole number from 1 to 10, inclusive
+print(roll)</code></pre>
+        <span class="example-box__subhead"><code>random.randint(1, 10)</code> is inclusive at both ends — it can return 1, it can return 10, and everything between.</span>
+      </div>
+      <p>The plan: each day, roll a number from 1–10. Low rolls trigger different events; a high roll means nothing happens. This gives you control over how often — and how severe — events are, just by choosing which numbers map to what.</p>
+    </section>
+
+    <section class="content-section" id="events">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 1</span>
+      <h2>Write the events</h2>
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">A single function, one roll, three outcomes</span>
+          </div>
+          <pre><code>import random
+
+def check_for_event(state):
+    roll = random.randint(1, 10)
+    if roll &lt;= 3:
+        print("The river crossing is rough — some food is lost!")
+        state["food"] -= 15
+    elif roll &lt;= 5:
+        print("Someone in the party has fallen ill.")
+        state["health"] -= 20
+    elif roll &lt;= 6:
+        print("The wagon wheel has broken! You lose a day fixing it.")
+        state["days_passed"] += 1
+    return state</code></pre>
+          <div class="step-explain">
+            Rolls 1–3 (30% chance) trigger the river event, 4–5 (20%) the illness event, 6 (10%) the wheel break, and 7–10 (40%) nothing happens. Adjust those thresholds to tune difficulty — moving the wheel-break cutoff from <code>6</code> to <code>8</code> would nearly triple how often it fires.
+          </div>
+        </div>
+      </div>
+      <div class="info-box">
+        <strong>Note:</strong> every branch changes <code>state</code> a different way, but they all share one function and one <code>return state</code> at the end — a repeat of the pattern from Lesson 3's <code>travel()</code>.
+      </div>
+    </section>
+
+    <section class="content-section" id="wire">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 2</span>
+      <h2>Wire events into the loop</h2>
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Call check_for_event() once per day</span>
+          </div>
+          <div class="code-change-banner">+ NEW THIS STEP</div>
+          <pre><code>while state["distance"] &lt; 2000 and state["food"] &gt; 0:
+    print(f"Day {state['days_passed']}: "
+          f"{state['distance']}km travelled, "
+          f"{state['food']} food remaining")
+    state = travel(state)
+    <span class="code-new">state = check_for_event(state)</span></code></pre>
+          <div class="step-explain">
+            Order matters here: <code>travel()</code> runs first so distance and food always update, then <code>check_for_event()</code> has a chance to add an extra hit on top. Swap the order and an event could fire before the day's baseline travel happens — not wrong, exactly, but a different design decision, and one you should make on purpose rather than by accident.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="feedback">
+      <span class="section-phase-tag produce"><span class="dot"></span>Design</span>
+      <h2>Designing clear feedback</h2>
+      <p>This game has no graphics — every piece of feedback is a line of text. That makes the wording of your <code>print()</code> statements a genuine user-interface design decision, not an afterthought.</p>
+
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead><tr><th>Weak feedback</th><th>Why it fails</th><th>Stronger version</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>print("event")</code></td>
+              <td>Tells the player nothing about what happened or why it matters</td>
+              <td><code>print("Someone in the party has fallen ill.")</code></td>
+            </tr>
+            <tr>
+              <td><code>print(state)</code></td>
+              <td>Dumps raw data the player has to decode themselves</td>
+              <td><code>print(f"Health: {state['health']}")</code></td>
+            </tr>
+            <tr>
+              <td><code>print("bad")</code></td>
+              <td>Gives no sense of scale — how bad?</td>
+              <td><code>print("Health dropped by 20.")</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The rule of thumb: a player should be able to tell, from the text alone, <em>what</em> happened and <em>how much</em> it changed their situation — without reading your source code.</p>
+    </section>
+
+    <section class="content-section" id="validate">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 3</span>
+      <h2>Validating player input</h2>
+      <p>The moment a player makes a real choice, your program has to handle the case where they type something you didn't expect. This is where <strong>CT5-SAF-01</strong> comes in for a text-based game: safe handling of data means the program never crashes or behaves unpredictably just because of what a player typed.</p>
+
+      <div class="code-bridge">
+        <div class="code-bridge__pair">
+          <div>
+            <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+            <pre><code>FUNCTION getPaceChoice()
+  SET choice TO INPUT
+  WHILE choice NOT IN ["1","2","3"]
+    DISPLAY "Enter 1, 2, or 3."
+    SET choice TO INPUT
+  ENDWHILE
+  RETURN choice
+ENDFUNCTION</code></pre>
+          </div>
+          <div>
+            <span class="code-bridge-label code-bridge-label--python">Python</span>
+            <pre><code>def get_pace_choice():
+    valid = ["1", "2", "3"]
+    choice = input(
+        "Pace — 1) Slow 2) Normal 3) Fast: ")
+    while choice not in valid:
+        print("Enter 1, 2, or 3.")
+        choice = input(
+            "Pace — 1) Slow 2) Normal 3) Fast: ")
+    return choice</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <p>This loop keeps re-asking until the player gives a valid answer — it never lets bad input reach the rest of the program. That's the same guard-clause thinking from Lesson 3, applied to user input instead of a function's starting condition.</p>
+    </section>
+
+    <div class="bug-detective" id="bug">
+      <p class="bug-detective__eyebrow">Bug detective</p>
+      <h3>Why does this event function break the game?</h3>
+      <pre><code>def check_for_event(state):
+    roll = random.randint(1, 10)
+    if roll &lt;= 3:
+        print("The river crossing is rough!")
+        state["food"] -= 15
+    elif roll &lt;= 5:
+        print("Someone has fallen ill.")
+        state["health"] -= 20
+<span class="bug-line">    # missing return statement here</span>
+
+while state["distance"] &lt; 2000 and state["food"] &gt; 0:
+    state = travel(state)
+    state = check_for_event(state)</code></pre>
+      <button class="bug-reveal-btn">Reveal the bug</button>
+      <div class="bug-detective__reveal">
+        <code>check_for_event()</code> never reaches a <code>return state</code> line. In Python, a function with no <code>return</code> gives back <code>None</code> — so <code>state = check_for_event(state)</code> replaces the whole state dictionary with <code>None</code> on the very first day. The next line that tries <code>state["food"]</code> crashes with a <code>TypeError</code>, because you can't index into <code>None</code>. This is the same bug pattern from Lesson 3's quick check, showing up for real.
+      </div>
+    </div>
+
+    <section class="content-section" id="vocabulary">
+      <span class="section-phase-tag produce"><span class="dot"></span>Vocabulary</span>
+      <h2>Words you'll need this unit</h2>
+      <p>Click each card to flip it.</p>
+      <div class="flip-card-grid">
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Module</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">A file of pre-written Python code you can use in your own program with <code>import</code>, instead of writing that functionality yourself.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Branching</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Code that follows one of several possible paths depending on a condition — Python's <code>if</code> / <code>elif</code> / <code>else</code> chain.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Input validation</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Checking that data entered by a user meets expected rules before the program uses it, rejecting or re-requesting anything that doesn't.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Probability</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">How likely an outcome is, often expressed as a fraction or percentage — a roll of 1–3 out of 1–10 is a 30% probability.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">None</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Python's value for "nothing here" — what a function returns automatically if it reaches the end without an explicit <code>return</code>.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Crash</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">When a program stops running unexpectedly because of an error it wasn't written to handle — good input validation prevents crashes caused by bad user input.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="content-section" id="check">
+      <span class="section-phase-tag produce"><span class="dot"></span>Quick check</span>
+      <h2>Check your understanding</h2>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Not quite — 1, 2, and 3 are three separate outcomes out of ten possible rolls, so that's a 30% chance, not 3%."
+           data-feedback-b="✓ Correct — rolls 1, 2, and 3 are three outcomes out of ten equally likely possibilities, which is 30%."
+           data-feedback-c="Not quite — that would be the chance if the range were 1 to 3 only, but random.randint(1, 10) can return any of ten values."
+           data-feedback-d="Not quite — check how many of the ten possible rolls (1–10) satisfy roll &lt;= 3.">
+        <div class="mcq-question">With <code>roll = random.randint(1, 10)</code>, what's the probability that <code>roll &lt;= 3</code> is true?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> 3%</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> 30%</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> 100%</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It can't be worked out from this code</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="C"
+           data-feedback-a="Not quite — a validation loop doesn't stop the program from asking for input at all."
+           data-feedback-b="Not quite — the opposite is true; validation makes the program accept fewer kinds of bad input, not more."
+           data-feedback-c="✓ Correct — re-asking until the input is valid means the rest of the program never has to deal with an invalid choice."
+           data-feedback-d="Not quite — validation doesn't affect how fast the program runs.">
+        <div class="mcq-question">What does the <code>while choice not in valid:</code> loop in <code>get_pace_choice()</code> actually achieve?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> It stops the program asking for input more than once</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> It makes the program accept a wider range of answers</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> It guarantees the function only ever returns "1", "2", or "3"</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> It makes the program run faster</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+    </section>
+
+    <section class="content-section" id="tasks">
+      <span class="section-phase-tag produce"><span class="dot"></span>Your task</span>
+      <h2>Today's task, by tier</h2>
+      <div class="tier-tasks">
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Add check_for_event() to your game</h4>
+            <p>Follow Steps 1–2 with your own event text. Confirm at least one event fires when you run the game a few times.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Add a validated pace choice</h4>
+            <p>Complete Steps 1–3. Add <code>get_pace_choice()</code> and use the result to change how much food travel() consumes each day.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Add a fourth event with its own probability</h4>
+            <p>Do the Core task, then design and justify a new event with a probability you chose deliberately — explain your reasoning in the Project Notebook.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cpd-section" id="cpd">
+      <h2>How this lesson is graded</h2>
+      <p class="cpd-intro">Evidence here spans three outcomes: <strong>CT5-DPM-01</strong> (does the randomness and branching actually work), <strong>CT5-DES-01</strong> (is your console feedback genuinely clear), and <strong>CT5-SAF-01</strong> (does bad input ever crash your game).</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Your events, feedback text, and input validation all work together seamlessly — no combination of choices or random rolls can crash the program, and every message is specific and easy to act on.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Multiple events fire correctly with sensible probabilities, feedback text clearly explains what changed, and your validated input never lets an invalid choice through.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>At least one random event works correctly, your feedback text is understandable, and you've implemented a working input validation loop.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>You've added a random event that sometimes fires, and you can explain in plain English what your feedback text is telling the player.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>You can run the starter event code and describe what <code>random.randint()</code> does.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="notebook-prompt" id="notebook">
+      <p class="notebook-prompt__label">Project Notebook — Phase 3: Producing &amp; Implementing (Sprint B)</p>
+      <ul>
+        <li>Paste in your finished event function and your validated input function.
+          <span class="sentence-starter">Sentence starter: "I set the probability of [event] to... because..."</span>
+        </li>
+        <li>Rewrite one piece of weak feedback text you wrote on your first attempt, and explain what you changed.</li>
+        <li>Record what happened when you deliberately typed invalid input to test your validation loop.</li>
+      </ul>
+      <a class="notebook-link" href="../notebook/project-notebook.html#phase-3">Open the Project Notebook →</a>
+    </div>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson-03.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 3: The Core Loop</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson-05.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Lesson 5: Desk-Check the Disaster</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../assets/js/ct-core.js"></script>
+<script src="../assets/js/ct-interactive.js"></script>
+<script src="../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'overland-studio',
+    lessonId: 'lesson04',
+    totalQuestions: 2
+  });
+</script>
+</body>
+</html>

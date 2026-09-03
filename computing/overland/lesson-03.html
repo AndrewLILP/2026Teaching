@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3: The Core Loop — Overland Studio</title>
+<link rel="stylesheet" href="../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../assets/css/ct-lessons.css">
+<style>
+  :root {
+    --accent:          #4d7c0f;
+    --accent-dim:      #3a5a0c;
+    --accent-bright:   #3f6212;
+    --accent-surface:  rgba(63, 98, 18, 0.10);
+    --accent-border:   rgba(63, 98, 18, 0.28);
+  }
+  /* ── Pseudocode → code bridge (see Lesson 2 for full note).
+     Repeated here unchanged; promote to ct-shared.css once proven. ── */
+  .code-bridge { margin: var(--space-6) 0; }
+  .code-bridge__pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .code-bridge-label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  }
+  .code-bridge-label--pseudo {
+    background: var(--accent-surface);
+    color: var(--accent-bright);
+    border: 1px solid var(--accent-border);
+    border-bottom: none;
+  }
+  .code-bridge-label--python {
+    background: rgba(29,78,216,0.10);
+    color: #1d4ed8;
+    border: 1px solid rgba(29,78,216,0.25);
+    border-bottom: none;
+  }
+  .code-bridge pre { margin: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
+  @media (max-width: 700px) { .code-bridge__pair { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body class="font-nunito">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="ct-nav">
+  <a class="ct-logo" href="../index.html">ct<span>::</span><em>overland</em></a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">Overland Studio</span>
+    <span class="ct-nav-sep">/</span>
+    <span>Lesson 3</span>
+  </div>
+  <div class="ct-nav-actions">
+    <a class="ct-nav-btn" href="../notebook/project-notebook.html">Project Notebook</a>
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system">Aa</button>
+      <button class="font-btn" data-font="dyslexia">Aa</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ct-breadcrumb">
+  <ol>
+    <li><a href="../index.html">Overland Studio</a></li>
+    <li aria-current="page">Lesson 3 · Producing &amp; Implementing — Sprint A</li>
+  </ol>
+</div>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <div class="sidebar-section">
+      <p class="sidebar-label">On this page</p>
+      <nav class="sidebar-toc" id="sidebar-toc">
+        <a href="#hook">Plan to code</a>
+        <a href="#setup">Set up the state</a>
+        <a href="#loop">Build the day loop</a>
+        <a href="#functions">Extract a function</a>
+        <a href="#guard">Guard clauses</a>
+        <a href="#trace">Trace the first two days</a>
+        <a href="#vocabulary">Key vocabulary</a>
+        <a href="#check">Quick check</a>
+        <a href="#tasks">Your task</a>
+        <a href="#cpd">How this is graded</a>
+        <a href="#notebook">Notebook</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Phase</p>
+      <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main" tabindex="-1">
+
+    <header class="page-hero">
+      <p class="page-eyebrow">Lesson 3 of 6 · Sprint A</p>
+      <h1>The core loop</h1>
+      <p class="page-intro">Open Grok Learning. Today your pseudocode plan becomes a real program — a state dictionary, a day-by-day loop, and the first function that gives the loop somewhere to put its logic.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">CT5-DPM-01</span>
+        <span class="outcome-tag">CT5-DES-01</span>
+      </div>
+    </header>
+
+    <section class="content-section" id="hook">
+      <span class="section-phase-tag produce"><span class="dot"></span>Warm-up</span>
+      <h2>From plan to code</h2>
+      <p>You already have a state design and a pseudocode plan from Lesson 2. Sprint A turns that plan into working Python — nothing fancy yet, no random events (that's Sprint B in Lesson 4). By the end of today, your wagon should be able to travel, run out of food, and stop.</p>
+    </section>
+
+    <section class="content-section" id="setup">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 1</span>
+      <h2>Set up the state</h2>
+      <p>In a new Grok Learning file, start with your state dictionary. Use your own keys from Lesson 2's Project Notebook entry — this example uses a minimal version.</p>
+
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 1</span>
+            <span class="step-label">Create the state dictionary</span>
+          </div>
+          <pre><code>state = {
+    "food": 100,
+    "health": 100,
+    "distance": 0,
+    "days_passed": 0
+}</code></pre>
+          <div class="step-explain">
+            Every value that changes over the course of the game lives inside <code>state</code>. Nothing important should exist as a separate loose variable outside it — that's the whole point of designing the dictionary in Lesson 2.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="loop">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 2</span>
+      <h2>Build the day loop</h2>
+      <p>Now add the loop itself, straight from your Lesson 2 pseudocode.</p>
+
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 2</span>
+            <span class="step-label">Add the guarded while loop</span>
+          </div>
+          <div class="code-change-banner">+ NEW THIS STEP</div>
+          <pre><code>state = {
+    "food": 100,
+    "health": 100,
+    "distance": 0,
+    "days_passed": 0
+}
+
+<span class="code-new">while state["distance"] &lt; 2000 and state["food"] &gt; 0:
+    print(f"Day {state['days_passed']}: "
+          f"{state['distance']}km travelled, "
+          f"{state['food']} food remaining")
+    state["food"] -= 10
+    state["distance"] += 20
+    state["days_passed"] += 1
+
+if state["distance"] &gt;= 2000:
+    print("You made it to the coast!")
+else:
+    print("The journey ends here.")</span></code></pre>
+          <div class="step-explain">
+            Run this now. It should print one line per day, counting distance up and food down, then stop with a win or a loss message. If it never stops, check your <code>while</code> condition against Lesson 2's pseudocode — a wrong comparison operator is the most common reason a loop refuses to end.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="functions">
+      <span class="section-phase-tag produce"><span class="dot"></span>Step 3</span>
+      <h2>Extract a function</h2>
+      <p>Right now, every line lives inside the loop. That's fine for four lines — it won't be fine once Lesson 4 adds random events on top. Move the travel logic into its own function so the loop stays readable as it grows.</p>
+
+      <div class="walkthrough">
+        <div class="walkthrough-step">
+          <div class="walkthrough-step__header">
+            <span class="step-number">STEP 3</span>
+            <span class="step-label">Define and call travel()</span>
+          </div>
+          <div class="code-change-banner">+ NEW THIS STEP</div>
+          <pre><code><span class="code-new">def travel(state):
+    """Advance the party by one day: spend food, gain distance."""
+    state["food"] -= 10
+    state["distance"] += 20
+    state["days_passed"] += 1
+    return state</span>
+
+while state["distance"] &lt; 2000 and state["food"] &gt; 0:
+    print(f"Day {state['days_passed']}: "
+          f"{state['distance']}km travelled, "
+          f"{state['food']} food remaining")
+    <span class="code-new">state = travel(state)</span>
+
+if state["distance"] &gt;= 2000:
+    print("You made it to the coast!")
+else:
+    print("The journey ends here.")</code></pre>
+          <div class="step-explain">
+            <code>travel</code> takes the whole <code>state</code> dictionary as a <strong>parameter</strong>, changes it, and <strong>returns</strong> the updated version. The loop calls it with <code>state = travel(state)</code> — the function doesn't need to know anything about printing or checking the ending, just about moving one day forward. That separation is what makes Lesson 4's random events easy to add without rewriting this function.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="guard">
+      <span class="section-phase-tag produce"><span class="dot"></span>Concept</span>
+      <h2>Guard clauses</h2>
+      <p>A <strong>guard clause</strong> is a check at the top of a function that exits early if something would make the rest of the function invalid. You'll need one shortly, once eating or resting becomes a player choice rather than something that happens automatically.</p>
+
+      <div class="code-bridge">
+        <div class="code-bridge__pair">
+          <div>
+            <span class="code-bridge-label code-bridge-label--pseudo">Pseudocode</span>
+            <pre><code>FUNCTION eat(state, amount)
+  IF state.food &lt;= 0 THEN
+    DISPLAY "No food left to eat."
+    RETURN state
+  ENDIF
+  SET state.food TO state.food + amount
+  RETURN state
+ENDFUNCTION</code></pre>
+          </div>
+          <div>
+            <span class="code-bridge-label code-bridge-label--python">Python</span>
+            <pre><code>def eat(state, amount):
+    if state["food"] &lt;= 0:
+        print("No food left to eat.")
+        return state
+    state["food"] += amount
+    return state</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>Note:</strong> the guard is the <code>if</code> block at the <em>top</em> of the function, before the "real" work happens. Guarding first — rather than wrapping the real work in an <code>else</code> — keeps the normal case unindented and easy to read.
+      </div>
+    </section>
+
+    <section class="content-section" id="trace">
+      <span class="section-phase-tag produce"><span class="dot"></span>Desk check</span>
+      <h2>Trace the first two days</h2>
+      <p>Before you keep building, trace what your program actually does. Starting state: <code>food = 100</code>, <code>distance = 0</code>, <code>days_passed = 0</code>.</p>
+
+      <div class="trace-table-wrap">
+        <table class="trace-table">
+          <thead>
+            <tr><th>Step</th><th>Code executed</th><th>food</th><th>distance</th><th>days_passed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="td-step">1</td><td class="td-code">while condition checked</td><td class="td-var">100</td><td class="td-var">0</td><td class="td-var">0</td></tr>
+            <tr><td class="td-step">2</td><td class="td-code">print(...) — Day 0</td><td class="td-var">100</td><td class="td-var">0</td><td class="td-var">0</td></tr>
+            <tr><td class="td-step">3</td><td class="td-code">state = travel(state)</td><td class="td-var">90</td><td class="td-var">20</td><td class="td-var">1</td></tr>
+            <tr><td class="td-step">4</td><td class="td-code">while condition checked</td><td class="td-var">90</td><td class="td-var">20</td><td class="td-var">1</td></tr>
+            <tr><td class="td-step">5</td><td class="td-code">print(...) — Day 1</td><td class="td-var">90</td><td class="td-var">20</td><td class="td-var">1</td></tr>
+            <tr><td class="td-step">6</td><td class="td-code">state = travel(state)</td><td class="td-var">80</td><td class="td-var">40</td><td class="td-var">2</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Continue the table by hand for two more days. Then check: at this rate, roughly how many days until <code>food</code> reaches <code>0</code>? Does that match what you saw when you ran the program?</p>
+    </section>
+
+    <section class="content-section" id="vocabulary">
+      <span class="section-phase-tag produce"><span class="dot"></span>Vocabulary</span>
+      <h2>Words you'll need this unit</h2>
+      <p>Click each card to flip it.</p>
+      <div class="flip-card-grid">
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Function</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">A named, reusable block of code that performs one clear job, defined once with <code>def</code> and called wherever it's needed.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Parameter</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">A named input a function expects — <code>state</code> in <code>def travel(state):</code> is a parameter. The value passed in when the function is called is the argument.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Return value</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">The result a function sends back to wherever it was called, using <code>return</code>. Without it, changes made inside the function are lost when it ends.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Guard clause</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">An early check at the top of a function that exits before the main logic runs, if that logic would otherwise be invalid.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">Modularity</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">Breaking a program into separate, focused pieces (like functions) so each can be understood, tested, and changed on its own.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flip-card" tabindex="0" role="button" aria-pressed="false">
+          <div class="flip-card__inner">
+            <div class="flip-card__face flip-card__face--front">
+              <span class="flip-card__term">f-string</span>
+              <span class="flip-card__hint">Show definition</span>
+            </div>
+            <div class="flip-card__face flip-card__face--back" aria-hidden="true">
+              <span class="flip-card__def">A Python string prefixed with <code>f</code> that lets you embed variables directly inside <code>{ }</code>, e.g. <code>f"Day {days}"</code>, instead of joining pieces with <code>+</code>.</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="content-section" id="check">
+      <span class="section-phase-tag produce"><span class="dot"></span>Quick check</span>
+      <h2>Check your understanding</h2>
+
+      <div class="mcq-card" data-q="1" data-correct="C"
+           data-feedback-a="Not quite — food is a key inside the state dictionary, not a parameter of travel."
+           data-feedback-b="Not quite — that's what the function does internally, not what it receives."
+           data-feedback-c="✓ Correct — state is the single parameter travel(state) is defined to accept."
+           data-feedback-d="Not quite — the loop condition isn't passed into the function.">
+        <div class="mcq-question">In <code>def travel(state):</code>, what is <code>state</code>?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> The value stored under the "food" key</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The distance the wagon travels each day</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> A parameter — the input the function expects</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> The while loop's condition</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="A"
+           data-feedback-a="✓ Correct — without return, the updated dictionary inside the function is discarded when the function ends, and state = travel(state) would set state to None."
+           data-feedback-b="Not quite — Python won't raise an error here, it just won't give you back the value you expected."
+           data-feedback-c="Not quite — the loop would still run, just with the wrong data."
+           data-feedback-d="Not quite — removing return doesn't affect the print statement inside the loop.">
+        <div class="mcq-question">If you deleted the <code>return state</code> line from <code>travel()</code>, what would happen?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> state = travel(state) would set state to None, losing all the changes</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> Python would raise an error before the program could run</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> The loop would stop running immediately</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> Nothing — the print statement would still work correctly</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+    </section>
+
+    <section class="content-section" id="tasks">
+      <span class="section-phase-tag produce"><span class="dot"></span>Your task</span>
+      <h2>Today's task, by tier</h2>
+      <div class="tier-tasks">
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Build the loop and get it running</h4>
+            <p>Follow Steps 1–2 using your own state design from Lesson 2. Confirm it prints one line per day and stops.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Extract travel() and add health</h4>
+            <p>Complete Steps 1–3, then extend travel() so it also reduces health slightly on days the party is short on food.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>Add a second function with a guard clause</h4>
+            <p>Write a rest() function the player can call instead of travelling, that restores health but costs an extra day. Guard against resting when health is already full.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cpd-section" id="cpd">
+      <h2>How this lesson is graded</h2>
+      <p class="cpd-intro">This lesson's evidence sits mainly against <strong>CT5-DPM-01</strong> (developing, testing and implementing algorithms) — specifically, whether your loop and functions actually run correctly and match your Lesson 2 plan.</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">A</span>
+          <p>Your code is technically concise — no repeated logic, functions are single-purpose, and a second function with a genuine guard clause runs correctly on the first attempt after debugging.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">B</span>
+          <p>Your loop, state, and travel() function all run correctly, and you've extended travel() with an extra rule of your own that works as intended.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">C</span>
+          <p>Your loop runs, correctly updates state each day, and stops under the right conditions; travel() is implemented as a working function.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">D</span>
+          <p>Your loop runs and prints something each day, though it may not stop correctly or may still have logic inside the loop rather than in a function.</p>
+        </div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false">
+          <span class="grade-label">E</span>
+          <p>You can run the starter code and describe, in plain English, what each line is doing.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="notebook-prompt" id="notebook">
+      <p class="notebook-prompt__label">Project Notebook — Phase 3: Producing &amp; Implementing (Sprint A)</p>
+      <ul>
+        <li>Paste in your finished Sprint A code — state, loop, and at least one function.
+          <span class="sentence-starter">Sentence starter: "My travel() function is responsible for..."</span>
+        </li>
+        <li>Record one bug you hit today and how you fixed it.</li>
+        <li>Complete your trace table for at least four days by hand, and note whether it matched the program's actual output.</li>
+      </ul>
+      <a class="notebook-link" href="../notebook/project-notebook.html#phase-3">Open the Project Notebook →</a>
+    </div>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson-02.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 2: Packing the Wagon in Pseudocode</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="lesson-04.html">
+        <span class="lesson-nav__dir">Next →</span>
+        <span class="lesson-nav__title">Lesson 4: Everything That Can Go Wrong</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../assets/js/ct-core.js"></script>
+<script src="../assets/js/ct-interactive.js"></script>
+<script src="../assets/js/ct-progress.js"></script>
+<script>
+  CTProgress.initLessonPage({
+    unitId: 'overland-studio',
+    lessonId: 'lesson03',
+    totalQuestions: 2
+  });
+</script>
+</body>
+</html>
