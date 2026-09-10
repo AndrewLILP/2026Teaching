@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Full Picture | MA4-PRO-C-01 Chapter 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;600&family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4EFE9;
+    --card:#FFFFFF;
+    --slate:#3D5A80;
+    --forest:#4A7C59;
+    --amber:#E89C2F;
+    --terracotta:#C1614F;
+    --accent:#A8BEDA;
+    --accent-text:#1F3A57;
+    --accent-light:#EEF2F8;
+    --text:#23303D;
+    --text-soft:#4B5A68;
+    --correct:#1E5631;
+    --correct-bg:#E4F3E8;
+    --incorrect:#8B2E2E;
+    --incorrect-bg:#FBEAEA;
+    --border:#D8D0C4;
+    --font-body:'Nunito Sans', sans-serif;
+    --font-hand:'Caveat', cursive;
+    --radius:14px;
+  }
+  body.font-atkinson{ --font-body:'Atkinson Hyperlegible', sans-serif; }
+  body.font-system{ --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.55; text-align:left; }
+  header{ background:var(--accent); color:var(--accent-text); padding:18px 20px; }
+  header .crumb{ font-size:0.85rem; opacity:0.85; margin-bottom:6px; }
+  header .crumb a{ color:var(--accent-text); text-decoration:underline; }
+  header h1{ margin:0; font-family:'Nunito', sans-serif; font-weight:800; font-size:1.5rem; color:var(--accent-text); }
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  #fontToggle{ background:rgba(31,58,87,0.12); border:1px solid rgba(31,58,87,0.4); color:var(--accent-text); padding:8px 14px; border-radius:999px; cursor:pointer; font-size:0.85rem; font-family:var(--font-body); }
+  #fontToggle:focus-visible, button:focus-visible, .opt:focus-visible, input:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  nav.tabs{ display:flex; background:#fff; border-bottom:2px solid var(--border); overflow-x:auto; }
+  nav.tabs button{ flex:1; min-width:110px; padding:14px 8px; background:none; border:none; border-bottom:4px solid transparent; font-family:var(--font-body); font-weight:700; font-size:0.88rem; color:var(--text-soft); cursor:pointer; }
+  nav.tabs button.active{ color:var(--accent-text); border-bottom:4px solid var(--accent); }
+
+  main{ max-width:780px; margin:0 auto; padding:22px 16px 60px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:18px; }
+  .card h2{ margin-top:0; font-family:'Nunito', sans-serif; font-weight:800; color:var(--accent-text); font-size:1.2rem; }
+  .card h3{ font-family:'Nunito', sans-serif; font-weight:700; color:var(--accent-text); font-size:1.02rem; }
+  .stage-label{ display:inline-block; background:var(--accent-light); color:var(--accent-text); font-weight:700; font-size:0.75rem; padding:4px 10px; border-radius:999px; margin-bottom:10px; }
+
+  .frac{ display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; font-weight:800; line-height:1.05; margin:0 3px; position:relative; top:3px; }
+  .frac .num{ border-bottom:2px solid currentColor; padding:0 5px 1px; }
+  .frac .den{ padding:1px 5px 0; }
+
+  .mcq .options{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+  .opt{ text-align:left; background:#fff; border:2px solid var(--border); border-radius:10px; padding:10px 14px; font-family:var(--font-body); font-size:0.98rem; color:var(--text); cursor:pointer; }
+  .opt:hover{ border-color:var(--slate); }
+  .opt.selected-correct{ border-color:var(--correct); background:var(--correct-bg); }
+  .opt.selected-incorrect{ border-color:var(--incorrect); background:var(--incorrect-bg); }
+  .opt:disabled{ cursor:default; opacity:0.75; }
+
+  .feedback{ font-weight:700; padding:10px 12px; border-radius:10px; margin-top:6px; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--correct-bg); color:var(--correct); }
+  .feedback.incorrect{ background:var(--incorrect-bg); color:var(--incorrect); }
+
+  .predict-row{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .predict-btn{ background:#fff; border:2px solid var(--slate); color:var(--slate); padding:10px 18px; border-radius:999px; font-weight:700; cursor:pointer; }
+  .predict-btn.chosen{ background:var(--slate); color:#fff; }
+
+  .diagram-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin:14px 0; }
+  svg{ display:block; }
+
+  .reveal-btn, .stage-btn, .complete-btn{ background:var(--slate); color:#fff; border:none; padding:11px 18px; border-radius:10px; font-weight:700; cursor:pointer; font-family:var(--font-body); }
+  .reveal-btn:disabled, .stage-btn:disabled{ opacity:0.5; cursor:default; }
+  .reveal-box{ background:var(--accent-light); border-left:4px solid var(--accent); padding:12px 14px; border-radius:0 10px 10px 0; margin-top:10px; display:none; }
+  .reveal-box.show{ display:block; }
+
+  .tier-nav{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tier-btn{ background:#fff; border:2px solid var(--border); padding:9px 16px; border-radius:999px; font-weight:700; cursor:pointer; color:var(--text-soft); }
+  .tier-btn.active{ background:var(--slate); color:#fff; border-color:var(--slate); }
+  .tier-panel{ display:none; }
+  .tier-panel.active{ display:block; }
+
+  .typein input{ padding:10px 12px; border:2px solid var(--border); border-radius:10px; font-family:var(--font-body); font-size:1rem; width:120px; }
+  .typein button{ background:var(--slate); color:#fff; border:none; padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer; margin-left:8px; }
+
+  textarea.reflect-box{ width:100%; min-height:90px; font-family:var(--font-body); font-size:0.98rem; padding:12px; border:2px solid var(--border); border-radius:10px; background:#fff; color:var(--text); }
+  textarea#journal{ width:100%; min-height:140px; font-family:var(--font-hand); font-size:1.4rem; padding:14px; border:2px solid var(--border); border-radius:10px; background:#FFFDF7; color:var(--text); }
+  .save-note{ font-size:0.85rem; color:var(--text-soft); margin-top:6px; }
+  .complete-box{ text-align:center; margin-top:20px; }
+  .complete-msg{ color:var(--correct); font-weight:700; margin-top:10px; display:none; }
+  .complete-msg.show{ display:block; }
+
+  p{ margin:0 0 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="crumb"><a href="index.html">&larr; Back to Chapter Hub</a> &nbsp;|&nbsp; MA4-PRO-C-01: Probability</div>
+  <div class="toolbar">
+    <h1>Chapter 4: The Full Picture</h1>
+    <button id="fontToggle" type="button">Font: Nunito Sans</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-panel="hook">Hook</button>
+  <button class="tab-btn" data-panel="learn">Learn</button>
+  <button class="tab-btn" data-panel="practise">Practise</button>
+  <button class="tab-btn" data-panel="nonroutine">Non-Routine Problems</button>
+  <button class="tab-btn" data-panel="reflect">Reflect</button>
+</nav>
+
+<main>
+
+  <!-- HOOK -->
+  <section id="hook" class="panel active">
+    <div class="card">
+      <h2>Pricing the Risk</h2>
+      <p>Insurance companies use probability to set premiums. If 1 in 8 young drivers make a claim in a year, what's the probability a young driver <em>doesn't</em> make a claim?</p>
+      <p><strong>Which number matters more to the insurer?</strong></p>
+      <div class="predict-row" id="insuranceGuess">
+        <button class="predict-btn" data-choice="claim">The 1 in 8 claim rate</button>
+        <button class="predict-btn" data-choice="noclaim">The 7 in 8 no-claim rate</button>
+        <button class="predict-btn" data-choice="both">Both, equally</button>
+      </div>
+    </div>
+    <div class="card">
+      <p><strong>Hold onto your thinking.</strong><br>Today we combine everything you've learned about probability into real decisions.</p>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="learn" class="panel">
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>Newman's Analysis: The Raffle (fully worked)</h2>
+      <p>A raffle sells 400 tickets. Maya buys 20.<br><strong>Question: what is the probability Maya does not win?</strong></p>
+      <div class="reveal-box show" style="margin-top:10px;"><strong>Stage 1: Read</strong><br>"A raffle sells 400 tickets. Maya buys 20. What is the probability Maya does not win?"</div>
+      <div class="reveal-box show" style="margin-top:10px;"><strong>Stage 2: Comprehend</strong><br>We need the complement of winning &mdash; the probability Maya's ticket is <em>not</em> drawn.</div>
+      <div class="reveal-box show" style="margin-top:10px;"><strong>Stage 3: Transform</strong><br>P(Maya wins) = <span class="frac"><span class="num">20</span><span class="den">400</span></span> = <span class="frac"><span class="num">1</span><span class="den">20</span></span></div>
+      <div class="reveal-box show" style="margin-top:10px;"><strong>Stage 4: Process</strong><br>P(Maya does not win) = 1 &minus; <span class="frac"><span class="num">1</span><span class="den">20</span></span> = <span class="frac"><span class="num">19</span><span class="den">20</span></span></div>
+      <div class="reveal-box show" style="margin-top:10px;"><strong>Stage 5: Encode</strong><br><strong>Maya has a 19/20 probability of not winning the raffle.</strong></div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do &rarr; Check</span>
+      <h2>Error Detective: Leo's Die</h2>
+      <p>Leo rolls a standard 6-sided die 12 times and gets a 6 only once.</p>
+      <p>Leo concludes: <strong>"This die is definitely biased against rolling a 6, since 1/12 is much less than 1/6."</strong></p>
+      <div class="mcq" data-qid="ed1">
+        <p class="q-prompt"><strong>What is the flaw in Leo's reasoning?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="Leo's count is correct &mdash; a 6 did appear exactly once.">Leo counted incorrectly &mdash; a 6 appeared more than once</button>
+          <button class="opt" data-result="incorrect" data-msg="The theoretical probability of 1/6 is correct for any standard 6-sided die.">The theoretical probability of 1/6 is wrong for a standard die</button>
+          <button class="opt" data-result="correct" data-msg="This is the same sample-size idea from Chapter 2: with only 12 trials, a result like this happens fairly often just by natural variation. Far more trials would be needed before concluding the die is actually biased.">12 trials is far too small a sample size to draw a conclusion about bias &mdash; this gap is easily explained by natural variation</button>
+          <button class="opt" data-result="incorrect" data-msg="The choice of device (die vs spinner) isn't the issue here.">Leo should have used a spinner instead of a die</button>
+        </div>
+        <div class="feedback" id="fb-ed1"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Newman's Analysis: The Factory Sample</h2>
+      <p>A factory simulates 500 trials of a process and finds 15 defective items.<br><strong>Question: estimate P(a randomly selected item is not defective), and discuss whether 500 trials is enough to trust the estimate.</strong></p>
+      <div id="newmanStages"></div>
+      <button class="stage-btn" id="newmanNext" type="button">Start Stage 1: Read</button>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Resolving the Hook</h2>
+      <button class="reveal-btn" id="revealInsurance" type="button">Reveal the discussion</button>
+      <div class="reveal-box" id="insuranceRevealBox">
+        <p>Both numbers matter &mdash; because they're complements, knowing one instantly tells you the other (they always sum to 1). Insurers use the <strong>full picture</strong>: the claim probability helps estimate expected payout costs, while the no-claim probability tells them how many drivers will pay premiums without costing them anything. Good decisions in probability almost always use both an event and its complement together, not just one number in isolation.</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- PRACTISE -->
+  <section id="practise" class="panel">
+    <div class="card">
+      <h2>You Do &mdash; choose your tier</h2>
+      <div class="tier-nav">
+        <button class="tier-btn active" data-tier="foundation">Foundation</button>
+        <button class="tier-btn" data-tier="core">Core</button>
+        <button class="tier-btn" data-tier="extension">Extension</button>
+      </div>
+
+      <!-- FOUNDATION -->
+      <div class="tier-panel active" id="tier-foundation">
+        <p>A raffle sells 200 tickets. Ben buys 10 of them.</p>
+
+        <div class="mcq" data-qid="f1">
+          <p class="q-prompt"><strong>1.</strong> What is P(Ben wins)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="10/200 simplifies further &mdash; keep dividing."><span class="frac"><span class="num">10</span><span class="den">200</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="This is the complement, not P(Ben wins) itself."><span class="frac"><span class="num">19</span><span class="den">20</span></span></button>
+            <button class="opt" data-result="correct" data-msg="10 favourable tickets out of 200 total simplifies to 1/20."><span class="frac"><span class="num">1</span><span class="den">20</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your simplification of 10/200 again."><span class="frac"><span class="num">1</span><span class="den">10</span></span></button>
+          </div>
+          <div class="feedback" id="fb-f1"></div>
+        </div>
+
+        <div class="mcq" data-qid="f2">
+          <p class="q-prompt"><strong>2.</strong> What is P(Ben does not win)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="This is P(Ben wins), not its complement."><span class="frac"><span class="num">1</span><span class="den">20</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 1/20 = 19/20."><span class="frac"><span class="num">19</span><span class="den">20</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your subtraction: 1 - 1/20 is not 9/10."><span class="frac"><span class="num">9</span><span class="den">10</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="A probability can't be greater than 1."><span class="frac"><span class="num">20</span><span class="den">20</span></span></button>
+          </div>
+          <div class="feedback" id="fb-f2"></div>
+        </div>
+
+        <div class="mcq" data-qid="f3">
+          <p class="q-prompt"><strong>3.</strong> If Ben buys more tickets, what happens to P(Ben wins)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="More tickets means more favourable outcomes out of the same total &mdash; the probability moves the other way.">It decreases</button>
+            <button class="opt" data-result="incorrect" data-msg="Buying more tickets does change Ben's probability of winning.">It stays the same</button>
+            <button class="opt" data-result="correct" data-msg="More tickets means more favourable outcomes out of the same 200 total, so P(Ben wins) increases.">It increases</button>
+            <button class="opt" data-result="incorrect" data-msg="Winning would only become impossible if Ben owned 0 tickets.">It becomes impossible</button>
+          </div>
+          <div class="feedback" id="fb-f3"></div>
+        </div>
+      </div>
+
+      <!-- CORE -->
+      <div class="tier-panel" id="tier-core">
+        <p>A factory tests 300 items from a production run and finds 12 are defective.</p>
+
+        <div class="mcq" data-qid="c1">
+          <p class="q-prompt"><strong>1.</strong> What is the relative frequency of a defective item?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="12/300 simplifies further &mdash; keep dividing."><span class="frac"><span class="num">12</span><span class="den">300</span></span></button>
+            <button class="opt" data-result="correct" data-msg="12 out of 300 simplifies to 1/25."><span class="frac"><span class="num">1</span><span class="den">25</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="This is the complement, not the defective rate itself."><span class="frac"><span class="num">24</span><span class="den">25</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your simplification of 12/300 again."><span class="frac"><span class="num">1</span><span class="den">12</span></span></button>
+          </div>
+          <div class="feedback" id="fb-c1"></div>
+        </div>
+
+        <div class="mcq" data-qid="c2">
+          <p class="q-prompt"><strong>2.</strong> What is P(not defective)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="This is P(defective), not its complement."><span class="frac"><span class="num">1</span><span class="den">25</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="A probability can't be greater than 1."><span class="frac"><span class="num">25</span><span class="den">25</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 1/25 = 24/25."><span class="frac"><span class="num">24</span><span class="den">25</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your subtraction: 1 - 1/25 is not 23/25."><span class="frac"><span class="num">23</span><span class="den">25</span></span></button>
+          </div>
+          <div class="feedback" id="fb-c2"></div>
+        </div>
+
+        <div class="mcq" data-qid="c3">
+          <p class="q-prompt"><strong>3.</strong> Which best describes this 1/25 probability?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="Theoretical probability comes from an assumption of equally likely outcomes, not from testing real items.">Theoretical probability, since it's calculated from an assumption of fairness</button>
+            <button class="opt" data-result="correct" data-msg="This value came from actually testing 300 real items &mdash; that makes it an observed probability, or relative frequency.">Observed probability (relative frequency), since it's based on real sampled data</button>
+            <button class="opt" data-result="incorrect" data-msg="This probability can definitely be classified &mdash; it's an observed one.">Impossible to classify</button>
+            <button class="opt" data-result="incorrect" data-msg="It's specifically observed, not theoretical &mdash; no assumption of fairness was used here.">Both theoretical and observed simultaneously</button>
+          </div>
+          <div class="feedback" id="fb-c3"></div>
+        </div>
+
+        <div class="typein" data-qid="c4">
+          <p class="q-prompt"><strong>4.</strong> Using this relative frequency, out of 1500 items produced, how many would you expect to be defective?</p>
+          <input type="number" id="input-c4" aria-label="Answer">
+          <button type="button" onclick="checkTypeIn('c4', 60)">Check</button>
+          <div class="feedback" id="fb-c4"></div>
+        </div>
+      </div>
+
+      <!-- EXTENSION -->
+      <div class="tier-panel" id="tier-extension">
+        <p>A spinner has 10 equal sections, 3 marked "Prize". It is spun 40 times; the prize is won 16 times.</p>
+        <p>Theoretical P(not prize) = <span class="frac"><span class="num">7</span><span class="den">10</span></span> = 0.7 &nbsp;&nbsp; Observed relative frequency of not winning = <span class="frac"><span class="num">24</span><span class="den">40</span></span> = 0.6</p>
+
+        <div class="mcq" data-qid="e1">
+          <p class="q-prompt"><strong>1.</strong> Based on Chapter 2's sample-size reasoning, does this 0.1 gap between theoretical (0.7) and observed (0.6) provide strong evidence the spinner is unfair?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="Any gap at all is normal, even with a perfectly fair spinner &mdash; the size of the sample matters.">Yes, any gap proves bias</button>
+            <button class="opt" data-result="correct" data-msg="40 trials is a fairly small sample. A gap of this size is well within what natural variation would produce, even from a perfectly fair spinner.">No, 40 trials is a fairly small sample, so this size of gap is expected from natural variation</button>
+            <button class="opt" data-result="incorrect" data-msg="The direction of the gap (higher or lower) doesn't by itself indicate bias &mdash; sample size is what matters most here.">Yes, because 0.6 is less than 0.7</button>
+            <button class="opt" data-result="incorrect" data-msg="We can reason about this using what we know about sample size and natural variation, even without weighing the spinner.">It's impossible to know without weighing the spinner</button>
+          </div>
+          <div class="feedback" id="fb-e1"></div>
+        </div>
+
+        <div class="typein" data-qid="e2">
+          <p class="q-prompt"><strong>2.</strong> If the spinner is fair, how many of the next 100 spins would you theoretically expect to <em>not</em> win the prize?</p>
+          <input type="number" id="input-e2" aria-label="Answer">
+          <button type="button" onclick="checkTypeIn('e2', 70)">Check</button>
+          <div class="feedback" id="fb-e2"></div>
+        </div>
+
+        <p style="margin-top:16px;"><strong>Written justification:</strong> what additional evidence (for example, running more trials) would help you decide more confidently whether this spinner is fair?</p>
+        <textarea class="reflect-box" id="extJustify" placeholder="Type your answer here..."></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- NON-ROUTINE PROBLEMS -->
+  <section id="nonroutine" class="panel">
+    <div class="card">
+      <h2>The Birthday Problem</h2>
+      <p>In a classroom of 23 students, what's the probability that at least 2 of them share a birthday?</p>
+      <button class="reveal-btn" id="revealBirthday" type="button">Reveal the surprising answer</button>
+      <div class="reveal-box" id="birthdayRevealBox">
+        <p>The probability is approximately <strong>50.7%</strong> &mdash; more likely than not! This feels surprising, but it's solved using the complement: it's far easier to calculate P(no one shares a birthday) first, then use P(at least one shared birthday) = 1 &minus; P(no shared birthdays). Directly counting every possible way two or more people could share a birthday is extremely complex, but counting the one way nobody shares is much more manageable.</p>
+      </div>
+      <div class="mcq" data-qid="nr1" style="margin-top:14px;">
+        <p class="q-prompt"><strong>Why is this problem solved by first finding P(no shared birthdays)?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="There are other mathematical approaches in theory, but this one is by far the most manageable &mdash; that's the real reason it's used.">Because it's the only possible approach</button>
+          <button class="opt" data-result="correct" data-msg="Counting every possible pairing, triple, or larger group that could share a birthday gets complicated fast. But there is only one way for nobody to share &mdash; every person has a different birthday &mdash; which is far simpler to calculate directly.">Because directly counting all the ways two people could share a birthday is far more complex than counting the one way nobody shares</button>
+          <button class="opt" data-result="incorrect" data-msg="Sharing a birthday can absolutely be calculated directly &mdash; it's just much harder than using the complement.">Because sharing a birthday is impossible to calculate directly</button>
+          <button class="opt" data-result="incorrect" data-msg="The complement rule applies perfectly well here &mdash; that's exactly why this method works.">Because the complement rule doesn't apply here</button>
+        </div>
+        <div class="feedback" id="fb-nr1"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Deal or No Deal</h2>
+      <p>You're playing a game show. 5 boxes remain unopened. One contains $100,000; the other four contain much smaller amounts. The bank offers you $18,000 to stop playing now.</p>
+      <div class="mcq" data-qid="nr2">
+        <p class="q-prompt"><strong>If you continue playing, what is the probability your own box holds the $100,000?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="This would be the probability if there were 4 boxes remaining, not 5."><span class="frac"><span class="num">1</span><span class="den">4</span></span></button>
+          <button class="opt" data-result="correct" data-msg="With 5 boxes remaining and one $100,000 prize, each box (including yours) has an equal 1/5 probability."><span class="frac"><span class="num">1</span><span class="den">5</span></span></button>
+          <button class="opt" data-result="incorrect" data-msg="This would mean the prize was almost certain &mdash; check how many boxes remain."><span class="frac"><span class="num">4</span><span class="den">5</span></span></button>
+          <button class="opt" data-result="incorrect" data-msg="A probability of 1 would mean the prize is certain to be in your box.">1</button>
+        </div>
+        <div class="feedback" id="fb-nr2"></div>
+      </div>
+      <p style="margin-top:14px;">Notice that opening the other boxes doesn't change the probability your own box holds the prize &mdash; that stayed fixed at 1/5 the moment boxes were assigned. What changes is the size of the bank's offer, since it's based on the shrinking pool of unknown values still in play.</p>
+    </div>
+  </section>
+
+  <!-- REFLECT -->
+  <section id="reflect" class="panel">
+    <div class="card">
+      <h2>Journal</h2>
+      <p>Of everything you've learned about probability across these four chapters, what's the one idea you'd explain first to a friend who's never studied it &mdash; and why?</p>
+      <textarea id="journal" placeholder="Start writing here..."></textarea>
+      <p class="save-note" id="saveNote">Your writing saves automatically.</p>
+    </div>
+    <div class="card complete-box">
+      <button class="complete-btn" id="markComplete" type="button">Mark Chapter 4 complete</button>
+      <p class="complete-msg" id="completeMsg">Chapter 4 marked complete &mdash; nice work!</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+console.log('Chapter 4 script starting to run...');
+
+// ---------- Safe storage (falls back to in-memory if localStorage is blocked) ----------
+const memStore = {};
+function safeGet(key, fallback){
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v;
+  } catch(e){
+    return (key in memStore) ? memStore[key] : fallback;
+  }
+}
+function safeSet(key, value){
+  try { localStorage.setItem(key, value); }
+  catch(e){ memStore[key] = value; }
+}
+
+// ---------- Font toggle ----------
+const fontModes = [
+  {cls:'', label:'Font: Nunito Sans'},
+  {cls:'font-system', label:'Font: System'},
+  {cls:'font-atkinson', label:'Font: Atkinson Hyperlegible'}
+];
+let fontIdx = parseInt(safeGet('pro-font', '0'), 10);
+function applyFont(){
+  document.body.classList.remove('font-system','font-atkinson');
+  if(fontModes[fontIdx].cls) document.body.classList.add(fontModes[fontIdx].cls);
+  document.getElementById('fontToggle').textContent = fontModes[fontIdx].label;
+}
+document.getElementById('fontToggle').addEventListener('click', ()=>{
+  fontIdx = (fontIdx + 1) % fontModes.length;
+  safeSet('pro-font', fontIdx);
+  applyFont();
+});
+applyFont();
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+
+// ---------- Tier nav (Foundation / Core / Extension) ----------
+document.querySelectorAll('.tier-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const nav = btn.closest('.tier-nav');
+    nav.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const panelContainer = nav.parentElement;
+    panelContainer.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('tier-' + btn.dataset.tier).classList.add('active');
+  });
+});
+
+// ---------- Hook prediction ----------
+document.querySelectorAll('#insuranceGuess .predict-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#insuranceGuess .predict-btn').forEach(b=>b.classList.remove('chosen'));
+    btn.classList.add('chosen');
+  });
+});
+
+// ---------- Reveal buttons ----------
+function wireReveal(btnId, boxId){
+  const btn = document.getElementById(btnId);
+  const box = document.getElementById(boxId);
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{ box.classList.add('show'); btn.disabled = true; });
+}
+wireReveal('revealInsurance','insuranceRevealBox');
+wireReveal('revealBirthday','birthdayRevealBox');
+
+// ---------- MCQ handler ----------
+function mcqAns(btn){
+  const wrap = btn.closest('.mcq');
+  const fb = wrap.querySelector('.feedback');
+  const result = btn.dataset.result;
+  const msg = btn.dataset.msg;
+  wrap.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected-correct','selected-incorrect'));
+  if(result === 'correct'){
+    btn.classList.add('selected-correct');
+    fb.innerHTML = '&#10003; ' + msg;
+    fb.className = 'feedback show correct';
+    wrap.querySelectorAll('.opt').forEach(o=>o.disabled = true);
+    safeSet('pro-ch4-' + wrap.dataset.qid, 'correct');
+  } else {
+    btn.classList.add('selected-incorrect');
+    fb.innerHTML = '&#10007; ' + msg;
+    fb.className = 'feedback show incorrect';
+  }
+}
+document.querySelectorAll('.mcq .opt').forEach(btn=>{
+  btn.addEventListener('click', ()=>mcqAns(btn));
+});
+
+// ---------- Type-in handler ----------
+function checkTypeIn(qid, answer){
+  const input = document.getElementById('input-' + qid);
+  const fb = document.getElementById('fb-' + qid);
+  const val = parseFloat(input.value);
+  if(val === answer){
+    fb.innerHTML = '&#10003; Correct!';
+    fb.className = 'feedback show correct';
+    safeSet('pro-ch4-' + qid, 'correct');
+  } else {
+    fb.innerHTML = '&#10007; Not quite. Check your working and try again.';
+    fb.className = 'feedback show incorrect';
+  }
+}
+
+// ---------- Newman's Analysis (accumulating, We Do) ----------
+const newmanStages = [
+  {title:'Stage 1: Read', body:'"A factory simulates 500 trials of a process and finds 15 defective items. Estimate P(a randomly selected item is not defective), and discuss whether 500 trials is enough to trust the estimate."'},
+  {title:'Stage 2: Comprehend', body:'What is being asked?<br>An estimate of the probability an item is not defective, plus a judgement about how trustworthy that estimate is.'},
+  {title:'Stage 3: Transform', body:'P(defective) = <span class="frac"><span class="num">15</span><span class="den">500</span></span> = <span class="frac"><span class="num">3</span><span class="den">100</span></span>'},
+  {title:'Stage 4: Process', body:'P(not defective) = 1 &minus; <span class="frac"><span class="num">3</span><span class="den">100</span></span> = <span class="frac"><span class="num">97</span><span class="den">100</span></span>'},
+  {title:'Stage 5: Encode', body:'<strong>The probability an item is not defective is estimated at 97/100, or 97%.</strong><br><br>500 trials is a reasonably large sample &mdash; recalling Chapter 2, more trials generally means the relative frequency is a more trustworthy estimate of the true probability, though it is still an estimate rather than a guaranteed exact value.'}
+];
+let newmanIdx = 0;
+const newmanContainer = document.getElementById('newmanStages');
+const newmanBtn = document.getElementById('newmanNext');
+function renderNewman(){
+  let html = '';
+  for(let i=0;i<newmanIdx;i++){
+    html += `<div class="reveal-box show" style="margin-bottom:10px;"><strong>${newmanStages[i].title}</strong><br>${newmanStages[i].body}</div>`;
+  }
+  newmanContainer.innerHTML = html;
+  if(newmanIdx >= newmanStages.length){
+    newmanBtn.style.display = 'none';
+  } else {
+    newmanBtn.textContent = newmanIdx === 0 ? 'Start Stage 1: Read' : 'Reveal ' + newmanStages[newmanIdx].title;
+  }
+}
+newmanBtn.addEventListener('click', ()=>{ newmanIdx++; renderNewman(); });
+renderNewman();
+
+// ---------- Reflection textarea autosave ----------
+const extJustify = document.getElementById('extJustify');
+if(extJustify){
+  extJustify.value = safeGet('pro-ch4-extJustify', '');
+  extJustify.addEventListener('input', ()=>{ safeSet('pro-ch4-extJustify', extJustify.value); });
+}
+
+// ---------- Journal autosave ----------
+const journal = document.getElementById('journal');
+journal.value = safeGet('pro-ch4-journal', '');
+journal.addEventListener('input', ()=>{ safeSet('pro-ch4-journal', journal.value); });
+
+// ---------- Mark complete ----------
+document.getElementById('markComplete').addEventListener('click', ()=>{
+  safeSet('pro-ch4-complete', 'true');
+  document.getElementById('completeMsg').classList.add('show');
+});
+
+console.log('Chapter 4 script finished running.');
+</script>
+
+</body>
+</html>

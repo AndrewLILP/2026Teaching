@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Other Side | MA4-PRO-C-01 Chapter 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;600&family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4EFE9;
+    --card:#FFFFFF;
+    --slate:#3D5A80;
+    --forest:#4A7C59;
+    --amber:#E89C2F;
+    --terracotta:#C1614F;
+    --accent:#6A85A8;
+    --accent-text:#1F3A57;
+    --accent-light:#E5EAF2;
+    --text:#23303D;
+    --text-soft:#4B5A68;
+    --correct:#1E5631;
+    --correct-bg:#E4F3E8;
+    --incorrect:#8B2E2E;
+    --incorrect-bg:#FBEAEA;
+    --border:#D8D0C4;
+    --font-body:'Nunito Sans', sans-serif;
+    --font-hand:'Caveat', cursive;
+    --radius:14px;
+  }
+  body.font-atkinson{ --font-body:'Atkinson Hyperlegible', sans-serif; }
+  body.font-system{ --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.55; text-align:left; }
+  header{ background:var(--accent); color:var(--accent-text); padding:18px 20px; }
+  header .crumb{ font-size:0.85rem; opacity:0.85; margin-bottom:6px; }
+  header .crumb a{ color:var(--accent-text); text-decoration:underline; }
+  header h1{ margin:0; font-family:'Nunito', sans-serif; font-weight:800; font-size:1.5rem; color:var(--accent-text); }
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  #fontToggle{ background:rgba(31,58,87,0.12); border:1px solid rgba(31,58,87,0.4); color:var(--accent-text); padding:8px 14px; border-radius:999px; cursor:pointer; font-size:0.85rem; font-family:var(--font-body); }
+  #fontToggle:focus-visible, button:focus-visible, .opt:focus-visible, input:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  nav.tabs{ display:flex; background:#fff; border-bottom:2px solid var(--border); overflow-x:auto; }
+  nav.tabs button{ flex:1; min-width:110px; padding:14px 8px; background:none; border:none; border-bottom:4px solid transparent; font-family:var(--font-body); font-weight:700; font-size:0.92rem; color:var(--text-soft); cursor:pointer; }
+  nav.tabs button.active{ color:var(--accent-text); border-bottom:4px solid var(--accent); }
+
+  main{ max-width:780px; margin:0 auto; padding:22px 16px 60px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:18px; }
+  .card h2{ margin-top:0; font-family:'Nunito', sans-serif; font-weight:800; color:var(--accent-text); font-size:1.2rem; }
+  .card h3{ font-family:'Nunito', sans-serif; font-weight:700; color:var(--accent-text); font-size:1.02rem; }
+  .stage-label{ display:inline-block; background:var(--accent-light); color:var(--accent-text); font-weight:700; font-size:0.75rem; padding:4px 10px; border-radius:999px; margin-bottom:10px; }
+
+  .frac{ display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; font-weight:800; line-height:1.05; margin:0 3px; position:relative; top:3px; }
+  .frac .num{ border-bottom:2px solid currentColor; padding:0 5px 1px; }
+  .frac .den{ padding:1px 5px 0; }
+
+  .mcq .options{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+  .opt{ text-align:left; background:#fff; border:2px solid var(--border); border-radius:10px; padding:10px 14px; font-family:var(--font-body); font-size:0.98rem; color:var(--text); cursor:pointer; }
+  .opt:hover{ border-color:var(--slate); }
+  .opt.selected-correct{ border-color:var(--correct); background:var(--correct-bg); }
+  .opt.selected-incorrect{ border-color:var(--incorrect); background:var(--incorrect-bg); }
+  .opt:disabled{ cursor:default; opacity:0.75; }
+
+  .feedback{ font-weight:700; padding:10px 12px; border-radius:10px; margin-top:6px; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--correct-bg); color:var(--correct); }
+  .feedback.incorrect{ background:var(--incorrect-bg); color:var(--incorrect); }
+
+  .predict-row{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .predict-btn{ background:#fff; border:2px solid var(--slate); color:var(--slate); padding:10px 18px; border-radius:999px; font-weight:700; cursor:pointer; }
+  .predict-btn.chosen{ background:var(--slate); color:#fff; }
+
+  .diagram-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin:14px 0; }
+  svg{ display:block; }
+
+  .reveal-btn, .stage-btn, .complete-btn{ background:var(--slate); color:#fff; border:none; padding:11px 18px; border-radius:10px; font-weight:700; cursor:pointer; font-family:var(--font-body); }
+  .reveal-btn:disabled, .stage-btn:disabled{ opacity:0.5; cursor:default; }
+  .reveal-box{ background:var(--accent-light); border-left:4px solid var(--accent); padding:12px 14px; border-radius:0 10px 10px 0; margin-top:10px; display:none; }
+  .reveal-box.show{ display:block; }
+
+  .tier-nav{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tier-btn{ background:#fff; border:2px solid var(--border); padding:9px 16px; border-radius:999px; font-weight:700; cursor:pointer; color:var(--text-soft); }
+  .tier-btn.active{ background:var(--slate); color:#fff; border-color:var(--slate); }
+  .tier-panel{ display:none; }
+  .tier-panel.active{ display:block; }
+
+  .set-notation{ background:#FBF9F5; border:2px dashed var(--border); border-radius:10px; padding:12px 16px; font-family:'Nunito', monospace; font-weight:700; margin:12px 0; }
+
+  .bar-wrap{ margin:14px 0; }
+  .bar-legend{ display:flex; gap:20px; flex-wrap:wrap; margin-top:8px; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-weight:700; font-size:0.92rem; }
+  .swatch{ width:16px; height:16px; border-radius:4px; display:inline-block; border:1px solid var(--text-soft); }
+
+  textarea.reflect-box{ width:100%; min-height:90px; font-family:var(--font-body); font-size:0.98rem; padding:12px; border:2px solid var(--border); border-radius:10px; background:#fff; color:var(--text); }
+  textarea#journal{ width:100%; min-height:140px; font-family:var(--font-hand); font-size:1.4rem; padding:14px; border:2px solid var(--border); border-radius:10px; background:#FFFDF7; color:var(--text); }
+  .save-note{ font-size:0.85rem; color:var(--text-soft); margin-top:6px; }
+  .complete-box{ text-align:center; margin-top:20px; }
+  .complete-msg{ color:var(--correct); font-weight:700; margin-top:10px; display:none; }
+  .complete-msg.show{ display:block; }
+
+  p{ margin:0 0 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="crumb"><a href="index.html">&larr; Back to Chapter Hub</a> &nbsp;|&nbsp; MA4-PRO-C-01: Probability</div>
+  <div class="toolbar">
+    <h1>Chapter 3: The Other Side</h1>
+    <button id="fontToggle" type="button">Font: Nunito Sans</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-panel="hook">Hook</button>
+  <button class="tab-btn" data-panel="learn">Learn</button>
+  <button class="tab-btn" data-panel="practise">Practise</button>
+  <button class="tab-btn" data-panel="reflect">Reflect</button>
+</nav>
+
+<main>
+
+  <!-- HOOK -->
+  <section id="hook" class="panel active">
+    <div class="card">
+      <h2>Tomorrow's Forecast</h2>
+      <p>The weather forecast says there's a 70% chance of rain tomorrow.</p>
+      <p><strong>What's the probability it doesn't rain?</strong></p>
+      <div class="predict-row" id="rainGuess">
+        <button class="predict-btn" data-choice="10%">10%</button>
+        <button class="predict-btn" data-choice="20%">20%</button>
+        <button class="predict-btn" data-choice="30%">30%</button>
+        <button class="predict-btn" data-choice="40%">40%</button>
+      </div>
+      <p id="rainGuessNote" style="display:none; color:var(--text-soft); font-style:italic;">Prediction locked in. Hold onto it.</p>
+    </div>
+    <div class="card">
+      <p><strong>Hold onto your answer.</strong><br>By the end of this lesson, you'll have a formula that answers this in one line.</p>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="learn" class="panel">
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>What is the complement?</h2>
+      <p>The <strong>complement</strong> of an event is everything in the sample space that is <em>not</em> the event.</p>
+      <p>A standard 6-sided die: complement of "rolling a 3" is "not rolling a 3".</p>
+      <div class="set-notation">
+        S = {1, 2, 3, 4, 5, 6}<br>
+        Complement of {3} = {1, 2, 4, 5, 6}
+      </div>
+      <p>P(3) = <span class="frac"><span class="num">1</span><span class="den">6</span></span> &nbsp;&nbsp; P(not 3) = <span class="frac"><span class="num">5</span><span class="den">6</span></span></p>
+      <p>Check: <span class="frac"><span class="num">1</span><span class="den">6</span></span> + <span class="frac"><span class="num">5</span><span class="den">6</span></span> = 1 &#10003;</p>
+      <div class="bar-wrap" id="barDie3"></div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>Resolving the Hook</h2>
+      <p>P(rain) = 0.7, so P(not rain) = 1 &minus; 0.7 = 0.3.</p>
+      <p style="font-size:1.1rem; font-weight:800; text-align:center;">P(not A) = 1 &minus; P(A)</p>
+      <button class="reveal-btn" id="revealRain" type="button">Reveal the correct answer</button>
+      <div class="reveal-box" id="rainRevealBox">
+        <p>P(not rain) = <strong>30%</strong>. This shortcut works for any event: subtract the probability from 1.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do &rarr; Check</span>
+      <h2>Error Detective: Tom's Die Roll</h2>
+      <p>Tom calculates P(rolling a 3) = <span class="frac"><span class="num">1</span><span class="den">6</span></span> on a standard 6-sided die.</p>
+      <p>Tom then writes: P(not rolling a 3) = <span class="frac"><span class="num">1</span><span class="den">6</span></span> as well.</p>
+      <div class="mcq" data-qid="ed1">
+        <p class="q-prompt"><strong>What mistake did Tom make?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="A standard die does have 6 sides &mdash; that's not the issue here.">He forgot the die has 6 sides</button>
+          <button class="opt" data-result="correct" data-msg="Tom just repeated the same value instead of applying the complement rule. The correct approach is P(not 3) = 1 - P(3) = 1 - 1/6 = 5/6.">He didn't apply the complement rule &mdash; he just repeated the same value instead of calculating 1 minus P(3)</button>
+          <button class="opt" data-result="incorrect" data-msg="The fraction 1/6 for P(3) was correct &mdash; the mistake happened after that.">He simplified the fraction incorrectly</button>
+          <button class="opt" data-result="incorrect" data-msg="This isn't about theoretical vs experimental probability &mdash; it's about applying the complement rule.">He confused theoretical and experimental probability</button>
+        </div>
+        <div class="feedback" id="fb-ed1"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>The Spinner: Not Green</h2>
+      <p>Recall this spinner from Chapter 1: 2 red, 3 green, 1 white section.</p>
+      <div class="diagram-row"><svg width="130" height="130" viewBox="0 0 200 200" id="spinnerCh3" aria-label="Spinner with 2 red, 3 green and 1 white sections"></svg></div>
+      <button class="reveal-btn" id="revealSpinnerC3" type="button">Reveal set notation and probability</button>
+      <div class="reveal-box" id="spinnerC3RevealBox">
+        <div class="set-notation">
+          S = {R, R, G, G, G, W}<br>
+          Complement of "green" = {R, R, W}
+        </div>
+        <p>P(green) = <span class="frac"><span class="num">3</span><span class="den">6</span></span> &nbsp;&nbsp; P(not green) = <span class="frac"><span class="num">3</span><span class="den">6</span></span></p>
+        <div class="bar-wrap" id="barSpinnerC3"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Card Draw: Not a Heart</h2>
+      <p>A standard deck has 52 cards, 13 of which are hearts.</p>
+      <button class="reveal-btn" id="revealCards" type="button">Reveal set notation and probability</button>
+      <div class="reveal-box" id="cardsRevealBox">
+        <div class="set-notation">
+          Complement of "drawing a heart" = "drawing any card that is not a heart"
+        </div>
+        <p>P(heart) = <span class="frac"><span class="num">13</span><span class="den">52</span></span> = <span class="frac"><span class="num">1</span><span class="den">4</span></span> &nbsp;&nbsp; P(not heart) = <span class="frac"><span class="num">39</span><span class="den">52</span></span> = <span class="frac"><span class="num">3</span><span class="den">4</span></span></p>
+        <div class="bar-wrap" id="barCards"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Newman's Analysis: The School Raffle</h2>
+      <p>In a school raffle, the probability that a specific class wins the major prize is 0.08.<br><strong>Question: estimate the probability that this class does not win, and interpret your answer.</strong></p>
+      <div id="newmanStages"></div>
+      <button class="stage-btn" id="newmanNext" type="button">Start Stage 1: Read</button>
+    </div>
+
+  </section>
+
+  <!-- PRACTISE -->
+  <section id="practise" class="panel">
+    <div class="card">
+      <h2>You Do &mdash; choose your tier</h2>
+      <div class="tier-nav">
+        <button class="tier-btn active" data-tier="foundation">Foundation</button>
+        <button class="tier-btn" data-tier="core">Core</button>
+        <button class="tier-btn" data-tier="extension">Extension</button>
+      </div>
+
+      <!-- FOUNDATION -->
+      <div class="tier-panel active" id="tier-foundation">
+        <div class="mcq" data-qid="f1">
+          <div class="bar-wrap" id="barF1"></div>
+          <p class="q-prompt"><strong>1.</strong> A standard 6-sided die shows P(rolling a 5) = <span class="frac"><span class="num">1</span><span class="den">6</span></span>. What is P(not rolling a 5)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="1/6 is P(rolling a 5), not its complement."><span class="frac"><span class="num">1</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your subtraction: 1 - 1/6 is not 4/6."><span class="frac"><span class="num">4</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 1/6 = 5/6."><span class="frac"><span class="num">5</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="A probability can't be greater than 1."><span class="frac"><span class="num">6</span><span class="den">6</span></span></button>
+          </div>
+          <div class="feedback" id="fb-f1"></div>
+        </div>
+
+        <div class="mcq" data-qid="f2">
+          <div class="bar-wrap" id="barF2"></div>
+          <p class="q-prompt"><strong>2.</strong> This spinner has P(red) = <span class="frac"><span class="num">2</span><span class="den">6</span></span>. What is P(not red)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="2/6 is P(red) itself, not its complement."><span class="frac"><span class="num">2</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 2/6 = 4/6."><span class="frac"><span class="num">4</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="Check your subtraction: 1 - 2/6 is not 1/6."><span class="frac"><span class="num">1</span><span class="den">6</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="A probability can't be greater than 1."><span class="frac"><span class="num">6</span><span class="den">6</span></span></button>
+          </div>
+          <div class="feedback" id="fb-f2"></div>
+        </div>
+
+        <div class="mcq" data-qid="f3">
+          <div class="bar-wrap" id="barF3"></div>
+          <p class="q-prompt"><strong>3.</strong> A fair coin has P(heads) = <span class="frac"><span class="num">1</span><span class="den">2</span></span>. What is P(not heads)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="A probability of 0 would mean tails is impossible &mdash; that's not right for a fair coin.">0</button>
+            <button class="opt" data-result="incorrect" data-msg="A probability of 1 would mean tails is certain every time &mdash; that's not right for a fair coin.">1</button>
+            <button class="opt" data-result="incorrect" data-msg="Check your subtraction: 1 - 1/2 is not 1/4."><span class="frac"><span class="num">1</span><span class="den">4</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 1/2 = 1/2. Notice P(heads) and P(not heads) are equal here &mdash; that makes sense since a coin only has 2 equally likely outcomes."><span class="frac"><span class="num">1</span><span class="den">2</span></span></button>
+          </div>
+          <div class="feedback" id="fb-f3"></div>
+        </div>
+
+        <div class="mcq" data-qid="f4">
+          <div class="bar-wrap" id="barF4"></div>
+          <p class="q-prompt"><strong>4.</strong> An event has P(event) = 0.8. What is P(not event)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="0.8 is P(event) itself, not its complement.">0.8</button>
+            <button class="opt" data-result="correct" data-msg="1 - 0.8 = 0.2.">0.2</button>
+            <button class="opt" data-result="incorrect" data-msg="A probability can't be greater than 1.">1.8</button>
+            <button class="opt" data-result="incorrect" data-msg="A probability of 0 would mean the complement is impossible &mdash; that's not right here.">0</button>
+          </div>
+          <div class="feedback" id="fb-f4"></div>
+        </div>
+      </div>
+
+      <!-- CORE -->
+      <div class="tier-panel" id="tier-core">
+        <div class="mcq" data-qid="c1">
+          <p class="q-prompt"><strong>1.</strong> In a standard deck of 52 cards, what is the complement of "drawing a heart"?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="This describes the same event happening twice, not the complement.">Drawing a heart again</button>
+            <button class="opt" data-result="incorrect" data-msg="This only covers 2 of the 3 remaining suits &mdash; the complement must include every card that isn't a heart.">Drawing a heart or a spade</button>
+            <button class="opt" data-result="correct" data-msg="The complement is everything in the sample space that isn't the event &mdash; every card that is not a heart.">Drawing any card that is not a heart</button>
+            <button class="opt" data-result="incorrect" data-msg="Some red cards are hearts, so this isn't quite the complement.">Drawing a red card</button>
+          </div>
+          <div class="feedback" id="fb-c1"></div>
+        </div>
+
+        <div class="mcq" data-qid="c2">
+          <div class="bar-wrap" id="barC2"></div>
+          <p class="q-prompt"><strong>2.</strong> Using P(heart) = 13/52, what is P(not heart)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="13/52 is P(heart) itself."><span class="frac"><span class="num">13</span><span class="den">52</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 13/52 = 39/52."><span class="frac"><span class="num">39</span><span class="den">52</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="This would only account for the black card suits, but hearts and diamonds are both red &mdash; check your working."><span class="frac"><span class="num">26</span><span class="den">52</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="This is far too small &mdash; there are 39 non-heart cards, not 1."><span class="frac"><span class="num">1</span><span class="den">52</span></span></button>
+          </div>
+          <div class="feedback" id="fb-c2"></div>
+        </div>
+
+        <div class="mcq" data-qid="c3">
+          <p class="q-prompt"><strong>3.</strong> A bag contains 4 red, 3 blue and 2 yellow marbles (from Chapter 1). What is the complement of "drawing red"?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="This leaves out yellow, which is also part of the complement.">Drawing blue only</button>
+            <button class="opt" data-result="incorrect" data-msg="This leaves out blue, which is also part of the complement.">Drawing yellow only</button>
+            <button class="opt" data-result="correct" data-msg="The complement of 'red' is everything else in the bag &mdash; blue or yellow.">Drawing blue or yellow</button>
+            <button class="opt" data-result="incorrect" data-msg="This describes the same event happening twice, not the complement.">Drawing red again</button>
+          </div>
+          <div class="feedback" id="fb-c3"></div>
+        </div>
+
+        <div class="mcq" data-qid="c4">
+          <div class="bar-wrap" id="barC4"></div>
+          <p class="q-prompt"><strong>4.</strong> What is P(not red) for this bag?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="4/9 is P(red) itself."><span class="frac"><span class="num">4</span><span class="den">9</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="2/9 is P(yellow) alone, not the full complement of red."><span class="frac"><span class="num">2</span><span class="den">9</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="3/9 is P(blue) alone, not the full complement of red."><span class="frac"><span class="num">3</span><span class="den">9</span></span></button>
+            <button class="opt" data-result="correct" data-msg="1 - 4/9 = 5/9 (matches blue + yellow: 3/9 + 2/9 = 5/9)."><span class="frac"><span class="num">5</span><span class="den">9</span></span></button>
+          </div>
+          <div class="feedback" id="fb-c4"></div>
+        </div>
+      </div>
+
+      <!-- EXTENSION -->
+      <div class="tier-panel" id="tier-extension">
+        <div class="mcq" data-qid="e1">
+          <p class="q-prompt"><strong>1.</strong> A bag of counters has P(red) = 0.35 and P(blue) = 0.4. What is P(neither red nor blue)?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="Check your working: 1 - (0.35 + 0.4) is not 0.75.">0.75</button>
+            <button class="opt" data-result="incorrect" data-msg="Check your working: 1 - (0.35 + 0.4) is not 0.65.">0.65</button>
+            <button class="opt" data-result="correct" data-msg="P(red or blue) = 0.35 + 0.4 = 0.75, so P(neither) = 1 - 0.75 = 0.25.">0.25</button>
+            <button class="opt" data-result="incorrect" data-msg="Check your working: 1 - (0.35 + 0.4) is not 0.05.">0.05</button>
+          </div>
+          <div class="feedback" id="fb-e1"></div>
+        </div>
+
+        <div class="typein" data-qid="e2">
+          <p class="q-prompt"><strong>2.</strong> A vaccine trial reports a 15% side-effect rate. What proportion of participants do <em>not</em> experience side effects? Enter your answer as a decimal (e.g. 0.5).</p>
+          <input type="number" step="0.01" id="input-e2" aria-label="Answer">
+          <button type="button" onclick="checkTypeIn('e2', 0.85)">Check</button>
+          <div class="feedback" id="fb-e2"></div>
+        </div>
+
+        <div class="mcq" data-qid="e3">
+          <p class="q-prompt"><strong>3.</strong> If P(A) + P(not A) did not equal 1, what would this tell you?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="How likely A is doesn't change the fact that A and not-A must always cover the whole sample space.">Event A is very likely</button>
+            <button class="opt" data-result="incorrect" data-msg="An impossible event still has a valid complement that sums to 1 with it.">Event A is impossible</button>
+            <button class="opt" data-result="correct" data-msg="A and its complement always cover every outcome in the sample space, so their probabilities must always sum to exactly 1. If they don't, a calculation error has occurred.">A mistake was made in the calculation</button>
+            <button class="opt" data-result="incorrect" data-msg="An event and its complement never overlap by definition &mdash; that's not what this situation would indicate.">A and not-A overlap partially</button>
+          </div>
+          <div class="feedback" id="fb-e3"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFLECT -->
+  <section id="reflect" class="panel">
+    <div class="card">
+      <h2>Journal</h2>
+      <p>Explain how finding the probability of "not rolling an even number" connects to the sample space you listed back in Chapter 1.</p>
+      <textarea id="journal" placeholder="Start writing here..."></textarea>
+      <p class="save-note" id="saveNote">Your writing saves automatically.</p>
+    </div>
+    <div class="card complete-box">
+      <button class="complete-btn" id="markComplete" type="button">Mark Chapter 3 complete</button>
+      <p class="complete-msg" id="completeMsg">Chapter 3 marked complete &mdash; nice work!</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+console.log('Chapter 3 script starting to run...');
+
+// ---------- Safe storage (falls back to in-memory if localStorage is blocked) ----------
+const memStore = {};
+function safeGet(key, fallback){
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v;
+  } catch(e){
+    return (key in memStore) ? memStore[key] : fallback;
+  }
+}
+function safeSet(key, value){
+  try { localStorage.setItem(key, value); }
+  catch(e){ memStore[key] = value; }
+}
+
+// ---------- Font toggle ----------
+const fontModes = [
+  {cls:'', label:'Font: Nunito Sans'},
+  {cls:'font-system', label:'Font: System'},
+  {cls:'font-atkinson', label:'Font: Atkinson Hyperlegible'}
+];
+let fontIdx = parseInt(safeGet('pro-font', '0'), 10);
+function applyFont(){
+  document.body.classList.remove('font-system','font-atkinson');
+  if(fontModes[fontIdx].cls) document.body.classList.add(fontModes[fontIdx].cls);
+  document.getElementById('fontToggle').textContent = fontModes[fontIdx].label;
+}
+document.getElementById('fontToggle').addEventListener('click', ()=>{
+  fontIdx = (fontIdx + 1) % fontModes.length;
+  safeSet('pro-font', fontIdx);
+  applyFont();
+});
+applyFont();
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+
+// ---------- Tier nav (Foundation / Core / Extension) ----------
+document.querySelectorAll('.tier-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const nav = btn.closest('.tier-nav');
+    nav.querySelectorAll('.tier-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const panelContainer = nav.parentElement;
+    panelContainer.querySelectorAll('.tier-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('tier-' + btn.dataset.tier).classList.add('active');
+  });
+});
+
+// ---------- Spinner SVG (reused from Chapter 1) ----------
+function spinnerSVG(segments){
+  let s = '';
+  segments.forEach(seg=>{ s += `<path d="${seg.path}" fill="${seg.color}" stroke="#fff" stroke-width="3"></path>`; });
+  s += `<circle cx="100" cy="100" r="80" fill="none" stroke="#23303D" stroke-width="2"></circle>`;
+  return s;
+}
+const mainSpinnerSegs = [
+  {color:'#C1614F', path:'M100,100 L100,20 A80,80 0 0,1 169.3,60 Z'},
+  {color:'#C1614F', path:'M100,100 L169.3,60 A80,80 0 0,1 169.3,140 Z'},
+  {color:'#4A7C59', path:'M100,100 L169.3,140 A80,80 0 0,1 100,180 Z'},
+  {color:'#4A7C59', path:'M100,100 L100,180 A80,80 0 0,1 30.7,140 Z'},
+  {color:'#4A7C59', path:'M100,100 L30.7,140 A80,80 0 0,1 30.7,60 Z'},
+  {color:'#FFFFFF', path:'M100,100 L30.7,60 A80,80 0 0,1 100,20 Z'}
+];
+const spinnerEl = document.getElementById('spinnerCh3');
+if(spinnerEl) spinnerEl.innerHTML = spinnerSVG(mainSpinnerSegs);
+
+// ---------- Two-part proportional bar ----------
+function fracHTML(n,d){
+  return `<span class="frac"><span class="num">${n}</span><span class="den">${d}</span></span>`;
+}
+function renderBar(containerId, pEvent, labelEvent, labelNot, colorEvent, colorNot){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const barX=10, barY=10, barW=280, barH=36;
+  const splitW = Math.max(0, Math.min(barW, pEvent*barW));
+  const svg = `
+    <svg viewBox="0 0 300 56" width="300" height="56" role="img" aria-label="Proportional bar showing ${labelEvent} versus ${labelNot}">
+      <rect x="${barX}" y="${barY}" width="${splitW}" height="${barH}" fill="${colorEvent}" stroke="#23303D" stroke-width="2"></rect>
+      <rect x="${barX+splitW}" y="${barY}" width="${barW-splitW}" height="${barH}" fill="${colorNot}" stroke="#23303D" stroke-width="2"></rect>
+    </svg>`;
+  const legend = `
+    <div class="bar-legend">
+      <span class="legend-item"><span class="swatch" style="background:${colorEvent}"></span>${labelEvent}</span>
+      <span class="legend-item"><span class="swatch" style="background:${colorNot}"></span>${labelNot}</span>
+    </div>`;
+  el.innerHTML = svg + legend;
+}
+
+renderBar('barDie3', 1/6, 'P(3) = ' + fracHTML(1,6), 'P(not 3) = ' + fracHTML(5,6), '#C1614F', '#6A85A8');
+renderBar('barSpinnerC3', 3/6, 'P(green) = ' + fracHTML(3,6), 'P(not green) = ' + fracHTML(3,6), '#4A7C59', '#6A85A8');
+renderBar('barCards', 13/52, 'P(heart) = ' + fracHTML(13,52), 'P(not heart) = ' + fracHTML(39,52), '#C1614F', '#6A85A8');
+renderBar('barF1', 1/6, 'P(5) = ' + fracHTML(1,6), 'P(not 5) = ?', '#C1614F', '#DDD3C4');
+renderBar('barF2', 2/6, 'P(red) = ' + fracHTML(2,6), 'P(not red) = ?', '#C1614F', '#DDD3C4');
+renderBar('barF3', 1/2, 'P(heads) = ' + fracHTML(1,2), 'P(not heads) = ?', '#C1614F', '#DDD3C4');
+renderBar('barF4', 0.8, 'P(event) = 0.8', 'P(not event) = ?', '#C1614F', '#DDD3C4');
+renderBar('barC2', 13/52, 'P(heart) = ' + fracHTML(13,52), 'P(not heart) = ?', '#C1614F', '#DDD3C4');
+renderBar('barC4', 4/9, 'P(red) = ' + fracHTML(4,9), 'P(not red) = ?', '#C1614F', '#DDD3C4');
+
+// ---------- Hook prediction ----------
+document.querySelectorAll('#rainGuess .predict-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#rainGuess .predict-btn').forEach(b=>b.classList.remove('chosen'));
+    btn.classList.add('chosen');
+    document.getElementById('rainGuessNote').style.display='block';
+  });
+});
+
+// ---------- Reveal buttons ----------
+function wireReveal(btnId, boxId){
+  const btn = document.getElementById(btnId);
+  const box = document.getElementById(boxId);
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{ box.classList.add('show'); btn.disabled = true; });
+}
+wireReveal('revealRain','rainRevealBox');
+wireReveal('revealSpinnerC3','spinnerC3RevealBox');
+wireReveal('revealCards','cardsRevealBox');
+
+// ---------- MCQ handler ----------
+function mcqAns(btn){
+  const wrap = btn.closest('.mcq');
+  const fb = wrap.querySelector('.feedback');
+  const result = btn.dataset.result;
+  const msg = btn.dataset.msg;
+  wrap.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected-correct','selected-incorrect'));
+  if(result === 'correct'){
+    btn.classList.add('selected-correct');
+    fb.innerHTML = '&#10003; ' + msg;
+    fb.className = 'feedback show correct';
+    wrap.querySelectorAll('.opt').forEach(o=>o.disabled = true);
+    safeSet('pro-ch3-' + wrap.dataset.qid, 'correct');
+  } else {
+    btn.classList.add('selected-incorrect');
+    fb.innerHTML = '&#10007; ' + msg;
+    fb.className = 'feedback show incorrect';
+  }
+}
+document.querySelectorAll('.mcq .opt').forEach(btn=>{
+  btn.addEventListener('click', ()=>mcqAns(btn));
+});
+
+// ---------- Type-in handler ----------
+function checkTypeIn(qid, answer){
+  const input = document.getElementById('input-' + qid);
+  const fb = document.getElementById('fb-' + qid);
+  const val = parseFloat(input.value);
+  if(Math.abs(val - answer) < 0.001){
+    fb.innerHTML = '&#10003; Correct! 1 - 0.15 = 0.85.';
+    fb.className = 'feedback show correct';
+    safeSet('pro-ch3-' + qid, 'correct');
+  } else {
+    fb.innerHTML = '&#10007; Not quite. Try 1 minus the side-effect rate (as a decimal).';
+    fb.className = 'feedback show incorrect';
+  }
+}
+
+// ---------- Newman's Analysis (accumulating) ----------
+const newmanStages = [
+  {title:'Stage 1: Read', body:'"In a school raffle, the probability that a specific class wins the major prize is 0.08. Estimate the probability that this class does not win, and interpret your answer."'},
+  {title:'Stage 2: Comprehend', body:'What is being asked?<br>We need the complement of winning &mdash; the probability that this class does not win.'},
+  {title:'Stage 3: Transform', body:'P(wins) = 0.08.<br>P(not win) = 1 &minus; P(wins).'},
+  {title:'Stage 4: Process', body:'P(not win) = 1 &minus; 0.08 = 0.92'},
+  {title:'Stage 5: Encode', body:'<strong>The probability that this class does not win the raffle is 0.92, or 92%.</strong><br><br><em>Full worked solution:</em><br>1 &minus; 0.08 = 0.92.'}
+];
+let newmanIdx = 0;
+const newmanContainer = document.getElementById('newmanStages');
+const newmanBtn = document.getElementById('newmanNext');
+function renderNewman(){
+  let html = '';
+  for(let i=0;i<newmanIdx;i++){
+    html += `<div class="reveal-box show" style="margin-bottom:10px;"><strong>${newmanStages[i].title}</strong><br>${newmanStages[i].body}</div>`;
+  }
+  newmanContainer.innerHTML = html;
+  if(newmanIdx >= newmanStages.length){
+    newmanBtn.style.display = 'none';
+  } else {
+    newmanBtn.textContent = newmanIdx === 0 ? 'Start Stage 1: Read' : 'Reveal ' + newmanStages[newmanIdx].title;
+  }
+}
+newmanBtn.addEventListener('click', ()=>{ newmanIdx++; renderNewman(); });
+renderNewman();
+
+// ---------- Journal autosave ----------
+const journal = document.getElementById('journal');
+journal.value = safeGet('pro-ch3-journal', '');
+journal.addEventListener('input', ()=>{ safeSet('pro-ch3-journal', journal.value); });
+
+// ---------- Mark complete ----------
+document.getElementById('markComplete').addEventListener('click', ()=>{
+  safeSet('pro-ch3-complete', 'true');
+  document.getElementById('completeMsg').classList.add('show');
+});
+
+console.log('Chapter 3 script finished running.');
+</script>
+
+</body>
+</html>

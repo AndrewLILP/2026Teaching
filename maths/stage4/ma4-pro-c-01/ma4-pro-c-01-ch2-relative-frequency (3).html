@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Does It Match Up? | MA4-PRO-C-01 Chapter 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;600&family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4EFE9;
+    --card:#FFFFFF;
+    --slate:#3D5A80;
+    --forest:#4A7C59;
+    --amber:#E89C2F;
+    --terracotta:#C1614F;
+    --accent:#3D5A80;
+    --accent-light:#DDE6F0;
+    --text:#23303D;
+    --text-soft:#4B5A68;
+    --correct:#1E5631;
+    --correct-bg:#E4F3E8;
+    --incorrect:#8B2E2E;
+    --incorrect-bg:#FBEAEA;
+    --border:#D8D0C4;
+    --font-body:'Nunito Sans', sans-serif;
+    --font-hand:'Caveat', cursive;
+    --radius:14px;
+  }
+  body.font-atkinson{ --font-body:'Atkinson Hyperlegible', sans-serif; }
+  body.font-system{ --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.55; text-align:left; }
+  header{ background:var(--accent); color:#fff; padding:18px 20px; }
+  header .crumb{ font-size:0.85rem; opacity:0.85; margin-bottom:6px; }
+  header .crumb a{ color:#fff; text-decoration:underline; }
+  header h1{ margin:0; font-family:'Nunito', sans-serif; font-weight:800; font-size:1.5rem; }
+  .toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  #fontToggle{ background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.4); color:#fff; padding:8px 14px; border-radius:999px; cursor:pointer; font-size:0.85rem; font-family:var(--font-body); }
+  #fontToggle:focus-visible, button:focus-visible, .opt:focus-visible, input:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+
+  nav.tabs{ display:flex; background:#fff; border-bottom:2px solid var(--border); overflow-x:auto; }
+  nav.tabs button{ flex:1; min-width:110px; padding:14px 8px; background:none; border:none; border-bottom:4px solid transparent; font-family:var(--font-body); font-weight:700; font-size:0.88rem; color:var(--text-soft); cursor:pointer; }
+  nav.tabs button.active{ color:var(--accent); border-bottom:4px solid var(--accent); }
+
+  main{ max-width:780px; margin:0 auto; padding:22px 16px 60px; }
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:18px; }
+  .card h2{ margin-top:0; font-family:'Nunito', sans-serif; font-weight:800; color:var(--accent); font-size:1.2rem; }
+  .card h3{ font-family:'Nunito', sans-serif; font-weight:700; color:var(--accent); font-size:1.02rem; }
+  .card h4{ font-family:'Nunito', sans-serif; font-weight:700; color:var(--accent); font-size:0.95rem; margin-bottom:6px; }
+  .stage-label{ display:inline-block; background:var(--accent-light); color:var(--accent); font-weight:700; font-size:0.75rem; padding:4px 10px; border-radius:999px; margin-bottom:10px; }
+
+  .frac{ display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; font-weight:800; line-height:1.05; margin:0 3px; position:relative; top:3px; }
+  .frac .num{ border-bottom:2px solid currentColor; padding:0 5px 1px; }
+  .frac .den{ padding:1px 5px 0; }
+
+  .mcq .options{ display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+  .opt{ text-align:left; background:#fff; border:2px solid var(--border); border-radius:10px; padding:10px 14px; font-family:var(--font-body); font-size:0.98rem; color:var(--text); cursor:pointer; }
+  .opt:hover{ border-color:var(--slate); }
+  .opt.selected-correct{ border-color:var(--correct); background:var(--correct-bg); }
+  .opt.selected-incorrect{ border-color:var(--incorrect); background:var(--incorrect-bg); }
+  .opt:disabled{ cursor:default; opacity:0.75; }
+
+  .feedback{ font-weight:700; padding:10px 12px; border-radius:10px; margin-top:6px; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.correct{ background:var(--correct-bg); color:var(--correct); }
+  .feedback.incorrect{ background:var(--incorrect-bg); color:var(--incorrect); }
+
+  .predict-row{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .predict-btn{ background:#fff; border:2px solid var(--slate); color:var(--slate); padding:10px 18px; border-radius:999px; font-weight:700; cursor:pointer; }
+  .predict-btn.chosen{ background:var(--slate); color:#fff; }
+
+  .diagram-row{ display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin:14px 0; }
+  svg{ display:block; }
+
+  .reveal-btn, .stage-btn, .complete-btn{ background:var(--accent); color:#fff; border:none; padding:11px 18px; border-radius:10px; font-weight:700; cursor:pointer; font-family:var(--font-body); }
+  .reveal-btn:disabled, .stage-btn:disabled{ opacity:0.5; cursor:default; }
+  .reveal-box{ background:var(--accent-light); border-left:4px solid var(--accent); padding:12px 14px; border-radius:0 10px 10px 0; margin-top:10px; display:none; }
+  .reveal-box.show{ display:block; }
+
+  .tier-nav{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .tier-btn{ background:#fff; border:2px solid var(--border); padding:9px 16px; border-radius:999px; font-weight:700; cursor:pointer; color:var(--text-soft); }
+  .tier-btn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .tier-panel{ display:none; }
+  .tier-panel.active{ display:block; }
+
+  table.data-table, table.sim-table{ width:100%; border-collapse:collapse; margin:12px 0; }
+  table.data-table th, table.data-table td, table.sim-table th, table.sim-table td{ border:1px solid var(--border); padding:8px 10px; text-align:left; font-size:0.95rem; }
+  table.data-table th, table.sim-table th{ background:var(--accent-light); color:var(--accent); font-weight:700; }
+
+  .simulator{ background:#FBF9F5; border:2px dashed var(--border); border-radius:12px; padding:16px; margin:14px 0; }
+  .sim-controls{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  .sim-action{ background:var(--forest); color:#fff; border:none; padding:12px 20px; border-radius:10px; font-weight:800; cursor:pointer; font-size:1rem; }
+  .sim-action:disabled{ background:#B7C4BC; cursor:default; }
+  .sim-count{ font-weight:700; color:var(--text-soft); }
+  .sim-record, .sim-finish{ background:var(--amber); color:#23303D; border:none; padding:10px 16px; border-radius:10px; font-weight:800; cursor:pointer; margin-top:8px; margin-right:8px; }
+  .sim-finish:disabled{ background:#EAD9BB; cursor:default; }
+  .sim-reset{ background:none; border:1px solid var(--text-soft); color:var(--text-soft); padding:8px 14px; border-radius:10px; cursor:pointer; margin-top:10px; font-size:0.85rem; }
+  .sim-comparison{ margin-top:14px; padding-top:10px; border-top:2px solid var(--border); }
+  .device-choice{ display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap; }
+  .device-choice label{ display:flex; align-items:center; gap:6px; font-weight:700; cursor:pointer; }
+
+  textarea.reflect-box{ width:100%; min-height:90px; font-family:var(--font-body); font-size:0.98rem; padding:12px; border:2px solid var(--border); border-radius:10px; background:#fff; color:var(--text); }
+  textarea#journal{ width:100%; min-height:140px; font-family:var(--font-hand); font-size:1.4rem; padding:14px; border:2px solid var(--border); border-radius:10px; background:#FFFDF7; color:var(--text); }
+  .save-note{ font-size:0.85rem; color:var(--text-soft); margin-top:6px; }
+  .complete-box{ text-align:center; margin-top:20px; }
+  .complete-msg{ color:var(--correct); font-weight:700; margin-top:10px; display:none; }
+  .complete-msg.show{ display:block; }
+
+  p{ margin:0 0 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="crumb"><a href="index.html">&larr; Back to Chapter Hub</a> &nbsp;|&nbsp; MA4-PRO-C-01: Probability</div>
+  <div class="toolbar">
+    <h1>Chapter 2: Does It Match Up?</h1>
+    <button id="fontToggle" type="button">Font: Nunito Sans</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-panel="hook">Hook</button>
+  <button class="tab-btn" data-panel="learn">Learn</button>
+  <button class="tab-btn" data-panel="practise">Practise</button>
+  <button class="tab-btn" data-panel="nonroutine">Non-Routine Problems</button>
+  <button class="tab-btn" data-panel="reflect">Reflect</button>
+</nav>
+
+<main>
+
+  <!-- HOOK -->
+  <section id="hook" class="panel active">
+    <div class="card">
+      <h2>Two "Fair" Coins</h2>
+      <p>Two students each toss a coin 20 times. Both coins are meant to be fair.</p>
+      <table class="data-table">
+        <thead><tr><th></th><th>Heads</th><th>Tails</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Coin A</strong></td><td>10</td><td>10</td></tr>
+          <tr><td><strong>Coin B</strong></td><td>14</td><td>6</td></tr>
+        </tbody>
+      </table>
+      <p>Both of these are meant to be fair coins.<br>Look at the results &mdash; can both coins really be fair?</p>
+      <div class="predict-row" id="coinGuess">
+        <button class="predict-btn" data-choice="Yes">Yes, both could be fair</button>
+        <button class="predict-btn" data-choice="No">No, Coin B must be biased</button>
+      </div>
+    </div>
+    <div class="card">
+      <p><strong>Hold onto your answer.</strong><br>Today you'll learn the difference between what a coin <em>should</em> do and what it <em>actually</em> does &mdash; and how many tosses it takes before you can really trust the result.</p>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="learn" class="panel">
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>What is relative frequency?</h2>
+      <p><strong>Relative frequency</strong> is the observed probability from repeated trials of a chance experiment.</p>
+      <p style="font-size:1.1rem; font-weight:800; text-align:center;">
+        Relative frequency = <span class="frac"><span class="num">number of times the outcome occurred</span><span class="den">total number of trials</span></span>
+      </p>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>Worked example: the drawing pin toss</h2>
+      <p>A drawing pin is tossed 50 times. It lands point-up 32 times.</p>
+      <p style="font-size:1.1rem; font-weight:800;">
+        Relative frequency = <span class="frac"><span class="num">32</span><span class="den">50</span></span> = <span class="frac"><span class="num">16</span><span class="den">25</span></span>
+      </p>
+      <p>This is the <strong>observed</strong> probability, based on what actually happened in these 50 tosses.</p>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do</span>
+      <h2>Observed vs theoretical</h2>
+      <p>Back in Chapter 1, we said a standard 6-sided die has a theoretical probability of <span class="frac"><span class="num">1</span><span class="den">6</span></span> for rolling any number.</p>
+      <p>But suppose a standard 6-sided die is actually rolled 120 times, and a 6 appears 30 of those times.</p>
+      <p style="font-weight:800;">
+        Observed (relative frequency) = <span class="frac"><span class="num">30</span><span class="den">120</span></span> = <span class="frac"><span class="num">1</span><span class="den">4</span></span>
+      </p>
+      <p>Theoretical probability = <span class="frac"><span class="num">1</span><span class="den">6</span></span></p>
+      <p>These aren't the same &mdash; and that's completely normal. A <strong>simulation</strong> uses a random number generator to repeat a chance experiment many times. The more trials we run, the closer the relative frequency usually gets to the theoretical probability.</p>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">I Do &rarr; Check</span>
+      <h2>Error Detective: Mia's Coin Flips</h2>
+      <p>Mia flips a coin 40 times and records 25 heads.</p>
+      <p>Mia writes: <strong>relative frequency of heads = <span class="frac"><span class="num">40</span><span class="den">25</span></span></strong></p>
+      <div class="mcq" data-qid="ed1">
+        <p class="q-prompt"><strong>What mistake did Mia make?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="40 and 25 are the right two numbers &mdash; the issue is which one goes on top.">She used the wrong numbers from the experiment</button>
+          <button class="opt" data-result="correct" data-msg="Mia put the total trials on top and the count on the bottom &mdash; the wrong way around. The correct relative frequency is 25/40 = 5/8. Notice Mia's version (40/25) is greater than 1, which is an instant sign something's wrong, since no probability can exceed 1.">She inverted the fraction &mdash; the total trials should be on the bottom, not the top</button>
+          <button class="opt" data-result="incorrect" data-msg="This isn't about simplifying &mdash; the fraction itself is upside down.">She forgot to simplify her final answer</button>
+          <button class="opt" data-result="incorrect" data-msg="40 trials is a perfectly reasonable number of trials to run.">She didn't run enough trials</button>
+        </div>
+        <div class="feedback" id="fb-ed1"></div>
+      </div>
+      <p style="margin-top:10px;">Correct relative frequency: <span class="frac"><span class="num">25</span><span class="den">40</span></span> = <span class="frac"><span class="num">5</span><span class="den">8</span></span></p>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Interpreting 600 simulated rolls</h2>
+      <p>A standard 6-sided die is simulated 600 times using a random number generator. Here are the results:</p>
+      <table class="data-table">
+        <thead><tr><th>Number</th><th>Frequency</th><th>Relative Frequency</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>96</td><td>0.160</td></tr>
+          <tr><td>2</td><td>103</td><td>0.172</td></tr>
+          <tr><td>3</td><td>98</td><td>0.163</td></tr>
+          <tr><td>4</td><td>101</td><td>0.168</td></tr>
+          <tr><td>5</td><td>97</td><td>0.162</td></tr>
+          <tr><td>6</td><td>105</td><td>0.175</td></tr>
+        </tbody>
+      </table>
+      <p>Theoretical probability for each number: <span class="frac"><span class="num">1</span><span class="den">6</span></span> &asymp; 0.167</p>
+      <button class="reveal-btn" id="revealTable" type="button">Reveal discussion notes</button>
+      <div class="reveal-box" id="tableRevealBox">
+        <p>Every relative frequency is close to 0.167, but none is exactly equal to it &mdash; that's expected with real (or simulated) data. Number 6 came out slightly higher (0.175) and Number 1 slightly lower (0.160). With even more trials, these values would likely drift even closer to 0.167.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Resolving the Hook</h2>
+      <p>So &mdash; can both Coin A and Coin B really be fair coins?</p>
+      <button class="reveal-btn" id="revealCoins" type="button">Reveal the explanation</button>
+      <div class="reveal-box" id="coinsRevealBox">
+        <p>Yes, both coins could still be fair. With only 20 tosses, results like 14 heads and 6 tails happen fairly often just by chance &mdash; this is called natural variation.</p>
+        <p>We only start to suspect a coin is <strong>biased</strong> (unfairly weighted toward one outcome) when the relative frequency stays far from 0.5 even after many more trials.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="stage-label">We Do</span>
+      <h2>Newman's Analysis: The Faulty Light Bulbs</h2>
+      <p>A factory tests 200 light bulbs from a production run and finds that 6 of them are faulty.<br><strong>Question: based on this data, estimate the probability that a randomly selected bulb from this factory is faulty.</strong></p>
+      <div id="newmanStages"></div>
+      <button class="stage-btn" id="newmanNext" type="button">Start Stage 1: Read</button>
+    </div>
+
+  </section>
+
+  <!-- PRACTISE -->
+  <section id="practise" class="panel">
+    <div class="card">
+      <h2>You Do &mdash; run your own simulation</h2>
+      <p>Click to generate results one at a time. After 10 trials, you'll record your relative frequency &mdash; then use "Finish Simulation" to see what happens with many more trials at once.</p>
+      <div class="tier-nav">
+        <button class="tier-btn active" data-tier="foundation">Foundation</button>
+        <button class="tier-btn" data-tier="core">Core</button>
+        <button class="tier-btn" data-tier="extension">Extension</button>
+      </div>
+
+      <!-- FOUNDATION -->
+      <div class="tier-panel active" id="tier-foundation">
+        <h3>Coin Flip Simulation</h3>
+        <p>Flip a virtual coin. Theoretical probability of heads = <span class="frac"><span class="num">1</span><span class="den">2</span></span>.</p>
+        <div class="simulator" id="simF">
+          <div class="sim-controls">
+            <button class="sim-action" type="button">Flip Coin</button>
+            <span class="sim-count">Trials: 0 / 10</span>
+          </div>
+          <div class="sim-tally"></div>
+          <button class="sim-record" type="button" style="display:none;">Record & Continue</button>
+          <button class="sim-finish" type="button" style="display:none;" disabled>Finish Simulation (30 total)</button>
+          <div class="sim-comparison" style="display:none;"></div>
+          <button class="sim-reset" type="button">Reset Simulation</button>
+        </div>
+        <div class="mcq" data-qid="f1" style="margin-top:16px;">
+          <p class="q-prompt"><strong>1.</strong> As you flip a coin more and more times, the relative frequency of heads should get closer to:</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="A relative frequency of 0 would mean heads never occurred &mdash; very unlikely with a fair coin.">0</button>
+            <button class="opt" data-result="correct" data-msg="1/2 is the theoretical probability of heads on a fair coin &mdash; relative frequency tends to settle near it with more trials."><span class="frac"><span class="num">1</span><span class="den">2</span></span></button>
+            <button class="opt" data-result="incorrect" data-msg="A relative frequency of 1 would mean every single flip was heads &mdash; very unlikely with a fair coin.">1</button>
+            <button class="opt" data-result="incorrect" data-msg="With more trials, relative frequency becomes more predictable, not less.">It could be any value</button>
+          </div>
+          <div class="feedback" id="fb-f1"></div>
+        </div>
+      </div>
+
+      <!-- CORE -->
+      <div class="tier-panel" id="tier-core">
+        <h3>Standard 6-Sided Die Simulation</h3>
+        <div class="diagram-row"><svg width="70" height="70" viewBox="0 0 100 100" id="dieCore"></svg><p style="margin:0;">Roll a virtual standard 6-sided die. Theoretical probability of each number = <span class="frac"><span class="num">1</span><span class="den">6</span></span>.</p></div>
+        <div class="simulator" id="simC">
+          <div class="sim-controls">
+            <button class="sim-action" type="button">Roll Die</button>
+            <span class="sim-count">Trials: 0 / 10</span>
+          </div>
+          <div class="sim-tally"></div>
+          <button class="sim-record" type="button" style="display:none;">Record & Continue</button>
+          <button class="sim-finish" type="button" style="display:none;" disabled>Finish Simulation (60 total)</button>
+          <div class="sim-comparison" style="display:none;"></div>
+          <button class="sim-reset" type="button">Reset Simulation</button>
+        </div>
+        <p style="margin-top:16px;"><strong>Reflection:</strong> after finishing, which number's relative frequency ended up furthest from the theoretical 1/6? Write a sentence explaining what you notice.</p>
+        <textarea class="reflect-box" id="coreReflect" placeholder="Type your answer here..."></textarea>
+        <div class="mcq" data-qid="c1" style="margin-top:16px;">
+          <p class="q-prompt"><strong>1.</strong> Which statement is true about relative frequency compared to theoretical probability?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="They are usually close but not exactly equal, especially with fewer trials.">They are always exactly equal</button>
+            <button class="opt" data-result="incorrect" data-msg="Relative frequency can be higher or lower than theoretical probability &mdash; it's not always bigger.">Relative frequency is always bigger than theoretical probability</button>
+            <button class="opt" data-result="correct" data-msg="This is the key idea behind simulation: more trials generally bring relative frequency closer to the true theoretical probability.">With more trials, relative frequency usually gets closer to the theoretical probability</button>
+            <button class="opt" data-result="incorrect" data-msg="They're closely related &mdash; relative frequency is our best estimate of theoretical probability from real data.">They are unrelated to each other</button>
+          </div>
+          <div class="feedback" id="fb-c1"></div>
+        </div>
+      </div>
+
+      <!-- EXTENSION -->
+      <div class="tier-panel" id="tier-extension">
+        <h3>Choose Your Device &mdash; Sample Size Investigation</h3>
+        <p>Choose a die or a spinner, then run the simulation to 200 trials.</p>
+        <div class="simulator" id="simE">
+          <div class="device-choice">
+            <label><input type="radio" name="deviceE" class="device-radio" value="die" checked> Standard 6-sided die</label>
+            <label><input type="radio" name="deviceE" class="device-radio" value="spinner"> Spinner (2 red, 3 green, 1 white)</label>
+          </div>
+          <div class="sim-controls">
+            <button class="sim-action" type="button">Roll Die</button>
+            <span class="sim-count">Trials: 0 / 10</span>
+          </div>
+          <div class="sim-tally"></div>
+          <button class="sim-record" type="button" style="display:none;">Record & Continue</button>
+          <button class="sim-finish" type="button" style="display:none;" disabled>Finish Simulation (200 total)</button>
+          <div class="sim-comparison" style="display:none;"></div>
+          <button class="sim-reset" type="button">Reset Simulation</button>
+        </div>
+        <p style="margin-top:16px;"><strong>Written conclusion:</strong> explain why the relative frequency after 200 trials is more reliable evidence of the true theoretical probability than the relative frequency after just 10 trials.</p>
+        <textarea class="reflect-box" id="extReflect" placeholder="Type your conclusion here..."></textarea>
+        <div class="mcq" data-qid="e1" style="margin-top:16px;">
+          <p class="q-prompt"><strong>1.</strong> Which result gives more reliable evidence about whether a coin might be biased?</p>
+          <div class="options">
+            <button class="opt" data-result="incorrect" data-msg="With only 20 tosses, unusual results happen fairly often just by chance.">20 tosses</button>
+            <button class="opt" data-result="correct" data-msg="More trials reduce the effect of random chance, making the relative frequency a more trustworthy estimate.">200 tosses</button>
+            <button class="opt" data-result="incorrect" data-msg="Larger sample sizes generally give more reliable evidence than smaller ones.">Both are equally reliable</button>
+            <button class="opt" data-result="incorrect" data-msg="More trials do tell you something useful &mdash; that's the whole idea behind relative frequency.">Neither can tell you anything about bias</button>
+          </div>
+          <div class="feedback" id="fb-e1"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NON-ROUTINE PROBLEMS -->
+  <section id="nonroutine" class="panel">
+    <div class="card">
+      <h2>The Gambler's Fallacy</h2>
+      <p>A fair coin has landed on heads 5 times in a row.</p>
+      <div class="mcq" data-qid="nr1">
+        <p class="q-prompt"><strong>What is the probability the next flip is tails?</strong></p>
+        <div class="options">
+          <button class="opt" data-result="incorrect" data-msg="A coin has no memory of previous flips &mdash; the probability doesn't increase just because tails hasn't appeared yet.">Very high, since tails is "overdue"</button>
+          <button class="opt" data-result="correct" data-msg="Each flip is independent of the ones before it. No matter what happened in the past 5 flips, the probability of tails on the next flip is still exactly 1/2.">Exactly 1/2, because each flip is independent</button>
+          <button class="opt" data-result="incorrect" data-msg="Heads isn't more likely just because it's occurred recently &mdash; the coin doesn't remember.">Exactly 0, since heads is clearly favoured</button>
+          <button class="opt" data-result="incorrect" data-msg="We do know &mdash; a fair coin always has a 1/2 probability for each outcome, on every single flip.">Impossible to know</button>
+        </div>
+        <div class="feedback" id="fb-nr1"></div>
+      </div>
+      <p style="margin-top:14px;">The belief that a "streak" makes the opposite outcome more likely is called the <strong>gambler's fallacy</strong>. Try it yourself below &mdash; streaks happen naturally, and they never change the next flip's probability.</p>
+      <div class="simulator" id="simFree">
+        <div class="sim-controls">
+          <button class="sim-action" type="button">Flip Coin</button>
+          <span class="sim-count">Trials: 0</span>
+        </div>
+        <p id="streakNote" style="font-weight:700; color:var(--accent);"></p>
+        <div class="sim-tally"></div>
+        <button class="sim-reset" type="button">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFLECT -->
+  <section id="reflect" class="panel">
+    <div class="card">
+      <h2>Journal</h2>
+      <p>Explain in your own words why running more trials makes relative frequency a more trustworthy estimate of the true probability.<br>Use an example from today's lesson.</p>
+      <textarea id="journal" placeholder="Start writing here..."></textarea>
+      <p class="save-note" id="saveNote">Your writing saves automatically.</p>
+    </div>
+    <div class="card complete-box">
+      <button class="complete-btn" id="markComplete" type="button">Mark Chapter 2 complete</button>
+      <p class="complete-msg" id="completeMsg">Chapter 2 marked complete &mdash; nice work!</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+console.log('Chapter 2 script starting to run...');
+
+// ---------- Safe storage (falls back to in-memory if localStorage is blocked,
+// e.g. when the file is opened directly from disk rather than served over http/https) ----------
+const memStore = {};
+function safeGet(key, fallback){
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v;
+  } catch(e){
+    return (key in memStore) ? memStore[key] : fallback;
+  }
+}
+function safeSet(key, value){
+  try { localStorage.setItem(key, value); }
+  catch(e){ memStore[key] = value; }
+}
+
+// ---------- Font toggle ----------
+const fontModes = [
+  {cls:'', label:'Font: Nunito Sans'},
+  {cls:'font-system', label:'Font: System'},
+  {cls:'font-atkinson', label:'Font: Atkinson Hyperlegible'}
+];
+let fontIdx = parseInt(safeGet('pro-font', '0'), 10);
+function applyFont(){
+  document.body.classList.remove('font-system','font-atkinson');
+  if(fontModes[fontIdx].cls) document.body.classList.add(fontModes[fontIdx].cls);
+  document.getElementById('fontToggle').textContent = fontModes[fontIdx].label;
+}
+document.getElementById('fontToggle').addEventListener('click', ()=>{
+  fontIdx = (fontIdx + 1) % fontModes.length;
+  safeSet('pro-font', fontIdx);
+  applyFont();
+});
+applyFont();
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.panel).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+
+// ---------- Die SVG (for Core tier illustration) ----------
+const pipMap = {
+  1:[[50,50]], 2:[[25,25],[75,75]], 3:[[25,25],[50,50],[75,75]],
+  4:[[25,25],[75,25],[25,75],[75,75]],
+  5:[[25,25],[75,25],[50,50],[25,75],[75,75]],
+  6:[[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]]
+};
+function dieSVG(n){
+  let pips = pipMap[n].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="8" fill="#23303D"></circle>`).join('');
+  return `<rect x="4" y="4" width="92" height="92" rx="14" fill="#fff" stroke="#23303D" stroke-width="3"></rect>${pips}`;
+}
+const dieCoreEl = document.getElementById('dieCore');
+if(dieCoreEl) dieCoreEl.innerHTML = dieSVG(6);
+
+// ---------- Hook prediction ----------
+document.querySelectorAll('#coinGuess .predict-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#coinGuess .predict-btn').forEach(b=>b.classList.remove('chosen'));
+    btn.classList.add('chosen');
+  });
+});
+
+// ---------- Reveal buttons ----------
+function wireReveal(btnId, boxId){
+  const btn = document.getElementById(btnId);
+  const box = document.getElementById(boxId);
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{ box.classList.add('show'); btn.disabled = true; });
+}
+wireReveal('revealTable','tableRevealBox');
+wireReveal('revealCoins','coinsRevealBox');
+
+// ---------- MCQ handler ----------
+function mcqAns(btn){
+  const wrap = btn.closest('.mcq');
+  const fb = wrap.querySelector('.feedback');
+  const result = btn.dataset.result;
+  const msg = btn.dataset.msg;
+  wrap.querySelectorAll('.opt').forEach(o=>o.classList.remove('selected-correct','selected-incorrect'));
+  if(result === 'correct'){
+    btn.classList.add('selected-correct');
+    fb.innerHTML = '&#10003; ' + msg;
+    fb.className = 'feedback show correct';
+    wrap.querySelectorAll('.opt').forEach(o=>o.disabled = true);
+    safeSet('pro-ch2-' + wrap.dataset.qid, 'correct');
+  } else {
+    btn.classList.add('selected-incorrect');
+    fb.innerHTML = '&#10007; ' + msg;
+    fb.className = 'feedback show incorrect';
+  }
+}
+document.querySelectorAll('.mcq .opt').forEach(btn=>{
+  btn.addEventListener('click', ()=>mcqAns(btn));
+});
+
+// ---------- Newman's Analysis (accumulating) ----------
+const newmanStages = [
+  {title:'Stage 1: Read', body:'"A factory tests 200 light bulbs from a production run and finds that 6 of them are faulty. Based on this data, estimate the probability that a randomly selected bulb from this factory is faulty."'},
+  {title:'Stage 2: Comprehend', body:'What is being asked?<br>An estimate of probability based on real data, not a theoretical calculation.'},
+  {title:'Stage 3: Transform', body:'Favourable outcomes = 6 (faulty bulbs).<br>Total outcomes = 200 (bulbs tested).'},
+  {title:'Stage 4: Process', body:'Relative frequency = <span class="frac"><span class="num">6</span><span class="den">200</span></span> = <span class="frac"><span class="num">3</span><span class="den">100</span></span>'},
+  {title:'Stage 5: Encode', body:'<strong>Based on this sample, the probability a bulb is faulty is estimated at 3/100, or 3%.</strong><br><br><em>Full worked solution:</em><br>Favourable &divide; Total = 6 &divide; 200 = 3/100.'}
+];
+let newmanIdx = 0;
+const newmanContainer = document.getElementById('newmanStages');
+const newmanBtn = document.getElementById('newmanNext');
+function renderNewman(){
+  let html = '';
+  for(let i=0;i<newmanIdx;i++){
+    html += `<div class="reveal-box show" style="margin-bottom:10px;"><strong>${newmanStages[i].title}</strong><br>${newmanStages[i].body}</div>`;
+  }
+  newmanContainer.innerHTML = html;
+  if(newmanIdx >= newmanStages.length){
+    newmanBtn.style.display = 'none';
+  } else {
+    newmanBtn.textContent = newmanIdx === 0 ? 'Start Stage 1: Read' : 'Reveal ' + newmanStages[newmanIdx].title;
+  }
+}
+newmanBtn.addEventListener('click', ()=>{ newmanIdx++; renderNewman(); });
+renderNewman();
+
+// ---------- Simulator engine ----------
+function fracHTML(n,d){
+  return `<span class="frac"><span class="num">${n}</span><span class="den">${d}</span></span>`;
+}
+function weightedRandom(outcomes, weights){
+  const total = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random()*total;
+  for(let i=0;i<outcomes.length;i++){
+    if(r < weights[i]) return outcomes[i];
+    r -= weights[i];
+  }
+  return outcomes[outcomes.length-1];
+}
+
+function createSimulator(opts){
+  try {
+    return createSimulatorInner(opts);
+  } catch(e){
+    console.error('Simulator "' + opts.id + '" failed to initialise:', e);
+    const root = document.getElementById(opts.id);
+    if(root) root.innerHTML = '<p style="color:#8B2E2E; font-weight:700;">This simulator could not load. Please check the browser console (F12) and report the error shown for "' + opts.id + '".</p>';
+  }
+}
+
+function createSimulatorInner(opts){
+  const root = document.getElementById(opts.id);
+  if(!root) return;
+  let activeOutcomes, activeWeights, activeLabels;
+  const deviceChoiceDiv = root.querySelector('.device-choice');
+
+  function setDevice(cfg){
+    activeOutcomes = cfg.outcomes;
+    activeWeights = cfg.weights;
+    activeLabels = cfg.labels;
+    actionBtn.textContent = cfg.actionLabel;
+  }
+
+  const counts = {};
+  let trials = 0;
+  let phase = 'manual';
+  let frozenSnapshot = null;
+  let deviceLocked = false;
+
+  const actionBtn = root.querySelector('.sim-action');
+  const countSpan = root.querySelector('.sim-count');
+  const tallyDiv = root.querySelector('.sim-tally');
+  const recordBtn = root.querySelector('.sim-record');
+  const finishBtn = root.querySelector('.sim-finish');
+  const comparisonDiv = root.querySelector('.sim-comparison');
+  const resetBtn = root.querySelector('.sim-reset');
+
+  if(opts.deviceChoice){
+    setDevice(opts.deviceChoice[opts.defaultDevice]);
+  } else {
+    setDevice(opts);
+  }
+  function resetCounts(){
+    Object.keys(counts).forEach(k=>delete counts[k]);
+    activeOutcomes.forEach(o=>counts[o]=0);
+  }
+  resetCounts();
+
+  function renderTally(){
+    const targetLabel = opts.freeMode ? '&mdash;' : (phase==='manual' ? 10 : opts.target);
+    let rows = activeOutcomes.map(o=>{
+      const c = counts[o];
+      const rf = trials>0 ? fracHTML(c, trials) : '&mdash;';
+      return `<tr><td>${activeLabels[o]}</td><td>${c}</td><td>${rf}</td></tr>`;
+    }).join('');
+    tallyDiv.innerHTML = `<table class="sim-table"><thead><tr><th>Outcome</th><th>Count</th><th>Relative Frequency</th></tr></thead><tbody>${rows}</tbody></table>`;
+    countSpan.textContent = opts.freeMode ? `Trials: ${trials}` : `Trials: ${trials} / ${targetLabel}`;
+  }
+
+  let lastResult = null;
+  let streak = 0;
+  function doTrial(){
+    const result = weightedRandom(activeOutcomes, activeWeights);
+    if(opts.freeMode){
+      if(result === lastResult) streak++; else streak = 1;
+      lastResult = result;
+      const note = document.getElementById('streakNote');
+      if(note) note.textContent = streak >= 2 ? `Current streak: ${streak} ${activeLabels[result]} in a row` : '';
+    }
+    counts[result]++;
+    trials++;
+    renderTally();
+    if(!opts.freeMode && trials >= 10 && phase === 'manual'){
+      phase = 'locked';
+      actionBtn.disabled = true;
+      if(deviceChoiceDiv) root.querySelectorAll('.device-radio').forEach(r=>r.disabled=true);
+      recordBtn.style.display = 'inline-block';
+    }
+  }
+
+  actionBtn.addEventListener('click', doTrial);
+
+  if(recordBtn){
+    recordBtn.addEventListener('click', ()=>{
+      frozenSnapshot = Object.assign({}, counts);
+      frozenSnapshot.__trials = trials;
+      finishBtn.disabled = false;
+      finishBtn.style.display = 'inline-block';
+      recordBtn.style.display = 'none';
+    });
+  }
+
+  if(finishBtn){
+    finishBtn.addEventListener('click', ()=>{
+      const remaining = opts.target - trials;
+      for(let i=0;i<remaining;i++){
+        const result = weightedRandom(activeOutcomes, activeWeights);
+        counts[result]++;
+        trials++;
+      }
+      phase = 'finished';
+      renderTally();
+      renderComparison();
+      finishBtn.disabled = true;
+    });
+  }
+
+  function renderComparison(){
+    let rowsBefore = activeOutcomes.map(o=>{
+      const c = frozenSnapshot[o];
+      const t = frozenSnapshot.__trials;
+      return `<tr><td>${activeLabels[o]}</td><td>${c}</td><td>${fracHTML(c,t)}</td></tr>`;
+    }).join('');
+    let rowsAfter = activeOutcomes.map(o=>{
+      const c = counts[o];
+      return `<tr><td>${activeLabels[o]}</td><td>${c}</td><td>${fracHTML(c,trials)}</td></tr>`;
+    }).join('');
+    comparisonDiv.style.display = 'block';
+    comparisonDiv.innerHTML = `
+      <h4>After 10 trials</h4>
+      <table class="sim-table"><thead><tr><th>Outcome</th><th>Count</th><th>Relative Frequency</th></tr></thead><tbody>${rowsBefore}</tbody></table>
+      <h4>After ${trials} trials</h4>
+      <table class="sim-table"><thead><tr><th>Outcome</th><th>Count</th><th>Relative Frequency</th></tr></thead><tbody>${rowsAfter}</tbody></table>
+    `;
+  }
+
+  if(resetBtn){
+    resetBtn.addEventListener('click', ()=>{
+      resetCounts();
+      trials = 0; phase = 'manual'; frozenSnapshot = null; streak = 0; lastResult = null;
+      actionBtn.disabled = false;
+      if(recordBtn) recordBtn.style.display = 'none';
+      if(finishBtn){ finishBtn.style.display = 'none'; finishBtn.disabled = true; }
+      if(comparisonDiv){ comparisonDiv.style.display = 'none'; comparisonDiv.innerHTML = ''; }
+      const note = document.getElementById('streakNote');
+      if(note) note.textContent = '';
+      if(deviceChoiceDiv) root.querySelectorAll('.device-radio').forEach(r=>r.disabled=false);
+      renderTally();
+    });
+  }
+
+  if(deviceChoiceDiv){
+    root.querySelectorAll('.device-radio').forEach(radio=>{
+      radio.addEventListener('change', ()=>{
+        if(deviceLocked) return;
+        setDevice(opts.deviceChoice[radio.value]);
+        resetCounts();
+        renderTally();
+      });
+    });
+  }
+
+  renderTally();
+}
+
+createSimulator({
+  id:'simF',
+  outcomes:['H','T'], weights:[1,1], labels:{H:'Heads',T:'Tails'}, actionLabel:'Flip Coin',
+  target:30
+});
+
+createSimulator({
+  id:'simC',
+  outcomes:[1,2,3,4,5,6], weights:[1,1,1,1,1,1],
+  labels:{1:'1',2:'2',3:'3',4:'4',5:'5',6:'6'}, actionLabel:'Roll Die',
+  target:60
+});
+
+createSimulator({
+  id:'simE',
+  deviceChoice:{
+    die:{ outcomes:[1,2,3,4,5,6], weights:[1,1,1,1,1,1], labels:{1:'1',2:'2',3:'3',4:'4',5:'5',6:'6'}, actionLabel:'Roll Die' },
+    spinner:{ outcomes:['R','G','W'], weights:[2,3,1], labels:{R:'Red',G:'Green',W:'White'}, actionLabel:'Spin Spinner' }
+  },
+  defaultDevice:'die',
+  target:200
+});
+
+createSimulator({
+  id:'simFree',
+  outcomes:['H','T'], weights:[1,1], labels:{H:'Heads',T:'Tails'}, actionLabel:'Flip Coin',
+  freeMode:true
+});
+
+console.log('Chapter 2 script finished running. All simulators initialised.');
+
+// ---------- Reflection textareas autosave ----------
+['coreReflect','extReflect'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.value = safeGet('pro-ch2-' + id, '');
+  el.addEventListener('input', ()=>{ safeSet('pro-ch2-' + id, el.value); });
+});
+
+// ---------- Journal autosave ----------
+const journal = document.getElementById('journal');
+journal.value = safeGet('pro-ch2-journal', '');
+journal.addEventListener('input', ()=>{ safeSet('pro-ch2-journal', journal.value); });
+
+// ---------- Mark complete ----------
+document.getElementById('markComplete').addEventListener('click', ()=>{
+  safeSet('pro-ch2-complete', 'true');
+  document.getElementById('completeMsg').classList.add('show');
+});
+</script>
+
+</body>
+</html>
