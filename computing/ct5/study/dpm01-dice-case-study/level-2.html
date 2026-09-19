@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Level 2 — Defensive Programming | Dice &amp; Chance Iteration Case Study | CT5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fdfcff;
+  --dust:#f3f0fb;
+  --ink:#1e1b2e;
+  --ink-soft:#5b5470;
+  --accent:#6d28d9;
+  --accent-dim:#5b21b6;
+  --accent-bright:#a78bfa;
+  --accent-surface:#efe9fd;
+  --rule:#e0d7f5;
+  --lilac:#e6ddf7;
+  --amber:#b45309;
+  --amber-surface:#fff3e0;
+  --green:#15803d;
+  --green-surface:#eafaf0;
+  --code-bg:#1a1330;
+  --code-fg:#ede9fe;
+  --code-key:#c4b5fd;
+  --code-str:#fbbf24;
+  --code-com:#9c93b3;
+  --foundation:#2f8f5b;
+  --core:#6d28d9;
+  --extension:#a1274f;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  font-family:'Nunito',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  color:var(--ink);
+  background:var(--paper);
+  line-height:1.75;
+  font-size:15px;
+}
+.skip-link{position:absolute;left:-999px;top:0;background:var(--accent);color:#fff;padding:0.6rem 1rem;border-radius:0 0 8px 0;z-index:200}
+.skip-link:focus{left:0}
+.layout{display:grid;grid-template-columns:250px 1fr;max-width:1280px;margin:0 auto}
+nav.sidebar-toc{
+  position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+  padding:1.5rem 1rem 2rem 1.5rem;border-right:1px solid var(--rule);
+  background:var(--dust);font-size:13px;
+}
+nav.sidebar-toc h2{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);margin:1.1rem 0 0.4rem}
+nav.sidebar-toc h2:first-child{margin-top:0}
+nav.sidebar-toc ol{list-style:none;padding:0;margin:0}
+nav.sidebar-toc li{margin:0.15rem 0}
+nav.sidebar-toc a{color:var(--ink);text-decoration:none;display:block;padding:0.25rem 0.5rem;border-radius:5px}
+nav.sidebar-toc a:hover,nav.sidebar-toc a:focus-visible{background:var(--lilac);color:var(--accent-dim)}
+main{padding:2rem 2.5rem 4rem;max-width:840px}
+header.hero{
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent-dim) 100%);
+  color:#fff;padding:2.2rem 2.4rem 1.8rem;margin:-2rem -2.5rem 2rem;position:relative;overflow:hidden;
+}
+header.hero .eyebrow{font-size:12px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.85;font-weight:700}
+header.hero h1{font-size:1.9rem;margin:0.3rem 0 0.3rem;line-height:1.2;font-weight:800}
+header.hero .sub{margin:0;color:#ece5fc;font-size:1rem}
+header.hero .meta{margin-top:1rem;font-size:13px;color:#f6f2ff;display:flex;gap:1.2rem;flex-wrap:wrap}
+header.hero .meta span{background:rgba(255,255,255,0.14);padding:3px 10px;border-radius:12px}
+h2{font-size:1.4rem;margin:2.4rem 0 0.6rem;color:var(--accent-dim);border-bottom:2px solid var(--lilac);padding-bottom:0.3rem;font-weight:800}
+h3{font-size:1.1rem;color:var(--ink);margin:1.3rem 0 0.5rem;font-weight:700}
+p{margin:0.6rem 0;max-width:680px}
+.tags{margin:0.6rem 0;display:flex;flex-wrap:wrap;gap:0.35rem}
+.tag{display:inline-block;background:var(--accent-surface);color:var(--accent-dim);font-size:11px;padding:3px 9px;border-radius:10px;text-transform:uppercase;letter-spacing:0.04em;font-weight:700}
+
+figure{margin:1.4rem 0;text-align:center}
+figure svg{max-width:100%;height:auto;background:var(--paper);border:1px solid var(--rule);border-radius:8px;padding:0.6rem}
+figcaption{font-size:12.5px;color:var(--ink-soft);margin-top:0.4rem;font-style:italic}
+
+.bug-report{background:var(--dust);border-left:4px solid var(--accent);border-radius:0 8px 8px 0;padding:0.9rem 1.1rem;margin:1rem 0;font-size:14px}
+.bug-report .who{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-soft);font-weight:700;margin-bottom:0.3rem}
+.bug-report q{font-style:italic}
+
+pre.code{background:var(--code-bg);color:var(--code-fg);padding:1.1rem 1.2rem;border-radius:8px;overflow-x:auto;font-family:"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;font-size:13.5px;line-height:1.7;margin:0.8rem 0}
+pre.code .k{color:var(--code-key);font-weight:700}
+pre.code .s{color:var(--code-str)}
+pre.code .c{color:var(--code-com);font-style:italic}
+.code-filename{font-family:"JetBrains Mono",monospace;font-size:11.5px;background:#100a20;color:var(--accent-bright);display:inline-block;padding:3px 10px;border-radius:5px 5px 0 0;margin-bottom:-6px;position:relative;z-index:1}
+
+table.trace{border-collapse:collapse;width:100%;margin:1rem 0;font-size:13.5px}
+table.trace th,table.trace td{border:1px solid var(--rule);padding:0.5rem 0.65rem;text-align:left;vertical-align:top}
+table.trace th{background:var(--lilac);color:var(--ink)}
+table.trace tr:nth-child(even){background:var(--dust)}
+table.trace td.halt{background:#fdeaea;color:#b91c1c;font-weight:700}
+
+.qset{border-radius:10px;padding:1.1rem 1.3rem 1.3rem;margin:1rem 0 1.8rem;border:1px solid var(--rule)}
+.qset.foundation{background:#f2faf5;border-color:#bfe3cc}
+.qset.core{background:var(--accent-surface);border-color:#d2c2f5}
+.qset.extension{background:#fbeef2;border-color:#eec3d1}
+.qset .tier-label{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:800;display:inline-block;padding:2px 10px;border-radius:10px;color:#fff;margin-bottom:0.6rem}
+.qset.foundation .tier-label{background:var(--foundation)}
+.qset.core .tier-label{background:var(--core)}
+.qset.extension .tier-label{background:var(--extension)}
+.q{margin:0.9rem 0;padding-bottom:0.9rem;border-bottom:1px dashed var(--rule)}
+.q:last-child{border-bottom:none}
+.q p.stem{margin:0 0 0.4rem;font-weight:600}
+.q .marks{font-weight:700;color:var(--ink-soft);font-size:12.5px}
+details.answer{margin-top:0.4rem}
+details.answer summary{cursor:pointer;color:var(--accent-dim);font-weight:700;font-size:13px;user-select:none}
+details.answer summary:hover{color:var(--accent)}
+details.answer .ans-body{background:rgba(255,255,255,0.6);border-left:3px solid var(--accent);padding:0.6rem 0.9rem;margin-top:0.4rem;border-radius:0 6px 6px 0;font-size:13.5px}
+.qset.extension details.answer .ans-body{border-left-color:var(--extension)}
+.qset.foundation details.answer .ans-body{border-left-color:var(--foundation)}
+
+.callout{background:var(--amber-surface);border:1px solid #f0d6a8;padding:0.8rem 1rem;border-radius:8px;margin:1rem 0;font-size:13.5px}
+.callout strong{color:var(--amber)}
+.callout.concept{background:var(--accent-surface);border-color:#d2c2f5}
+.callout.concept strong{color:var(--accent-dim)}
+
+.try-it{background:var(--green-surface);border:1px solid #bfe3cc;border-radius:8px;padding:0.9rem 1.1rem;margin:1rem 0;font-size:13.5px}
+.try-it .label{font-size:11px;text-transform:uppercase;letter-spacing:0.07em;font-weight:800;color:var(--green);margin-bottom:0.4rem}
+.try-it code{background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px}
+
+nav.pager{display:flex;justify-content:space-between;margin:2.5rem 0 1rem;font-size:14px}
+nav.pager a{color:var(--accent-dim);text-decoration:none;font-weight:700}
+nav.pager a:hover{text-decoration:underline}
+
+footer.page-footer{margin-top:3rem;padding-top:1.3rem;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-soft)}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.sidebar-toc{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--rule)}
+  main{padding:1.3rem}
+  header.hero{margin:-1.3rem -1.3rem 1.5rem;padding:1.6rem}
+}
+:focus-visible{outline:3px solid var(--accent-bright);outline-offset:2px}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to content</a>
+<div class="layout">
+<nav class="sidebar-toc" id="sidebar-toc" aria-label="Page sections">
+  <h2>Defensive Programming</h2>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#bug-report">The bug report</a></li>
+    <li><a href="#investigate">Investigate &mdash; hands-on</a></li>
+    <li><a href="#root-cause">Root cause</a></li>
+    <li><a href="#the-fix">The fix</a></li>
+    <li><a href="#verify">Proving the fix</a></li>
+    <li><a href="#questions">Questions</a></li>
+  </ol>
+  <h2>Series</h2>
+  <ol>
+    <li><a href="index.html">Hub</a></li>
+    <li><a href="level-1.html">Level 1 &mdash; Magic Numbers</a></li>
+    <li><a href="level-2.html" style="font-weight:800;color:var(--accent-dim)">Level 2 &mdash; Defensive Programming</a></li>
+    <li><a href="level-3.html">Level 3 &mdash; Native vs Custom UI</a></li>
+    <li><a href="level-4.html">Level 4 &mdash; CSS Cascade</a></li>
+    <li><a href="level-5.html">Level 5 &mdash; Box Model</a></li>
+  </ol>
+</nav>
+<main id="main-content">
+<header class="hero">
+  <div class="eyebrow">Dice &amp; Chance &middot; Iteration Case Study &middot; Level 2</div>
+  <h1>"I Need to Hit Refresh to Play Again"</h1>
+  <p class="sub">A "Play Again" button that looked completely broken turned out to have perfect code. The real fault was one unguarded line, three functions away, that silently killed everything downstream of it.</p>
+  <div class="meta"><span>Artefact: Dice &amp; Chance (MA4-PRO-C-01)</span>
+<span>Bug type: unhandled exception</span>
+<span>DPM stages: Develop &amp; Evaluate</span></div>
+</header>
+
+<section id="overview">
+<div class="tags">
+  <span class="tag">CT5-DPM-01</span>
+  <span class="tag">Defensive programming</span>
+  <span class="tag">Graceful degradation</span>
+</div>
+<p>This is the case study's central bug &mdash; the one that best shows the gap between <strong>"my code has an error"</strong> and <strong>"my code has a bug."</strong> Nothing in the code was written incorrectly. Every line did exactly what it was told. The bug only exists because of what was <em>missing</em>: a plan for what should happen when something outside the program's control &mdash; browser storage &mdash; fails.</p>
+<figure>
+<svg viewBox="0 0 650 130" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Iterative process cycle: Define, Plan, Design, Develop, Evaluate. Develop and Evaluate are highlighted for this level.">
+<defs>
+  <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+    <path d="M0 0 L10 5 L0 10 z" fill="#8a83a3"/>
+  </marker>
+</defs>
+<rect x="15" y="35" width="102" height="55" rx="8" fill="#efe9fd" stroke="#6d28d9" stroke-width="1.5"/>
+<text x="66" y="67" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="700" fill="#1e1b2e">Define</text>
+<line x1="117" y1="62.5" x2="132" y2="62.5" stroke="#8a83a3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+<rect x="134" y="35" width="102" height="55" rx="8" fill="#efe9fd" stroke="#6d28d9" stroke-width="1.5"/>
+<text x="185" y="67" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="700" fill="#1e1b2e">Plan</text>
+<line x1="236" y1="62.5" x2="251" y2="62.5" stroke="#8a83a3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+<rect x="253" y="35" width="102" height="55" rx="8" fill="#efe9fd" stroke="#6d28d9" stroke-width="1.5"/>
+<text x="304" y="67" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="700" fill="#1e1b2e">Design</text>
+<line x1="355" y1="62.5" x2="370" y2="62.5" stroke="#8a83a3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+<rect x="372" y="30" width="122" height="65" rx="8" fill="#6d28d9" stroke="#5b21b6" stroke-width="2"/>
+<text x="433" y="67" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#fff">Develop</text>
+<line x1="494" y1="62.5" x2="509" y2="62.5" stroke="#8a83a3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+<rect x="511" y="30" width="124" height="65" rx="8" fill="#6d28d9" stroke="#5b21b6" stroke-width="2"/>
+<text x="573" y="67" text-anchor="middle" font-family="Nunito,sans-serif" font-size="13" font-weight="800" fill="#fff">Evaluate</text>
+
+<path d="M573 90 C 573 118, 66 118, 66 90" fill="none" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow2)"/>
+</svg>
+<figcaption>Figure 1 &mdash; <strong>Develop</strong> (writing code that assumes storage can fail) and <strong>Evaluate</strong> (proving the fix works, not just eyeballing it) are this level's focus.</figcaption>
+</figure>
+</section>
+
+<section id="bug-report">
+<h2>1. The bug report</h2>
+<div class="bug-report">
+  <div class="who">Player report</div>
+  <q>The "Play Again" button doesn't do anything. I have to reload the whole page to start a new game.</q>
+</div>
+<p>The report is a <strong>symptom</strong>, not a diagnosis &mdash; that's true of every real bug report. It names what the player saw, not what caused it. Finding the cause is the actual skill.</p>
+<p>When the "Play Again" button's own code was checked line by line, it was completely correct. Simulating full games programmatically confirmed the reset logic worked perfectly &mdash; <em>when everything else was working normally.</em> So the bug wasn't in the button at all.</p>
+</section>
+
+<section id="investigate">
+<h2>2. Investigate &mdash; reproduce it yourself</h2>
+<div class="try-it">
+  <div class="label">Try it yourself</div>
+  <p style="margin:0 0 0.5rem">Open <code>source/dice-games-buggy.html</code> in your browser and open Developer Tools (F12 or right-click &rarr; Inspect &rarr; Console). Paste this one line into the console and press Enter &mdash; it makes <code>localStorage</code> behave the way it does in some school devices, sandboxed previews, or private browsing:</p>
+  <pre class="code" style="margin:0.4rem 0"><span class="k">localStorage</span>.setItem = <span class="k">function</span>(){ <span class="k">throw</span> <span class="k">new</span> Error(<span class="s">'Storage blocked'</span>); };</pre>
+  <p style="margin:0.5rem 0 0">Now click on the die in either game a few times. What happens to the round counter? Does anything on screen respond at all? Try the "Play Again" button. Write down exactly what you observe before reading on.</p>
+</div>
+</section>
+
+<section id="root-cause">
+<h2>3. Root cause: one unguarded call, three functions deep</h2>
+<p>The die-roll handler calls <code>recordRoll()</code> every roll, to log the result for the observed-vs-theoretical statistics further down the page:</p>
+<div class="code-filename">dice-games-buggy.html (before)</div>
+<pre class="code"><span class="c">// No error handling — if setItem throws, nothing below this line runs</span>
+<span class="k">function</span> recordRoll(game, face){
+  <span class="k">var</span> c = getCount(game, face) + 1;
+  localStorage.setItem(statsKey(game, face), String(c));   <span class="c">// ← throws here</span>
+  <span class="k">var</span> t = getTotal(game) + 1;
+  localStorage.setItem(totalKey(game), String(t));
+}</pre>
+<p>In some environments &mdash; opening the file directly from disk instead of through a web server, private/incognito browsing, or a locked-down school device &mdash; <code>localStorage</code> throws an error instead of quietly failing. Because that call wasn't wrapped in a <code>try/catch</code>, the error doesn't just fail silently: in JavaScript, an uncaught error stops the <strong>entire rest of the current function</strong> from running, and unwinds back through everything that called it.</p>
+<table class="trace">
+<tr><th>Trace step</th><th>What runs</th></tr>
+<tr><td>1</td><td>Player clicks the die</td></tr>
+<tr><td>2</td><td>Die-roll handler starts: generate face, update die display</td></tr>
+<tr><td>3</td><td>Handler calls <code>recordRoll(game, face)</code></td></tr>
+<tr class="halt"><td>4</td><td class="halt">🛑 <code>localStorage.setItem(...)</code> throws — <code>recordRoll</code> stops immediately</td></tr>
+<tr><td>5</td><td style="color:#b91c1c">Never runs: round counter increment</td></tr>
+<tr><td>6</td><td style="color:#b91c1c">Never runs: win/bust check</td></tr>
+<tr><td>7</td><td style="color:#b91c1c">Never runs: status label update, "Play Again" visibility logic</td></tr>
+</table>
+<div class="callout concept">
+<strong>Concept for students &mdash; defensive programming and graceful degradation:</strong> code that depends on something outside its control (a file, a network connection, browser storage) should assume that thing can fail, and decide in advance what should happen when it does &mdash; rather than letting one failure cascade into an apparently unrelated part of the program. Refreshing the page only appeared to "fix" it because a refresh restarts the whole script from scratch, silently resetting the illusion each time.</div>
+</section>
+
+<section id="the-fix">
+<h2>4. The fix: contain the failure</h2>
+<p>The whole body of <code>recordRoll</code> was wrapped in a <code>try/catch</code>. If storage fails, the <em>catch</em> block runs instead of an uncaught error &mdash; and everything after the original call site (in the calling function) keeps executing normally.</p>
+<div class="code-filename">dice-games-buggy.html (after — real code from the fixed file)</div>
+<pre class="code"><span class="k">function</span> recordRoll(game, face){
+  <span class="c">// Wrapped so a storage failure (private browsing, file:// testing,</span>
+  <span class="c">// sandboxed preview, etc.) never breaks the game itself — it just</span>
+  <span class="c">// means this roll won't be added to the persisted tally.</span>
+  <span class="k">try</span>{
+    <span class="k">var</span> c = getCount(game, face) + 1;
+    localStorage.setItem(statsKey(game, face), String(c));
+    <span class="k">var</span> t = getTotal(game) + 1;
+    localStorage.setItem(totalKey(game), String(t));
+  } <span class="k">catch</span>(e){ <span class="c">/* stats unavailable this session — gameplay continues normally */</span> }
+}</pre>
+<p>Gameplay logic (the round counter, the win/bust check, the "Play Again" button) lives in the function that <em>calls</em> <code>recordRoll</code> &mdash; so once <code>recordRoll</code> can no longer throw past its own boundary, everything downstream of it runs normally every time, storage or no storage.</p>
+</section>
+
+<section id="verify">
+<h2>5. Proving the fix &mdash; not just eyeballing it</h2>
+<div class="try-it">
+  <div class="label">Try it yourself &mdash; confirm the fix</div>
+  <p style="margin:0">Open <code>source/dice-games-fixed.html</code> and repeat the exact same console trick from Section 2. Roll the dice again. This time, does the round counter still update? Does "Play Again" still work at the end of a game? If the only thing that changed is the file, and the only thing you did is the same console command, any difference in behaviour is the fix at work.</p>
+</div>
+<p>When this was fixed for real, a script (Node.js + jsdom) built a fake browser environment that deliberately made every <code>localStorage</code> call throw, then ran a full 10-round game through it programmatically. Before the fix, the game froze exactly as reported. After the fix, it completed all 10 rounds and "Play Again" worked &mdash; proving the storage failure could no longer affect gameplay, regardless of <em>why</em> storage had failed. That's the <strong>Evaluate</strong> stage of CT5-DPM-01 done properly: not "it looks fine now," but a repeatable test that would catch the bug again if it ever came back.</p>
+</section>
+
+<section id="questions">
+<h2>6. Practice questions</h2>
+
+<div class="qset foundation">
+  <span class="tier-label">Foundation D&ndash;E</span>
+
+  <div class="q">
+    <p class="stem">Q1. What symptom did the player report, in their own words? <span class="marks">(1 mark)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">The "Play Again" button didn't seem to do anything — they had to reload the whole page to start a new game.</div></details>
+  </div>
+
+  <div class="q">
+    <p class="stem">Q2. Was the bug actually inside the "Play Again" button's own code? Explain. <span class="marks">(2 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">No. The button's code was checked and found to be completely correct. The real fault was in a different function (<code>recordRoll</code>) that ran earlier and silently stopped everything after it.</div></details>
+  </div>
+
+  <div class="q">
+    <p class="stem">Q3. What does <code>try/catch</code> do, in plain English? <span class="marks">(2 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">It lets a program attempt something that might fail (the <code>try</code> part) and run a backup plan instead of crashing if it does fail (the <code>catch</code> part).</div></details>
+  </div>
+</div>
+
+<div class="qset core">
+  <span class="tier-label">Core C</span>
+
+  <div class="q">
+    <p class="stem">Q4. Using the trace table in Section 3, explain in your own words why an error in <code>recordRoll</code> stopped the round counter from updating, even though the round counter code has nothing to do with <code>localStorage</code>. <span class="marks">(3 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">In JavaScript, an uncaught error stops the rest of the current function immediately and unwinds back through whatever called it. <code>recordRoll</code> was called partway through the die-roll handler, so when it threw an error with no <code>try/catch</code>, the rest of that same handler — including the round counter update — never ran, even though that code was written correctly and had no direct connection to storage.</div></details>
+  </div>
+
+  <div class="q">
+    <p class="stem">Q5. Explain why refreshing the page appeared to "fix" the problem, even though the underlying bug was still there. <span class="marks">(2 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">Refreshing restarts the whole script from scratch, so the game looks like it's working again from round 1 — but the same unguarded <code>localStorage</code> call would throw and freeze it again as soon as another roll triggered a storage failure.</div></details>
+  </div>
+
+  <div class="q">
+    <p class="stem">Q6. Which CT5-DPM-01 stage was missing when <code>recordRoll</code> was first written, and which stage caught the problem? <span class="marks">(3 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body"><strong>Develop</strong> was incomplete — the function was written assuming storage always succeeds, with no plan for failure. <strong>Evaluate</strong> is what caught it: testing under a forced storage failure (by hand in the console, or by an automated script) revealed the freeze that normal testing wouldn't show.</div></details>
+  </div>
+</div>
+
+<div class="qset extension">
+  <span class="tier-label">Extension B&ndash;A</span>
+
+  <div class="q">
+    <p class="stem">Q7 &mdash; Audit. Open <code>source/dice-games-buggy.html</code> and search for other <code>localStorage.getItem</code> or <code>localStorage.setItem</code> calls outside <code>recordRoll</code>. Find at least one more that is <em>not</em> wrapped in a <code>try/catch</code>, and explain what would visibly break if storage failed at that point. <span class="marks">(3 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body">The font-preference toggle near the bottom of the script reads and writes <code>localStorage.getItem('pro-dice-font')</code> / <code>setItem('pro-dice-font', name)</code> with no <code>try/catch</code>. If storage failed there, it would likely break page load entirely (an uncaught error partway through setup), rather than just losing the saved font choice — a much more visible failure than a silently-reset stats tally.</div></details>
+  </div>
+
+  <div class="q">
+    <p class="stem">Q8 &mdash; Fix and evaluate. Rewrite the font-preference code you found in Q7 using the same defensive pattern as <code>recordRoll</code>, then describe a test (like Section 5's console trick) that would prove your fix works. <span class="marks">(4 marks)</span></p>
+    <details class="answer"><summary>Show answer</summary><div class="ans-body"><pre class="code" style="margin:0 0 0.6rem"><span class="k">var</span> savedFont = <span class="s">'nunitosans'</span>;
+<span class="k">try</span>{ savedFont = localStorage.getItem(<span class="s">'pro-dice-font'</span>) || <span class="s">'nunitosans'</span>; } <span class="k">catch</span>(e){}
+<span class="c">// ...inside applyFont():</span>
+<span class="k">try</span>{ localStorage.setItem(<span class="s">'pro-dice-font'</span>, name); } <span class="k">catch</span>(e){}</pre>
+Test: apply the same console override from Section 2 (<code>localStorage.setItem = function(){ throw ... }</code>) before the page finishes loading, then confirm the page still loads and the font buttons still work — clicking one just won't remember the choice next visit, instead of breaking the page. (This is in fact exactly how the real fixed file handles it — check <code>source/dice-games-fixed.html</code> to compare.)</div></details>
+  </div>
+</div>
+</section>
+
+<nav class="pager">
+  <a href="level-1.html">&larr; Level 1: Magic Numbers</a>
+  <a href="level-3.html">Level 3: Native vs Custom UI &rarr;</a>
+</nav>
+<footer class="page-footer">
+  NSW Computing Technology 7&ndash;10 &middot; Stage 5 (CT5) &middot; Dice &amp; Chance Iteration Case Study &middot; CT5-DPM-01
+</footer>
+</main>
+</div>
+</body>
+</html>

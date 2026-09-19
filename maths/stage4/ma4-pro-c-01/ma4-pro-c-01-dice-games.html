@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dice &amp; Chance — MA4-PRO-C-01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4EFE9;
+    --slate:#3D5A80;
+    --forest:#4A7C59;
+    --forest-dark:#345C42;
+    --amber:#E89C2F;
+    --terracotta:#C1614F;
+    --terracotta-dark:#9E4B3D;
+    --white:#FFFFFF;
+    --ink:#2A2A2A;
+    --line:#E1D8CB;
+    --font: 'Nunito Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    line-height:1.5;
+    text-align:left;
+  }
+  body.font-nunito{ --font: 'Nunito', sans-serif; }
+  body.font-atkinson{ --font: 'Atkinson Hyperlegible', sans-serif; }
+
+  header{
+    background:var(--slate);
+    color:var(--white);
+    padding:1.5rem 1.25rem 1.25rem;
+  }
+  header h1{ margin:0 0 0.15rem; font-size:1.6rem; font-weight:800; }
+  header p{ margin:0; opacity:0.9; font-size:0.95rem; }
+  .code-tag{
+    display:inline-block;
+    background:rgba(255,255,255,0.18);
+    border-radius:999px;
+    padding:0.15rem 0.7rem;
+    font-size:0.75rem;
+    font-weight:700;
+    letter-spacing:0.03em;
+    margin-bottom:0.5rem;
+  }
+
+  .font-toggle{
+    display:flex;
+    gap:0.4rem;
+    margin-top:0.9rem;
+  }
+  .font-toggle button{
+    background:rgba(255,255,255,0.12);
+    color:var(--white);
+    border:1px solid rgba(255,255,255,0.35);
+    border-radius:8px;
+    padding:0.3rem 0.6rem;
+    font-size:0.8rem;
+    cursor:pointer;
+  }
+  .font-toggle button[aria-pressed="true"]{
+    background:var(--white);
+    color:var(--slate);
+    font-weight:700;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap:0.5rem;
+    padding:0.9rem 1.25rem 0;
+    background:var(--bg);
+    flex-wrap:wrap;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  nav.tabs button{
+    font-family:var(--font);
+    border:2px solid var(--line);
+    background:var(--white);
+    border-radius:12px 12px 0 0;
+    padding:0.7rem 1rem;
+    font-size:0.95rem;
+    font-weight:700;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  nav.tabs button[aria-selected="true"]{
+    border-color:var(--slate);
+    border-bottom-color:var(--white);
+    background:var(--white);
+    color:var(--slate);
+  }
+
+  main{ padding:1.25rem; max-width:900px; margin:0 auto; }
+  section.game{ display:none; }
+  section.game.active{ display:block; }
+
+  .card{
+    background:var(--white);
+    border-radius:14px;
+    padding:1.1rem 1.25rem;
+    margin-bottom:1rem;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card h2{ margin-top:0; font-size:1.25rem; }
+  .card h3{ font-size:1.05rem; margin-bottom:0.5rem; }
+
+  .accent-forest{ border-left:6px solid var(--forest); }
+  .accent-terracotta{ border-left:6px solid var(--terracotta); }
+  .accent-slate{ border-left:6px solid var(--slate); }
+
+  ul.rules{ margin:0.4rem 0 0; padding-left:1.2rem; }
+  ul.rules li{ margin-bottom:0.3rem; }
+
+  .play-grid{
+    display:grid;
+    grid-template-columns:140px 1fr;
+    gap:1.25rem;
+    align-items:start;
+  }
+  @media (max-width:520px){
+    .play-grid{ grid-template-columns:1fr; }
+  }
+  .die-wrap{ text-align:center; }
+  .die-wrap svg{ width:120px; height:120px; transition:transform 0.25s ease; }
+  .die-wrap svg.pop{ transform:scale(1.08); }
+
+  .status-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:1rem;
+    margin-bottom:0.6rem;
+    font-weight:700;
+  }
+  .status-pill{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0.4rem 0.7rem;
+    font-size:0.9rem;
+  }
+  .status-pill span.val{ font-weight:800; }
+
+  .msg-box{
+    min-height:2.6rem;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0.6rem 0.8rem;
+    margin:0.6rem 0;
+    font-weight:700;
+  }
+  .msg-box.safe{ border-color:var(--forest); color:var(--forest-dark); }
+  .msg-box.bust{ border-color:var(--terracotta); color:var(--terracotta-dark); }
+  .msg-box.bonus{ border-color:var(--amber); color:#8A5A12; }
+
+  .btn-row{ display:flex; gap:0.6rem; flex-wrap:wrap; margin-bottom:0.6rem; }
+  button.action{
+    font-family:var(--font);
+    font-weight:800;
+    font-size:0.95rem;
+    border:none;
+    border-radius:10px;
+    padding:0.65rem 1.1rem;
+    cursor:pointer;
+    color:var(--white);
+  }
+  button.action:disabled{ opacity:0.45; cursor:not-allowed; }
+  .btn-forest{ background:var(--forest); }
+  .btn-terracotta{ background:var(--terracotta); }
+  .btn-slate{ background:var(--slate); }
+  .btn-outline{
+    background:var(--white);
+    color:var(--ink) !important;
+    border:2px solid var(--line) !important;
+  }
+
+  table.history{ width:100%; border-collapse:collapse; margin-top:0.5rem; font-size:0.9rem; }
+  table.history th, table.history td{
+    border-bottom:1px solid var(--line);
+    padding:0.4rem 0.5rem;
+    text-align:left;
+  }
+  table.history th{ font-weight:800; }
+
+  .frac{ display:inline-flex; flex-direction:column; text-align:center; vertical-align:middle; line-height:1; font-weight:800; margin:0 0.15em; }
+  .frac .num{ border-bottom:2px solid currentColor; padding:0 0.25em; }
+  .frac .den{ padding:0 0.25em; }
+
+  .maths-box{
+    background:#FBF8F3;
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:0.8rem 0.9rem;
+    font-size:0.95rem;
+  }
+  .maths-box p{ margin:0.3rem 0; }
+
+  table.stats{ width:100%; border-collapse:collapse; font-size:0.88rem; margin-top:0.5rem; }
+  table.stats th, table.stats td{
+    border-bottom:1px solid var(--line);
+    padding:0.35rem 0.4rem;
+    text-align:center;
+  }
+  table.stats th{ font-weight:800; }
+  table.stats td:first-child, table.stats th:first-child{ text-align:left; }
+  .stats-total{ margin-top:0.5rem; font-weight:700; font-size:0.9rem; }
+
+  .bar-row{ display:flex; align-items:center; gap:0.5rem; margin:0.35rem 0; font-size:0.85rem; }
+  .bar-label{ width:2.2rem; font-weight:800; }
+  .bar-track{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:6px; height:1.1rem; position:relative; overflow:hidden; }
+  .bar-fill{ display:block; height:100%; border-radius:6px 0 0 6px; }
+  .bar-fill.forest{ background:var(--forest); }
+  .bar-fill.terracotta{ background:var(--terracotta); }
+  .bar-ref{ position:absolute; top:0; bottom:0; width:2px; background:var(--slate); }
+  .bar-value{ width:3.6rem; text-align:right; font-weight:700; }
+
+  .compare-legend{ display:flex; gap:1.2rem; margin-bottom:0.6rem; font-size:0.85rem; flex-wrap:wrap; }
+  .legend-swatch{ display:inline-block; width:0.8rem; height:0.8rem; border-radius:3px; margin-right:0.35rem; vertical-align:middle; }
+
+  footer{ text-align:center; padding:1.5rem 1rem 2.5rem; font-size:0.8rem; color:#6b6355; }
+</style>
+</head>
+<body class="font-nunitosans">
+
+<header>
+  <span class="code-tag">MA4-PRO-C-01</span>
+  <h1>Dice &amp; Chance</h1>
+  <p>Push Your Luck vs Dice Cricket — testing theoretical probability against what actually happens when you roll.</p>
+  <div class="font-toggle" role="group" aria-label="Font style">
+    <button type="button" data-font="nunitosans" aria-pressed="true">Nunito Sans</button>
+    <button type="button" data-font="nunito" aria-pressed="false">Nunito</button>
+    <button type="button" data-font="atkinson" aria-pressed="false">Atkinson</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Choose a game">
+  <button role="tab" data-tab="pyl" aria-selected="true">🎲 Push Your Luck</button>
+  <button role="tab" data-tab="crik" aria-selected="false">🏏 Dice Cricket</button>
+  <button role="tab" data-tab="compare" aria-selected="false">📊 Compare My Dice</button>
+</nav>
+
+<main>
+
+  <!-- ================= PUSH YOUR LUCK ================= -->
+  <section id="tab-pyl" class="game active">
+    <div class="card accent-forest">
+      <h2>Push Your Luck</h2>
+      <p>Roll again and again to build up your turn total — but roll a <strong>1</strong> and you lose everything you've earned this round. Bank your points before that happens, if you dare.</p>
+      <ul class="rules">
+        <li>Each round: roll the die as many times as you like.</li>
+        <li>Every roll of 2–6 adds that number to your <strong>turn total</strong>.</li>
+        <li>Roll a <strong>1</strong> and your turn total is wiped to zero — the round ends.</li>
+        <li><strong>Bank</strong> at any time to lock in your turn total and add it to your overall score.</li>
+        <li>Play <strong>10 rounds</strong>. Highest overall score wins.</li>
+      </ul>
+    </div>
+
+    <div class="card accent-forest">
+      <div class="status-row">
+        <div class="status-pill">Round <span class="val" id="pylRound">1</span> of <span id="pylMaxRounds">10</span></div>
+        <div class="status-pill">Turn total: <span class="val" id="pylTurn">0</span></div>
+        <div class="status-pill">Overall score: <span class="val" id="pylScore">0</span></div>
+      </div>
+
+      <div class="play-grid">
+        <div class="die-wrap">
+          <svg id="pylDie" viewBox="0 0 100 100" role="img" aria-label="Die showing 1"></svg>
+        </div>
+        <div>
+          <div class="msg-box" id="pylMsg" aria-live="polite">Click Roll to start round 1.</div>
+          <div class="btn-row">
+            <button class="action btn-forest" id="pylRollBtn">Roll</button>
+            <button class="action btn-slate" id="pylBankBtn" disabled>Bank turn total</button>
+            <button class="action btn-outline" id="pylNewGameBtn" style="display:none;">Play again</button>
+          </div>
+        </div>
+      </div>
+
+      <table class="history" id="pylHistoryTable">
+        <thead><tr><th>Round</th><th>Result</th><th>Points</th></tr></thead>
+        <tbody id="pylHistoryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card accent-slate">
+      <h3>The maths behind it</h3>
+      <div class="maths-box">
+        <p>Sample space for one roll: <em>S</em> = {1, 2, 3, 4, 5, 6}</p>
+        <p>P(bust) = P(rolling a 1) = <span class="frac"><span class="num">1</span><span class="den">6</span></span></p>
+        <p>P(safe roll) = P(not rolling a 1) = <span class="frac"><span class="num">5</span><span class="den">6</span></span> — the <strong>complement</strong> of P(bust), since <span class="frac"><span class="num">1</span><span class="den">6</span></span> + <span class="frac"><span class="num">5</span><span class="den">6</span></span> = 1.</p>
+        <p>Every extra roll you take carries the same <span class="frac"><span class="num">1</span><span class="den">6</span></span> risk — that's why "just one more roll" gets riskier the longer a turn goes on, even though the die has no memory.</p>
+      </div>
+    </div>
+
+    <div class="card accent-forest">
+      <h3>Observed vs theoretical — Push Your Luck's die</h3>
+      <table class="stats">
+        <thead><tr><th>Face</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr></thead>
+        <tbody>
+          <tr><td>Count</td><td id="pylCount1">0</td><td id="pylCount2">0</td><td id="pylCount3">0</td><td id="pylCount4">0</td><td id="pylCount5">0</td><td id="pylCount6">0</td></tr>
+          <tr><td>Observed</td><td id="pylObs1">—</td><td id="pylObs2">—</td><td id="pylObs3">—</td><td id="pylObs4">—</td><td id="pylObs5">—</td><td id="pylObs6">—</td></tr>
+        </tbody>
+      </table>
+      <p class="stats-total">Total rolls recorded: <span id="pylTotalRolls">0</span> &nbsp;·&nbsp; Theoretical probability for each face: <span class="frac"><span class="num">1</span><span class="den">6</span></span> ≈ 0.167</p>
+      <button class="action btn-outline" id="pylResetStats">Reset Push Your Luck stats</button>
+      <div class="msg-box bust" id="pylResetConfirm" style="display:none; margin-top:0.6rem;">
+        <p style="margin:0 0 0.5rem;">Reset all recorded Push Your Luck roll data? This cannot be undone.</p>
+        <div class="btn-row" style="margin-bottom:0;">
+          <button class="action btn-terracotta" id="pylResetConfirmYes">Yes, reset it</button>
+          <button class="action btn-outline" id="pylResetConfirmNo">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DICE CRICKET ================= -->
+  <section id="tab-crik" class="game">
+    <div class="card accent-terracotta">
+      <h2>Dice Cricket</h2>
+      <p>You're batting. Face one ball at a time. Score runs, watch for the wicket ball, and see how your innings adds up over a full match.</p>
+      <ul class="rules">
+        <li>Roll 1, 2, 3 or 4 → that many runs added to your innings.</li>
+        <li>Roll a <strong>5</strong> → OUT. Your innings ends immediately.</li>
+        <li>Roll a <strong>6</strong> → a six! 6 runs added.</li>
+        <li>Play <strong>10 innings</strong>. Your match total is the sum of all innings.</li>
+      </ul>
+    </div>
+
+    <div class="card accent-terracotta">
+      <div class="status-row">
+        <div class="status-pill">Innings <span class="val" id="crikInnings">1</span> of <span id="crikMaxInnings">10</span></div>
+        <div class="status-pill">This innings: <span class="val" id="crikInningsScore">0</span></div>
+        <div class="status-pill">Match total: <span class="val" id="crikMatchScore">0</span></div>
+      </div>
+
+      <div class="play-grid">
+        <div class="die-wrap">
+          <svg id="crikDie" viewBox="0 0 100 100" role="img" aria-label="Die showing 1"></svg>
+        </div>
+        <div>
+          <div class="msg-box" id="crikMsg" aria-live="polite">Click "Face next ball" to start innings 1.</div>
+          <div class="btn-row">
+            <button class="action btn-terracotta" id="crikRollBtn">Face next ball</button>
+            <button class="action btn-outline" id="crikNewGameBtn" style="display:none;">New match</button>
+          </div>
+        </div>
+      </div>
+
+      <table class="history" id="crikHistoryTable">
+        <thead><tr><th>Innings</th><th>Runs</th><th>Out on ball #</th></tr></thead>
+        <tbody id="crikHistoryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card accent-slate">
+      <h3>The maths behind it</h3>
+      <div class="maths-box">
+        <p>Sample space for one ball: <em>S</em> = {1, 2, 3, 4, 5, 6}</p>
+        <p>P(out) = P(rolling a 5) = <span class="frac"><span class="num">1</span><span class="den">6</span></span></p>
+        <p>P(survive the ball) = <span class="frac"><span class="num">5</span><span class="den">6</span></span> — the <strong>complement</strong> of P(out).</p>
+        <p>P(hit a six) = <span class="frac"><span class="num">1</span><span class="den">6</span></span>, the same as P(out) — equally likely outcomes on a fair die, even though one feels much better than the other!</p>
+      </div>
+    </div>
+
+    <div class="card accent-terracotta">
+      <h3>Observed vs theoretical — Dice Cricket's die</h3>
+      <table class="stats">
+        <thead><tr><th>Face</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5 (out)</th><th>6</th></tr></thead>
+        <tbody>
+          <tr><td>Count</td><td id="crikCount1">0</td><td id="crikCount2">0</td><td id="crikCount3">0</td><td id="crikCount4">0</td><td id="crikCount5">0</td><td id="crikCount6">0</td></tr>
+          <tr><td>Observed</td><td id="crikObs1">—</td><td id="crikObs2">—</td><td id="crikObs3">—</td><td id="crikObs4">—</td><td id="crikObs5">—</td><td id="crikObs6">—</td></tr>
+        </tbody>
+      </table>
+      <p class="stats-total">Total balls recorded: <span id="crikTotalRolls">0</span> &nbsp;·&nbsp; Theoretical probability for each face: <span class="frac"><span class="num">1</span><span class="den">6</span></span> ≈ 0.167</p>
+      <button class="action btn-outline" id="crikResetStats">Reset Dice Cricket stats</button>
+      <div class="msg-box bust" id="crikResetConfirm" style="display:none; margin-top:0.6rem;">
+        <p style="margin:0 0 0.5rem;">Reset all recorded Dice Cricket roll data? This cannot be undone.</p>
+        <div class="btn-row" style="margin-bottom:0;">
+          <button class="action btn-terracotta" id="crikResetConfirmYes">Yes, reset it</button>
+          <button class="action btn-outline" id="crikResetConfirmNo">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMPARE ================= -->
+  <section id="tab-compare" class="game">
+    <div class="card accent-slate">
+      <h2>Compare My Two Dice</h2>
+      <p>Both games use a fair six-sided die, so in theory every face should turn up about <span class="frac"><span class="num">1</span><span class="den">6</span></span> (≈16.7%) of the time. With only a few rolls the two games' results can look quite different from each other and from the theoretical value — that's expected. The more rolls recorded, the closer the observed bars should creep toward the dashed line.</p>
+      <div class="compare-legend">
+        <span><span class="legend-swatch" style="background:var(--forest);"></span>Push Your Luck</span>
+        <span><span class="legend-swatch" style="background:var(--terracotta);"></span>Dice Cricket</span>
+        <span><span class="legend-swatch" style="background:var(--slate);"></span>Theoretical (16.7%)</span>
+      </div>
+      <div id="compareBars"></div>
+      <p class="stats-total" id="compareTotals"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  MA4-PRO-C-01 — solves problems involving the probabilities of simple chance experiments. Stage 4 enrichment resource.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Die face SVG ----------
+  var PIPS = {
+    1: [[50,50]],
+    2: [[25,25],[75,75]],
+    3: [[25,25],[50,50],[75,75]],
+    4: [[25,25],[75,25],[25,75],[75,75]],
+    5: [[25,25],[75,25],[50,50],[25,75],[75,75]],
+    6: [[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]]
+  };
+
+  function dieFaceSVG(face, colorVar){
+    var pips = PIPS[face] || PIPS[1];
+    var circles = pips.map(function(p){
+      return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="8" fill="' + colorVar + '"></circle>';
+    }).join('');
+    return '<rect x="4" y="4" width="92" height="92" rx="14" fill="#FFFFFF" stroke="' + colorVar + '" stroke-width="4"></rect>' + circles;
+  }
+
+  function setDie(svgEl, face, colorVar){
+    svgEl.innerHTML = dieFaceSVG(face, colorVar);
+    svgEl.setAttribute('aria-label', 'Die showing ' + face);
+    svgEl.classList.remove('pop');
+    void svgEl.offsetWidth; // restart animation
+    svgEl.classList.add('pop');
+  }
+
+  function rollDie(){
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  // ---------- Stats (localStorage) ----------
+  function statsKey(game, face){ return 'pro-' + game + '-face' + face; }
+  function totalKey(game){ return 'pro-' + game + '-rolls-total'; }
+
+  function getCount(game, face){
+    try{
+      var v = localStorage.getItem(statsKey(game, face));
+      return v ? parseInt(v, 10) : 0;
+    } catch(e){ return 0; }
+  }
+  function getTotal(game){
+    try{
+      var v = localStorage.getItem(totalKey(game));
+      return v ? parseInt(v, 10) : 0;
+    } catch(e){ return 0; }
+  }
+  function recordRoll(game, face){
+    // Wrapped so a storage failure (private browsing, file:// testing,
+    // sandboxed preview, etc.) never breaks the game itself — it just
+    // means this roll won't be added to the persisted tally.
+    try{
+      var c = getCount(game, face) + 1;
+      localStorage.setItem(statsKey(game, face), String(c));
+      var t = getTotal(game) + 1;
+      localStorage.setItem(totalKey(game), String(t));
+    } catch(e){ /* stats unavailable this session — gameplay continues normally */ }
+  }
+  function resetStats(game){
+    try{
+      for (var f = 1; f <= 6; f++){
+        localStorage.removeItem(statsKey(game, f));
+      }
+      localStorage.removeItem(totalKey(game));
+    } catch(e){ /* nothing to reset if storage isn't available */ }
+  }
+
+  function renderStats(game){
+    var total = getTotal(game);
+    for (var f = 1; f <= 6; f++){
+      var c = getCount(game, f);
+      var countEl = document.getElementById(game + 'Count' + f);
+      var obsEl = document.getElementById(game + 'Obs' + f);
+      if (countEl) countEl.textContent = c;
+      if (obsEl){
+        obsEl.textContent = total > 0 ? (c + '/' + total + ' (' + ((c/total)*100).toFixed(1) + '%)') : '—';
+      }
+    }
+    var totalEl = document.getElementById(game + 'TotalRolls');
+    if (totalEl) totalEl.textContent = total;
+  }
+
+  // ---------- PUSH YOUR LUCK ----------
+  var pyl = { round: 1, maxRounds: 10, turnTotal: 0, score: 0, over: false };
+
+  var pylDieEl = document.getElementById('pylDie');
+  var pylMsg = document.getElementById('pylMsg');
+  var pylRollBtn = document.getElementById('pylRollBtn');
+  var pylBankBtn = document.getElementById('pylBankBtn');
+  var pylNewGameBtn = document.getElementById('pylNewGameBtn');
+  var pylHistoryBody = document.getElementById('pylHistoryBody');
+
+  setDie(pylDieEl, 1, 'var(--forest)');
+
+  function pylUpdateStatus(){
+    document.getElementById('pylRound').textContent = Math.min(pyl.round, pyl.maxRounds);
+    document.getElementById('pylMaxRounds').textContent = pyl.maxRounds;
+    document.getElementById('pylTurn').textContent = pyl.turnTotal;
+    document.getElementById('pylScore').textContent = pyl.score;
+    pylBankBtn.disabled = pyl.turnTotal === 0 || pyl.over;
+  }
+
+  function pylAddHistory(roundNum, result, points){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + roundNum + '</td><td>' + result + '</td><td>' + points + '</td>';
+    pylHistoryBody.appendChild(tr);
+  }
+
+  function pylEndGame(){
+    pyl.over = true;
+    pylRollBtn.disabled = true;
+    pylBankBtn.disabled = true;
+    pylNewGameBtn.style.display = 'inline-block';
+    pylMsg.className = 'msg-box safe';
+    pylMsg.textContent = 'Game over! Final score after ' + pyl.maxRounds + ' rounds: ' + pyl.score + ' points.';
+  }
+
+  pylRollBtn.addEventListener('click', function(){
+    if (pyl.over) return;
+    var face = rollDie();
+    setDie(pylDieEl, face, 'var(--forest)');
+    recordRoll('pyl', face);
+    renderStats('pyl');
+
+    if (face === 1){
+      pylMsg.className = 'msg-box bust';
+      pylMsg.textContent = 'Busted! You rolled a 1 and lost this round\u2019s ' + pyl.turnTotal + ' points.';
+      pylAddHistory(pyl.round, 'Bust (rolled 1)', 0);
+      pyl.turnTotal = 0;
+      pyl.round += 1;
+      if (pyl.round > pyl.maxRounds){
+        pylUpdateStatus();
+        pylEndGame();
+        return;
+      }
+    } else {
+      pyl.turnTotal += face;
+      pylMsg.className = 'msg-box';
+      pylMsg.textContent = 'Rolled a ' + face + '. Turn total is now ' + pyl.turnTotal + '. Bank it or keep pushing your luck.';
+    }
+    pylUpdateStatus();
+  });
+
+  pylBankBtn.addEventListener('click', function(){
+    if (pyl.over || pyl.turnTotal === 0) return;
+    pyl.score += pyl.turnTotal;
+    pylMsg.className = 'msg-box safe';
+    pylMsg.textContent = 'Banked ' + pyl.turnTotal + ' points! Overall score is now ' + pyl.score + '.';
+    pylAddHistory(pyl.round, 'Banked', pyl.turnTotal);
+    pyl.turnTotal = 0;
+    pyl.round += 1;
+    if (pyl.round > pyl.maxRounds){
+      pylUpdateStatus();
+      pylEndGame();
+      return;
+    }
+    pylUpdateStatus();
+  });
+
+  pylNewGameBtn.addEventListener('click', function(){
+    pyl = { round: 1, maxRounds: 10, turnTotal: 0, score: 0, over: false };
+    pylHistoryBody.innerHTML = '';
+    pylRollBtn.disabled = false;
+    pylNewGameBtn.style.display = 'none';
+    pylMsg.className = 'msg-box';
+    pylMsg.textContent = 'Click Roll to start round 1.';
+    setDie(pylDieEl, 1, 'var(--forest)');
+    pylUpdateStatus();
+  });
+
+  document.getElementById('pylResetStats').addEventListener('click', function(){
+    document.getElementById('pylResetConfirm').style.display = 'block';
+  });
+  document.getElementById('pylResetConfirmYes').addEventListener('click', function(){
+    resetStats('pyl');
+    renderStats('pyl');
+    document.getElementById('pylResetConfirm').style.display = 'none';
+  });
+  document.getElementById('pylResetConfirmNo').addEventListener('click', function(){
+    document.getElementById('pylResetConfirm').style.display = 'none';
+  });
+
+  pylUpdateStatus();
+  renderStats('pyl');
+
+  // ---------- DICE CRICKET ----------
+  var crik = { innings: 1, maxInnings: 10, inningsScore: 0, matchScore: 0, ball: 0, over: false };
+
+  var crikDieEl = document.getElementById('crikDie');
+  var crikMsg = document.getElementById('crikMsg');
+  var crikRollBtn = document.getElementById('crikRollBtn');
+  var crikNewGameBtn = document.getElementById('crikNewGameBtn');
+  var crikHistoryBody = document.getElementById('crikHistoryBody');
+
+  setDie(crikDieEl, 1, 'var(--terracotta)');
+
+  function crikUpdateStatus(){
+    document.getElementById('crikInnings').textContent = Math.min(crik.innings, crik.maxInnings);
+    document.getElementById('crikMaxInnings').textContent = crik.maxInnings;
+    document.getElementById('crikInningsScore').textContent = crik.inningsScore;
+    document.getElementById('crikMatchScore').textContent = crik.matchScore;
+  }
+
+  function crikAddHistory(inningsNum, runs, outBall){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + inningsNum + '</td><td>' + runs + '</td><td>' + outBall + '</td>';
+    crikHistoryBody.appendChild(tr);
+  }
+
+  function crikEndMatch(){
+    crik.over = true;
+    crikRollBtn.disabled = true;
+    crikNewGameBtn.style.display = 'inline-block';
+    crikMsg.className = 'msg-box safe';
+    crikMsg.textContent = 'Match over! Final total after ' + crik.maxInnings + ' innings: ' + crik.matchScore + ' runs.';
+  }
+
+  crikRollBtn.addEventListener('click', function(){
+    if (crik.over) return;
+    var face = rollDie();
+    setDie(crikDieEl, face, 'var(--terracotta)');
+    recordRoll('crik', face);
+    renderStats('crik');
+    crik.ball += 1;
+
+    if (face === 5){
+      crikMsg.className = 'msg-box bust';
+      crikMsg.textContent = 'OUT! You rolled a 5 on ball ' + crik.ball + '. Innings ' + crik.innings + ' ends on ' + crik.inningsScore + ' runs.';
+      crikAddHistory(crik.innings, crik.inningsScore, crik.ball);
+      crik.matchScore += crik.inningsScore;
+      crik.inningsScore = 0;
+      crik.ball = 0;
+      crik.innings += 1;
+      if (crik.innings > crik.maxInnings){
+        crikUpdateStatus();
+        crikEndMatch();
+        return;
+      }
+    } else {
+      var runs = face; // 1,2,3,4 = runs; 6 = six runs
+      crik.inningsScore += runs;
+      if (face === 6){
+        crikMsg.className = 'msg-box bonus';
+        crikMsg.textContent = 'SIX! Ball ' + crik.ball + ' — innings score is now ' + crik.inningsScore + '.';
+      } else {
+        crikMsg.className = 'msg-box';
+        crikMsg.textContent = runs + ' run' + (runs === 1 ? '' : 's') + ' off ball ' + crik.ball + '. Innings score is now ' + crik.inningsScore + '.';
+      }
+    }
+    crikUpdateStatus();
+  });
+
+  crikNewGameBtn.addEventListener('click', function(){
+    crik = { innings: 1, maxInnings: 10, inningsScore: 0, matchScore: 0, ball: 0, over: false };
+    crikHistoryBody.innerHTML = '';
+    crikRollBtn.disabled = false;
+    crikNewGameBtn.style.display = 'none';
+    crikMsg.className = 'msg-box';
+    crikMsg.textContent = 'Click "Face next ball" to start innings 1.';
+    setDie(crikDieEl, 1, 'var(--terracotta)');
+    crikUpdateStatus();
+  });
+
+  document.getElementById('crikResetStats').addEventListener('click', function(){
+    document.getElementById('crikResetConfirm').style.display = 'block';
+  });
+  document.getElementById('crikResetConfirmYes').addEventListener('click', function(){
+    resetStats('crik');
+    renderStats('crik');
+    document.getElementById('crikResetConfirm').style.display = 'none';
+  });
+  document.getElementById('crikResetConfirmNo').addEventListener('click', function(){
+    document.getElementById('crikResetConfirm').style.display = 'none';
+  });
+
+  crikUpdateStatus();
+  renderStats('crik');
+
+  // ---------- COMPARE ----------
+  function renderCompare(){
+    var container = document.getElementById('compareBars');
+    container.innerHTML = '';
+    var pylTotal = getTotal('pyl');
+    var crikTotal = getTotal('crik');
+    var refPct = (1/6) * 100;
+
+    for (var f = 1; f <= 6; f++){
+      var pylPct = pylTotal > 0 ? (getCount('pyl', f) / pylTotal) * 100 : 0;
+      var crikPct = crikTotal > 0 ? (getCount('crik', f) / crikTotal) * 100 : 0;
+
+      var row1 = document.createElement('div');
+      row1.className = 'bar-row';
+      row1.innerHTML = '<span class="bar-label">' + f + '</span>' +
+        '<span class="bar-track"><span class="bar-fill forest" style="width:' + pylPct.toFixed(1) + '%"></span><span class="bar-ref" style="left:' + refPct.toFixed(1) + '%"></span></span>' +
+        '<span class="bar-value">' + pylPct.toFixed(1) + '%</span>';
+      container.appendChild(row1);
+
+      var row2 = document.createElement('div');
+      row2.className = 'bar-row';
+      row2.innerHTML = '<span class="bar-label"></span>' +
+        '<span class="bar-track"><span class="bar-fill terracotta" style="width:' + crikPct.toFixed(1) + '%"></span><span class="bar-ref" style="left:' + refPct.toFixed(1) + '%"></span></span>' +
+        '<span class="bar-value">' + crikPct.toFixed(1) + '%</span>';
+      container.appendChild(row2);
+    }
+
+    document.getElementById('compareTotals').textContent =
+      'Push Your Luck rolls recorded: ' + pylTotal + ' · Dice Cricket balls recorded: ' + crikTotal;
+  }
+
+  // ---------- TABS ----------
+  var tabButtons = document.querySelectorAll('nav.tabs button');
+  var panels = { pyl: document.getElementById('tab-pyl'), crik: document.getElementById('tab-crik'), compare: document.getElementById('tab-compare') };
+
+  tabButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabButtons.forEach(function(b){ b.setAttribute('aria-selected', 'false'); });
+      btn.setAttribute('aria-selected', 'true');
+      Object.keys(panels).forEach(function(k){ panels[k].classList.remove('active'); });
+      var key = btn.getAttribute('data-tab');
+      panels[key].classList.add('active');
+      if (key === 'compare') renderCompare();
+    });
+  });
+
+  // ---------- FONT TOGGLE ----------
+  var fontButtons = document.querySelectorAll('.font-toggle button');
+  var savedFont = 'nunitosans';
+  try{ savedFont = localStorage.getItem('pro-dice-font') || 'nunitosans'; } catch(e){}
+  function applyFont(name){
+    document.body.classList.remove('font-nunitosans', 'font-nunito', 'font-atkinson');
+    document.body.classList.add('font-' + name);
+    fontButtons.forEach(function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-font') === name ? 'true' : 'false');
+    });
+    try{ localStorage.setItem('pro-dice-font', name); } catch(e){}
+  }
+  fontButtons.forEach(function(b){
+    b.addEventListener('click', function(){ applyFont(b.getAttribute('data-font')); });
+  });
+  applyFont(savedFont);
+
+})();
+</script>
+</body>
+</html>
