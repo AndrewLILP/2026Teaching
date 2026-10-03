@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 11: Testing | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 11 of 12: choose normal, boundary and invalid test data, write automated unit tests with Unity's Test Framework, and log defects by severity.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+
+    .tier-card { min-width: 0; }
+    .tier-card code { overflow-wrap: anywhere; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .test-output {
+      background: #2b2418;
+      color: #fbf6ea;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      margin: var(--space-4) 0;
+    }
+    .bug-detective .test-output { background: #2b2418; color: #fbf6ea; }
+    .test-output .pass { color: #86efac; }
+    .test-output .fail { color: #fca5a5; }
+    .folder-tree {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+      margin: var(--space-4) 0;
+    }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 11</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#review">Review your 40 tests</a>
+          <a href="#data">Choosing test data</a>
+          <a href="#pure">Testable code</a>
+          <a href="#refactor">Moving the rules</a>
+          <a href="#unit">Writing unit tests</a>
+          <a href="#red">A test that found a bug</a>
+          <a href="#run">Run the tests</a>
+          <a href="#defects">Final regression and defect log</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-test">Testing &amp; evaluating</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 11 of 12 · 50 minutes</p>
+        <h1>Testing</h1>
+        <p class="page-intro">Over ten lessons you've written 40 manual tests, and you run them by hand. Professional teams also write <strong>automated tests</strong>: code that checks other code, running dozens of checks in under a second whenever you ask. Today you'll choose test data deliberately, write unit tests with Unity's Test Framework, watch one catch a real bug, and finish with a full regression run and a defect log.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-test">Testing &amp; evaluating</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you audited your game against Steam Deck criteria using evidence, and built a rolling-average performance tool. Today that tool's circular buffer becomes the subject of a test, and one of those tests fails.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · test review 4 min · test data 6 min · testable code and refactor 10 min · writing and running unit tests 12 min · regression and defect log 9 min · checkpoint 5 min.</p>
+        <p><strong>Setup:</strong> Unity 6 projects include the Test Framework package. Open it with <em>Window → General → Test Runner</em>. Unity's tests need code in separate <strong>assemblies</strong> (set up with <code>.asmdef</code> files). Both ready-made <code>.asmdef</code> files are in the unit's <code>code</code> folder. Dropping them into the right folders takes about two minutes.</p>
+        <p><strong>Verified:</strong> all 14 tests on this page were run before publishing, and they pass. Removing one guard clause makes exactly one test fail, with the message shown in "A test that found a bug".</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>choose normal, boundary and invalid test data for a rule</li>
+          <li>explain why separating pure logic makes code easier to test</li>
+          <li>write and run automated unit tests using Arrange, Act, Assert</li>
+          <li>log defects with a severity, and prioritise what to fix.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> all 14 provided tests pass in my Test Runner, I've added tests of my own covering each type of test data, and I've completed a regression run and defect log for T1–T40.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Unit test</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An automated test that checks one small piece of code, like one method, on its own.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Normal data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Typical, expected input that should be accepted, e.g. a 20-character caption.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Boundary data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Values at the edges of a rule, and just either side: 59, 60 and 61 characters for a 60 limit.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Invalid data</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Input that should never happen, like a missing (null) caption. The code must still cope safely.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Assertion</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A statement in a test that must be true, e.g. "the result equals 3". If it isn't, the test fails.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Pure method</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A method whose result depends only on its inputs. No screen, files or clock, so the same input always gives the same output.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Defect</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A difference between what the software does and what its requirements say it should do.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Severity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How serious a defect's effect is, from critical (data loss, crashes) to cosmetic (looks slightly wrong).</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ REVIEW ═══ -->
+      <section class="content-section" id="review">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Review your 40 tests</h2>
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · pairs · 4 min</p>
+          <h3>What kind of tests do you have?</h3>
+          <p>Flick through your test table from Lessons 3–10.</p>
+          <ol>
+            <li>Roughly how long would it take to run all 40 by hand? How often would you realistically do it?</li>
+            <li>Which tests check how the game <em>feels</em> or <em>looks</em> (only a person can judge), and which check a <em>rule</em> with one right answer?</li>
+            <li>Find a rule you tested with only one value. What values did you <em>not</em> try?</li>
+          </ol>
+        </div>
+        <p>Tests that check feel, looks and hardware will always need a person. But rules with one right answer, like "captions stop at 60 characters", can be checked by code in milliseconds, as often as you like. That's what unit tests are for.</p>
+      </section>
+
+      <!-- ═══ TEST DATA ═══ -->
+      <section class="content-section" id="data">
+        <h2>Choosing test data</h2>
+        <p>Testing a rule with one value proves very little. Good testers choose data deliberately, in three types:</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Type</th><th scope="col">Caption rule: trim, max 60</th><th scope="col">Expected result</th><th scope="col">Why test it</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Normal</strong></td><td>"Fog over the valley"</td><td>Unchanged</td><td>The everyday case must work</td></tr>
+              <tr><td><strong>Normal</strong></td><td>"&nbsp;&nbsp;&nbsp;Summit&nbsp;&nbsp;"</td><td>"Summit"</td><td>Spaces typed by accident are common</td></tr>
+              <tr><td><strong>Boundary</strong></td><td>60 characters</td><td>All 60 kept</td><td>Off-by-one errors live at edges, e.g. <code>&gt;</code> written instead of <code>&gt;=</code></td></tr>
+              <tr><td><strong>Boundary</strong></td><td>61 characters</td><td>Cut to 60</td><td>The first value that must change</td></tr>
+              <tr><td><strong>Boundary</strong></td><td>"" (empty)</td><td>""</td><td>The smallest possible input</td></tr>
+              <tr><td><strong>Invalid</strong></td><td><code>null</code> (no caption at all)</td><td>""</td><td>Should never happen, but mustn't crash if it does</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">You do · 3 min</p>
+          <p>The journal holds at most 50 photos. In your notebook, list normal, boundary and invalid test data for the rule "the journal is full when it has 50 or more photos". Include the expected <code>IsFull</code> result for each.</p>
+        </div>
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Possible answer
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <p><strong>Normal:</strong> 12 photos → false. <strong>Boundary:</strong> 0 → false, 49 → false, 50 → true, 51 → true (it shouldn't happen, but the rule uses <code>&gt;=</code> so it still counts as full). <strong>Invalid:</strong> a negative count can't occur, because a list's count is never below 0. Recognising impossible data is part of choosing test data too.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ PURE ═══ -->
+      <section class="content-section" id="pure">
+        <h2>Testable code</h2>
+        <p>Try writing an automated test for <code>CaptureRoutine</code> from Lesson 4. It needs a screen to capture, a frame to finish drawing, a real folder, the clock and a sound. That's a lot to set up just to check one rule. Compare:</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Method</th><th scope="col">Depends on</th><th scope="col">Easy to unit test?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>CaptureRoutine</code></td><td>Screen, frames, files, clock, audio</td><td>No</td></tr>
+              <tr><td>Caption cleaning</td><td>Only the text passed in</td><td>Yes</td></tr>
+              <tr><td>Counting unique places</td><td>Only the list passed in</td><td>Yes</td></tr>
+              <tr><td>Choosing a unique file name</td><td>The folder… unless we pass in "which names exist"</td><td>Yes, with one change</td></tr>
+              <tr><td>The rolling average</td><td>Only the frame times added</td><td>Yes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>So we pull those four rules out into <mark class="paper-hl paper-hl--yellow">pure</mark> code that has no Unity, no files and no screen, and the game scripts call them. The rules get tested automatically, and the game scripts become thinner.</p>
+      </section>
+
+      <!-- ═══ REFACTOR ═══ -->
+      <section class="content-section" id="refactor">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Moving the rules</h2>
+        <p>The new folders look like this. Each <code>.asmdef</code> file turns its folder into a separate <strong>assembly</strong>: a separately compiled block of code.</p>
+<pre class="folder-tree" aria-label="Project folder structure">Assets/PhotoJournal/
+├── Logic/
+│   ├── PhotoJournal.Logic.asmdef   ← "No Engine References" ticked: Unity code is not allowed here
+│   ├── JournalRules.cs
+│   └── FrameSampler.cs
+└── Tests/
+    ├── PhotoJournal.Tests.asmdef   ← Editor-only test assembly that can see Logic
+    └── JournalRulesTests.cs</pre>
+        <p class="paper-margin-note">Ticking "No Engine References" means the compiler itself stops anyone from adding Unity code to the Logic folder. The rule enforces the design.</p>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">JournalRules.cs: the rules, now pure</span></div>
+<pre><code>// Recommended filename: JournalRules.cs   (folder: Assets/PhotoJournal/Logic)
+using System;
+using System.Collections.Generic;
+
+// Pure logic: no Unity, no files, no screen. Same input, same output, every time.
+// That makes every method here easy to test automatically.
+public static class JournalRules
+{
+    public const int MaxCaptionLength = 60;     // from the Lesson 2 data dictionary
+
+    public static string CleanCaption(string caption)
+    {
+        caption = (caption ?? "").Trim();
+        if (caption.Length &gt; MaxCaptionLength)
+        {
+            caption = caption.Substring(0, MaxCaptionLength);
+        }
+        return caption;
+    }
+
+    public static int CountPlaces(IEnumerable&lt;string&gt; locationNames)
+    {
+        List&lt;string&gt; places = new List&lt;string&gt;();
+        foreach (string name in locationNames)
+        {
+            if (!places.Contains(name))
+            {
+                places.Add(name);
+            }
+        }
+        return places.Count;
+    }
+
+    // "exists" is passed in, so a test can pretend which files exist.
+    public static string MakeUniqueFileName(string baseName, Func&lt;string, bool&gt; exists)
+    {
+        string fileName = baseName + ".png";
+        int copy = 2;
+        while (exists(fileName))
+        {
+            fileName = baseName + "_" + copy + ".png";
+            copy++;
+        }
+        return fileName;
+    }
+}</code></pre>
+            <div class="step-explain">These are the same algorithms you desk-checked in Lessons 4, 8 and 9. The only new idea is <code>Func&lt;string, bool&gt; exists</code>: a method passed in as a value. The game passes "check the real folder", and a test passes "check this list". The rule doesn't care which.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">The game scripts now call the rules</span></div>
+            <div class="code-change-banner">Journal.SetCaption: REPLACE THE CLEANING LINES</div>
+<pre><code>public void SetCaption(JournalEntry entry, string caption)
+{
+    if (!data.entries.Contains(entry)) return;      // guard clause
+
+    entry.caption = JournalRules.CleanCaption(caption);   // tested in JournalRulesTests
+    Save();
+    JournalChanged?.Invoke();
+}</code></pre>
+            <div class="code-change-banner">PhotoCapture.MakeUniqueFileName: REPLACE THE BODY</div>
+<pre><code>private string MakeUniqueFileName()
+{
+    string baseName = "photo_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+    // The rule is tested in JournalRulesTests; here it checks the real folder.
+    return JournalRules.MakeUniqueFileName(baseName, name =&gt; File.Exists(Path.Combine(photoFolder, name)));
+}</code></pre>
+            <div class="step-explain"><code>name =&gt; File.Exists(...)</code> is a <strong>lambda</strong>: a tiny method written inline. It's what gets passed as <code>exists</code>. <code>PlatformLink.CountPlaces</code> and <code>DeckReadinessTools</code> change the same way. Their full versions are below. This is another refactor, so the regression run at the end of the lesson matters.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ UNIT TESTS ═══ -->
+      <section class="content-section" id="unit">
+        <h2>Writing unit tests</h2>
+        <p>Every unit test follows the same three steps: <strong>Arrange</strong> the input, <strong>Act</strong> by calling the method, and <strong>Assert</strong> what the result must be.</p>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">One test, three steps</span></div>
+<pre><code>public void CleanCaption_NormalText_IsUnchanged()
+{
+    // Arrange
+    string input = "Fog over the valley";
+    // Act
+    string result = JournalRules.CleanCaption(input);
+    // Assert
+    Assert.AreEqual("Fog over the valley", result);
+}</code></pre>
+            <div class="step-explain"><code>[Test]</code> tells the Test Runner this method is a test. The name says what's tested, the situation, and the expected outcome, so a failing test explains itself. <code>Assert.AreEqual(expected, actual)</code> fails the test if the two differ.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">Boundary and invalid tests</span></div>
+<pre><code>public void CleanCaption_Exactly60_IsKept()
+{
+    string sixty = new string('a', 60);
+    Assert.AreEqual(60, JournalRules.CleanCaption(sixty).Length);
+}
+
+public void CleanCaption_61_IsCutTo60()
+{
+    string sixtyOne = new string('a', 61);
+    Assert.AreEqual(60, JournalRules.CleanCaption(sixtyOne).Length);
+}
+
+public void CleanCaption_Null_BecomesEmpty()
+{
+    Assert.AreEqual("", JournalRules.CleanCaption(null));
+}</code></pre>
+            <div class="step-explain"><code>new string('a', 60)</code> builds a 60-letter string without typing it. Shorter tests like these skip the Arrange/Act/Assert comments, but the three steps are still there.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">Turning a desk check into a test</span></div>
+<pre><code>public void FrameSampler_Lesson10DeskCheck_MatchesByHand()
+{
+    var sampler = new FrameSampler(4);
+    foreach (float ms in new float[] { 20, 20, 40, 20, 60 }) sampler.Add(ms);
+    Assert.AreEqual(35f, sampler.Average);
+    Assert.AreEqual(60f, sampler.Worst);
+}
+
+public void MakeUniqueFileName_TwoExist_AddsThree()
+{
+    var existing = new List&lt;string&gt; { "photo_20261002_143012.png", "photo_20261002_143012_2.png" };
+    string result = JournalRules.MakeUniqueFileName("photo_20261002_143012", existing.Contains);
+    Assert.AreEqual("photo_20261002_143012_3.png", result);
+}</code></pre>
+            <div class="step-explain">These are the Lesson 10 and Lesson 4 desk checks, written as code. You worked them out by hand once; now the computer re-checks them every time you run the tests. <code>existing.Contains</code> is passed as <code>exists</code>, so the test pretends those two files are in the folder.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ RED ═══ -->
+      <section class="content-section" id="red">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">A test that found a bug</p>
+          <h3>What's the average of nothing?</h3>
+          <p>When <code>FrameSampler</code> was first moved out of Lesson 10's script, it didn't have a guard clause on <code>Average</code>. In Lesson 10 that never mattered: a frame was always recorded before the readout. But a boundary test asks a question the game never did: what if no frames have been added yet?</p>
+<pre><code>public void FrameSampler_Empty_AverageIsZero()
+{
+    var sampler = new FrameSampler(4);
+    Assert.AreEqual(0f, sampler.Average);
+}</code></pre>
+          <p>Without the guard, the Test Runner reported:</p>
+<pre class="test-output"><span class="fail">✗ FrameSampler_Empty_AverageIsZero</span>
+  Expected: 0
+  But was:  NaN
+<span class="pass">13 passed</span>, <span class="fail">1 failed</span></pre>
+          <button class="bug-reveal-btn" type="button">Why NaN?</button>
+          <div class="bug-detective__reveal">
+            0 ÷ 0 has no answer. For decimal numbers (floats), C# gives <strong>NaN</strong>, "Not a Number", instead of crashing. NaN then spreads silently: 1 ÷ NaN is NaN, so the readout would show "NaN fps". The fix is a guard clause: <code>if (count == 0) return 0f;</code>. After adding it, all 14 tests pass. This is why boundary data matters: the bug was real, but no manual test would have found it, because the game never asks for the average of nothing. Yet.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ RUN ═══ -->
+      <section class="content-section" id="run">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Run the tests</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup and run · 8 min</p>
+          <ol>
+            <li>Create <code>Assets/PhotoJournal/Logic</code> and <code>Assets/PhotoJournal/Tests</code>. Drop each <code>.asmdef</code> file and script from the listings below into its folder.</li>
+            <li>Update <code>Journal</code>, <code>PhotoCapture</code>, <code>PlatformLink</code> and <code>DeckReadinessTools</code> with the Lesson 11 versions.</li>
+            <li>Open <strong>Window → General → Test Runner</strong>, choose <strong>EditMode</strong>, and press <strong>Run All</strong>.</li>
+            <li>You should see 14 green ticks. Then delete the guard clause from <code>FrameSampler.Average</code>, run again, and watch it fail. Put the guard back.</li>
+          </ol>
+        </div>
+        <p>Here's the run before publishing, with the guard in place:</p>
+<pre class="test-output"><span class="pass">✓ CleanCaption_NormalText_IsUnchanged
+✓ CleanCaption_SpacesAtEnds_AreTrimmed
+✓ CleanCaption_Exactly60_IsKept
+✓ CleanCaption_61_IsCutTo60
+✓ CleanCaption_Empty_StaysEmpty
+✓ CleanCaption_Null_BecomesEmpty
+✓ CountPlaces_RepeatedPlace_CountedOnce
+✓ CountPlaces_EmptyJournal_IsZero
+✓ CountPlaces_DifferentCapitals_CountAsDifferent
+✓ MakeUniqueFileName_NoClash_UsesBaseName
+✓ MakeUniqueFileName_TwoExist_AddsThree
+✓ FrameSampler_Lesson10DeskCheck_MatchesByHand
+✓ FrameSampler_Empty_AverageIsZero
+✓ FrameSampler_CountStopsAtSize
+14 passed, 0 failed</span></pre>
+
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: JournalRulesTests.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: JournalRulesTests.cs   (folder: Assets/PhotoJournal/Tests)
+using System.Collections.Generic;
+using NUnit.Framework;
+
+public class JournalRulesTests
+{
+    // ---------- CleanCaption ----------
+
+    [Test]
+    public void CleanCaption_NormalText_IsUnchanged()
+    {
+        // Arrange
+        string input = "Fog over the valley";
+        // Act
+        string result = JournalRules.CleanCaption(input);
+        // Assert
+        Assert.AreEqual("Fog over the valley", result);
+    }
+
+    [Test]
+    public void CleanCaption_SpacesAtEnds_AreTrimmed()
+    {
+        Assert.AreEqual("Summit", JournalRules.CleanCaption("   Summit  "));
+    }
+
+    [Test]
+    public void CleanCaption_Exactly60_IsKept()
+    {
+        string sixty = new string('a', 60);
+        Assert.AreEqual(60, JournalRules.CleanCaption(sixty).Length);
+    }
+
+    [Test]
+    public void CleanCaption_61_IsCutTo60()
+    {
+        string sixtyOne = new string('a', 61);
+        Assert.AreEqual(60, JournalRules.CleanCaption(sixtyOne).Length);
+    }
+
+    [Test]
+    public void CleanCaption_Empty_StaysEmpty()
+    {
+        Assert.AreEqual("", JournalRules.CleanCaption(""));
+    }
+
+    [Test]
+    public void CleanCaption_Null_BecomesEmpty()
+    {
+        Assert.AreEqual("", JournalRules.CleanCaption(null));
+    }
+
+    // ---------- CountPlaces ----------
+
+    [Test]
+    public void CountPlaces_RepeatedPlace_CountedOnce()
+    {
+        var names = new List&lt;string&gt; { "Lookout Point", "Creek Crossing", "Lookout Point", "Summit" };
+        Assert.AreEqual(3, JournalRules.CountPlaces(names));
+    }
+
+    [Test]
+    public void CountPlaces_EmptyJournal_IsZero()
+    {
+        Assert.AreEqual(0, JournalRules.CountPlaces(new List&lt;string&gt;()));
+    }
+
+    [Test]
+    public void CountPlaces_DifferentCapitals_CountAsDifferent()
+    {
+        // Documents current behaviour. Is this what we want? See the Extension task.
+        var names = new List&lt;string&gt; { "Summit", "summit" };
+        Assert.AreEqual(2, JournalRules.CountPlaces(names));
+    }
+
+    // ---------- MakeUniqueFileName ----------
+
+    [Test]
+    public void MakeUniqueFileName_NoClash_UsesBaseName()
+    {
+        string result = JournalRules.MakeUniqueFileName("photo_20261002_143012", name =&gt; false);
+        Assert.AreEqual("photo_20261002_143012.png", result);
+    }
+
+    [Test]
+    public void MakeUniqueFileName_TwoExist_AddsThree()
+    {
+        var existing = new List&lt;string&gt; { "photo_20261002_143012.png", "photo_20261002_143012_2.png" };
+        string result = JournalRules.MakeUniqueFileName("photo_20261002_143012", existing.Contains);
+        Assert.AreEqual("photo_20261002_143012_3.png", result);
+    }
+
+    // ---------- FrameSampler ----------
+
+    [Test]
+    public void FrameSampler_Lesson10DeskCheck_MatchesByHand()
+    {
+        var sampler = new FrameSampler(4);
+        foreach (float ms in new float[] { 20, 20, 40, 20, 60 }) sampler.Add(ms);
+        Assert.AreEqual(35f, sampler.Average);
+        Assert.AreEqual(60f, sampler.Worst);
+    }
+
+    [Test]
+    public void FrameSampler_Empty_AverageIsZero()
+    {
+        var sampler = new FrameSampler(4);
+        Assert.AreEqual(0f, sampler.Average);
+    }
+
+    [Test]
+    public void FrameSampler_CountStopsAtSize()
+    {
+        var sampler = new FrameSampler(4);
+        for (int i = 0; i &lt; 10; i++) sampler.Add(16f);
+        Assert.AreEqual(4, sampler.Count);
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: FrameSampler.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: FrameSampler.cs   (folder: Assets/PhotoJournal/Logic)
+
+// The Lesson 10 circular buffer, moved into its own class so it can be tested.
+public class FrameSampler
+{
+    private readonly float[] samples;
+    private int index;
+    private int count;
+
+    public FrameSampler(int size)
+    {
+        samples = new float[size];
+    }
+
+    public int Count =&gt; count;
+
+    public void Add(float frameTime)
+    {
+        samples[index] = frameTime;
+        index = (index + 1) % samples.Length;
+        if (count &lt; samples.Length) count++;
+    }
+
+    public float Average
+    {
+        get
+        {
+            if (count == 0) return 0f;          // guard clause: added after a test failed
+            float total = 0f;
+            for (int i = 0; i &lt; count; i++)
+            {
+                total += samples[i];
+            }
+            return total / count;
+        }
+    }
+
+    public float Worst
+    {
+        get
+        {
+            float worst = 0f;
+            for (int i = 0; i &lt; count; i++)
+            {
+                if (samples[i] &gt; worst) worst = samples[i];
+            }
+            return worst;
+        }
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Assembly definitions: PhotoJournal.Logic.asmdef and PhotoJournal.Tests.asmdef<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Assets/PhotoJournal/Logic/PhotoJournal.Logic.asmdef
+{
+    "name": "PhotoJournal.Logic",
+    "rootNamespace": "",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
+
+// Assets/PhotoJournal/Tests/PhotoJournal.Tests.asmdef
+{
+    "name": "PhotoJournal.Tests",
+    "rootNamespace": "",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "PhotoJournal.Logic"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full scripts: PlatformLink.cs and DeckReadinessTools.cs (Lesson 11)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: PlatformLink.cs
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+// Connects the journal to whichever platform is running. It never needs to know which one.
+public class PlatformLink : MonoBehaviour
+{
+    [SerializeField] private Journal journal;
+    [SerializeField] private int placesNeeded = 3;
+
+    private int lastCount;
+
+    private void Start()
+    {
+        lastCount = journal.Entries.Count;
+        journal.JournalChanged += OnJournalChanged;
+        CheckAchievements();                    // counts progress made before achievements existed
+    }
+
+    private void OnDestroy()
+    {
+        journal.JournalChanged -= OnJournalChanged;
+    }
+
+    private void OnJournalChanged()
+    {
+        if (Platform.Current == null) return;   // guard clause: no platform registered
+
+        int count = journal.Entries.Count;
+        if (count &gt; lastCount)                  // a photo was added, not deleted
+        {
+            JournalEntry newest = journal.Entries[count - 1];
+            string path = Path.Combine(journal.PhotoFolder, newest.fileName);
+            Platform.Current.AddScreenshot(path, newest.locationName);
+        }
+        lastCount = count;
+        CheckAchievements();
+    }
+
+    private void CheckAchievements()
+    {
+        if (Platform.Current == null) return;   // guard clause
+
+        if (journal.Entries.Count &gt;= 1) Platform.Current.UnlockAchievement(Achievements.FirstPhoto);
+        if (CountPlaces() &gt;= placesNeeded) Platform.Current.UnlockAchievement(Achievements.ThreeTrails);
+        if (journal.IsFull) Platform.Current.UnlockAchievement(Achievements.FullJournal);
+    }
+
+    // Counts how many different location names appear in the journal.
+    private int CountPlaces()
+    {
+        List&lt;string&gt; names = new List&lt;string&gt;();
+        foreach (JournalEntry entry in journal.Entries)
+        {
+            names.Add(entry.locationName);
+        }
+        return JournalRules.CountPlaces(names);     // tested in JournalRulesTests
+    }
+}
+
+// Recommended filename: DeckReadinessTools.cs
+// Developer tools for Lesson 10. F3 shows performance; F4 audits text sizes.
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Profiling;
+
+public class DeckReadinessTools : MonoBehaviour
+{
+    [Header("Performance readout (F3)")]
+    [SerializeField] private TMP_Text readout;
+    [SerializeField] private float targetFps = 30f;
+
+    [Header("Text audit (F4)")]
+    [SerializeField] private float minTextSize = 24f;   // our design rule at 1280 × 800
+
+    private readonly FrameSampler sampler = new FrameSampler(60);   // tested in JournalRulesTests
+    private bool visible;
+
+    private void Awake()
+    {
+        readout.gameObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        sampler.Add(Time.unscaledDeltaTime);
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null &amp;&amp; keyboard.f3Key.wasPressedThisFrame)
+        {
+            visible = !visible;
+            readout.gameObject.SetActive(visible);
+        }
+        if (keyboard != null &amp;&amp; keyboard.f4Key.wasPressedThisFrame)
+        {
+            AuditTextSizes();
+        }
+
+        if (!visible) return;                           // guard clause: nothing to draw
+        ShowReadout();
+    }
+
+    private void ShowReadout()
+    {
+        float average = sampler.Average;
+        float worst = sampler.Worst;
+        float fps = average &gt; 0f ? 1f / average : 0f;
+        float memoryMB = Profiler.GetTotalAllocatedMemoryLong() / 1000000f;
+
+        readout.text = $"{fps:0} fps   avg {average * 1000f:0.0} ms   worst {worst * 1000f:0.0} ms   {memoryMB:0} MB";
+        readout.color = fps &gt;= targetFps ? Color.green : Color.red;
+    }
+
+    // Lists every TextMesh Pro text in the scene smaller than the design rule.
+    private void AuditTextSizes()
+    {
+        int problems = 0;
+        TMP_Text[] texts = FindObjectsByType&lt;TMP_Text&gt;(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (TMP_Text text in texts)
+        {
+            float smallest = text.enableAutoSizing ? text.fontSizeMin : text.fontSize;
+            if (smallest &lt; minTextSize)
+            {
+                Debug.LogWarning($"Text too small ({smallest} px): {text.name}", text);
+                problems++;
+            }
+        }
+        Debug.Log($"Text audit: checked {texts.Length} texts, {problems} below {minTextSize} px.");
+    }
+}</code></pre></div></div>
+      </section>
+
+      <!-- ═══ DEFECTS ═══ -->
+      <section class="content-section" id="defects">
+        <span class="section-phase-tag test"><span class="dot"></span>Evaluating</span>
+        <h2>Final regression and defect log</h2>
+        <p>Unit tests check rules, but they can't tell you whether the flash feels right or the grid scrolls smoothly. Today's refactor touched four game scripts, so finish with your last full manual regression run: <strong>T1–T40</strong>. Log every failure as a defect.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Severity</th><th scope="col">Meaning</th><th scope="col">Example</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Critical</strong></td><td>Crashes, or loses or damages player data</td><td>Deleting one photo removes a different photo's file</td></tr>
+              <tr><td><strong>Major</strong></td><td>A feature doesn't work, with no workaround</td><td>Captions can't be saved with a gamepad</td></tr>
+              <tr><td><strong>Minor</strong></td><td>Works, but wrong or awkward, and a workaround exists</td><td>Selection jumps to the newest photo after deleting</td></tr>
+              <tr><td><strong>Cosmetic</strong></td><td>Looks wrong but doesn't affect use</td><td>Prompt text overlaps a border by a few pixels</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Defect log · copy into your notebook</p>
+          <p>Columns: <strong>ID</strong> (D1, D2…) · <strong>Test</strong> that found it · <strong>Steps to reproduce</strong> · <strong>Expected</strong> · <strong>Actual</strong> · <strong>Severity</strong> · <strong>Status</strong> (open / fixed / won't fix). Fix critical and major defects first. A "won't fix" needs a reason.</p>
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Green ticks</h4>
+            <ul>
+              <li>Set up both folders and run the 14 tests until all pass.</li>
+              <li>Complete the IsFull test-data activity.</li>
+              <li>Label each provided test as normal, boundary or invalid.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Your own tests</h4>
+            <ul>
+              <li>Write three new tests, one of each data type. For example: a 59-character caption, or <code>CountPlaces</code> with one entry.</li>
+              <li>Complete the full T1–T40 regression run and a defect log. Fix at least one defect, then re-test.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Test first</h4>
+            <ul>
+              <li>Should "Summit" and "summit" count as one place? Decide. If yes, <em>first</em> change the expected value in <code>CountPlaces_DifferentCapitals…</code> to 1 and watch it fail (red). Then change the rule using <code>StringComparer.OrdinalIgnoreCase</code> until it passes (green).</li>
+              <li>Combine the CleanCaption length tests using NUnit's <code>[TestCase]</code> attribute.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="B"
+             data-feedback-a="Not quite. 20 characters is comfortably inside the rule, so it's normal data."
+             data-feedback-b="✓ Correct. Boundary data sits on the edge of the rule (60) and just either side (59 and 61)."
+             data-feedback-c="Not quite. A null caption should never happen, so it's invalid data."
+             data-feedback-d="Not quite. Capital letters don't affect a length rule. That's still normal data.">
+          <div class="mcq-question">1. Captions are limited to 60 characters. Which is <strong>boundary</strong> test data for this rule?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>A caption of 20 ordinary characters</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Captions of 59, 60 and 61 characters</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>A caption that is null, not text at all</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>A caption written only in capital letters</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="A"
+             data-feedback-a="✓ Correct. An assertion checks the result. If it isn't 3, the test fails and reports both values."
+             data-feedback-b="Not quite. Assertions check values. They never change them."
+             data-feedback-c="Not quite. Nothing is printed unless the test fails, and then it's the Test Runner that reports it."
+             data-feedback-d="Not quite. Each test runs once per Run. The 3 is the expected value.">
+          <div class="mcq-question">2. What does <code>Assert.AreEqual(3, result)</code> do in a unit test?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Fails the test unless result is 3</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Sets result to 3 before the test starts</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Prints the number 3 to the Console window</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Repeats the test three times to be certain</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="D"
+             data-feedback-a="Not quite. Speed isn't the reason. Testability is."
+             data-feedback-b="Not quite. The folder name doesn't matter to Unity. The assembly definition does."
+             data-feedback-c="Not quite. Moving code changes nothing about its bugs. Tests find them."
+             data-feedback-d="✓ Correct. A pure method only needs its inputs, so a test can call it directly in milliseconds.">
+          <div class="mcq-question">3. Why were the rules moved into <code>JournalRules</code> before writing unit tests?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Static classes always run faster than any MonoBehaviour</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Unity can only test code kept inside a folder named Logic</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Moving code into a new class removes any bugs in it</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Pure methods need no screen, files or scene to test</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="C"
+             data-feedback-a="Not quite. 0 is the right expectation. The average of no frames shouldn't be NaN."
+             data-feedback-b="Not quite. The constructor creates the array. Count is just 0."
+             data-feedback-c="✓ Correct. With count = 0, total ÷ count is 0 ÷ 0, which gives NaN for floats."
+             data-feedback-d="Not quite. Nothing was added, so the buffer never wrapped.">
+          <div class="mcq-question">4. The test <code>FrameSampler_Empty_AverageIsZero</code> fails with "Expected: 0, But was: NaN". What caused it?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The test expected the wrong number</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The samples array was never created</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Average divided by a count of zero</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The buffer wrapped around much too early</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="A"
+             data-feedback-a="✓ Correct. Losing or damaging the player's data is the most serious kind of defect."
+             data-feedback-b="Not quite. How often it happens doesn't make it less serious. The damage is permanent."
+             data-feedback-c="Not quite. The grid looking right hides the problem. The data is still gone."
+             data-feedback-d="Not quite. Nothing here is about speed. It's about destroyed data.">
+          <div class="mcq-question">5. Deleting one photo also deletes a <em>different</em> photo's file. Which severity is this defect?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Critical, because it destroys player data</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Minor, because it only happens when deleting</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Cosmetic, because the grid still looks correct</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Major, because the game slows down briefly</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="D"
+             data-feedback-a="Not quite. Passing tests can be correct and the game still slow. They check different things."
+             data-feedback-b="Not quite. This is exactly why manual and performance testing are still needed."
+             data-feedback-c="Not quite. Passing unit tests never proves there are no bugs, only that the tested rules work."
+             data-feedback-d="✓ Correct. Unit tests check rules in isolation. Speed, feel and the whole system need other kinds of testing.">
+          <div class="mcq-question">6. All 14 unit tests pass, but playtesters say the journal opens slowly. What does this show?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The unit tests must contain a hidden mistake somewhere</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Automated tests can now replace all of the manual tests</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The journal's code has been proven to have no bugs</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unit tests check rules, not speed or the whole game</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for developing, testing and implementing algorithms. Today is the "testing" in that sentence. Tap a grade to see what it looks like.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language.</strong> Works test-first on the place-counting rule, uses parameterised tests, and completes a prioritised defect log with fixes.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Develops, tests and implements functional algorithms in a general-purpose programming language.</strong> Writes passing tests of all three data types and completes the full regression run with a defect log.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Develops common algorithms and implements them in a general-purpose programming language.</strong> Moves the rules, gets all 14 tests passing, and adds at least one test of their own.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Develops basic algorithms and/or implements them in a general-purpose programming language.</strong> Runs the provided tests and labels them by data type.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Follows algorithms and/or partially implements them in a general-purpose programming language.</strong> Identifies normal, boundary and invalid data for a simple rule.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Which is more valuable for your game: the 14 automated tests or the 40 manual ones? Justify your answer.
+            <span class="sentence-starter">I think ___ are more valuable because… but…</span></li>
+          <li>What was your most serious defect today, and how did you decide its severity?
+            <span class="sentence-starter">My most serious defect was ___. I rated it ___ because…</span></li>
+        </ul>
+        <label for="reflection-l11" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l11" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson10.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 10: Steam Deck readiness</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson12.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 12: Evaluation and showcase</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson11',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

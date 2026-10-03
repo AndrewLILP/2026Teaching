@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 8: Platform services | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 8 of 12: design a platform interface, build a mock Steam service with achievement pop-ups, and drive achievements from a data table.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+
+    .tier-card { min-width: 0; }
+    .tier-card code { overflow-wrap: anywhere; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+
+    .class-diagram { margin: var(--space-5) 0 var(--space-6); }
+    .class-diagram svg { width: 100%; height: auto; display: block; }
+    .class-diagram figcaption { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--color-text-secondary); font-style: italic; }
+    .cd-box rect { fill: var(--color-surface-2); stroke: var(--accent); stroke-width: 2; }
+    .cd-box--contract rect { fill: var(--accent-surface); stroke-width: 3; }
+    .cd-box--future rect { stroke-dasharray: 7 5; fill: var(--color-surface); }
+    .cd-title { fill: var(--color-text-primary); font-family: var(--font-mono); font-size: 17px; font-weight: 700; text-anchor: middle; }
+    .cd-sub { fill: var(--color-text-secondary); font-family: var(--font-body); font-size: 14px; text-anchor: middle; }
+    .cd-line { stroke: var(--color-text-secondary); stroke-width: 2; fill: none; }
+    .cd-line--dash { stroke-dasharray: 6 5; }
+    .cd-label { fill: var(--color-text-secondary); font-family: var(--font-body); font-size: 13px; text-anchor: middle; }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 8</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#analyse">Same job, different platforms</a>
+          <a href="#contract">The contract</a>
+          <a href="#table">The achievement table</a>
+          <a href="#pseudo">Pseudocode first</a>
+          <a href="#code">Into C#</a>
+          <a href="#trace">Desk check</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#setup">Set it up</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 8 of 12 · 50 minutes</p>
+        <h1>Platform services</h1>
+        <p class="page-intro">Commercial games reward players with achievements and send their screenshots to the platform's library. But your school computer can't run Steam. Today you'll solve that the way professional studios do: write an <strong>interface</strong> that describes what a platform must do, then build a <strong>mock</strong> that does it on any computer. Next lesson, the real Steam version plugs into the same interface.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you refactored every control into one asset, making it the single source of truth, and proved nothing broke with regression testing. Today's achievement table is another single source of truth, and the interface is the strongest form of low coupling yet.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · platform analysis 6 min · interface and table 8 min · pseudocode and code walkthrough 12 min · desk check and bug detective 5 min · setup and testing 10 min · checkpoint 5 min.</p>
+        <p><strong>Key concept:</strong> an interface is new for most students. The power-socket analogy works well: a socket defines the shape of the plug, and any appliance that fits the shape works, whether it's a kettle or a lamp.</p>
+        <p><strong>Testing tip:</strong> achievements unlock once and are remembered. To test again, right-click the <code>MockPlatformService</code> component's header in the Inspector and choose <em>Reset mock achievements</em>.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>explain an interface as a contract and implement one in C#</li>
+          <li>explain why a mock lets a team build and test without the real service</li>
+          <li>drive features from a data table instead of scattered code</li>
+          <li>use a queue to handle events in the order they happen.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> my game shows an achievement pop-up the first time each achievement is earned, never twice, shows several in order if they unlock together, and logs every new photo as a platform screenshot, all without Steam.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Interface</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A list of methods a class promises to provide, with no code inside them. A contract.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Implement</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Write a class that provides every method an interface lists, keeping its promise.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Mock</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A stand-in that behaves like a real service, so code can be built and tested without it.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Polymorphism</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One piece of code working with many types, e.g. one call that works on the mock or on Steam.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Platform</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The store and system a game runs on, such as Steam, Xbox or PlayStation, with its own services.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Lookup table</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A table of data that code searches, instead of hard-coding each value in many places.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Queue</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A first-in, first-out (FIFO) list: items join at the back and leave from the front.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Static</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Belonging to the class itself rather than one object, so there's one shared copy for the whole game.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ ANALYSE ═══ -->
+      <section class="content-section" id="analyse">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Same job, different platforms</h2>
+        <p>Many games release on several platforms. Steam has achievements, Xbox has achievements, PlayStation has trophies. Each also has a screenshot library. They all do similar jobs, but each platform's code is completely different.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · pairs · 6 min</p>
+          <h3>Find what's common</h3>
+          <ol>
+            <li>A studio's game calls Steam's achievement code directly in 40 places. They now want to release on another platform. What do they have to do?</li>
+            <li>List the <em>jobs</em> our photo journal needs a platform to do, ignoring how any one platform does them.</li>
+            <li>Think about achievements you've enjoyed or disliked. Which kind suits a calm hiking game: "take 1000 photos" or "photograph three different places"? Why?</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Discussion points
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>Find and rewrite all 40, then keep two versions in step forever. Every bug fix has to be made twice.</li>
+              <li>Check whether an achievement is unlocked, unlock an achievement, and add a screenshot. Those three jobs become our interface.</li>
+              <li>Achievements that reward exploring suit a game with no pressure. "Grind" achievements push players to repeat actions, which works against the calm purpose from Lesson 1.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CONTRACT ═══ -->
+      <section class="content-section" id="contract">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>The contract</h2>
+        <p>An <mark class="paper-hl paper-hl--yellow">interface</mark> lists those jobs as methods, with no code inside. It is a promise: any class that implements it must provide every method. Code that <em>uses</em> a platform only ever talks to the interface.</p>
+
+        <figure class="class-diagram">
+          <svg viewBox="0 0 720 300" role="img" aria-labelledby="cd-title cd-desc">
+            <title id="cd-title">How the platform interface connects the game to platforms</title>
+            <desc id="cd-desc">PlatformLink, on the left, uses IPlatformService in the centre. Two classes below it implement IPlatformService: MockPlatformService, built today, and SteamPlatformService, shown dashed because it comes in Lesson 9.</desc>
+            <path class="cd-line" d="M200 70 L260 70"/>
+            <text class="cd-label" x="230" y="58">uses</text>
+            <path class="cd-line" d="M370 105 L370 140 L190 140 L190 185"/>
+            <path class="cd-line cd-line--dash" d="M370 140 L550 140 L550 185"/>
+            <text class="cd-label" x="370" y="165">implements</text>
+            <g class="cd-box"><rect x="10" y="35" width="190" height="70" rx="10"/><text class="cd-title" x="110" y="66">PlatformLink</text><text class="cd-sub" x="110" y="88">watches the journal</text></g>
+            <g class="cd-box cd-box--contract"><rect x="260" y="35" width="220" height="70" rx="10"/><text class="cd-title" x="370" y="66">IPlatformService</text><text class="cd-sub" x="370" y="88">the contract</text></g>
+            <g class="cd-box"><rect x="60" y="185" width="260" height="80" rx="10"/><text class="cd-title" x="190" y="218">MockPlatformService</text><text class="cd-sub" x="190" y="242">today · any computer</text></g>
+            <g class="cd-box cd-box--future"><rect x="420" y="185" width="260" height="80" rx="10"/><text class="cd-title" x="550" y="218">SteamPlatformService</text><text class="cd-sub" x="550" y="242">Lesson 9 · real Steam</text></g>
+          </svg>
+          <figcaption><code>PlatformLink</code> never knows which platform it's talking to. It only knows the contract.</figcaption>
+        </figure>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">IPlatformService.cs: the whole interface</span></div>
+<pre><code>// Recommended filename: IPlatformService.cs
+// The contract: what any platform (Steam, a mock, a future console) must be able to do.
+public interface IPlatformService
+{
+    string Name { get; }
+    bool IsUnlocked(string achievementId);
+    void UnlockAchievement(string achievementId);
+    void AddScreenshot(string filePath, string locationName);
+}</code></pre>
+            <div class="step-explain">By convention, interface names start with <strong>I</strong>. Notice there are no curly braces and no code, just the <em>shape</em> of each method. Like a power socket, it defines what fits, not what the appliance does.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TABLE ═══ -->
+      <section class="content-section" id="table">
+        <h2>The achievement table</h2>
+        <p>Each achievement needs an ID, a title, a description and, for Lesson 9, the matching ID in Valve's test app Spacewar. Rather than scattering these through the code, they live in one table: another single source of truth.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Our ID</th><th scope="col">Title</th><th scope="col">How to earn it</th><th scope="col">Spacewar ID (Lesson 9)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>FIRST_PHOTO</code></td><td>Say Cheese</td><td>Take your first photo</td><td><code>ACH_WIN_ONE_GAME</code></td></tr>
+              <tr><td><code>THREE_TRAILS</code></td><td>Trail Collector</td><td>Take photos in 3 different places</td><td><code>ACH_TRAVEL_FAR_ACCUM</code></td></tr>
+              <tr><td><code>FULL_JOURNAL</code></td><td>Every Page Filled</td><td>Fill your journal</td><td><code>ACH_WIN_100_GAMES</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="paper-margin-note">Spacewar comes with its own fixed achievements, so ours borrow their IDs. A real release would have its own, and only the last column would change.</p>
+      </section>
+
+      <!-- ═══ PSEUDOCODE ═══ -->
+      <section class="content-section" id="pseudo">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>Pseudocode first</h2>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · CheckAchievements and CountPlaces</p>
+<pre>1   BEGIN CheckAchievements
+2       IF number of entries &gt;= 1 THEN
+3           UnlockAchievement("FIRST_PHOTO")
+4       ENDIF
+5       IF CountPlaces() &gt;= 3 THEN
+6           UnlockAchievement("THREE_TRAILS")
+7       ENDIF
+8       IF journal is full THEN
+9           UnlockAchievement("FULL_JOURNAL")
+10      ENDIF
+11  END CheckAchievements
+
+12  BEGIN CountPlaces
+13      SET places TO empty list
+14      FOR EACH entry IN journal entries
+15          IF entry.locationName NOT IN places THEN
+16              ADD entry.locationName TO places
+17          ENDIF
+18      NEXT entry
+19      RETURN length of places
+20  END CountPlaces</pre>
+        </div>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · UnlockAchievement (mock) with a queue</p>
+<pre>1   BEGIN UnlockAchievement(id)
+2       IF id is already unlocked THEN
+3           RETURN
+4       ENDIF
+5       REMEMBER id as unlocked
+6       ADD id TO BACK OF toastQueue
+7       IF not showing toasts THEN
+8           ShowToasts()
+9       ENDIF
+10  END UnlockAchievement
+
+11  BEGIN ShowToasts
+12      WHILE toastQueue is not empty
+13          SET next TO REMOVE FROM FRONT OF toastQueue
+14          SHOW pop-up for next
+15          WAIT 3 seconds
+16          HIDE pop-up
+17      ENDWHILE
+18  END ShowToasts</pre>
+        </div>
+      </section>
+
+      <!-- ═══ CODE ═══ -->
+      <section class="content-section" id="code">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Into C#</h2>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">The mock keeps the promise</span></div>
+<pre><code>public class MockPlatformService : MonoBehaviour, IPlatformService
+
+public void UnlockAchievement(string achievementId)
+{
+    if (IsUnlocked(achievementId)) return;              // guard clause: unlock once only
+
+    AchievementInfo info = Achievements.Find(achievementId);
+    if (info == null)                                   // guard clause: not in the table
+    {
+        Debug.LogWarning("Unknown achievement: " + achievementId);
+        return;
+    }
+
+    PlayerPrefs.SetInt("mock_ach_" + achievementId, 1);
+    PlayerPrefs.Save();
+
+    toastQueue.Enqueue(info);                           // join the back of the queue
+    if (!showingToasts) StartCoroutine(ShowToasts());
+}
+
+private IEnumerator ShowToasts()
+{
+    showingToasts = true;
+    while (toastQueue.Count &gt; 0)
+    {
+        AchievementInfo info = toastQueue.Dequeue();    // take from the front
+        toastTitle.text = "Achievement unlocked: " + info.title;
+        toastDescription.text = info.description;
+        toastPanel.SetActive(true);
+        yield return new WaitForSecondsRealtime(toastSeconds);
+        toastPanel.SetActive(false);
+        yield return new WaitForSecondsRealtime(0.3f);  // short gap between pop-ups
+    }
+    showingToasts = false;
+}</code></pre>
+            <div class="step-explain"><code>, IPlatformService</code> after <code>MonoBehaviour</code> is the promise. If the class left out any method from the interface, Unity would refuse to compile it. The mock remembers unlocks with <code>PlayerPrefs</code>, Unity's small built-in settings store, so they survive a restart just as real achievements do.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">One shared "current platform"</span></div>
+<pre><code>public static void Register(IPlatformService service)
+{
+    if (Current != null) return;        // guard clause: the first platform to register wins
+    Current = service;
+    Debug.Log("Platform services: " + service.Name);
+}</code></pre>
+            <div class="step-explain"><code>Current</code> has the type <code>IPlatformService</code>, the interface, not the mock. That's what lets the Steam version slot in next lesson. The first platform to register wins. In Lesson 9 the Steam version tries first, and the mock only steps in if Steam isn't running.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">PlatformLink: watching the journal</span></div>
+<pre><code>private void OnJournalChanged()
+{
+    if (Platform.Current == null) return;   // guard clause: no platform registered
+
+    int count = journal.Entries.Count;
+    if (count &gt; lastCount)                  // a photo was added, not deleted
+    {
+        JournalEntry newest = journal.Entries[count - 1];
+        string path = Path.Combine(journal.PhotoFolder, newest.fileName);
+        Platform.Current.AddScreenshot(path, newest.locationName);
+    }
+    lastCount = count;
+    CheckAchievements();
+}
+
+private void CheckAchievements()
+{
+    if (Platform.Current == null) return;   // guard clause
+
+    if (journal.Entries.Count &gt;= 1) Platform.Current.UnlockAchievement(Achievements.FirstPhoto);
+    if (CountPlaces() &gt;= placesNeeded) Platform.Current.UnlockAchievement(Achievements.ThreeTrails);
+    if (journal.IsFull) Platform.Current.UnlockAchievement(Achievements.FullJournal);
+}</code></pre>
+            <div class="step-explain">Every line here calls <code>Platform.Current</code>, without knowing whether it's the mock or Steam. That's <strong>polymorphism</strong>. Comparing <code>count</code> with <code>lastCount</code> tells a new photo apart from a deletion, because <code>JournalChanged</code> fires for both.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TRACE ═══ -->
+      <section class="content-section" id="trace">
+        <h2>Desk check</h2>
+        <p><code>CountPlaces</code> with four journal entries taken at: Lookout Point, Creek Crossing, Lookout Point, Summit.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Entry</th><th scope="col">locationName</th><th scope="col">Already in places?</th><th scope="col">places</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">1</td><td class="td-code">Lookout Point</td><td class="td-note">No, so add it</td><td class="td-var">[Lookout Point]</td></tr>
+              <tr><td class="td-step">2</td><td class="td-code">Creek Crossing</td><td class="td-note">No, so add it</td><td class="td-var">[Lookout Point, Creek Crossing]</td></tr>
+              <tr><td class="td-step">3</td><td class="td-code">Lookout Point</td><td class="td-note">Yes, so skip</td><td class="td-var">[Lookout Point, Creek Crossing]</td></tr>
+              <tr><td class="td-step">4</td><td class="td-code">Summit</td><td class="td-note">No, so add it</td><td class="td-var">[Lookout Point, Creek Crossing, Summit]</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Returns <strong>3</strong>, so Trail Collector unlocks. We ran <code>CountPlaces</code> on this data to confirm.</p>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>"Say Cheese" after every single photo</h3>
+          <p>A classmate's pop-up says "Achievement unlocked: Say Cheese" after their first photo, and their second, and their third. Here's their mock's <code>UnlockAchievement</code>:</p>
+<pre>public void UnlockAchievement(string achievementId)
+{
+    AchievementInfo info = Achievements.Find(achievementId);
+    PlayerPrefs.SetInt("mock_ach_" + achievementId, 1);
+    toastQueue.Enqueue(info);
+    if (!showingToasts) StartCoroutine(ShowToasts());
+}</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            The guard clause is missing. <code>CheckAchievements</code> runs after every journal change, and "at least 1 photo" is still true after photo 2, 3 and 4, so it asks to unlock FIRST_PHOTO every time. Without <code>if (IsUnlocked(achievementId)) return;</code> at the top, each request becomes a new pop-up. In our test run, 3 photos made 5 unlock requests but only 3 achievements, so the guard pattern blocked the 2 repeats.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETUP ═══ -->
+      <section class="content-section" id="setup">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Set it up</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 8 min</p>
+          <ol>
+            <li>Create five scripts from the full listings below: <code>IPlatformService</code>, <code>Platform</code>, <code>Achievements</code>, <code>MockPlatformService</code> and <code>PlatformLink</code>.</li>
+            <li>Create a canvas called <strong>ToastCanvas</strong> with a panel in a top corner holding two TMP texts: title and description. Give it a higher <em>Sort Order</em> than your other canvases so it appears on top.</li>
+            <li>Add <code>MockPlatformService</code> to the <strong>PhotoMode</strong> object and drag in the panel and both texts.</li>
+            <li>Add <code>PlatformLink</code> to the same object and drag in the <code>Journal</code>.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: Platform.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: Platform.cs
+using UnityEngine;
+
+// The one place every script asks for "the current platform".
+public static class Platform
+{
+    public static IPlatformService Current { get; private set; }
+
+    public static void Register(IPlatformService service)
+    {
+        if (Current != null) return;        // guard clause: the first platform to register wins
+        Current = service;
+        Debug.Log("Platform services: " + service.Name);
+    }
+
+    // Clears the old value each time Play is pressed, even if the Editor skips reloading scripts.
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetForPlayMode()
+    {
+        Current = null;
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: Achievements.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: Achievements.cs
+
+// One row of the achievement table.
+public class AchievementInfo
+{
+    public readonly string id;
+    public readonly string title;
+    public readonly string description;
+    public readonly string spacewarId;      // used by the Steam version in Lesson 9
+
+    public AchievementInfo(string id, string title, string description, string spacewarId)
+    {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.spacewarId = spacewarId;
+    }
+}
+
+// The achievement table: the single source of truth for every achievement.
+public static class Achievements
+{
+    public const string FirstPhoto = "FIRST_PHOTO";
+    public const string ThreeTrails = "THREE_TRAILS";
+    public const string FullJournal = "FULL_JOURNAL";
+
+    public static readonly AchievementInfo[] All =
+    {
+        new AchievementInfo(FirstPhoto,  "Say Cheese",        "Take your first photo",              "ACH_WIN_ONE_GAME"),
+        new AchievementInfo(ThreeTrails, "Trail Collector",   "Take photos in 3 different places",  "ACH_TRAVEL_FAR_ACCUM"),
+        new AchievementInfo(FullJournal, "Every Page Filled", "Fill your journal",                  "ACH_WIN_100_GAMES"),
+    };
+
+    // Linear search: check each row until the id matches.
+    public static AchievementInfo Find(string id)
+    {
+        foreach (AchievementInfo info in All)
+        {
+            if (info.id == id) return info;
+        }
+        return null;
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: MockPlatformService.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: MockPlatformService.cs
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using TMPro;
+using UnityEngine;
+
+[DefaultExecutionOrder(-50)]                // registers before other scripts start
+public class MockPlatformService : MonoBehaviour, IPlatformService
+{
+    [Header("Achievement pop-up (on its own canvas)")]
+    [SerializeField] private GameObject toastPanel;
+    [SerializeField] private TMP_Text toastTitle;
+    [SerializeField] private TMP_Text toastDescription;
+    [SerializeField] private float toastSeconds = 3f;
+
+    public string Name =&gt; "Mock (no Steam)";
+
+    private readonly Queue&lt;AchievementInfo&gt; toastQueue = new Queue&lt;AchievementInfo&gt;();
+    private bool showingToasts;
+
+    private void Awake()
+    {
+        Platform.Register(this);
+        toastPanel.SetActive(false);
+    }
+
+    public bool IsUnlocked(string achievementId)
+    {
+        return PlayerPrefs.GetInt("mock_ach_" + achievementId, 0) == 1;
+    }
+
+    public void UnlockAchievement(string achievementId)
+    {
+        if (IsUnlocked(achievementId)) return;              // guard clause: unlock once only
+
+        AchievementInfo info = Achievements.Find(achievementId);
+        if (info == null)                                   // guard clause: not in the table
+        {
+            Debug.LogWarning("Unknown achievement: " + achievementId);
+            return;
+        }
+
+        PlayerPrefs.SetInt("mock_ach_" + achievementId, 1);
+        PlayerPrefs.Save();
+
+        toastQueue.Enqueue(info);                           // join the back of the queue
+        if (!showingToasts) StartCoroutine(ShowToasts());
+    }
+
+    public void AddScreenshot(string filePath, string locationName)
+    {
+        Debug.Log("[Mock] Screenshot added: " + Path.GetFileName(filePath) + " at " + locationName);
+    }
+
+    private IEnumerator ShowToasts()
+    {
+        showingToasts = true;
+        while (toastQueue.Count &gt; 0)
+        {
+            AchievementInfo info = toastQueue.Dequeue();    // take from the front
+            toastTitle.text = "Achievement unlocked: " + info.title;
+            toastDescription.text = info.description;
+            toastPanel.SetActive(true);
+            yield return new WaitForSecondsRealtime(toastSeconds);
+            toastPanel.SetActive(false);
+            yield return new WaitForSecondsRealtime(0.3f);  // short gap between pop-ups
+        }
+        showingToasts = false;
+    }
+
+    // Right-click the component's title in the Inspector to test achievements again.
+    [ContextMenu("Reset mock achievements")]
+    private void ResetMockAchievements()
+    {
+        foreach (AchievementInfo info in Achievements.All)
+        {
+            PlayerPrefs.DeleteKey("mock_ach_" + info.id);
+        }
+        Debug.Log("[Mock] Achievements reset.");
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: PlatformLink.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: PlatformLink.cs
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+// Connects the journal to whichever platform is running. It never needs to know which one.
+public class PlatformLink : MonoBehaviour
+{
+    [SerializeField] private Journal journal;
+    [SerializeField] private int placesNeeded = 3;
+
+    private int lastCount;
+
+    private void Start()
+    {
+        lastCount = journal.Entries.Count;
+        journal.JournalChanged += OnJournalChanged;
+        CheckAchievements();                    // counts progress made before achievements existed
+    }
+
+    private void OnDestroy()
+    {
+        journal.JournalChanged -= OnJournalChanged;
+    }
+
+    private void OnJournalChanged()
+    {
+        if (Platform.Current == null) return;   // guard clause: no platform registered
+
+        int count = journal.Entries.Count;
+        if (count &gt; lastCount)                  // a photo was added, not deleted
+        {
+            JournalEntry newest = journal.Entries[count - 1];
+            string path = Path.Combine(journal.PhotoFolder, newest.fileName);
+            Platform.Current.AddScreenshot(path, newest.locationName);
+        }
+        lastCount = count;
+        CheckAchievements();
+    }
+
+    private void CheckAchievements()
+    {
+        if (Platform.Current == null) return;   // guard clause
+
+        if (journal.Entries.Count &gt;= 1) Platform.Current.UnlockAchievement(Achievements.FirstPhoto);
+        if (CountPlaces() &gt;= placesNeeded) Platform.Current.UnlockAchievement(Achievements.ThreeTrails);
+        if (journal.IsFull) Platform.Current.UnlockAchievement(Achievements.FullJournal);
+    }
+
+    // Counts how many different location names appear in the journal.
+    private int CountPlaces()
+    {
+        List&lt;string&gt; places = new List&lt;string&gt;();
+        foreach (JournalEntry entry in journal.Entries)
+        {
+            if (!places.Contains(entry.locationName))
+            {
+                places.Add(entry.locationName);
+            }
+        }
+        return places.Count;
+    }
+}</code></pre></div></div>
+
+        <aside class="paper-sticky paper-sticky--rotate-r">
+          <p class="paper-sticky__label">Why ResetForPlayMode?</p>
+          <p>Static values can survive between presses of Play if the Editor is set to skip reloading scripts. Without the reset, <code>Platform.Current</code> could point to a mock from your <em>last</em> test that no longer exists.</p>
+        </aside>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <p>Reset mock achievements and delete your journal before starting.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T29</td><td>Start the game</td><td>Console shows "Platform services: Mock (no Steam)"</td><td></td></tr>
+              <tr><td>T30</td><td>Take your first photo</td><td>"Say Cheese" pop-up appears for about 3 seconds, and the Console logs "[Mock] Screenshot added"</td><td></td></tr>
+              <tr><td>T31</td><td>Take a second photo</td><td>Screenshot logged, with no pop-up</td><td></td></tr>
+              <tr><td>T32</td><td>Set Max Photos to 3. Take the third photo in a third location</td><td>"Trail Collector" then "Every Page Filled", one after the other</td><td></td></tr>
+              <tr><td>T33</td><td>Restart the game</td><td>No pop-ups: achievements are remembered</td><td></td></tr>
+              <tr><td>T34</td><td>Delete a photo in the journal</td><td>No screenshot logged and no pop-up</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Then regression-test T6, T11 and T17 to check that photos, saving and the journal screen still work.</p>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>First pop-up</h4>
+            <ul>
+              <li>Complete the setup and run T29, T30 and T31.</li>
+              <li>Label the interface, the implementation and the guard clauses in <code>MockPlatformService</code> with comments.</li>
+              <li>Desk-check <code>CountPlaces</code> for your own game's locations.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Your own achievement</h4>
+            <ul>
+              <li>Run all six tests.</li>
+              <li>Design one new achievement that suits your game's purpose. Add a row to the table (use Spacewar ID <code>ACH_TRAVEL_FAR_SINGLE</code>) and a check to <code>CheckAchievements</code>.</li>
+              <li>Pseudocode first, then a test for it.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Pop-ups in photos</h4>
+            <ul>
+              <li>Take a photo while a pop-up is showing: it appears in the photo. Change <code>PhotoCapture</code>'s single <code>photoModeOverlay</code> into a <code>GameObject[] hideDuringCapture</code> list, so any overlay can be hidden during capture.</li>
+              <li>Explain why this keeps <code>PhotoCapture</code> loosely coupled, compared with having it call the mock directly.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="A"
+             data-feedback-a="✓ Correct. An interface is a contract: it lists methods a class must provide, with no code of its own."
+             data-feedback-b="Not quite. That's a user interface. In C#, interface means a contract between pieces of code."
+             data-feedback-c="Not quite. An interface contains no code at all, so it can't save anything."
+             data-feedback-d="Not quite. An interface describes methods, not values.">
+          <div class="mcq-question">1. In C#, what is an interface?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>A list of methods that a class promises to provide</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The menus and buttons that the player sees on screen</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>A class that saves the game's data to Steam's servers</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>A special kind of variable that can hold any number</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="D"
+             data-feedback-a="Not quite. The mock never contacts Steam. Its achievements only exist on this computer."
+             data-feedback-b="Not quite. Steam doesn't require mocks. They're a tool for the developer."
+             data-feedback-c="Not quite. The mock logs screenshots. It doesn't upload anything."
+             data-feedback-d="✓ Correct. The mock keeps the same promise as Steam, so the game can be built and tested without Steam installed.">
+          <div class="mcq-question">2. Why does the game use <code>MockPlatformService</code> at school?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The mock unlocks real Steam achievements more quickly</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Steam requires every game to include a mock to be sold</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The mock uploads the photos to a cloud storage service</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Steam can't run here, so the mock stands in for it</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="C"
+             data-feedback-a="Not quite. That counts every entry. Repeated places are skipped."
+             data-feedback-b="Not quite. Lookout Point, Creek Crossing and Summit are all different, so that's more than two."
+             data-feedback-c="✓ Correct. Lookout Point, Creek Crossing and Summit. The repeats are skipped because they're already in the list."
+             data-feedback-d="Not quite. Only one place appears exactly once. The question asks for different places.">
+          <div class="mcq-question">3. The journal's entries were taken at: Lookout Point, Creek Crossing, Lookout Point, Summit, Creek Crossing. What does <code>CountPlaces</code> return?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>5</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>2</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>3</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>1</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="B"
+             data-feedback-a="Not quite. Nothing is replaced. Both wait their turn in the queue."
+             data-feedback-b="✓ Correct. Each joins the back of the queue, and ShowToasts takes them from the front, one at a time, in the order they unlocked."
+             data-feedback-c="Not quite. Only one pop-up panel exists, and the loop shows one item at a time."
+             data-feedback-d="Not quite. Arriving together is exactly what the queue is for.">
+          <div class="mcq-question">4. One photo unlocks "Trail Collector" and "Every Page Filled" at the same moment. What does the toast queue do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Shows only the second pop-up, which replaces the first</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Shows both pop-ups, one after the other, in order</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Shows both pop-ups stacked on top of each other at once</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Skips both pop-ups because they arrived at the same time</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="D"
+             data-feedback-a="Not quite. Nothing is hidden or scrambled. The code simply doesn't need to know which platform it is."
+             data-feedback-b="Not quite. Recursion is a method calling itself. That doesn't happen here."
+             data-feedback-c="Not quite. Overflow is a value too big for its type. That doesn't apply here."
+             data-feedback-d="✓ Correct. The same call works on the mock or Steam because both implement IPlatformService.">
+          <div class="mcq-question">5. <code>PlatformLink</code> calls <code>Platform.Current.UnlockAchievement(…)</code> without knowing whether it's the mock or Steam. What is this called?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Encryption: hiding which platform is actually being used</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Recursion: a method calling itself over and over again</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Overflow: too many platforms for one variable</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Polymorphism: one call works with any version</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="A"
+             data-feedback-a="✓ Correct. PhotoCapture just hides whatever is in its list. It never needs to know what a pop-up or a mock is."
+             data-feedback-b="Not quite. That works, but it ties PhotoCapture to the mock, which is high coupling, and breaks when Steam is used instead."
+             data-feedback-c="Not quite. That removes useful feedback rather than fixing the problem."
+             data-feedback-d="Not quite. Making players wait would hurt the experience, and pop-ups could still appear in time.">
+          <div class="mcq-question">6. The mock's pop-up appears in photos taken while it's on screen. Which fix keeps <code>PhotoCapture</code> loosely coupled?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Give PhotoCapture an Inspector list of overlays to hide</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Have PhotoCapture call the MockPlatformService to hide its pop-up</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Remove achievement pop-ups from the game completely</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Block every capture until three seconds after any pop-up</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for computational, design and systems thinking. An interface is systems thinking: designing how parts connect. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Develops highly effective computing solutions using computational, design and systems thinking skills.</strong> Fixes pop-ups in photos with a loosely coupled design, adds a tested achievement of their own, and explains the role of the interface.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Develops effective computing solutions using computational, design and systems thinking skills.</strong> Passes all six tests and adds a new achievement that suits their game's purpose, from pseudocode to test.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Develops sound computing solutions using computational, design and systems thinking skills.</strong> Sets up the mock and link so achievements and screenshots work, and passes T29–T33.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Develops basic computing solutions using computational or design or systems thinking skills.</strong> Gets the first achievement pop-up working and desk-checks CountPlaces.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Follows algorithms.</strong> Traces CountPlaces with help and identifies which class implements the interface.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Explain the interface to someone who missed today, using the power-socket analogy or one of your own.
+            <span class="sentence-starter">An interface is like ___ because…</span></li>
+          <li>Describe the achievement you designed (or would design) and explain how it fits your game's purpose.
+            <span class="sentence-starter">My achievement rewards players for… This suits my game because…</span></li>
+        </ul>
+        <label for="reflection-l8" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l8" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson07.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 7: Controller-first input</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson09.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 9: Steamworks in practice</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson08',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

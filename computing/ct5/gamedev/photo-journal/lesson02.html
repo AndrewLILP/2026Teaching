@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 2: Designing the journal | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 2 of 12: design the journal's data, write the capture algorithm in NSW pseudocode, and storyboard the interface for Steam Deck.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+
+    .json-sample {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      margin: var(--space-4) 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.7;
+      color: var(--color-text-primary);
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .storyboard { margin: var(--space-5) 0 var(--space-6); }
+    .storyboard svg { width: 100%; height: auto; display: block; }
+    .storyboard figcaption {
+      margin-top: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      font-style: italic;
+    }
+    .sb-screen  { fill: #2b2418; }
+    .sb-panel   { fill: #3d3424; stroke: #5c5240; stroke-width: 2; }
+    .sb-thumb   { fill: #5c5240; }
+    .sb-focus   { fill: none; stroke: #facc15; stroke-width: 6; }
+    .sb-text    { fill: #fbf6ea; font-family: var(--font-body); }
+    .sb-muted   { fill: #c9bfa8; font-family: var(--font-body); }
+    .sb-callout { fill: #6d28d9; }
+    .sb-callout-text { fill: #ffffff; font-family: var(--font-body); font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 2</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#analyse">Analyse a save file</a>
+          <a href="#data">The data dictionary</a>
+          <a href="#algorithm">The capture algorithm</a>
+          <a href="#trace">Desk check</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#storyboard">Storyboard for Steam Deck</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-research">Researching &amp; planning</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 2 of 12 · 50 minutes</p>
+        <h1>Designing the journal</h1>
+        <p class="page-intro">Professional developers design before they build. Today you'll decide exactly what data each photo needs, write the capture algorithm in pseudocode, and storyboard the journal screen so it works on a handheld. There is no C# yet. That starts in Lesson 3, built on the design you finish today.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-research">Researching &amp; planning</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you turned observations of published photo modes into requirements, sorted into functional, non-functional and constraints, each with a test. Keep your requirements table open. Every design decision today should trace back to a requirement.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 6 min · analyse a save file 7 min · data dictionary 8 min · pseudocode and desk check 12 min · bug detective 4 min · storyboard and tasks 9 min · checkpoint and reflection 4 min.</p>
+        <p><strong>Key idea to name:</strong> the <strong>guard pattern</strong>. Checks that can stop an algorithm go at the top, before any work is done. It will come back in Lessons 3, 4, 5 and 8, so name it every time it appears.</p>
+        <p><strong>Numeracy link:</strong> the storage calculation in the data section is a good place to model working with megabytes and kilobytes. Students can use a calculator.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>design the data for a journal entry, choosing a data type for each field and explaining why</li>
+          <li>write and desk-check an algorithm in NSW pseudocode that uses the guard pattern</li>
+          <li>storyboard a journal screen that meets my Steam Deck requirements.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> I have a completed data dictionary, at least one algorithm in pseudocode with a desk check, and a labelled storyboard where every element links to a requirement.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Record</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A group of related data about one thing, such as one journal entry.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Field</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One piece of data inside a record, such as the caption or the date.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data type</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The kind of value a field holds, such as string, integer or Boolean.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data dictionary</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A table describing every field: its name, type, size, example and validation rule.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">JSON</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A text format for storing data as named fields and lists. Games often use it for save files.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Guard clause</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A check at the start of an algorithm that exits early if it isn't safe to continue.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Desk check</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Running an algorithm by hand with test values, recording each step in a trace table.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Storyboard</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A sequence of labelled screen sketches showing how a user moves through an interface.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ ANALYSE ═══ -->
+      <section class="content-section" id="analyse">
+        <span class="section-phase-tag research"><span class="dot"></span>Researching</span>
+        <h2>Analyse a save file</h2>
+        <p>Before designing our own data, let's look inside someone else's. This is part of the journal file from <em>Ridgeline</em>, the hiking game from Lesson 1. It holds two photos.</p>
+
+        <pre class="json-sample" aria-label="Sample journal save file in JSON">{
+  "maxPhotos": 60,
+  "entries": [
+    {
+      "fileName": "photo_20260914_101522.png",
+      "caption": "Fog over the valley",
+      "locationName": "Lookout Point",
+      "timestamp": "2026-09-14T10:15:22"
+    },
+    {
+      "fileName": "photo_20260914_103847.png",
+      "caption": "",
+      "locationName": "Creek Crossing",
+      "timestamp": "2026-09-14T10:38:47"
+    }
+  ]
+}</pre>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · pairs · 7 min</p>
+          <h3>What does this file tell you?</h3>
+          <ol>
+            <li>How many fields does each journal entry have? Name them.</li>
+            <li>The second photo's caption is <code>""</code>. What does that tell you about captions?</li>
+            <li>The photo itself isn't in this file. Where must it be, and how does the game find it?</li>
+            <li>Look at how the file names are built. Why might the developers have used the date and time in each name?</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Discussion points (open after you've answered)
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>Four fields: fileName, caption, locationName and timestamp.</li>
+              <li>Captions are optional. An empty string means "no caption yet", which is different from the field being missing.</li>
+              <li>Each photo is saved as its own PNG file in the same folder. The game uses <code>fileName</code> to find and load it.</li>
+              <li>Date and time give every photo a different name, as long as no two are taken in the same second (Lesson 4 handles that case). Names built year-first also sort into the order the photos were taken.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ DATA DICTIONARY ═══ -->
+      <section class="content-section" id="data">
+        <span class="section-phase-tag research"><span class="dot"></span>Planning</span>
+        <h2>The data dictionary</h2>
+        <p>A data dictionary records every design decision about our data in one place. Here is the dictionary for one <strong>JournalEntry</strong> record. Two cells are left for us to complete together.</p>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Field</th><th scope="col">Type</th><th scope="col">Example</th><th scope="col">Validation</th><th scope="col">Requirement</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>fileName</code></td><td>String</td><td>photo_20261002_143012.png</td><td>Must end in .png and be unique</td><td>R3</td></tr>
+              <tr><td><code>caption</code></td><td>String</td><td>Fog over the valley</td><td><em>Together:</em> ______</td><td>R3</td></tr>
+              <tr><td><code>locationName</code></td><td>String</td><td>Lookout Point</td><td>Must match a named area in the game</td><td>R3</td></tr>
+              <tr><td><code>timestamp</code></td><td><em>Together:</em> ______</td><td>2026-10-02T14:30:12</td><td>Must be a valid date and time</td><td>R3</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Possible answers (teacher reveal)
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <p><strong>caption validation:</strong> 0 to 60 characters. Empty is allowed. Sixty characters fits on one line of the journal screen at Steam Deck resolution.</p>
+            <p><strong>timestamp type:</strong> String, in ISO 8601 format (year-month-day, then time). Unity's built-in JSON tool, <code>JsonUtility</code>, can't save C# date values directly, so we store the date as text and convert it back when loading. Because the format puts the year first, sorting the strings also sorts the photos by date.</p>
+          </div>
+        </div>
+
+        <div class="example-box">
+          <strong>Worked example: why store the file name instead of the photo?</strong>
+          <span class="example-box__subhead">The photo</span>
+          A 1920 × 1080 screenshot has 2,073,600 pixels. At 3 bytes per pixel that's 6,220,800 bytes, about 6.2 MB before compression. PNG compression usually makes game screenshots a few megabytes each.
+          <span class="example-box__subhead">The record</span>
+          The four fields in one entry add up to roughly 150 characters, which is about 150 bytes.
+          <span class="example-box__subhead">The decision</span>
+          If photos were inside journal.json, the game would have to read hundreds of megabytes just to show the journal's list. Storing file names keeps journal.json tiny, so it loads instantly, and photos are only loaded when they're needed.
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">We do · calculation · 3 min</p>
+          <p>A full journal holds 50 photos. Assume each PNG is 4 MB and each entry is 150 bytes.</p>
+          <ol>
+            <li>How much disk space do the photos use? (Answer in MB.)</li>
+            <li>How big is journal.json? (Answer in KB, using 1 KB = 1,000 bytes.)</li>
+            <li>How many times bigger is the photo storage than the JSON file? Round to the nearest thousand.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Worked answers
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>50 × 4 MB = 200 MB.</li>
+              <li>50 × 150 bytes = 7,500 bytes = 7.5 KB.</li>
+              <li>200 MB = 200,000 KB, and 200,000 ÷ 7.5 ≈ 26,667, so about 27,000 times bigger. This is why the photo limit in your requirements matters.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ALGORITHM ═══ -->
+      <section class="content-section" id="algorithm">
+        <span class="section-phase-tag research"><span class="dot"></span>Planning</span>
+        <h2>The capture algorithm</h2>
+        <p>Now for the most important algorithm in the unit: what happens when the player presses capture. It's written in NSW pseudocode, so it doesn't depend on any programming language.</p>
+        <p>Look at lines 2 to 8 first. They are <strong>guard clauses</strong>: checks that stop the algorithm before it does any work. Putting every "should we stop?" check at the top is called the <mark class="paper-hl paper-hl--yellow">guard pattern</mark>. It keeps the main steps simple, because by line 9 we already know it's safe to continue.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · CapturePhoto</p>
+<pre>1   BEGIN CapturePhoto
+2       IF photoModeActive = FALSE THEN
+3           RETURN
+4       ENDIF
+5       IF journalCount &gt;= maxPhotos THEN
+6           DISPLAY "Journal full – remove a photo first"
+7           RETURN
+8       ENDIF
+9       HIDE hud
+10      SET image TO CaptureScreen()
+11      SHOW hud
+12      SET timestamp TO CurrentDateTime()
+13      SET fileName TO "photo_" + FileSafe(timestamp) + ".png"
+14      SAVE image TO fileName
+15      SET entry TO NEW JournalEntry(fileName, "", currentLocation, timestamp)
+16      ADD entry TO journalEntries
+17      SET journalCount TO journalCount + 1
+18      SAVE journalEntries TO "journal.json"
+19  END CapturePhoto</pre>
+        </div>
+
+        <p class="paper-margin-note">Line 13: <code>FileSafe</code> turns 2026-10-02T14:30:12 into 20261002_143012, because colons aren't allowed in Windows file names. That gives photo_20261002_143012.png, matching the data dictionary.</p>
+        <p class="paper-margin-note">The caption starts as an empty string (line 15). The player adds it later, which is why the data dictionary allows an empty caption.</p>
+      </section>
+
+      <!-- ═══ TRACE ═══ -->
+      <section class="content-section" id="trace">
+        <h2>Desk check</h2>
+        <p>A desk check proves the algorithm works before any code exists. Here it's run with a nearly full journal: <code>photoModeActive = TRUE</code>, <code>journalCount = 49</code>, <code>maxPhotos = 50</code>.</p>
+
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Line</th><th scope="col">Code</th><th scope="col">journalCount</th><th scope="col">Output / note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">2</td><td class="td-code">photoModeActive = FALSE?</td><td class="td-var">49</td><td class="td-note">FALSE, so skip lines 3–4</td></tr>
+              <tr><td class="td-step">5</td><td class="td-code">49 &gt;= 50?</td><td class="td-var">49</td><td class="td-note">FALSE, so skip lines 6–7</td></tr>
+              <tr><td class="td-step">9–11</td><td class="td-code">HIDE, capture, SHOW</td><td class="td-var">49</td><td class="td-note">Image captured without HUD</td></tr>
+              <tr><td class="td-step">14</td><td class="td-code">SAVE image</td><td class="td-var">49</td><td class="td-output">PNG file written</td></tr>
+              <tr><td class="td-step">17</td><td class="td-code">journalCount + 1</td><td class="td-var">50</td><td class="td-note">Journal is now full</td></tr>
+              <tr><td class="td-step">18</td><td class="td-code">SAVE journalEntries</td><td class="td-var">50</td><td class="td-output">journal.json updated</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">You do · 3 min</p>
+          <p>The player presses capture <em>again</em>. Copy the trace table headings and desk-check this second press, starting with <code>journalCount = 50</code>. Which line is the last to run, and what does the player see?</p>
+        </div>
+      </section>
+
+      <!-- ═══ BUG DETECTIVE ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>The journal is full, but the disk keeps filling up</h3>
+          <p>A classmate wrote this version. Their journal correctly stops at 50 entries, but playtesters' photo folders keep growing. Find the bug.</p>
+<pre>1   BEGIN CapturePhoto
+2       HIDE hud
+3       SET image TO CaptureScreen()
+4       SHOW hud
+<span class="bug-line">5       SAVE image TO fileName</span>
+6       IF journalCount &gt;= maxPhotos THEN
+7           DISPLAY "Journal full – remove a photo first"
+8           RETURN
+9       ENDIF
+10      ADD entry TO journalEntries
+11  END CapturePhoto</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            The guard clause is in the wrong place. Line 5 saves the PNG <em>before</em> line 6 checks whether the journal is full, so every press creates a file that is never added to the journal. The HUD also flickers for no reason. The fix is the guard pattern: move the check to the top, before any work is done.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ STORYBOARD ═══ -->
+      <section class="content-section" id="storyboard">
+        <span class="section-phase-tag research"><span class="dot"></span>Designing</span>
+        <h2>Storyboard for Steam Deck</h2>
+        <p>Steam Deck's screen is 1280 × 800 pixels, about 7 inches across. That's the size to design for. If it works there, it will work on a monitor too. Here is a wireframe of the journal screen at that size.</p>
+
+        <figure class="storyboard">
+          <svg viewBox="0 0 1280 800" role="img" aria-labelledby="sb-title sb-desc">
+            <title id="sb-title">Journal screen wireframe at 1280 by 800</title>
+            <desc id="sb-desc">A dark screen with a title bar reading Journal 12 of 50, a grid of twelve photo thumbnails on the left with the first one highlighted in yellow, a detail panel on the right showing a large preview, caption, location and date, and a bar of controller button prompts along the bottom.</desc>
+            <rect class="sb-screen" x="0" y="0" width="1280" height="800" rx="18"/>
+            <!-- title bar -->
+            <text class="sb-text" x="48" y="78" font-size="40" font-weight="800">Journal</text>
+            <text class="sb-muted" x="230" y="78" font-size="30">12 / 50 photos</text>
+            <!-- grid -->
+            <rect class="sb-thumb" x="48"  y="120" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="238" y="120" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="428" y="120" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="618" y="120" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="48"  y="260" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="238" y="260" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="428" y="260" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="618" y="260" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="48" y="400" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="238" y="400" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="428" y="400" width="170" height="120" rx="8"/>
+            <rect class="sb-thumb" x="618" y="400" width="170" height="120" rx="8"/>
+            <rect class="sb-focus" x="45" y="117" width="176" height="126" rx="10"/>
+            <!-- detail panel -->
+            <rect class="sb-panel" x="820" y="120" width="412" height="560" rx="12"/>
+            <rect class="sb-thumb" x="844" y="144" width="364" height="230" rx="8"/>
+            <text class="sb-text" x="844" y="430" font-size="30" font-weight="700">Fog over the valley</text>
+            <text class="sb-muted" x="844" y="480" font-size="26">Lookout Point</text>
+            <text class="sb-muted" x="844" y="522" font-size="26">2 Oct 2026, 2:30 pm</text>
+            <!-- prompt bar -->
+            <text class="sb-text" x="48"  y="740" font-size="28">Ⓐ View</text>
+            <text class="sb-text" x="200" y="740" font-size="28">Ⓧ Caption</text>
+            <text class="sb-text" x="390" y="740" font-size="28">Ⓨ Delete</text>
+            <text class="sb-text" x="570" y="740" font-size="28">Ⓑ Back</text>
+            <!-- callouts -->
+            <circle class="sb-callout" cx="640" cy="68" r="26"/><text class="sb-callout-text" x="640" y="68" font-size="26">1</text>
+            <circle class="sb-callout" cx="250" cy="110" r="26"/><text class="sb-callout-text" x="250" y="110" font-size="26">2</text>
+            <circle class="sb-callout" cx="1210" cy="420" r="26"/><text class="sb-callout-text" x="1210" y="420" font-size="26">3</text>
+            <circle class="sb-callout" cx="760" cy="728" r="26"/><text class="sb-callout-text" x="760" y="728" font-size="26">4</text>
+          </svg>
+          <figcaption>Journal screen wireframe at Steam Deck resolution. Numbers refer to the design notes below.</figcaption>
+        </figure>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Design decision</th><th scope="col">Why</th><th scope="col">Requirement</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>Photo count shown next to the title</td><td>Players can see when the journal is nearly full</td><td>Journal limit</td></tr>
+              <tr><td>2</td><td>Thick, bright focus outline on the selected photo</td><td>With no mouse pointer, players must always see where they are</td><td>R5 (gamepad only)</td></tr>
+              <tr><td>3</td><td>Large detail panel with caption, location and date</td><td>Shows every field from the data dictionary, at a readable size</td><td>R3</td></tr>
+              <tr><td>4</td><td>Button prompts that match the controller</td><td>Players never have to guess which button does what</td><td>R5, Steam Deck</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-l">
+          <p class="paper-sticky__label">Our design rule</p>
+          <p>No text smaller than 24 px on the 1280 × 800 wireframe. If you can't read it from arm's length on a printout scaled to 7 inches, make it bigger.</p>
+        </aside>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <p>Design for <em>your</em> game: use your own area names and your own requirements from Lesson 1.</p>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Data and screen</h4>
+            <ul>
+              <li>Copy the data dictionary and replace the examples with ones from your game.</li>
+              <li>Sketch your journal screen at 1280 × 800 and label four parts.</li>
+              <li>Desk-check CapturePhoto with <code>journalCount = 50</code>.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Add a caption</h4>
+            <ul>
+              <li>Write <code>AddCaption(entry, newCaption)</code> in NSW pseudocode. Use a guard clause to reject captions over 60 characters.</li>
+              <li>Desk-check it with a 12-character and a 75-character caption.</li>
+              <li>Storyboard three screens: hiking, photo mode and journal, with arrows showing which button moves between them.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Delete a photo</h4>
+            <ul>
+              <li>Write <code>DeletePhoto(entry)</code> in NSW pseudocode. It must remove both the PNG file and the journal entry, and ask the player to confirm first.</li>
+              <li>Desk-check it, including the case where the PNG file is already missing.</li>
+              <li>Justify why <code>timestamp</code> is a string rather than a number of seconds since the game started.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="C"
+             data-feedback-a="Not quite. Photos can be saved anywhere the game can write files, not only in the Assets folder."
+             data-feedback-b="Not quite. A file name isn't more secure than a photo. Anyone who can read one can read the other."
+             data-feedback-c="✓ Correct. A photo is millions of bytes, but a file name is a few dozen, so the journal file stays small and loads quickly."
+             data-feedback-d="Not quite. Unity doesn't delete images from JSON. The problem is that they'd make the file enormous.">
+          <div class="mcq-question">1. Why does the journal save each photo's file name in journal.json instead of the photo itself?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Images can only be stored inside the project's Assets folder</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>File names are more secure than the photos are</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>It keeps the journal file small and fast to load</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unity removes any images placed inside JSON files</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="A"
+             data-feedback-a="✓ Correct. A caption is text, which is stored as a string."
+             data-feedback-b="Not quite. You might count a caption's characters, but the caption itself is text, not a number."
+             data-feedback-c="Not quite. A Boolean only holds TRUE or FALSE, so it could say whether a caption exists but not what it says."
+             data-feedback-d="Not quite. A float is a number with a decimal point. A caption is words.">
+          <div class="mcq-question">2. Which data type best suits the <code>caption</code> field?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>String, because a caption is made of text</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Integer, because it stores how many characters it has</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Boolean, because a caption is either set or not set</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Float, because a caption can be any length at all</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="B"
+             data-feedback-a="Not quite. The check uses &gt;=, so 50 &gt;= 50 is TRUE and the algorithm stops before saving."
+             data-feedback-b="✓ Correct. The first guard passes, the second guard is TRUE, so the message shows and nothing is saved."
+             data-feedback-c="Not quite. photoModeActive is TRUE, so the first guard is passed. It's the second guard that stops the algorithm."
+             data-feedback-d="Not quite. In the guard pattern the check happens before anything is saved, so no file is created.">
+          <div class="mcq-question">3. CapturePhoto first checks <code>IF photoModeActive = FALSE</code>, then <code>IF journalCount &gt;= maxPhotos</code>, before saving anything. What happens when photoModeActive is TRUE, journalCount is 50 and maxPhotos is 50?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The photo is saved and journalCount becomes 51</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>A "Journal full" message shows and nothing saves</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The algorithm stops silently at the very first check</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The photo is saved but is never added to the journal</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="D"
+             data-feedback-a="Not quite. Repeating code until a condition is met is a loop, such as WHILE … ENDWHILE."
+             data-feedback-b="Not quite. &quot;Guard&quot; here means guarding the algorithm against unsafe situations, not hiding code."
+             data-feedback-c="Not quite. Guard clauses prevent problems before they happen rather than reacting after a crash."
+             data-feedback-d="✓ Correct. A guard clause checks for an unsafe situation first and exits early, so the main steps only run when it's safe.">
+          <div class="mcq-question">4. What is the main purpose of a guard clause?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>To repeat steps until a condition becomes true</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>To hide important code from other programmers</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>To catch and report errors after a game crashes</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>To exit early when it isn't safe to continue</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="A"
+             data-feedback-a="✓ Correct. An ISO 8601 string keeps the full date and time, saves as plain text and sorts in date order."
+             data-feedback-b="Not quite. A file's creation date can change when files are copied or backed up, so it isn't reliable."
+             data-feedback-c="Not quite. The hour alone loses the date, so photos from different days would look the same."
+             data-feedback-d="Not quite. That counter restarts every session, so it can't tell you when a photo was really taken.">
+          <div class="mcq-question">5. Unity's <code>JsonUtility</code> can't save C# date values directly. Which design is the best way to keep each photo's date and time?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Store it as a text string like 2026-10-02T14:30:12</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Leave it out and use each PNG file's creation date instead</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Store only the hour the photo was taken as an integer</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Store the seconds since the current play session began</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="C"
+             data-feedback-a="Not quite. Twenty-four photos is plenty. The problem is how small each one becomes."
+             data-feedback-b="Not quite. Controllers can move around a grid easily with the D-pad or stick."
+             data-feedback-c="✓ Correct. Fitting 24 thumbnails onto 1280 × 800 makes each one tiny, and the text with them becomes too small to read on a handheld."
+             data-feedback-d="Not quite. Disk space depends on the files saved, not on how many are shown on screen.">
+          <div class="mcq-question">6. A storyboard shows 24 thumbnails at once on a 1280 × 800 screen, each with its caption underneath. What is the strongest criticism for Steam Deck?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Too few photos are visible at one time to be useful</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>A grid layout can't be navigated using a controller</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Thumbnails and captions become too small to read</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Showing more thumbnails uses up more disk space</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for computational, design and systems thinking. Tap a grade to see what it looks like in today's lesson.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Develops highly effective computing solutions using computational, design and systems thinking skills.</strong> Writes and desk-checks DeletePhoto including the missing-file case, and justifies data type choices with reference to how the data is saved and sorted.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Develops effective computing solutions using computational, design and systems thinking skills.</strong> Writes AddCaption with a correct guard clause, desk-checks both test cases, and storyboards all three screens with clear navigation.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Develops sound computing solutions using computational, design and systems thinking skills.</strong> Completes the data dictionary for their game and storyboards a journal screen that links to their requirements.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Develops basic computing solutions using computational or design or systems thinking skills.</strong> Desk-checks CapturePhoto correctly and sketches a labelled journal screen.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Follows algorithms.</strong> Steps through CapturePhoto with support and identifies which lines are guard clauses.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Which design decision today will save you the most time when you start coding? Explain why.
+            <span class="sentence-starter">Deciding ___ now will save time because…</span></li>
+          <li>In your own words, explain the guard pattern to someone who missed this lesson.
+            <span class="sentence-starter">The guard pattern means…</span></li>
+        </ul>
+        <label for="reflection-l2" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l2" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson01.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 1: Deconstructing photo modes</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson03.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 3: Photo mode hook and camera</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson02',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 4: Capturing the shot | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 4 of 12: capture the screen with a coroutine, save it as a PNG and give the player shutter feedback in Unity 6.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .ipo-flow--compact .ipo-step { flex: 1 1 0; min-width: 0; padding: var(--space-3); }
+    .ipo-flow--compact code { overflow-wrap: anywhere; }
+    .sequence-list { list-style: upper-alpha; padding-left: var(--space-8); }
+    .sequence-list li { margin-bottom: var(--space-2); }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 4</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#sequence">Sequence a shutter press</a>
+          <a href="#frame">Inside one frame</a>
+          <a href="#pseudo">Pseudocode first</a>
+          <a href="#code">Into C#</a>
+          <a href="#names">Unique file names</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#setup">Set it up</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 4 of 12 · 50 minutes</p>
+        <h1>Capturing the shot</h1>
+        <p class="page-intro">Photo mode opens and the camera moves. Now the player presses the shutter. Today you'll capture exactly what's on screen, without any prompts in the way, save it as a PNG file, and make the moment feel satisfying with a sound and a flash. This is where your game starts to feel like a product.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you added <code>PhotoModeController</code>, connected it to your game with the <code>SetAvailable</code> hook, and saw why the camera needs <strong>unscaled time</strong> while the world is frozen. That idea comes back today in the flash effect.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 5 min · sequencing 5 min · frame timeline 4 min · pseudocode and code walkthrough 12 min · unique names and bug detective 6 min · setup and testing 13 min · checkpoint 5 min.</p>
+        <p><strong>Prerequisite:</strong> students need Lesson 3 working (tests T1 and T4 passing). Pair anyone who isn't there yet with a student who is, and let them catch up using Lesson 3's full script.</p>
+        <p><strong>Editor tip:</strong> keep the Game view visible while testing in the Editor. The capture copies whatever the Game view has just drawn. The Console prints the photo folder location the first time the script runs.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>explain why a screen capture must wait until the end of the frame</li>
+          <li>use a coroutine to spread a task across several frames</li>
+          <li>use a WHILE loop to make sure no saved photo is ever overwritten</li>
+          <li>add feedback that makes an action feel responsive to the player.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> pressing capture in my game saves a PNG with no prompts or HUD in it, plays a shutter sound and flashes the screen, and pressing it rapidly never overwrites an earlier photo.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Frame</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One complete image drawn by the game. At 60 fps, a new frame is drawn about every 17 ms.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Coroutine</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A method that can pause partway through and continue in a later frame.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">yield return</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The line where a coroutine pauses. What follows it says when to continue.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Texture2D</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An image held in memory as a grid of pixels. Our screen capture is one.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Encoding</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Converting data into a format for storage. EncodeToPNG turns pixels into PNG file bytes.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">persistentDataPath</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A folder Unity guarantees the game can save to on every platform, including Steam Deck.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Event</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A message a script sends out ("a photo was saved") that any other script can listen for.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Feedback</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Sound, motion or visuals that confirm to the player their action worked.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ SEQUENCE ═══ -->
+      <section class="content-section" id="sequence">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Sequence a shutter press</h2>
+        <p>In a well-made photo mode, a lot happens in the split second after the player presses capture. Order matters: get it wrong and the photo is ruined.</p>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">DART · sequencing · pairs · 5 min</p>
+          <p>These steps are scrambled. Write the letters in the order they must happen, and be ready to justify any step that <em>must</em> come before another.</p>
+          <ol class="sequence-list">
+            <li>Play the shutter sound and flash the screen white</li>
+            <li>Copy the finished frame into a texture</li>
+            <li>Check the player is in photo mode and not already taking a photo</li>
+            <li>Tell the rest of the game a photo was saved</li>
+            <li>Hide the button prompts</li>
+            <li>Wait until the frame has finished drawing</li>
+            <li>Choose a file name no other photo is using, then save the PNG</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Answer and reasons
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <p><strong>C → E → F → B → G → A → D.</strong></p>
+            <p><strong>C first:</strong> this is the guard pattern again. Nothing happens unless it's safe. <strong>E before F:</strong> prompts must be hidden before the frame is drawn, or they'll appear in the photo. <strong>F before B:</strong> a half-drawn frame would give a broken image. <strong>A after B:</strong> flash before capturing and every photo is white. <strong>D last:</strong> other scripts should only hear about the photo once the file really exists.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ FRAME ═══ -->
+      <section class="content-section" id="frame">
+        <h2>Inside one frame</h2>
+        <p>Every frame, Unity runs your scripts, then draws the scene, then shows the result. A screen capture copies what has been drawn, so it has to happen after drawing finishes.</p>
+        <div class="ipo-flow ipo-flow--compact">
+          <div class="ipo-step"><span class="ipo-step__label">1 · Input</span><p>Button presses are read. Our <code>OnCapture</code> runs here.</p></div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step"><span class="ipo-step__label">2 · Update</span><p>Scripts run <code>Update</code> and <code>LateUpdate</code>. The camera moves.</p></div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step"><span class="ipo-step__label">3 · Render</span><p>The scene, then the UI, are drawn into the frame.</p></div>
+          <span class="ipo-arrow" aria-hidden="true">→</span>
+          <div class="ipo-step"><span class="ipo-step__label">4 · End of frame</span><p>Drawing is complete. <code>WaitForEndOfFrame</code> resumes here, so we capture now.</p></div>
+        </div>
+        <p>A normal method has to finish all its work inside one of these steps. A <strong>coroutine</strong> can pause at step 1, wait for step 4, then keep going, and later pause again for each frame of the flash. That's why the capture is written as a coroutine.</p>
+      </section>
+
+      <!-- ═══ PSEUDOCODE ═══ -->
+      <section class="content-section" id="pseudo">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>Pseudocode first</h2>
+        <p>This is <code>CapturePhoto</code> from Lesson 2, updated with what we know now. The journal-full check moves to Lesson 5, where the journal is built. Instead, there's a new guard on line 5 to stop two captures running at once.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · CapturePhoto (updated)</p>
+<pre>1   BEGIN CapturePhoto
+2       IF photoModeActive = FALSE THEN
+3           RETURN
+4       ENDIF
+5       IF isCapturing = TRUE THEN
+6           RETURN
+7       ENDIF
+8       SET isCapturing TO TRUE
+9       HIDE overlay
+10      WAIT until end of frame
+11      SET image TO CaptureScreen()
+12      SET fileName TO MakeUniqueFileName()
+13      SAVE image AS PNG TO fileName
+14      PLAY shutter sound
+15      Flash()
+16      SEND message "photo saved" WITH fileName
+17      SET isCapturing TO FALSE
+18  END CapturePhoto</pre>
+        </div>
+      </section>
+
+      <!-- ═══ CODE ═══ -->
+      <section class="content-section" id="code">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Into C#</h2>
+        <p>The new script, <code>PhotoCapture</code>, sits next to <code>PhotoModeController</code>. It only reads <code>photoMode.IsActive</code>, so Lesson 3's script doesn't change.</p>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">Two guard clauses, then start the coroutine</span></div>
+<pre><code>private void OnCapture(InputAction.CallbackContext context)
+{
+    if (!photoMode.IsActive) return;     // guard clause: not in photo mode
+    if (isCapturing) return;             // guard clause: already taking a photo
+    StartCoroutine(CaptureRoutine());
+}</code></pre>
+            <div class="step-explain">These match pseudocode lines 2–7. <code>StartCoroutine</code> begins the capture but doesn't wait for it to finish. Without the <code>isCapturing</code> guard, pressing twice quickly would start two captures at the same time.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">The capture coroutine</span></div>
+<pre><code>private IEnumerator CaptureRoutine()
+{
+    isCapturing = true;
+    if (photoModeOverlay != null) photoModeOverlay.SetActive(false);
+
+    yield return new WaitForEndOfFrame();       // wait until the frame is fully drawn
+
+    Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+    byte[] png = shot.EncodeToPNG();
+    Destroy(shot);                              // free the texture's memory
+
+    string fileName = MakeUniqueFileName();
+    File.WriteAllBytes(Path.Combine(photoFolder, fileName), png);
+
+    if (shutterSound != null) shutterSound.Play();
+    yield return Flash();
+
+    PhotoSaved?.Invoke(fileName);
+    isCapturing = false;
+}</code></pre>
+            <div class="step-explain"><code>IEnumerator</code> marks this as a coroutine. Each <code>yield return</code> is a pause: the first waits for the end of the frame, the second waits for the whole flash to finish. <code>Destroy(shot)</code> matters. A 1080p texture uses about 8 MB of memory, and without it every photo would leak another 8 MB.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">The flash: a loop across frames</span></div>
+<pre><code>private IEnumerator Flash()
+{
+    if (flashImage == null) yield break;        // guard clause
+
+    float elapsed = 0f;
+    while (elapsed &lt; flashDuration)
+    {
+        elapsed += Time.unscaledDeltaTime;      // real time: the world is frozen
+        float alpha = 1f - (elapsed / flashDuration);
+        flashImage.color = new Color(1f, 1f, 1f, alpha);
+        yield return null;                      // wait one frame
+    }
+    flashImage.color = new Color(1f, 1f, 1f, 0f);
+}</code></pre>
+            <div class="step-explain">Each time round the WHILE loop, the image gets a little more see-through, then <code>yield return null</code> waits one frame. Over 0.25 seconds, alpha goes from 1 (solid white) to 0 (invisible). It uses <code>Time.unscaledDeltaTime</code> for the same reason as the camera in Lesson 3: the world is frozen.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">Keeping the prompts in step</span></div>
+<pre><code>// Keeps the photo mode prompts in step with photo mode.
+private void Update()
+{
+    if (photoModeOverlay == null || isCapturing) return;   // guard clause
+    photoModeOverlay.SetActive(photoMode.IsActive);
+}</code></pre>
+            <div class="step-explain">Every frame, the prompts copy whether photo mode is on, except while a capture is in progress, when the coroutine is in charge of hiding them. One more guard clause.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ NAMES ═══ -->
+      <section class="content-section" id="names">
+        <h2>Unique file names</h2>
+        <p>In Lesson 2, file names were built from the date and time, down to the second. But a player can easily take two photos in the same second, and saving the second one with the same name would silently replace the first. A WHILE loop fixes this.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · MakeUniqueFileName</p>
+<pre>1   BEGIN MakeUniqueFileName
+2       SET baseName TO "photo_" + FileSafe(CurrentDateTime())
+3       SET fileName TO baseName + ".png"
+4       SET copy TO 2
+5       WHILE file fileName exists
+6           SET fileName TO baseName + "_" + copy + ".png"
+7           SET copy TO copy + 1
+8       ENDWHILE
+9       RETURN fileName
+10  END MakeUniqueFileName</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">The same algorithm in C#</span></div>
+<pre><code>private string MakeUniqueFileName()
+{
+    string baseName = "photo_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+    string fileName = baseName + ".png";
+    int copy = 2;
+    while (File.Exists(Path.Combine(photoFolder, fileName)))   // same second? add a number
+    {
+        fileName = baseName + "_" + copy + ".png";
+        copy++;
+    }
+    return fileName;
+}</code></pre>
+            <div class="step-explain"><code>"yyyyMMdd_HHmmss"</code> is the <code>FileSafe</code> format from Lesson 2: no colons, year first so names sort in date order. <code>Path.Combine</code> joins folder and file names with the correct separator for each operating system, which matters on Steam Deck's Linux.</div>
+          </div>
+        </div>
+
+        <h3>Desk check</h3>
+        <p>Three photos are taken within the same second, 2:30:12 pm on 2 October 2026.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Photo</th><th scope="col">Line 5: file exists?</th><th scope="col">copy</th><th scope="col">Returned name</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">1st</td><td class="td-code">photo_20261002_143012.png → no</td><td class="td-var">2</td><td class="td-output">photo_20261002_143012.png</td></tr>
+              <tr><td class="td-step">2nd</td><td class="td-code">…143012.png → yes, then …143012_2.png → no</td><td class="td-var">3</td><td class="td-output">photo_20261002_143012_2.png</td></tr>
+              <tr><td class="td-step">3rd</td><td class="td-code">…143012.png → yes, …_2.png → yes, …_3.png → no</td><td class="td-var">4</td><td class="td-output">photo_20261002_143012_3.png</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="paper-margin-note">This algorithm was run for real before going on this page, and those are the names it produced.</p>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>Every photo is white</h3>
+          <p>A classmate's capture saves PNG files, plays the sound and flashes, but every photo is solid white or very washed out. Here's their coroutine:</p>
+<pre>private IEnumerator CaptureRoutine()
+{
+    isCapturing = true;
+<span class="bug-line">    shutterSound.Play();</span>
+<span class="bug-line">    StartCoroutine(Flash());</span>
+    yield return new WaitForEndOfFrame();
+    Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            The flash starts <em>before</em> the capture, so the first frame of the flash, a full-screen white image, is drawn into the very frame being captured. Feedback must come after the capture: move the sound and flash below the <code>CaptureScreenshotAsTexture</code> line. This is step A coming before step B from the sequencing activity.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETUP ═══ -->
+      <section class="content-section" id="setup">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Set it up</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 8 min</p>
+          <ol>
+            <li>Create a script called <code>PhotoCapture</code>, paste in the full script below, and add it to your <strong>PhotoMode</strong> object. Space or gamepad A is set as the capture button.</li>
+            <li>Drag the <strong>PhotoMode</strong> object's own <code>PhotoModeController</code> into the <em>Photo Mode</em> slot.</li>
+            <li><strong>Prompts:</strong> create a UI canvas called <strong>PhotoModeOverlay</strong> with a text line such as "Ⓐ Capture · Ⓨ Exit". Drag it into <em>Photo Mode Overlay</em>.</li>
+            <li><strong>Flash:</strong> create a <em>separate</em> canvas called <strong>FlashCanvas</strong> with one full-screen white Image. Set its alpha to 0 and untick <em>Raycast Target</em>. Drag the Image into <em>Flash Image</em>.</li>
+            <li><strong>Sound:</strong> add an AudioSource with a short shutter click (free sound sites have many) and untick <em>Play On Awake</em>. Drag it into <em>Shutter Sound</em>.</li>
+          </ol>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-l">
+          <p class="paper-sticky__label">Why a separate flash canvas?</p>
+          <p>The overlay is hidden during the capture. If the flash lived on the same canvas, it would be hidden too, and the player would see nothing.</p>
+        </aside>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: PhotoCapture.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: PhotoCapture.cs
+using System;
+using System.Collections;
+using System.IO;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class PhotoCapture : MonoBehaviour
+{
+    [Header("Input (defaults are set when you add the component)")]
+    [SerializeField] private InputAction captureAction;
+
+    [Header("Scene references")]
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private GameObject photoModeOverlay;   // button prompts shown in photo mode
+    [SerializeField] private AudioSource shutterSound;
+    [SerializeField] private Image flashImage;              // full-screen white Image on its own canvas
+
+    [Header("Feedback")]
+    [SerializeField] private float flashDuration = 0.25f;   // seconds
+
+    // Lesson 5's journal listens for this.
+    public event Action&lt;string&gt; PhotoSaved;
+
+    private bool isCapturing;
+    private string photoFolder;
+
+    // Runs when the component is first added: fills in default controls.
+    private void Reset()
+    {
+        captureAction = new InputAction("Capture", InputActionType.Button);
+        captureAction.AddBinding("&lt;Keyboard&gt;/space");
+        captureAction.AddBinding("&lt;Gamepad&gt;/buttonSouth");
+    }
+
+    private void Awake()
+    {
+        photoFolder = Path.Combine(Application.persistentDataPath, "Journal");
+        Directory.CreateDirectory(photoFolder);     // does nothing if it already exists
+        Debug.Log("Photos are saved to: " + photoFolder);
+    }
+
+    private void OnEnable()
+    {
+        captureAction.performed += OnCapture;
+        captureAction.Enable();
+    }
+
+    private void OnDisable()
+    {
+        captureAction.performed -= OnCapture;
+        captureAction.Disable();
+    }
+
+    // Keeps the photo mode prompts in step with photo mode.
+    private void Update()
+    {
+        if (photoModeOverlay == null || isCapturing) return;   // guard clause
+        photoModeOverlay.SetActive(photoMode.IsActive);
+    }
+
+    private void OnCapture(InputAction.CallbackContext context)
+    {
+        if (!photoMode.IsActive) return;     // guard clause: not in photo mode
+        if (isCapturing) return;             // guard clause: already taking a photo
+        StartCoroutine(CaptureRoutine());
+    }
+
+    private IEnumerator CaptureRoutine()
+    {
+        isCapturing = true;
+        if (photoModeOverlay != null) photoModeOverlay.SetActive(false);
+
+        yield return new WaitForEndOfFrame();       // wait until the frame is fully drawn
+
+        Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+        byte[] png = shot.EncodeToPNG();
+        Destroy(shot);                              // free the texture's memory
+
+        string fileName = MakeUniqueFileName();
+        File.WriteAllBytes(Path.Combine(photoFolder, fileName), png);
+
+        if (shutterSound != null) shutterSound.Play();
+        yield return Flash();
+
+        PhotoSaved?.Invoke(fileName);
+        isCapturing = false;
+    }
+
+    private string MakeUniqueFileName()
+    {
+        string baseName = "photo_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = baseName + ".png";
+        int copy = 2;
+        while (File.Exists(Path.Combine(photoFolder, fileName)))   // same second? add a number
+        {
+            fileName = baseName + "_" + copy + ".png";
+            copy++;
+        }
+        return fileName;
+    }
+
+    private IEnumerator Flash()
+    {
+        if (flashImage == null) yield break;        // guard clause
+
+        float elapsed = 0f;
+        while (elapsed &lt; flashDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;      // real time: the world is frozen
+            float alpha = 1f - (elapsed / flashDuration);
+            flashImage.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;                      // wait one frame
+        }
+        flashImage.color = new Color(1f, 1f, 1f, 0f);
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="info-box">
+          <strong>Where are my photos?</strong> The Console shows the path when the game starts. On Windows it's under <code>AppData\LocalLow\</code>, on macOS under <code>~/Library/Application Support/</code>, and on Linux and Steam Deck under <code>~/.config/unity3d/</code>, each followed by your company and product names and then <code>Journal</code>.
+        </div>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <p>Add these to your test table from Lesson 3.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Req.</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T6</td><td>In photo mode, press capture</td><td>Sound plays, screen flashes, a new PNG appears in the Journal folder</td><td>R3</td><td></td></tr>
+              <tr><td>T7</td><td>Open the PNG from T6</td><td>No prompts, HUD or flash visible in the image</td><td>R2</td><td></td></tr>
+              <tr><td>T8</td><td>Press capture three times as fast as possible</td><td>Every press that works makes a new file and no file is replaced</td><td>R3</td><td></td></tr>
+              <tr><td>T9</td><td>Not in photo mode, press capture</td><td>Nothing happens and no file is created</td><td>R1</td><td></td></tr>
+              <tr><td>T10</td><td>Capture, then wait</td><td>The flash fades fully, even though the world is frozen</td><td>Feedback</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>First photo</h4>
+            <ul>
+              <li>Complete the setup and take three photos in different places.</li>
+              <li>Find them in the Journal folder and run tests T6, T7 and T9.</li>
+              <li>Number the lines of <code>CaptureRoutine</code> to match the pseudocode line numbers.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Make it feel right</h4>
+            <ul>
+              <li>Run all five tests and fix any that fail.</li>
+              <li>Desk-check <code>MakeUniqueFileName</code> for a 4th photo in the same second.</li>
+              <li>Tune the flash duration and colour, and choose a sound that fits your game's mood. Record your choices and reasons. That's design thinking.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>No stutter (R4)</h4>
+            <ul>
+              <li>Open the Profiler (Window → Analysis), capture a photo, and find the frame spike. Record how many milliseconds it took.</li>
+              <li>Writing the file is slow. Move <code>File.WriteAllBytes</code> onto a background thread with <code>System.Threading.Tasks.Task.Run</code>, and wait for it to finish before raising <code>PhotoSaved</code>.</li>
+              <li>Measure again and compare the two results.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="A"
+             data-feedback-a="✓ Correct. The capture copies the drawn frame, so it has to wait until drawing is complete."
+             data-feedback-b="Not quite. The sound plays after the capture. Waiting for the end of the frame is about drawing."
+             data-feedback-c="Not quite. Coroutines keep running when timeScale is 0. Only WaitForSeconds is affected by it."
+             data-feedback-d="Not quite. Button timing doesn't matter. The guard clause handles repeated presses.">
+          <div class="mcq-question">1. Why does the capture coroutine use <code>yield return new WaitForEndOfFrame()</code> before capturing the screen?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>So the frame is completely drawn before it's copied</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So the shutter sound has time to finish playing first</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Because coroutines can't run while the world is frozen</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>To give the player time to let go of the capture button</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="C"
+             data-feedback-a="Not quite. The Assets folder only exists in the Editor. A built game can't save there."
+             data-feedback-b="Not quite. journal.json stores file names, not the images themselves. That was the Lesson 2 decision."
+             data-feedback-c="✓ Correct. persistentDataPath is a folder the game can always write to, on Windows, macOS and Steam Deck."
+             data-feedback-d="Not quite. Installed games often aren't allowed to write into their own program folder.">
+          <div class="mcq-question">2. Where does <code>PhotoCapture</code> save each photo?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>In the project's Assets folder, beside the scripts</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Inside journal.json, stored as a long line of text</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>In a Journal folder inside persistentDataPath</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>In the same folder as the game's main program file</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="D"
+             data-feedback-a="Not quite. That name exists, so the WHILE loop keeps going."
+             data-feedback-b="Not quite. That name exists too, so the loop runs again with copy = 3."
+             data-feedback-c="Not quite. copy starts at 2, so _1 is never produced."
+             data-feedback-d="✓ Correct. The loop skips the plain name and _2 because both exist, then stops at _3.">
+          <div class="mcq-question">3. The Journal folder already holds <code>photo_20261002_143012.png</code> and <code>photo_20261002_143012_2.png</code>. Another photo is taken in that same second. What does <code>MakeUniqueFileName</code> return?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>photo_20261002_143012.png</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>photo_20261002_143012_2.png</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>photo_20261002_143012_1.png</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>photo_20261002_143012_3.png</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="B"
+             data-feedback-a="Not quite. WaitForEndOfFrame pauses one capture. It doesn't stop a second one starting."
+             data-feedback-b="✓ Correct. isCapturing stays TRUE until the whole capture finishes, so extra presses are ignored."
+             data-feedback-c="Not quite. The WHILE loop prevents overwriting, but two captures could still run at once."
+             data-feedback-d="Not quite. Destroy frees memory after the capture. It doesn't block a new one.">
+          <div class="mcq-question">4. The player presses capture twice very quickly. What stops two capture coroutines running at the same time?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The WaitForEndOfFrame line inside the coroutine</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The isCapturing guard clause in OnCapture</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The WHILE loop that runs inside MakeUniqueFileName</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The call to Destroy(shot) after the PNG is encoded</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="C"
+             data-feedback-a="Not quite. With deltaTime at 0, the flash wouldn't speed up. It wouldn't move at all."
+             data-feedback-b="Not quite. The loop would still run every frame. It just wouldn't make progress."
+             data-feedback-c="✓ Correct. elapsed would stay at 0, so the loop never ends, the screen stays white and isCapturing stays TRUE forever."
+             data-feedback-d="Not quite. Nothing is divided by deltaTime. elapsed is divided by flashDuration, which is 0.25.">
+          <div class="mcq-question">5. In photo mode, <code>Time.timeScale</code> is 0. What would happen if <code>Flash()</code> used <code>Time.deltaTime</code> instead of <code>Time.unscaledDeltaTime</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The flash would fade out twice as quickly as before</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The loop would be skipped, so there'd be no flash at all</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The flash would never end and capture would lock up</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The game would crash with a divide-by-zero error</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="A"
+             data-feedback-a="✓ Correct. PhotoCapture announces the photo, and whatever is listening decides what to do. Neither script needs to know how the other works. That's low coupling again."
+             data-feedback-b="Not quite. Raising an event doesn't change how fast the file saves."
+             data-feedback-c="Not quite. Coroutines can call methods on other scripts. The choice is about design, not ability."
+             data-feedback-d="Not quite. The photo is saved once. The event only passes on its file name.">
+          <div class="mcq-question">6. Why does <code>PhotoCapture</code> raise a <code>PhotoSaved</code> event instead of adding the photo to the journal itself?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>So it doesn't need to know how the journal works</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Because events make the PNG file save much faster</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Because a coroutine can't call another script's method</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So the photo gets saved twice, once by each script</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for user interfaces and user experience. Feedback like a shutter sound and a flash is UX design. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Demonstrates creativity and innovation in the design and implementation of user interfaces to create engaging user experiences.</strong> Designs feedback that suits their game's mood, justifies each choice, and removes the capture stutter so the experience feels seamless.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Demonstrates creativity in the design and implementation of user interfaces to create engaging user experiences.</strong> Tunes the flash and sound to suit their game, with recorded reasons, and passes all five tests.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Designs and implements user interfaces to create user experiences.</strong> Sets up the prompts, flash and sound so captures give clear feedback, and passes T6, T7 and T9.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Implements basic elements of user interface design to support user experiences.</strong> Gets captures saving with at least one form of feedback working.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies elements of user interfaces that contribute to user experiences.</strong> Identifies the feedback in a photo mode and explains how it helps the player.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Describe the moment of taking a photo in your game. What does the player see, hear and feel, and why did you choose it?
+            <span class="sentence-starter">When the player presses capture, they… I chose this because…</span></li>
+          <li>Explain in your own words why the order of steps in <code>CaptureRoutine</code> matters.
+            <span class="sentence-starter">If the flash happened before the capture…</span></li>
+        </ul>
+        <label for="reflection-l4" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l4" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson03.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 3: Photo mode hook and camera</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson05.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 5: Saving and loading</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson04',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 7: Controller-first input | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 7 of 12: refactor every control into one Input Action Asset, add mouse look, switch button prompts by device and make the journal fully gamepad-friendly.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+
+    .tier-card { min-width: 0; }
+    .tier-card code { overflow-wrap: anywhere; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 7</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#audit">Audit your controls</a>
+          <a href="#asset">One home for every control</a>
+          <a href="#refactor">The refactor</a>
+          <a href="#mouse">Mouse look</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#prompts">Prompts that follow the player</a>
+          <a href="#scroll">Keeping focus on screen</a>
+          <a href="#setup">Set it up</a>
+          <a href="#regression">Regression testing</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 7 of 12 · 50 minutes</p>
+        <h1>Controller-first input</h1>
+        <p class="page-intro">Your controls are scattered across four scripts. That worked while building, but it's hard to change and impossible to see in one place. Today you'll <strong>refactor</strong>: move every control into one Input Action Asset without changing what the game does, then prove nothing broke. Along the way, you'll add mouse look, prompts that switch between keyboard and gamepad, and a journal that scrolls itself for gamepad players.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+          <span class="phase-pill phase-test">Testing &amp; evaluating</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> the journal screen built itself from saved data and asked before deleting. Every script so far has created its own controls in a <code>Reset</code> method. Today those controls move to one shared asset.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · control audit 5 min · asset and refactor 12 min · mouse look and bug detective 7 min · prompts and scrolling 7 min · regression testing 10 min · checkpoint 5 min.</p>
+        <p><strong>Ready-made asset:</strong> <code>PhotoJournalControls.inputactions</code> is in the unit's <code>code</code> folder. Students can drag it into Assets instead of building it from the table, which saves about 10 minutes. Building it by hand is good Core practice.</p>
+        <p><strong>Why a separate asset?</strong> Unity 6 projects come with a project-wide <code>InputSystem_Actions</code> asset. We keep our own so the photo journal stays self-contained and can be moved into another game, which is low coupling again.</p>
+        <p><strong>Name it:</strong> this lesson introduces <strong>regression testing</strong> by name. Students re-run tests from Lessons 3–6 after changing code that already worked.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>refactor code to use a single source of truth, without changing what it does</li>
+          <li>explain why mouse and stick input need different calculations</li>
+          <li>make on-screen prompts match the device the player is using</li>
+          <li>use regression testing to prove a refactor broke nothing.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> every control lives in one asset, mouse look feels the same at any frame rate, prompts switch when I swap devices, the journal scrolls to follow the gamepad, and every earlier test still passes.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Refactor</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Restructure code to make it clearer or easier to change, without changing what it does.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Regression test</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Re-running earlier tests after a change, to check nothing that used to work is now broken.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Single source of truth</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Keeping each piece of information in exactly one place, so it can't get out of step.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Action map</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named group of related actions, such as all the Photo controls or all the Journal controls.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Binding</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A link from an action to a physical control, e.g. Capture → Space bar and gamepad A.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Control scheme</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A set of devices used together, like "Keyboard &amp; Mouse" or "Gamepad".</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Delta</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A change in value. Mouse delta is how far the mouse moved since the last frame.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Button prompt</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">On-screen text or icons telling the player which button to press. They must match the device in use.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ AUDIT ═══ -->
+      <section class="content-section" id="audit">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Audit your controls</h2>
+        <p>Before changing anything, find out what you have. This is your own code, analysed like someone else's.</p>
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · individual · 5 min</p>
+          <h3>Where do the controls live?</h3>
+          <p>Open each script from Lessons 3–6 and complete this table in your notebook.</p>
+          <div class="spec-table-wrap">
+            <table class="spec-table">
+              <thead>
+                <tr><th scope="col">Action</th><th scope="col">Script</th><th scope="col">Keyboard</th><th scope="col">Gamepad</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Toggle photo mode</td><td></td><td></td><td></td></tr>
+                <tr><td>Move photo camera</td><td></td><td></td><td></td></tr>
+                <tr><td>Look</td><td></td><td></td><td></td></tr>
+                <tr><td>Capture</td><td></td><td></td><td></td></tr>
+                <tr><td>Toggle journal</td><td></td><td></td><td></td></tr>
+                <tr><td>Back</td><td></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <ol>
+            <li>A playtester asks for capture to move from Space to the left mouse button. How many files would you need to open and change?</li>
+            <li>Is there anything missing from the table that a PC player would expect?</li>
+          </ol>
+        </div>
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Discussion points
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>One script, but you'd have to know which one. And because the defaults were set in <code>Reset</code>, changing the code wouldn't affect components already in your scene. You'd also need to edit each one in the Inspector. With six actions in four scripts, controls are easy to lose track of.</li>
+              <li>Mouse look. PC players expect the mouse to turn the camera, and right now only the arrow keys do.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ASSET ═══ -->
+      <section class="content-section" id="asset">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>One home for every control</h2>
+        <p>An <strong>Input Action Asset</strong> is a file that holds every action and binding. It becomes the <mark class="paper-hl paper-hl--yellow">single source of truth</mark> for controls: change a binding there and every script that uses it changes too. Ours has two action maps.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Map</th><th scope="col">Action</th><th scope="col">Type</th><th scope="col">Keyboard &amp; Mouse</th><th scope="col">Gamepad</th></tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="4"><strong>Photo</strong></td><td>TogglePhotoMode</td><td>Button</td><td>P</td><td>North button (Y)</td></tr>
+              <tr><td>Capture</td><td>Button</td><td>Space</td><td>South button (A)</td></tr>
+              <tr><td>Move</td><td>Value · Vector2</td><td>WASD</td><td>Left stick</td></tr>
+              <tr><td>Look</td><td>Value · Vector2</td><td>Mouse delta, arrow keys</td><td>Right stick</td></tr>
+              <tr><td rowspan="2"><strong>Journal</strong></td><td>ToggleJournal</td><td>Button</td><td>J</td><td>Select (View)</td></tr>
+              <tr><td>Back</td><td>Button</td><td>Escape</td><td>East button (B)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="paper-margin-note">Gamepad bindings use positions (north, south, east), not letters, so one binding works on Xbox, PlayStation and Steam Deck controllers. Steam Deck's face buttons use the same A, B, X, Y layout as an Xbox controller.</p>
+      </section>
+
+      <!-- ═══ REFACTOR ═══ -->
+      <section class="content-section" id="refactor">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>The refactor</h2>
+        <p>Each script changes in the same three small ways. Here's <code>PhotoModeController</code>. <code>PhotoCapture</code> and <code>JournalScreen</code> follow exactly the same pattern.</p>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">Change the field type</span></div>
+            <div class="code-change-banner">BEFORE (Lesson 3)</div>
+<pre><code>[Header("Input (defaults are set when you add the component)")]
+[SerializeField] private InputAction toggleAction;
+[SerializeField] private InputAction moveAction;
+[SerializeField] private InputAction lookAction;</code></pre>
+            <div class="code-change-banner">AFTER</div>
+<pre><code>[Header("Input (from the PhotoJournalControls asset)")]
+[SerializeField] private InputActionReference toggleAction;
+[SerializeField] private InputActionReference moveAction;
+[SerializeField] private InputActionReference lookAction;</code></pre>
+            <div class="step-explain">An <code>InputActionReference</code> doesn't hold its own bindings. It <em>points to</em> an action in the asset. In the Inspector, you drag each action from the asset into its slot.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Add <code>.action</code> wherever the field is used</span></div>
+<pre><code>private void OnEnable()
+{
+    toggleAction.action.performed += OnToggle;
+    toggleAction.action.Enable();
+    moveAction.action.Enable();
+    lookAction.action.Enable();
+}</code></pre>
+            <div class="step-explain">The reference is a signpost. <code>.action</code> follows it to the real action. Everything else about the action works the same.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">Delete the <code>Reset</code> method</span></div>
+            <div class="step-explain" style="border-top:none">The default bindings now live in the asset, so <code>Reset</code> has nothing left to do. Deleting code you no longer need is part of refactoring. Less code means fewer places for bugs.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MOUSE ═══ -->
+      <section class="content-section" id="mouse">
+        <h2>Mouse look</h2>
+        <p>The asset already binds mouse delta to Look. But a mouse and a stick report <em>different kinds</em> of value:</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Device</th><th scope="col">What it reports</th><th scope="col">Example</th><th scope="col">So the camera turns by…</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Stick or arrow keys</td><td>A <strong>rate</strong>: how hard it's pushed, from −1 to 1</td><td>Held fully right gives 1, 1, 1 every frame</td><td>value × lookSpeed × dt</td></tr>
+              <tr><td>Mouse</td><td>A <strong>distance</strong>: pixels moved since last frame</td><td>A quick flick might give 40, 120, 60, 0</td><td>value × mouseSensitivity</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · turning the camera</p>
+<pre>1   SET look TO Look action value
+2   IF look came from a mouse THEN
+3       SET lookScale TO mouseSensitivity
+4   ELSE
+5       SET lookScale TO lookSpeed × dt
+6   ENDIF
+7   SET yaw TO yaw + look.x × lookScale
+8   SET pitch TO pitch − look.y × lookScale</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">LateUpdate, now device-aware</span></div>
+<pre><code>private void LateUpdate()
+{
+    if (!IsActive) return;               // guard clause
+
+    float dt = Time.unscaledDeltaTime;   // keeps ticking while time is frozen
+
+    Vector2 look = lookAction.action.ReadValue&lt;Vector2&gt;();
+    bool fromMouse = lookAction.action.activeControl?.device is Mouse;
+    // A mouse reports how far it moved this frame. A stick reports a steady rate.
+    float lookScale = fromMouse ? mouseSensitivity : lookSpeed * dt;
+    yaw += look.x * lookScale;
+    pitch -= look.y * lookScale;
+    pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+    Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+
+    Vector2 move = moveAction.action.ReadValue&lt;Vector2&gt;();
+    Vector3 step = rotation * new Vector3(move.x, 0f, move.y) * moveSpeed * dt;
+    offset = Vector3.ClampMagnitude(offset + step, maxDistance);
+
+    cameraTransform.SetPositionAndRotation(pivot.position + offset, rotation);
+}</code></pre>
+            <div class="step-explain"><code>activeControl</code> is the physical control that produced the value. <code>?.</code> means "only if it isn't null", because nothing is active when no one is touching the controls. <code>EnterPhotoMode</code> now also locks the cursor so the mouse turns the camera instead of moving a pointer, and <code>ExitPhotoMode</code> puts it back.</div>
+          </div>
+        </div>
+
+        <h3>Desk check: does frame rate matter?</h3>
+        <p>The player sweeps the mouse 600 pixels to the right over exactly one second. <code>lookSpeed = 90</code>, <code>mouseSensitivity = 0.1</code>. The school PC runs at 60 fps and a Steam Deck in a busy area at 30 fps.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Formula</th><th scope="col">60 fps</th><th scope="col">30 fps</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-code">600 × lookSpeed × dt (stick formula)</td><td class="td-var">600 × 90 × 1/60 = 900°</td><td class="td-var">600 × 90 × 1/30 = 1800°</td><td class="td-note">Wildly fast, and doubles at 30 fps</td></tr>
+              <tr><td class="td-code">600 × mouseSensitivity (mouse formula)</td><td class="td-var">600 × 0.1 = 60°</td><td class="td-var">600 × 0.1 = 60°</td><td class="td-output">Same at any frame rate</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The total distance the mouse moves doesn't depend on frame rate, so the turn shouldn't either. Multiplying a distance by <code>dt</code> ties it to frame rate. Multiplying a rate by <code>dt</code> is what <em>removes</em> that link.</p>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>Twice as twitchy on Steam Deck</h3>
+          <p>A classmate added <code>&lt;Mouse&gt;/delta</code> to Look in the asset but didn't change their code. On the school PC, mouse look is very fast but usable once they turned <code>lookSpeed</code> down. On a Steam Deck with its trackpad set up as a mouse, in a busy scene running at 30 fps, it turns twice as far for the same thumb movement.</p>
+<pre>Vector2 look = lookAction.action.ReadValue&lt;Vector2&gt;();
+<span class="bug-line">yaw += look.x * lookSpeed * dt;</span>
+<span class="bug-line">pitch -= look.y * lookSpeed * dt;</span></pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            The mouse distance is being treated like a stick rate and multiplied by <code>dt</code>. At 30 fps, <code>dt</code> is twice as big, so the same mouse movement turns the camera twice as far, as the desk check shows. Turning <code>lookSpeed</code> down only hid the problem on one machine. The fix is the device check from step 4: mouse distance × <code>mouseSensitivity</code>, with no <code>dt</code>.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ PROMPTS ═══ -->
+      <section class="content-section" id="prompts">
+        <h2>Prompts that follow the player</h2>
+        <p>If a player picks up a gamepad but the screen still says "Press Space", the game feels broken. Steam Deck reviews check that prompts match the controller. Two small scripts solve this: one <em>watches</em> which device was used last, and one <em>updates</em> each prompt.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · watching for device changes</p>
+<pre>1   BEGIN OnAnyButton(control)
+2       SET isGamepad TO (control's device is a gamepad)
+3       IF isGamepad = usingGamepad THEN
+4           RETURN
+5       ENDIF
+6       SET usingGamepad TO isGamepad
+7       SEND message "device changed"
+8   END OnAnyButton</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">InputDeviceWatcher.cs</span></div>
+<pre><code>// Recommended filename: InputDeviceWatcher.cs
+using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class InputDeviceWatcher : MonoBehaviour
+{
+    public static bool UsingGamepad { get; private set; }
+    public static event Action DeviceChanged;
+
+    private IDisposable listener;
+
+    private void Awake()
+    {
+        UsingGamepad = Gamepad.current != null;     // e.g. Steam Deck starts on gamepad prompts
+    }
+
+    private void OnEnable()
+    {
+        listener = InputSystem.onAnyButtonPress.Call(OnAnyButton);
+    }
+
+    private void OnDisable()
+    {
+        listener?.Dispose();
+    }
+
+    private void OnAnyButton(InputControl control)
+    {
+        bool isGamepad = control.device is Gamepad;
+        if (isGamepad == UsingGamepad) return;      // guard clause: same device as before
+        UsingGamepad = isGamepad;
+        DeviceChanged?.Invoke();
+    }
+}</code></pre>
+            <div class="step-explain"><code>static</code> means there's one shared value for the whole game, so any script can read <code>InputDeviceWatcher.UsingGamepad</code> without needing a reference. <code>Awake</code> starts in gamepad mode if one is connected, so a Steam Deck shows the right prompts before the first button is pressed. The guard clause means prompts only redraw when the device actually changes.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">6</span><span class="step-label">PromptLabel.cs, added to any prompt text</span></div>
+<pre><code>// Recommended filename: PromptLabel.cs
+using TMPro;
+using UnityEngine;
+
+[RequireComponent(typeof(TMP_Text))]
+public class PromptLabel : MonoBehaviour
+{
+    [SerializeField] private string keyboardText = "[Space] Capture   [P] Exit";
+    [SerializeField] private string gamepadText = "[A] Capture   [Y] Exit";
+
+    private TMP_Text label;
+
+    private void Awake()
+    {
+        label = GetComponent&lt;TMP_Text&gt;();
+    }
+
+    private void OnEnable()
+    {
+        InputDeviceWatcher.DeviceChanged += Refresh;
+        Refresh();
+    }
+
+    private void OnDisable()
+    {
+        InputDeviceWatcher.DeviceChanged -= Refresh;
+    }
+
+    private void Refresh()
+    {
+        label.text = InputDeviceWatcher.UsingGamepad ? gamepadText : keyboardText;
+    }
+}</code></pre>
+            <div class="step-explain">This is the same event pattern as <code>PhotoSaved</code> and <code>JournalChanged</code>: the watcher announces, and every prompt label listens. Add one <code>PromptLabel</code> to each prompt and type its two versions in the Inspector.</div>
+          </div>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-r">
+          <p class="paper-sticky__label">Why [A] and not Ⓐ?</p>
+          <p>TextMesh Pro's default font has no circled letters, so Ⓐ shows as an empty box. Use [A] for now. The Extension task swaps in proper button icons.</p>
+        </aside>
+      </section>
+
+      <!-- ═══ SCROLL ═══ -->
+      <section class="content-section" id="scroll">
+        <h2>Keeping focus on screen</h2>
+        <p>Try the Lesson 6 journal with a gamepad and more than two rows of photos. Press down past the last visible row and the selection disappears off the bottom. A mouse player would scroll, but a gamepad player can't. When a thumbnail is selected, the grid must move to show it.</p>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">7</span><span class="step-label">JournalScreen.cs: KeepVisible</span></div>
+            <div class="code-change-banner">ADD TO JournalScreen, AND CALL IT FROM JournalThumbnail.OnSelect</div>
+<pre><code>// Scrolls the grid just enough to keep a selected thumbnail on screen.
+public void KeepVisible(RectTransform item)
+{
+    Vector3[] itemCorners = new Vector3[4];     // 0 = bottom-left, 1 = top-left
+    Vector3[] viewCorners = new Vector3[4];
+    item.GetWorldCorners(itemCorners);
+    gridScroll.viewport.GetWorldCorners(viewCorners);
+
+    float belowBottom = viewCorners[0].y - itemCorners[0].y;
+    float aboveTop = itemCorners[1].y - viewCorners[1].y;
+
+    float shift = 0f;
+    if (belowBottom &gt; 0f) shift = belowBottom;      // item hidden below: move content up
+    else if (aboveTop &gt; 0f) shift = -aboveTop;      // item hidden above: move content down
+    if (shift == 0f) return;                        // guard clause: already visible
+
+    gridScroll.StopMovement();
+    gridScroll.content.position += new Vector3(0f, shift, 0f);
+}
+
+// Runs when this thumbnail is selected by mouse, keyboard or gamepad.
+public void OnSelect(BaseEventData eventData)
+{
+    screen.ShowDetail(this);
+    screen.KeepVisible((RectTransform)transform);   // gamepad users can't scroll by hand
+}</code></pre>
+            <div class="step-explain">It compares the thumbnail's bottom and top edges with the visible window's edges. If the thumbnail pokes out below, the content moves up by exactly that much. If it pokes out above, the content moves down. Otherwise the guard clause returns. Set the ScrollRect's <em>Movement Type</em> to <strong>Clamped</strong> so it never scrolls past the ends.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETUP ═══ -->
+      <section class="content-section" id="setup">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Set it up</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 10 min</p>
+          <ol>
+            <li>Drag <code>PhotoJournalControls.inputactions</code> into your Assets folder, or create it yourself from the table above (right-click → Create → Input Actions).</li>
+            <li>Replace <code>PhotoModeController</code>, <code>PhotoCapture</code>, <code>JournalScreen</code> and <code>JournalThumbnail</code> with the Lesson 7 versions below.</li>
+            <li>The input slots are now empty. Expand the asset in the Project window and drag each action into its slot: Photo/TogglePhotoMode, Move, Look and Capture; Journal/ToggleJournal and Back.</li>
+            <li>Drag your journal's ScrollRect into <em>Grid Scroll</em> and set its Movement Type to <strong>Clamped</strong>.</li>
+            <li>Add <code>InputDeviceWatcher</code> to the <strong>PhotoMode</strong> object. Add <code>PromptLabel</code> to the photo mode prompt and the journal prompt bar, and fill in both texts.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: PhotoModeController.cs (Lesson 7)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: PhotoModeController.cs
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PhotoModeController : MonoBehaviour
+{
+    [Header("Input (from the PhotoJournalControls asset)")]
+    [SerializeField] private InputActionReference toggleAction;
+    [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private InputActionReference lookAction;
+
+    [Header("Scene references")]
+    [SerializeField] private Transform cameraTransform;   // your main camera
+    [SerializeField] private Transform pivot;             // an empty object at the hiker's head
+    [SerializeField] private GameObject hud;              // your HUD canvas
+    [SerializeField] private Behaviour[] disableWhileActive; // movement and camera-follow scripts
+
+    [Header("Camera limits")]
+    [SerializeField] private float maxDistance = 4f;      // metres from the pivot
+    [SerializeField] private float moveSpeed = 2f;        // metres per second
+    [SerializeField] private float lookSpeed = 90f;       // stick: degrees per second
+    [SerializeField] private float mouseSensitivity = 0.1f; // mouse: degrees per pixel moved
+    [SerializeField] private float minPitch = -60f;
+    [SerializeField] private float maxPitch = 70f;
+
+    public bool IsActive { get; private set; }
+
+    private bool isAvailable;
+    private Vector3 offset;
+    private float yaw;
+    private float pitch;
+    private Vector3 savedPosition;
+    private Quaternion savedRotation;
+    private float savedTimeScale = 1f;
+    private CursorLockMode savedCursorLock;
+
+    private void OnEnable()
+    {
+        toggleAction.action.performed += OnToggle;
+        toggleAction.action.Enable();
+        moveAction.action.Enable();
+        lookAction.action.Enable();
+    }
+
+    private void OnDisable()
+    {
+        toggleAction.action.performed -= OnToggle;
+        toggleAction.action.Disable();
+        moveAction.action.Disable();
+        lookAction.action.Disable();
+    }
+
+    // THE HOOK: your own player code calls this.
+    public void SetAvailable(bool available)
+    {
+        isAvailable = available;
+        if (!isAvailable &amp;&amp; IsActive)
+        {
+            ExitPhotoMode();   // forced out, e.g. a cutscene starts
+        }
+    }
+
+    private void OnToggle(InputAction.CallbackContext context)
+    {
+        if (!isAvailable) return;            // guard clause
+
+        if (IsActive) ExitPhotoMode();
+        else EnterPhotoMode();
+    }
+
+    private void EnterPhotoMode()
+    {
+        IsActive = true;
+
+        savedPosition = cameraTransform.position;
+        savedRotation = cameraTransform.rotation;
+
+        foreach (Behaviour script in disableWhileActive)
+        {
+            script.enabled = false;
+        }
+        if (hud != null) hud.SetActive(false);
+
+        offset = Vector3.ClampMagnitude(cameraTransform.position - pivot.position, maxDistance);
+        yaw = cameraTransform.eulerAngles.y;
+        pitch = NormaliseAngle(cameraTransform.eulerAngles.x);
+
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 0f;                 // freeze the world
+
+        savedCursorLock = Cursor.lockState;
+        Cursor.lockState = CursorLockMode.Locked;   // the mouse turns the camera, not a pointer
+    }
+
+    private void ExitPhotoMode()
+    {
+        IsActive = false;
+        Cursor.lockState = savedCursorLock;
+        Time.timeScale = savedTimeScale;
+
+        cameraTransform.SetPositionAndRotation(savedPosition, savedRotation);
+        if (hud != null) hud.SetActive(true);
+
+        foreach (Behaviour script in disableWhileActive)
+        {
+            script.enabled = true;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsActive) return;               // guard clause
+
+        float dt = Time.unscaledDeltaTime;   // keeps ticking while time is frozen
+
+        Vector2 look = lookAction.action.ReadValue&lt;Vector2&gt;();
+        bool fromMouse = lookAction.action.activeControl?.device is Mouse;
+        // A mouse reports how far it moved this frame. A stick reports a steady rate.
+        float lookScale = fromMouse ? mouseSensitivity : lookSpeed * dt;
+        yaw += look.x * lookScale;
+        pitch -= look.y * lookScale;
+        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+
+        Vector2 move = moveAction.action.ReadValue&lt;Vector2&gt;();
+        Vector3 step = rotation * new Vector3(move.x, 0f, move.y) * moveSpeed * dt;
+        offset = Vector3.ClampMagnitude(offset + step, maxDistance);
+
+        cameraTransform.SetPositionAndRotation(pivot.position + offset, rotation);
+    }
+
+    private static float NormaliseAngle(float angle)
+    {
+        return angle &gt; 180f ? angle - 360f : angle;
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: PhotoCapture.cs (Lesson 7)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: PhotoCapture.cs
+using System;
+using System.Collections;
+using System.IO;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class PhotoCapture : MonoBehaviour
+{
+    [Header("Input (from the PhotoJournalControls asset)")]
+    [SerializeField] private InputActionReference captureAction;
+
+    [Header("Scene references")]
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private Journal journal;
+    [SerializeField] private GameObject journalFullMessage; // hidden "Journal full" text
+    [SerializeField] private GameObject photoModeOverlay;   // button prompts shown in photo mode
+    [SerializeField] private AudioSource shutterSound;
+    [SerializeField] private Image flashImage;              // full-screen white Image on its own canvas
+
+    [Header("Feedback")]
+    [SerializeField] private float flashDuration = 0.25f;   // seconds
+
+    // Lesson 5's journal listens for this.
+    public event Action&lt;string&gt; PhotoSaved;
+
+    private bool isCapturing;
+    private string photoFolder;
+
+    private void Awake()
+    {
+        photoFolder = Path.Combine(Application.persistentDataPath, "Journal");
+        Directory.CreateDirectory(photoFolder);     // does nothing if it already exists
+        Debug.Log("Photos are saved to: " + photoFolder);
+    }
+
+    private void OnEnable()
+    {
+        captureAction.action.performed += OnCapture;
+        captureAction.action.Enable();
+    }
+
+    private void OnDisable()
+    {
+        captureAction.action.performed -= OnCapture;
+        captureAction.action.Disable();
+    }
+
+    // Keeps the photo mode prompts in step with photo mode.
+    private void Update()
+    {
+        if (photoModeOverlay == null || isCapturing) return;   // guard clause
+        photoModeOverlay.SetActive(photoMode.IsActive);
+    }
+
+    private void OnCapture(InputAction.CallbackContext context)
+    {
+        if (!photoMode.IsActive) return;     // guard clause: not in photo mode
+        if (isCapturing) return;             // guard clause: already taking a photo
+        if (journal != null &amp;&amp; journal.IsFull)   // guard clause: no room left
+        {
+            StartCoroutine(ShowFullMessage());
+            return;
+        }
+        StartCoroutine(CaptureRoutine());
+    }
+
+    private IEnumerator ShowFullMessage()
+    {
+        if (journalFullMessage == null) yield break;   // guard clause
+        journalFullMessage.SetActive(true);
+        yield return new WaitForSecondsRealtime(2f);   // real seconds: the world is frozen
+        journalFullMessage.SetActive(false);
+    }
+
+    private IEnumerator CaptureRoutine()
+    {
+        isCapturing = true;
+        if (photoModeOverlay != null) photoModeOverlay.SetActive(false);
+
+        yield return new WaitForEndOfFrame();       // wait until the frame is fully drawn
+
+        Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+        byte[] png = shot.EncodeToPNG();
+        Destroy(shot);                              // free the texture's memory
+
+        string fileName = MakeUniqueFileName();
+        File.WriteAllBytes(Path.Combine(photoFolder, fileName), png);
+
+        if (shutterSound != null) shutterSound.Play();
+        yield return Flash();
+
+        PhotoSaved?.Invoke(fileName);
+        isCapturing = false;
+    }
+
+    private string MakeUniqueFileName()
+    {
+        string baseName = "photo_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = baseName + ".png";
+        int copy = 2;
+        while (File.Exists(Path.Combine(photoFolder, fileName)))   // same second? add a number
+        {
+            fileName = baseName + "_" + copy + ".png";
+            copy++;
+        }
+        return fileName;
+    }
+
+    private IEnumerator Flash()
+    {
+        if (flashImage == null) yield break;        // guard clause
+
+        float elapsed = 0f;
+        while (elapsed &lt; flashDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;      // real time: the world is frozen
+            float alpha = 1f - (elapsed / flashDuration);
+            flashImage.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;                      // wait one frame
+        }
+        flashImage.color = new Color(1f, 1f, 1f, 0f);
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: JournalScreen.cs (Lesson 7)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: JournalScreen.cs
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class JournalScreen : MonoBehaviour
+{
+    [Header("Input (from the PhotoJournalControls asset)")]
+    [SerializeField] private InputActionReference toggleAction;
+    [SerializeField] private InputActionReference backAction;
+
+    [Header("Data and game")]
+    [SerializeField] private Journal journal;
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private Behaviour[] disableWhileOpen;  // movement, camera, PhotoModeController, PhotoCapture
+
+    [Header("Grid")]
+    [SerializeField] private GameObject screenRoot;         // the journal canvas
+    [SerializeField] private ScrollRect gridScroll;         // set Movement Type to Clamped
+    [SerializeField] private Transform gridContent;         // ScrollRect content with a GridLayoutGroup
+    [SerializeField] private JournalThumbnail thumbnailPrefab;
+    [SerializeField] private GameObject emptyMessage;
+    [SerializeField] private TMP_Text countText;
+    [SerializeField] private int thumbnailWidth = 480;
+    [SerializeField] private int thumbnailHeight = 270;
+
+    [Header("Detail panel")]
+    [SerializeField] private RawImage detailImage;
+    [SerializeField] private TMP_Text captionText;
+    [SerializeField] private TMP_Text locationText;
+    [SerializeField] private TMP_Text dateText;
+
+    [Header("Delete confirmation")]
+    [SerializeField] private GameObject confirmPanel;
+    [SerializeField] private Button confirmNoButton;
+
+    public bool IsOpen { get; private set; }
+
+    private readonly List&lt;JournalThumbnail&gt; thumbnails = new List&lt;JournalThumbnail&gt;();
+    private JournalThumbnail selected;
+    private float savedTimeScale = 1f;
+
+    private void OnEnable()
+    {
+        toggleAction.action.performed += OnToggle;
+        backAction.action.performed += OnBack;
+        toggleAction.action.Enable();
+        backAction.action.Enable();
+        journal.JournalChanged += OnJournalChanged;
+    }
+
+    private void OnDisable()
+    {
+        toggleAction.action.performed -= OnToggle;
+        backAction.action.performed -= OnBack;
+        toggleAction.action.Disable();
+        backAction.action.Disable();
+        journal.JournalChanged -= OnJournalChanged;
+    }
+
+    private void OnToggle(InputAction.CallbackContext context)
+    {
+        if (IsOpen) Close();
+        else Open();
+    }
+
+    private void OnBack(InputAction.CallbackContext context)
+    {
+        if (!IsOpen) return;                        // guard clause: nothing to go back from
+        if (confirmPanel.activeSelf) CancelDelete(); // back out of the question first
+        else Close();
+    }
+
+    private void Open()
+    {
+        if (photoMode != null &amp;&amp; photoMode.IsActive) return;   // guard clause: finish photo mode first
+
+        IsOpen = true;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = false;
+        }
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+
+        screenRoot.SetActive(true);
+        confirmPanel.SetActive(false);
+        StartCoroutine(BuildGrid());
+    }
+
+    private void Close()
+    {
+        StopAllCoroutines();
+        ClearGrid();
+        screenRoot.SetActive(false);
+
+        Time.timeScale = savedTimeScale;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = true;
+        }
+        IsOpen = false;
+    }
+
+    private void OnJournalChanged()
+    {
+        if (!IsOpen) return;                        // guard clause
+        StopAllCoroutines();
+        StartCoroutine(BuildGrid());
+    }
+
+    private IEnumerator BuildGrid()
+    {
+        ClearGrid();
+
+        int count = journal.Entries.Count;
+        countText.text = count == 1 ? "1 photo" : count + " photos";
+        emptyMessage.SetActive(count == 0);
+        if (count == 0)
+        {
+            ShowDetail(null);
+            yield break;
+        }
+
+        // 1. Make every button now, newest first, so the layout appears at once.
+        for (int i = count - 1; i &gt;= 0; i--)
+        {
+            JournalThumbnail thumb = Instantiate(thumbnailPrefab, gridContent);
+            thumb.Setup(journal.Entries[i], this);
+            thumbnails.Add(thumb);
+        }
+        EventSystem.current.SetSelectedGameObject(thumbnails[0].gameObject);
+
+        // 2. Load one photo per frame, so the screen never freezes.
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            thumb.SetTexture(LoadThumbnail(thumb.Entry));
+            if (thumb == selected) detailImage.texture = thumb.Texture;
+            yield return null;
+        }
+    }
+
+    private void ClearGrid()
+    {
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            if (thumb.Texture != null) Destroy(thumb.Texture);   // free its memory
+            Destroy(thumb.gameObject);
+        }
+        thumbnails.Clear();
+        selected = null;
+        detailImage.texture = null;
+    }
+
+    private Texture2D LoadThumbnail(JournalEntry entry)
+    {
+        string path = Path.Combine(journal.PhotoFolder, entry.fileName);
+        if (!File.Exists(path)) return null;        // guard clause
+
+        Texture2D full = new Texture2D(2, 2);
+        full.LoadImage(File.ReadAllBytes(path));    // decodes the PNG and resizes to fit
+        Texture2D thumb = Shrink(full, thumbnailWidth, thumbnailHeight);
+        Destroy(full);                              // keep only the small copy
+        return thumb;
+    }
+
+    private static Texture2D Shrink(Texture2D source, int width, int height)
+    {
+        RenderTexture temp = RenderTexture.GetTemporary(width, height);
+        Graphics.Blit(source, temp);                // GPU draws the photo at the new size
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = temp;
+        Texture2D small = new Texture2D(width, height, TextureFormat.RGB24, false);
+        small.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        small.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(temp);
+        return small;
+    }
+
+    public void ShowDetail(JournalThumbnail thumb)
+    {
+        selected = thumb;
+        if (thumb == null)
+        {
+            detailImage.texture = null;
+            captionText.text = "";
+            locationText.text = "";
+            dateText.text = "";
+            return;
+        }
+
+        JournalEntry entry = thumb.Entry;
+        detailImage.texture = thumb.Texture;
+        captionText.text = string.IsNullOrEmpty(entry.caption) ? "No caption yet" : entry.caption;
+        locationText.text = entry.locationName;
+
+        // Saved in one fixed format, shown in the player's own format.
+        if (DateTime.TryParseExact(entry.timestamp, "yyyy-MM-ddTHH:mm:ss",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime taken))
+        {
+            dateText.text = taken.ToString("g", CultureInfo.CurrentCulture);   // e.g. 2/10/2026 2:30 PM in Australia
+        }
+        else
+        {
+            dateText.text = "Unknown date";
+        }
+    }
+
+    // Scrolls the grid just enough to keep a selected thumbnail on screen.
+    public void KeepVisible(RectTransform item)
+    {
+        Vector3[] itemCorners = new Vector3[4];     // 0 = bottom-left, 1 = top-left
+        Vector3[] viewCorners = new Vector3[4];
+        item.GetWorldCorners(itemCorners);
+        gridScroll.viewport.GetWorldCorners(viewCorners);
+
+        float belowBottom = viewCorners[0].y - itemCorners[0].y;
+        float aboveTop = itemCorners[1].y - viewCorners[1].y;
+
+        float shift = 0f;
+        if (belowBottom &gt; 0f) shift = belowBottom;      // item hidden below: move content up
+        else if (aboveTop &gt; 0f) shift = -aboveTop;      // item hidden above: move content down
+        if (shift == 0f) return;                        // guard clause: already visible
+
+        gridScroll.StopMovement();
+        gridScroll.content.position += new Vector3(0f, shift, 0f);
+    }
+
+    // Delete button: ask first.
+    public void RequestDelete()
+    {
+        if (selected == null) return;               // guard clause
+        confirmPanel.SetActive(true);
+        EventSystem.current.SetSelectedGameObject(confirmNoButton.gameObject);  // safe default
+    }
+
+    // "Yes, delete" button.
+    public void ConfirmDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected == null) return;               // guard clause
+        journal.DeleteEntry(selected.Entry);        // raises JournalChanged, which rebuilds the grid
+    }
+
+    // "No, keep it" button.
+    public void CancelDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected != null) EventSystem.current.SetSelectedGameObject(selected.gameObject);
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: JournalThumbnail.cs (Lesson 7)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: JournalThumbnail.cs
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class JournalThumbnail : MonoBehaviour, ISelectHandler
+{
+    [SerializeField] private RawImage image;
+
+    public JournalEntry Entry { get; private set; }
+    public Texture2D Texture { get; private set; }
+
+    private JournalScreen screen;
+
+    public void Setup(JournalEntry entry, JournalScreen owner)
+    {
+        Entry = entry;
+        screen = owner;
+        image.texture = null;            // grey until the photo loads
+    }
+
+    public void SetTexture(Texture2D texture)
+    {
+        Texture = texture;
+        image.texture = texture;
+    }
+
+    // Runs when this thumbnail is selected by mouse, keyboard or gamepad.
+    public void OnSelect(BaseEventData eventData)
+    {
+        screen.ShowDetail(this);
+        screen.KeepVisible((RectTransform)transform);   // gamepad users can't scroll by hand
+    }
+}</code></pre></div></div>
+      </section>
+
+      <!-- ═══ REGRESSION ═══ -->
+      <section class="content-section" id="regression">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Regression testing</h2>
+        <p>A refactor is only successful if the game does exactly what it did before. The way to prove that is <mark class="paper-hl paper-hl--yellow">regression testing</mark>: re-running the tests you already wrote. You have 23 from Lessons 3–6, and they're now worth more than when you wrote them.</p>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">New test</th><th scope="col">Expected output</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T24</td><td>In photo mode, move the mouse</td><td>Camera turns, no pointer visible, and the pointer returns after exiting</td><td></td></tr>
+              <tr><td>T25</td><td>Set <code>Application.targetFrameRate = 30</code> (with VSync off in Quality settings), repeat T24</td><td>The same mouse movement turns the camera the same amount</td><td></td></tr>
+              <tr><td>T26</td><td>Press a gamepad button, then a keyboard key</td><td>Prompts change to [A]/[Y], then back to keyboard text</td><td></td></tr>
+              <tr><td>T27</td><td>Start the game with a gamepad connected</td><td>Gamepad prompts from the first frame</td><td></td></tr>
+              <tr><td>T28</td><td>Journal with 3+ rows: press down repeatedly on a gamepad</td><td>Grid scrolls so the selected photo is always visible</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Regression run · 8 min</p>
+          <p>Then re-run your <strong>earlier tests T1–T23</strong> and record a new Pass/Fail column dated today. Any test that passed before and fails now is a <strong>regression</strong>. Fix it before adding anything new. The most common cause is an action slot left empty in the Inspector.</p>
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Refactor safely</h4>
+            <ul>
+              <li>Import the ready-made asset and complete setup steps 2 and 3.</li>
+              <li>Regression-test T1, T4, T6 and T17, then run T24.</li>
+              <li>Complete the control audit table.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Controller-first</h4>
+            <ul>
+              <li>Build the asset yourself from the table and complete all five setup steps.</li>
+              <li>Run T24–T28, then the full regression run of T1–T23.</li>
+              <li>Tune <code>mouseSensitivity</code> and explain why it has no <code>dt</code>.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Real button icons</h4>
+            <ul>
+              <li>Make a TextMesh Pro <strong>Sprite Asset</strong> of button icons (free icon packs exist) and use <code>&lt;sprite name="a"&gt;</code> tags in <code>PromptLabel</code>.</li>
+              <li>PlayStation controllers label buttons ✕ ○ □ △. Extend <code>InputDeviceWatcher</code> to tell them apart, by checking whether <code>control.device</code> is a <code>DualShockGamepad</code> (namespace <code>UnityEngine.InputSystem.DualShock</code>), and show the matching icons.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="C"
+             data-feedback-a="Not quite. The number of scripts barely changes, and speed isn't the goal."
+             data-feedback-b="Not quite. Both keyboard and gamepad still work. The asset holds bindings for both."
+             data-feedback-c="✓ Correct. The asset is the single source of truth, so a control changed there changes everywhere it's used."
+             data-feedback-d="Not quite. Saving the journal is the Journal script's job and has nothing to do with input.">
+          <div class="mcq-question">1. What is the main benefit of moving every binding into one Input Action Asset?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The game runs faster because there are fewer scripts</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Players no longer need a keyboard or gamepad at all</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>All controls can be seen and changed in one place</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unity can then save the journal file automatically</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="A"
+             data-feedback-a="✓ Correct. A regression is something that used to work and now doesn't. Re-running old tests catches it."
+             data-feedback-b="Not quite. Testing on different hardware is useful, but it's a different kind of testing."
+             data-feedback-c="Not quite. Old tests are kept and re-run. That's what makes them valuable."
+             data-feedback-d="Not quite. Testing only the new feature misses anything the change broke elsewhere.">
+          <div class="mcq-question">2. What is regression testing?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Re-running old tests to check nothing broke</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Testing the game on older and slower computers</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Deleting tests that already passed in earlier lessons</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Testing only the newest feature that was just added</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="B"
+             data-feedback-a="Not quite. Accuracy isn't the reason. It's what kind of number each device reports."
+             data-feedback-b="✓ Correct. A mouse reports a distance (pixels this frame), while a stick reports a rate that must be multiplied by time."
+             data-feedback-c="Not quite. Sticks work fine in photo mode. That's why the stick formula uses unscaled time."
+             data-feedback-d="Not quite. Mouse input arrives every frame, just like stick input.">
+          <div class="mcq-question">3. Stick input is multiplied by <code>lookSpeed × dt</code>, but mouse input only by <code>mouseSensitivity</code>. Why?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>A mouse is more accurate, so it needs smaller numbers</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>A mouse reports a distance; a stick reports a rate</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Sticks stop working whenever time is frozen at zero</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Mouse input is only delivered once in every second</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="D"
+             data-feedback-a="Not quite. 90° is a full second at 90 degrees per second. Here it's held for half that."
+             data-feedback-b="Not quite. That's double the full-second turn. Check the time."
+             data-feedback-c="Not quite. 0.5 is the time, not the angle. Multiply by lookSpeed too."
+             data-feedback-d="✓ Correct. 1 × 90 degrees per second × 0.5 seconds = 45°. Frame rate doesn't matter, because dt adds up to 0.5 either way.">
+          <div class="mcq-question">4. A stick is held fully right (x = 1) for 0.5 seconds with <code>lookSpeed = 90</code> degrees per second. How far does the camera turn?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>90°</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>180°</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>0.5°</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>45°</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="A"
+             data-feedback-a="✓ Correct. A Steam Deck always has its gamepad connected, so the first prompts it shows are already the right ones."
+             data-feedback-b="Not quite. The keyboard still works. This only chooses which prompts appear first."
+             data-feedback-c="Not quite. onAnyButtonPress reports buttons from every device, keyboard included."
+             data-feedback-d="Not quite. Gamepad.current is simply null when none is connected. Nothing crashes.">
+          <div class="mcq-question">5. Why does <code>InputDeviceWatcher</code> start with <code>UsingGamepad = Gamepad.current != null</code> in <code>Awake</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>So Steam Deck shows gamepad prompts right away</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So the keyboard is switched off when a gamepad exists</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Because onAnyButtonPress only works for gamepads</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So the game stops if no controller is plugged in</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="C"
+             data-feedback-a="Not quite. A high sensitivity would be equally fast at every frame rate."
+             data-feedback-b="Not quite. An unlocked cursor affects the pointer, not how far the camera turns."
+             data-feedback-c="✓ Correct. Mouse delta is a distance. Multiplying it by dt makes the turn depend on frame rate, doubling at 30 fps."
+             data-feedback-d="Not quite. Several bindings on one action is normal and doesn't change the maths.">
+          <div class="mcq-question">6. At 30 fps, mouse look turns twice as far as at 60 fps for the same hand movement. What is the most likely cause?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The mouseSensitivity value in the Inspector is too high</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The cursor isn't locked while photo mode is active</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Mouse delta is being multiplied by the frame time</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The Look action has more than one binding attached</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for iterative processes. Refactoring, then regression testing, is iteration done properly. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Skilfully applies appropriate iterative processes to produce computing solutions.</strong> Completes the refactor, passes T1–T28, and extends prompts with real icons for different controller families.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Applies appropriate iterative processes to produce computing solutions.</strong> Builds the asset, passes T24–T28, completes the full regression run and fixes any regressions found.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Applies iterative processes to produce computing solutions.</strong> Refactors all scripts to the asset and regression-tests the core features.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Uses processes to produce computing solutions.</strong> Imports the asset, reconnects the actions, and checks photo mode still works.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies processes that may produce a computing solution.</strong> Completes the control audit and explains why re-testing is needed after a change.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Did your regression run find anything? If so, what caused it, and how would you have found it without your old tests?
+            <span class="sentence-starter">My regression run found… Without old tests, I would have…</span></li>
+          <li>The game plays the same as before today's lesson. So was the refactor worth the time? Justify your answer.
+            <span class="sentence-starter">The refactor was / wasn't worth it because…</span></li>
+        </ul>
+        <label for="reflection-l7" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l7" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson06.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 6: Journal UI</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson08.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 8: Platform services</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson07',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

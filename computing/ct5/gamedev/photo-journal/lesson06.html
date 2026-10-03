@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 6: Journal UI | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 6 of 12: build the journal screen from saved data, with memory-friendly thumbnails, a detail panel and safe deleting.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .ipo-flow--compact .ipo-step { flex: 1 1 0; min-width: 0; padding: var(--space-3); }
+    .ipo-flow--compact code { overflow-wrap: anywhere; }
+    .hierarchy {
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-mid);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.8;
+      white-space: pre;
+      overflow-x: auto;
+      margin: var(--space-4) 0;
+    }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 6</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#analyse">Deconstruct a gallery</a>
+          <a href="#memory">Why thumbnails?</a>
+          <a href="#pseudo">Pseudocode first</a>
+          <a href="#code">Into C#</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#build">Build the screen</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-DES-01</span>
+          <span class="outcome-tag">CT5-OPL-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 6 of 12 · 50 minutes</p>
+        <h1>Journal UI</h1>
+        <p class="page-intro">Your journal remembers every photo, but players can't see it yet. Today you'll build the journal screen from your Lesson 2 storyboard: a scrolling grid that builds itself from the saved data, a detail panel for the selected photo, and a delete button that asks before doing anything permanent.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> the <code>Journal</code> saved entries safely, reloaded and validated them, and gained a <code>DeleteEntry</code> method and a <code>JournalChanged</code> event. Today's screen uses both. It also reuses the "disable scripts and freeze time" pattern from Lesson 3.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · gallery analysis 5 min · memory calculation 5 min · pseudocode and code walkthrough 10 min · bug detective 3 min · building the screen 18 min · checkpoint 5 min.</p>
+        <p><strong>Build time:</strong> constructing the canvas is the longest part. Consider prebuilding the canvas hierarchy as a prefab for Foundation students, so they focus on wiring and testing.</p>
+        <p><strong>Before class:</strong> when Unity offers to replace the EventSystem's old input module with <strong>Input System UI Input Module</strong>, accept it. Without it, buttons won't respond to the gamepad. Students also need TextMesh Pro, which Unity imports the first time a TMP text object is created.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>build interface elements at runtime from saved records</li>
+          <li>calculate memory use and justify using thumbnails</li>
+          <li>spread slow work across frames so the interface stays responsive</li>
+          <li>design a destructive action so players can't trigger it by accident.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> my journal opens with J or the gamepad's select button, shows my photos newest first with their details, deletes only after I confirm, and can be used entirely with a gamepad.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Prefab</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A saved, reusable GameObject template. We make one per photo from a single thumbnail prefab.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Instantiate</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Create a new copy of a prefab while the game is running.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Layout group</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A UI component that arranges its children automatically, such as into a grid.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Thumbnail</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A small copy of an image, used for previews to save memory and time.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Focus</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The UI element currently selected. A gamepad player can only use the screen if something has focus.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Empty state</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">What a screen shows when there's no data yet. Good ones tell the user what to do next.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Destructive action</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An action that can't be undone, like deleting. It should always ask the user to confirm.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Memory leak</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Memory a program keeps using after it's finished with it, so usage keeps growing.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ ANALYSE ═══ -->
+      <section class="content-section" id="analyse">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Deconstruct a gallery</h2>
+        <p>You use photo galleries every day: on your phone, in Steam's screenshot manager, in social media apps. Their designers have solved the same problems you're about to face.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · pairs · 5 min</p>
+          <h3>How does a gallery behave?</h3>
+          <p>Open the photo gallery on a phone (or think about one you know well) and answer:</p>
+          <ol>
+            <li>What order are the photos in? Why that order?</li>
+            <li>When you open an album with hundreds of photos, does every photo appear instantly at full quality? What do you see first?</li>
+            <li>What happens when you press delete? How many steps does it take, and which button is easier to hit?</li>
+            <li>What does an empty album show?</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            What our journal will copy
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li><strong>Newest first:</strong> people usually want what they just took.</li>
+              <li><strong>Progressive loading:</strong> the grid appears straight away with blank tiles, then small previews fill in. Full-size images are never loaded for the grid.</li>
+              <li><strong>Confirm before deleting:</strong> a second step, with the safe choice selected by default.</li>
+              <li><strong>A helpful empty state:</strong> "No photos yet" plus how to take one.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MEMORY ═══ -->
+      <section class="content-section" id="memory">
+        <h2>Why thumbnails?</h2>
+        <p>A PNG file is compressed on disk, but to display it, the game decodes it into raw pixels in memory: every pixel stored in full.</p>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">We do · calculation · 4 min</p>
+          <ol>
+            <li>A full photo is 1920 × 1080 pixels at 4 bytes per pixel (red, green, blue and transparency). How many bytes is one photo in memory?</li>
+            <li>How much memory would a full journal of 50 photos use, in MB? (1 MB = 1,000,000 bytes.)</li>
+            <li>Our thumbnails are 480 × 270 at 3 bytes per pixel (no transparency). How much do 50 thumbnails use?</li>
+            <li>How many times less memory is that?</li>
+          </ol>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Worked answers
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>1920 × 1080 × 4 = 8,294,400 bytes, about 8.3 MB.</li>
+              <li>8,294,400 × 50 = 414,720,000 bytes, about 415 MB, just for one screen.</li>
+              <li>480 × 270 × 3 = 388,800 bytes each. × 50 = 19,440,000 bytes, about 19.4 MB.</li>
+              <li>414.72 ÷ 19.44 ≈ 21.3, so about 21 times less. Each thumbnail is a quarter of the width and a quarter of the height (1/16 of the pixels), and uses 3 bytes instead of 4.</li>
+            </ol>
+          </div>
+        </div>
+        <p class="paper-margin-note">480 × 270 is still sharp enough for the detail panel in our storyboard, so one small copy does both jobs.</p>
+      </section>
+
+      <!-- ═══ PSEUDOCODE ═══ -->
+      <section class="content-section" id="pseudo">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>Pseudocode first</h2>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · BuildGrid (progressive loading)</p>
+<pre>1   BEGIN BuildGrid
+2       ClearGrid()
+3       IF number of entries = 0 THEN
+4           SHOW empty message
+5           RETURN
+6       ENDIF
+7       FOR i FROM last entry DOWN TO first entry
+8           CREATE thumbnail button for entry i
+9       NEXT i
+10      SELECT first button
+11      FOR EACH button IN buttons
+12          LOAD small copy of its photo
+13          WAIT one frame
+14      NEXT button
+15  END BuildGrid</pre>
+        </div>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · deleting safely</p>
+<pre>1   BEGIN RequestDelete
+2       IF selected = nothing THEN
+3           RETURN
+4       ENDIF
+5       SHOW confirm panel
+6       SELECT "No, keep it" button
+7   END RequestDelete
+
+8   BEGIN ConfirmDelete
+9       HIDE confirm panel
+10      Journal.DeleteEntry(selected entry)
+11  END ConfirmDelete</pre>
+        </div>
+        <p>Notice what <code>ConfirmDelete</code> <em>doesn't</em> do: it doesn't rebuild the grid. <code>DeleteEntry</code> raises <code>JournalChanged</code>, and the screen rebuilds whenever it hears that. One path for every change means one place for bugs to hide, not several.</p>
+      </section>
+
+      <!-- ═══ CODE ═══ -->
+      <section class="content-section" id="code">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Into C#</h2>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">Building the grid from data</span></div>
+<pre><code>private IEnumerator BuildGrid()
+{
+    ClearGrid();
+
+    int count = journal.Entries.Count;
+    countText.text = count == 1 ? "1 photo" : count + " photos";
+    emptyMessage.SetActive(count == 0);
+    if (count == 0)
+    {
+        ShowDetail(null);
+        yield break;
+    }
+
+    // 1. Make every button now, newest first, so the layout appears at once.
+    for (int i = count - 1; i &gt;= 0; i--)
+    {
+        JournalThumbnail thumb = Instantiate(thumbnailPrefab, gridContent);
+        thumb.Setup(journal.Entries[i], this);
+        thumbnails.Add(thumb);
+    }
+    EventSystem.current.SetSelectedGameObject(thumbnails[0].gameObject);
+
+    // 2. Load one photo per frame, so the screen never freezes.
+    foreach (JournalThumbnail thumb in thumbnails)
+    {
+        thumb.SetTexture(LoadThumbnail(thumb.Entry));
+        if (thumb == selected) detailImage.texture = thumb.Texture;
+        yield return null;
+    }
+}</code></pre>
+            <div class="step-explain">Part 1 creates every button immediately, so the layout appears at once. Part 2 loads one photo, then <code>yield return null</code> waits a frame before the next. Decoding a PNG takes a few milliseconds, so loading 50 in one frame would freeze the screen, but one per frame is unnoticeable.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Loading and shrinking a photo</span></div>
+<pre><code>private Texture2D LoadThumbnail(JournalEntry entry)
+{
+    string path = Path.Combine(journal.PhotoFolder, entry.fileName);
+    if (!File.Exists(path)) return null;        // guard clause
+
+    Texture2D full = new Texture2D(2, 2);
+    full.LoadImage(File.ReadAllBytes(path));    // decodes the PNG and resizes to fit
+    Texture2D thumb = Shrink(full, thumbnailWidth, thumbnailHeight);
+    Destroy(full);                              // keep only the small copy
+    return thumb;
+}
+
+private static Texture2D Shrink(Texture2D source, int width, int height)
+{
+    RenderTexture temp = RenderTexture.GetTemporary(width, height);
+    Graphics.Blit(source, temp);                // GPU draws the photo at the new size
+
+    RenderTexture previous = RenderTexture.active;
+    RenderTexture.active = temp;
+    Texture2D small = new Texture2D(width, height, TextureFormat.RGB24, false);
+    small.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+    small.Apply();
+
+    RenderTexture.active = previous;
+    RenderTexture.ReleaseTemporary(temp);
+    return small;
+}</code></pre>
+            <div class="step-explain"><code>Graphics.Blit</code> asks the graphics card to draw the full photo onto a small temporary canvas (a <code>RenderTexture</code>). <code>ReadPixels</code> copies that small result back into a normal texture. The full-size texture is destroyed straight away, so only about 0.39 MB stays in memory per photo.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">Showing the details</span></div>
+<pre><code>public void ShowDetail(JournalThumbnail thumb)
+{
+    selected = thumb;
+    if (thumb == null)
+    {
+        detailImage.texture = null;
+        captionText.text = "";
+        locationText.text = "";
+        dateText.text = "";
+        return;
+    }
+
+    JournalEntry entry = thumb.Entry;
+    detailImage.texture = thumb.Texture;
+    captionText.text = string.IsNullOrEmpty(entry.caption) ? "No caption yet" : entry.caption;
+    locationText.text = entry.locationName;
+
+    // Saved in one fixed format, shown in the player's own format.
+    if (DateTime.TryParseExact(entry.timestamp, "yyyy-MM-ddTHH:mm:ss",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime taken))
+    {
+        dateText.text = taken.ToString("g", CultureInfo.CurrentCulture);   // e.g. 2/10/2026 2:30 PM in Australia
+    }
+    else
+    {
+        dateText.text = "Unknown date";
+    }
+}</code></pre>
+            <div class="step-explain">This closes a loop from Lesson 5. The timestamp was <em>saved</em> in one fixed format (InvariantCulture) so every computer reads it the same way. It's <em>shown</em> in the player's own format (CurrentCulture), so an Australian player sees day/month and an American player sees month/day. If the timestamp can't be read, <code>TryParseExact</code> returns false instead of crashing.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">Each thumbnail reports when it's selected</span></div>
+<pre><code>// Runs when this thumbnail is selected by mouse, keyboard or gamepad.
+public void OnSelect(BaseEventData eventData)
+{
+    screen.ShowDetail(this);
+}</code></pre>
+            <div class="step-explain"><code>ISelectHandler</code> is an <strong>interface</strong>: a promise that this class has an <code>OnSelect</code> method. Unity calls it whenever the thumbnail gains focus, whether from a mouse click, the arrow keys or a gamepad. One method handles all three.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">Back means "back one step"</span></div>
+<pre><code>private void OnBack(InputAction.CallbackContext context)
+{
+    if (!IsOpen) return;                        // guard clause: nothing to go back from
+    if (confirmPanel.activeSelf) CancelDelete(); // back out of the question first
+    else Close();
+}</code></pre>
+            <div class="step-explain">If the delete question is showing, Back cancels it. Otherwise Back closes the journal. Players expect Back to undo the <em>last</em> thing, not everything.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>The journal gets slower every time</h3>
+          <p>A classmate's journal works, but in the Profiler their game's memory rises by about 19 MB every time they open and close it. After twenty visits the game stutters. Here's their <code>ClearGrid</code>:</p>
+<pre>private void ClearGrid()
+{
+    foreach (JournalThumbnail thumb in thumbnails)
+    {
+<span class="bug-line">        Destroy(thumb.gameObject);</span>
+    }
+    thumbnails.Clear();
+}</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            Destroying a GameObject doesn't destroy textures created in code. Each visit creates 50 new thumbnail textures (about 19.4 MB, the figure you calculated) and never frees the old ones. That's a memory leak. Add <code>if (thumb.Texture != null) Destroy(thumb.Texture);</code> before destroying the GameObject. Any texture made with <code>new Texture2D</code> must be destroyed by your code.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ BUILD ═══ -->
+      <section class="content-section" id="build">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Build the screen</h2>
+        <p>Set the Game view to <strong>1280 × 800</strong> (Steam Deck) before you start, and keep your Lesson 2 storyboard beside you. This is the hierarchy you're aiming for:</p>
+
+<pre class="hierarchy" aria-label="Unity hierarchy for the journal screen">JournalCanvas  (Canvas, Canvas Scaler: Scale With Screen Size, 1280 × 800)
+├── Title          (TMP text: "Journal")
+├── Count          (TMP text)
+├── EmptyMessage   (TMP text: "No photos yet…", hidden)
+├── GridScroll     (Scroll Rect, vertical only)
+│   └── Viewport   (Mask)
+│       └── Content (Grid Layout Group: cell 240 × 135, spacing 16;
+│                    Content Size Fitter: vertical = Preferred Size)
+├── DetailPanel
+│   ├── DetailImage  (Raw Image)
+│   ├── Caption      (TMP text)
+│   ├── Location     (TMP text)
+│   ├── Date         (TMP text)
+│   └── DeleteButton (Button → OnClick: JournalScreen.RequestDelete)
+├── PromptBar      (TMP text: "Ⓑ Back")
+└── ConfirmPanel   (hidden)
+    ├── Question   (TMP text: "Delete this photo? This can't be undone.")
+    ├── YesButton  (→ JournalScreen.ConfirmDelete)
+    └── NoButton   (→ JournalScreen.CancelDelete)</pre>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 15 min</p>
+          <ol>
+            <li><strong>Thumbnail prefab:</strong> create a UI Button, delete its text, and add a child <strong>Raw Image</strong> stretched to fill it. Add <code>JournalThumbnail</code> to the Button and drag the Raw Image in. Set the Button's <em>Selected Color</em> to something bright. That's your focus outline from the storyboard. Drag it into a Prefabs folder and delete it from the scene.</li>
+            <li>Build the canvas hierarchy above. Untick <strong>JournalCanvas</strong> so it starts hidden.</li>
+            <li>Add <code>JournalScreen</code> to the <strong>PhotoMode</strong> object. Drag in every reference, including the prefab.</li>
+            <li>Add your movement script, camera script, <code>PhotoModeController</code> and <code>PhotoCapture</code> to <em>Disable While Open</em>.</li>
+            <li>Wire the three buttons' <em>On Click</em> events to the methods shown in the hierarchy.</li>
+          </ol>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-l">
+          <p class="paper-sticky__label">Remember the 24 px rule</p>
+          <p>With the Game view at 1280 × 800, no text should be smaller than 24 px. Check the caption, location and date especially.</p>
+        </aside>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: JournalScreen.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: JournalScreen.cs
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class JournalScreen : MonoBehaviour
+{
+    [Header("Input (defaults are set when you add the component)")]
+    [SerializeField] private InputAction toggleAction;
+    [SerializeField] private InputAction backAction;
+
+    [Header("Data and game")]
+    [SerializeField] private Journal journal;
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private Behaviour[] disableWhileOpen;  // movement, camera, PhotoModeController, PhotoCapture
+
+    [Header("Grid")]
+    [SerializeField] private GameObject screenRoot;         // the journal canvas
+    [SerializeField] private Transform gridContent;         // ScrollRect content with a GridLayoutGroup
+    [SerializeField] private JournalThumbnail thumbnailPrefab;
+    [SerializeField] private GameObject emptyMessage;
+    [SerializeField] private TMP_Text countText;
+    [SerializeField] private int thumbnailWidth = 480;
+    [SerializeField] private int thumbnailHeight = 270;
+
+    [Header("Detail panel")]
+    [SerializeField] private RawImage detailImage;
+    [SerializeField] private TMP_Text captionText;
+    [SerializeField] private TMP_Text locationText;
+    [SerializeField] private TMP_Text dateText;
+
+    [Header("Delete confirmation")]
+    [SerializeField] private GameObject confirmPanel;
+    [SerializeField] private Button confirmNoButton;
+
+    public bool IsOpen { get; private set; }
+
+    private readonly List&lt;JournalThumbnail&gt; thumbnails = new List&lt;JournalThumbnail&gt;();
+    private JournalThumbnail selected;
+    private float savedTimeScale = 1f;
+
+    // Runs when the component is first added: fills in default controls.
+    private void Reset()
+    {
+        toggleAction = new InputAction("ToggleJournal", InputActionType.Button);
+        toggleAction.AddBinding("&lt;Keyboard&gt;/j");
+        toggleAction.AddBinding("&lt;Gamepad&gt;/select");
+
+        backAction = new InputAction("Back", InputActionType.Button);
+        backAction.AddBinding("&lt;Keyboard&gt;/escape");
+        backAction.AddBinding("&lt;Gamepad&gt;/buttonEast");
+    }
+
+    private void OnEnable()
+    {
+        toggleAction.performed += OnToggle;
+        backAction.performed += OnBack;
+        toggleAction.Enable();
+        backAction.Enable();
+        journal.JournalChanged += OnJournalChanged;
+    }
+
+    private void OnDisable()
+    {
+        toggleAction.performed -= OnToggle;
+        backAction.performed -= OnBack;
+        toggleAction.Disable();
+        backAction.Disable();
+        journal.JournalChanged -= OnJournalChanged;
+    }
+
+    private void OnToggle(InputAction.CallbackContext context)
+    {
+        if (IsOpen) Close();
+        else Open();
+    }
+
+    private void OnBack(InputAction.CallbackContext context)
+    {
+        if (!IsOpen) return;                        // guard clause: nothing to go back from
+        if (confirmPanel.activeSelf) CancelDelete(); // back out of the question first
+        else Close();
+    }
+
+    private void Open()
+    {
+        if (photoMode != null &amp;&amp; photoMode.IsActive) return;   // guard clause: finish photo mode first
+
+        IsOpen = true;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = false;
+        }
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+
+        screenRoot.SetActive(true);
+        confirmPanel.SetActive(false);
+        StartCoroutine(BuildGrid());
+    }
+
+    private void Close()
+    {
+        StopAllCoroutines();
+        ClearGrid();
+        screenRoot.SetActive(false);
+
+        Time.timeScale = savedTimeScale;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = true;
+        }
+        IsOpen = false;
+    }
+
+    private void OnJournalChanged()
+    {
+        if (!IsOpen) return;                        // guard clause
+        StopAllCoroutines();
+        StartCoroutine(BuildGrid());
+    }
+
+    private IEnumerator BuildGrid()
+    {
+        ClearGrid();
+
+        int count = journal.Entries.Count;
+        countText.text = count == 1 ? "1 photo" : count + " photos";
+        emptyMessage.SetActive(count == 0);
+        if (count == 0)
+        {
+            ShowDetail(null);
+            yield break;
+        }
+
+        // 1. Make every button now, newest first, so the layout appears at once.
+        for (int i = count - 1; i &gt;= 0; i--)
+        {
+            JournalThumbnail thumb = Instantiate(thumbnailPrefab, gridContent);
+            thumb.Setup(journal.Entries[i], this);
+            thumbnails.Add(thumb);
+        }
+        EventSystem.current.SetSelectedGameObject(thumbnails[0].gameObject);
+
+        // 2. Load one photo per frame, so the screen never freezes.
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            thumb.SetTexture(LoadThumbnail(thumb.Entry));
+            if (thumb == selected) detailImage.texture = thumb.Texture;
+            yield return null;
+        }
+    }
+
+    private void ClearGrid()
+    {
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            if (thumb.Texture != null) Destroy(thumb.Texture);   // free its memory
+            Destroy(thumb.gameObject);
+        }
+        thumbnails.Clear();
+        selected = null;
+        detailImage.texture = null;
+    }
+
+    private Texture2D LoadThumbnail(JournalEntry entry)
+    {
+        string path = Path.Combine(journal.PhotoFolder, entry.fileName);
+        if (!File.Exists(path)) return null;        // guard clause
+
+        Texture2D full = new Texture2D(2, 2);
+        full.LoadImage(File.ReadAllBytes(path));    // decodes the PNG and resizes to fit
+        Texture2D thumb = Shrink(full, thumbnailWidth, thumbnailHeight);
+        Destroy(full);                              // keep only the small copy
+        return thumb;
+    }
+
+    private static Texture2D Shrink(Texture2D source, int width, int height)
+    {
+        RenderTexture temp = RenderTexture.GetTemporary(width, height);
+        Graphics.Blit(source, temp);                // GPU draws the photo at the new size
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = temp;
+        Texture2D small = new Texture2D(width, height, TextureFormat.RGB24, false);
+        small.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        small.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(temp);
+        return small;
+    }
+
+    public void ShowDetail(JournalThumbnail thumb)
+    {
+        selected = thumb;
+        if (thumb == null)
+        {
+            detailImage.texture = null;
+            captionText.text = "";
+            locationText.text = "";
+            dateText.text = "";
+            return;
+        }
+
+        JournalEntry entry = thumb.Entry;
+        detailImage.texture = thumb.Texture;
+        captionText.text = string.IsNullOrEmpty(entry.caption) ? "No caption yet" : entry.caption;
+        locationText.text = entry.locationName;
+
+        // Saved in one fixed format, shown in the player's own format.
+        if (DateTime.TryParseExact(entry.timestamp, "yyyy-MM-ddTHH:mm:ss",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime taken))
+        {
+            dateText.text = taken.ToString("g", CultureInfo.CurrentCulture);   // e.g. 2/10/2026 2:30 PM in Australia
+        }
+        else
+        {
+            dateText.text = "Unknown date";
+        }
+    }
+
+    // Delete button: ask first.
+    public void RequestDelete()
+    {
+        if (selected == null) return;               // guard clause
+        confirmPanel.SetActive(true);
+        EventSystem.current.SetSelectedGameObject(confirmNoButton.gameObject);  // safe default
+    }
+
+    // "Yes, delete" button.
+    public void ConfirmDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected == null) return;               // guard clause
+        journal.DeleteEntry(selected.Entry);        // raises JournalChanged, which rebuilds the grid
+    }
+
+    // "No, keep it" button.
+    public void CancelDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected != null) EventSystem.current.SetSelectedGameObject(selected.gameObject);
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: JournalThumbnail.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: JournalThumbnail.cs
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+
+public class JournalThumbnail : MonoBehaviour, ISelectHandler
+{
+    [SerializeField] private RawImage image;
+
+    public JournalEntry Entry { get; private set; }
+    public Texture2D Texture { get; private set; }
+
+    private JournalScreen screen;
+
+    public void Setup(JournalEntry entry, JournalScreen owner)
+    {
+        Entry = entry;
+        screen = owner;
+        image.texture = null;            // grey until the photo loads
+    }
+
+    public void SetTexture(Texture2D texture)
+    {
+        Texture = texture;
+        image.texture = texture;
+    }
+
+    // Runs when this thumbnail is selected by mouse, keyboard or gamepad.
+    public void OnSelect(BaseEventData eventData)
+    {
+        screen.ShowDetail(this);
+    }
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Req.</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T17</td><td>While hiking, press J (or select)</td><td>World freezes, grid appears newest first, first photo selected with details shown</td><td>R3</td><td></td></tr>
+              <tr><td>T18</td><td>Delete journal.json and all PNGs, then open the journal</td><td>"No photos yet" message, no errors</td><td>Empty state</td><td></td></tr>
+              <tr><td>T19</td><td>Move through the grid with arrow keys</td><td>Detail panel updates for each photo, with date in day/month order</td><td>R3</td><td></td></tr>
+              <tr><td>T20</td><td>Press Delete, then press Space or A immediately</td><td>Nothing is deleted, because "No" was selected</td><td>Safety</td><td></td></tr>
+              <tr><td>T21</td><td>Press Delete, choose Yes</td><td>Photo disappears from grid, folder and journal.json</td><td>R3</td><td></td></tr>
+              <tr><td>T22</td><td>In photo mode, press J</td><td>Nothing happens</td><td>Guard</td><td></td></tr>
+              <tr><td>T23</td><td>Unplug keyboard and mouse: open, browse, delete and close with a gamepad</td><td>Every step works</td><td>R5</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>See your photos</h4>
+            <ul>
+              <li>Build the thumbnail prefab and canvas (or use your teacher's prebuilt one) and wire up <code>JournalScreen</code>.</li>
+              <li>Run T17, T18 and T19.</li>
+              <li>Complete the memory calculation in your notebook.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Match the storyboard</h4>
+            <ul>
+              <li>Run all seven tests and fix any failures.</li>
+              <li>Style the screen to match your Lesson 2 storyboard at 1280 × 800, following the 24 px rule.</li>
+              <li>Write an empty-state message that tells players how to take their first photo in <em>your</em> game, and explain your wording.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Open instantly</h4>
+            <ul>
+              <li>The journal reloads every thumbnail each time it opens. Keep them in a <code>Dictionary&lt;string, Texture2D&gt;</code> keyed by file name, so only <em>new</em> photos are loaded.</li>
+              <li>Remember to destroy a cached texture when its photo is deleted. Otherwise you've built a new leak.</li>
+              <li>Measure how long the grid takes to fill, before and after.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="B"
+             data-feedback-a="Not quite. A smaller image isn't sharper. It's just the right size for a small tile."
+             data-feedback-b="✓ Correct. 50 full photos decode to about 415 MB in memory. Thumbnails need about 19 MB."
+             data-feedback-c="Not quite. RawImage can show any texture size. The limit we care about is memory."
+             data-feedback-d="Not quite. The PNG files on disk don't change. Thumbnails only exist in memory while the journal is open.">
+          <div class="mcq-question">1. Why does the journal grid show small thumbnails instead of the full photos?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Small images always look sharper inside a grid</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Full photos would use hundreds of MB of memory</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>A RawImage can only display images under 500 pixels wide</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Thumbnails make the PNG files on disk much smaller</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="C"
+             data-feedback-a="Not quite. Our code chooses the selected button with SetSelectedGameObject."
+             data-feedback-b="Not quite. Every button works with a gamepad. The default only decides where focus starts."
+             data-feedback-c="✓ Correct. If the player presses A out of habit, the safe option runs and nothing is lost."
+             data-feedback-d="Not quite. It's about what happens by accident, not which answer is chosen more often.">
+          <div class="mcq-question">2. Why does the delete confirmation select "No, keep it" when it appears?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Unity always selects the most recently made button</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So that players must use a mouse to delete a photo</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>So an accidental quick press can't delete a photo</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Because playtesters chose No more often than they chose Yes</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="D"
+             data-feedback-a="Not quite. That would happen if all 50 photos loaded in one frame. Here, each loads in its own frame."
+             data-feedback-b="Not quite. Every button is created in part 1, before any photo loads."
+             data-feedback-c="Not quite. The foreach loop has a fixed number of thumbnails, so it always finishes."
+             data-feedback-d="✓ Correct. The buttons appear instantly as blank tiles, then one photo fills in each frame.">
+          <div class="mcq-question">3. <code>BuildGrid</code> creates every thumbnail button first, then loads one photo per frame. What does the player see when the journal opens?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>A frozen screen until every photo has finished loading</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Only the newest photo, and the rest on the next visit</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Blank tiles forever, because the loop never finishes</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The grid appears at once, then photos fill in</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="A"
+             data-feedback-a="✓ Correct. 480 × 270 × 3 = 388,800 bytes, and × 50 = 19,440,000 bytes, about 19 MB."
+             data-feedback-b="Not quite. Check the multiplication: 480 × 270 is 129,600 pixels before multiplying by 3 bytes."
+             data-feedback-c="Not quite. That's the figure for full 1920 × 1080 photos at 4 bytes per pixel."
+             data-feedback-d="Not quite. That's far too big. Try 480 × 270 × 3 for one thumbnail first.">
+          <div class="mcq-question">4. Each thumbnail is 480 × 270 pixels at 3 bytes per pixel. About how much memory do 50 thumbnails use?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>About 19 MB</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>About 6 MB</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>About 415 MB</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>About 1.2 GB</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="C"
+             data-feedback-a="Not quite. Either culture works on Steam Deck. This is about who the text is for."
+             data-feedback-b="Not quite. Display text isn't saved, so it doesn't affect file size."
+             data-feedback-c="✓ Correct. Saved data is for computers, so it must be identical everywhere. Displayed text is for people, so it should match their settings."
+             data-feedback-d="Not quite. It's deliberate. Storage and display have different jobs.">
+          <div class="mcq-question">5. The timestamp is saved using InvariantCulture but displayed using the player's CurrentCulture. Why the difference?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>InvariantCulture text can't be displayed on Steam Deck</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The player's culture makes journal.json files smaller</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Saved data must be fixed; shown text suits the reader</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>It's a mistake, and both should use the same culture</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="B"
+             data-feedback-a="Not quite. journal.json is loaded once in Awake, and it's tiny anyway."
+             data-feedback-b="✓ Correct. Textures made with new Texture2D aren't freed when their GameObject is destroyed. 50 thumbnails ≈ 19 MB leaked per visit."
+             data-feedback-c="Not quite. timeScale affects game speed, not memory."
+             data-feedback-d="Not quite. On-screen size doesn't change texture memory. The texture's own size does.">
+          <div class="mcq-question">6. Every time the journal is opened and closed, memory use rises by about 19 MB and never comes back down. What is the most likely cause?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>journal.json is being reloaded from disk on every visit</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Thumbnail textures aren't destroyed in ClearGrid</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Time.timeScale isn't being restored when it closes</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The thumbnail buttons are drawn too large on screen</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for communicating information with data and media. The journal screen communicates the player's saved data. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Selects relevant data, media and processes to effectively communicate information in a range of contexts.</strong> Matches the storyboard at Steam Deck size, caches thumbnails so the journal opens instantly, and justifies every display choice.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Selects relevant data, media and processes to communicate appropriate information in a range of contexts.</strong> Passes all seven tests with a styled screen, a helpful empty state and readable text.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Selects appropriate data, media and processes to communicate information in a range of contexts.</strong> Gets the grid and detail panel showing photos, captions, locations and dates correctly.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Uses data to communicate basic information.</strong> Gets the journal screen opening and showing saved photos.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Uses data to communicate information in a very limited way.</strong> Identifies which saved fields appear where on the journal screen.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Compare your finished journal screen with your Lesson 2 storyboard. What changed, and why?
+            <span class="sentence-starter">In my storyboard I planned ___, but I changed it because…</span></li>
+          <li>Which design decision today protects the player most?
+            <span class="sentence-starter">The decision that protects the player most is ___ because…</span></li>
+        </ul>
+        <label for="reflection-l6" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l6" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson05.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 5: Saving and loading</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson07.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 7: Controller-first input</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson06',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

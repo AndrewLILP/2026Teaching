@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 5: Saving and loading | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 5 of 12: save the journal as JSON, protect it from crashes, and reload and validate it when the game starts.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .ipo-flow--compact .ipo-step { flex: 1 1 0; min-width: 0; padding: var(--space-3); }
+    .ipo-flow--compact code { overflow-wrap: anywhere; }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 5</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#risks">What could go wrong?</a>
+          <a href="#memory">Memory and disk</a>
+          <a href="#pseudo">Pseudocode first</a>
+          <a href="#code">Into C#</a>
+          <a href="#crash">Desk check: crashes</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#capture">Updating PhotoCapture</a>
+          <a href="#setup">Set it up</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 5 of 12 · 50 minutes</p>
+        <h1>Saving and loading</h1>
+        <p class="page-intro">Your game can take photos, but quit and restart and it has forgotten them all. Today you'll build the journal: it records every photo with its location and time, saves to <code>journal.json</code> in a way that survives crashes, and checks everything it loads. Nothing frustrates players more than losing their progress.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> <code>PhotoCapture</code> saved each photo as a PNG, then announced it with the <code>PhotoSaved</code> event. Today's <code>Journal</code> script is the listener, and it builds the <code>JournalEntry</code> records you designed in Lesson 2.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 5 min · risk analysis 6 min · memory and disk 4 min · pseudocode and code walkthrough 12 min · crash desk check and bug detective 6 min · setup and testing 12 min · checkpoint 5 min.</p>
+        <p><strong>Common errors:</strong> <code>JsonUtility</code> only saves classes marked <code>[Serializable]</code>, only saves public fields, and can't save a bare <code>List</code>. That's why the list lives inside a <code>JournalData</code> wrapper. If <code>journal.json</code> comes out as <code>{}</code>, check these three first.</p>
+        <p><strong>Testing tip:</strong> set <em>Max Photos</em> to 3 in the Inspector to test the full-journal guard quickly, then set it back to 50.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>serialise data to JSON and deserialise it back into objects</li>
+          <li>explain how writing to a temporary file protects a save from crashes</li>
+          <li>validate loaded data and handle a damaged file without crashing</li>
+          <li>explain why a loop that removes items should count backwards.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> photos in my journal survive a restart, each with a location and time. A deleted PNG or a damaged save file doesn't crash the game, and capturing stops with a message when the journal is full.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Persistence</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Data that still exists after the program closes, because it was saved to storage.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Serialise</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Turn objects in memory into text or bytes that can be saved or sent.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Deserialise</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Turn saved text or bytes back into objects the program can use.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">[Serializable]</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A C# attribute that tells Unity a class is allowed to be turned into JSON.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Corruption</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Damage to a file, often from being only half written, that makes it unreadable.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Exception</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">An error raised while code runs. <code>try</code> / <code>catch</code> lets the program handle it instead of crashing.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Validation</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Checking data follows the rules before using it, e.g. every entry's photo really exists.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Data integrity</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Data staying complete, accurate and consistent over its whole lifetime.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ RISKS ═══ -->
+      <section class="content-section" id="risks">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>What could go wrong?</h2>
+        <p>Saving seems simple: write the data to a file. But real players do unexpected things, and real computers lose power. Professional developers list the risks <em>before</em> writing the save code.</p>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · pairs · 6 min</p>
+          <h3>Predict the problem</h3>
+          <p>For each situation, predict what would happen with a simple "just write the file" save, then suggest what the game <em>should</em> do.</p>
+          <div class="spec-table-wrap">
+            <table class="spec-table">
+              <thead>
+                <tr><th scope="col">#</th><th scope="col">Situation</th><th scope="col">Simple save would…</th><th scope="col">Should…</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>A brand-new player starts the game. There is no save file yet.</td><td></td><td></td></tr>
+                <tr><td>2</td><td>The Steam Deck battery dies halfway through writing <code>journal.json</code>.</td><td></td><td></td></tr>
+                <tr><td>3</td><td>A player deletes some PNG files from the Journal folder to free up space.</td><td></td><td></td></tr>
+                <tr><td>4</td><td>A curious player opens <code>journal.json</code> in Notepad and accidentally deletes a bracket.</td><td></td><td></td></tr>
+                <tr><td>5</td><td>A player takes their 51st photo.</td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            How today's journal handles each one
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li><strong>No file:</strong> a guard clause in <code>Load</code> returns early and the journal starts empty, with no error.</li>
+              <li><strong>Power loss:</strong> the new save is written to a temporary file first, so the old save is never half-overwritten. If needed, <code>Load</code> recovers from the temporary file.</li>
+              <li><strong>Missing photos:</strong> <code>Load</code> validates every entry and removes any whose PNG no longer exists, so the journal never shows a blank photo.</li>
+              <li><strong>Damaged file:</strong> <code>try</code> / <code>catch</code> handles the error, logs a warning and starts an empty journal instead of crashing.</li>
+              <li><strong>51st photo:</strong> the new guard clause in <code>PhotoCapture</code> shows "Journal full" and nothing is saved.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MEMORY ═══ -->
+      <section class="content-section" id="memory">
+        <h2>Memory and disk</h2>
+        <p>While the game runs, the journal lives in memory as C# objects. Memory is fast but is wiped when the game closes. To persist, the data is converted to text and written to disk.</p>
+        <div class="ipo-flow ipo-flow--compact">
+          <div class="ipo-step"><span class="ipo-step__label">In memory</span><p>A <code>JournalData</code> object holding a list of <code>JournalEntry</code> objects.</p></div>
+          <span class="ipo-arrow" aria-hidden="true">⇄</span>
+          <div class="ipo-step"><span class="ipo-step__label">Serialise / deserialise</span><p><code>JsonUtility.ToJson</code> turns objects into text. <code>FromJson</code> turns text back into objects.</p></div>
+          <span class="ipo-arrow" aria-hidden="true">⇄</span>
+          <div class="ipo-step"><span class="ipo-step__label">On disk</span><p><code>journal.json</code>, a text file that lasts after the game closes.</p></div>
+        </div>
+      </section>
+
+      <!-- ═══ PSEUDOCODE ═══ -->
+      <section class="content-section" id="pseudo">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>Pseudocode first</h2>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · Save (crash-safe)</p>
+<pre>1   BEGIN Save
+2       SET json TO Serialise(journalData)
+3       WRITE json TO "journal.json.tmp"
+4       IF "journal.json" exists THEN
+5           DELETE "journal.json"
+6       ENDIF
+7       RENAME "journal.json.tmp" TO "journal.json"
+8   END Save</pre>
+        </div>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · Load (with recovery and validation)</p>
+<pre>1   BEGIN Load
+2       SET path TO "journal.json"
+3       IF path does not exist THEN
+4           IF "journal.json.tmp" does not exist THEN
+5               RETURN
+6           ENDIF
+7           SET path TO "journal.json.tmp"
+8       ENDIF
+9       TRY
+10          SET journalData TO Deserialise(READ path)
+11      CATCH damaged file
+12          DISPLAY warning
+13          SET journalData TO empty journal
+14          RETURN
+15      ENDTRY
+16      SET i TO number of entries − 1
+17      WHILE i &gt;= 0
+18          IF photo for entry i does not exist THEN
+19              REMOVE entry i
+20          ENDIF
+21          SET i TO i − 1
+22      ENDWHILE
+23      Save()
+24  END Load</pre>
+        </div>
+        <p class="paper-margin-note">Lines 16–22 count backwards from the last entry. The bug detective below shows why.</p>
+      </section>
+
+      <!-- ═══ CODE ═══ -->
+      <section class="content-section" id="code">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Into C#</h2>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">The data classes from Lesson 2</span></div>
+<pre><code>[Serializable]
+public class JournalEntry
+{
+    public string fileName;
+    public string caption;
+    public string locationName;
+    public string timestamp;
+}
+
+// JsonUtility can't save a List on its own, so it goes inside a wrapper class.
+[Serializable]
+public class JournalData
+{
+    public List&lt;JournalEntry&gt; entries = new List&lt;JournalEntry&gt;();
+}</code></pre>
+            <div class="step-explain">Each field is one row of your Lesson 2 data dictionary. <code>[Serializable]</code> lets <code>JsonUtility</code> convert these classes to JSON. The fields are <strong>public</strong> because <code>JsonUtility</code> only saves public fields (or ones marked <code>[SerializeField]</code>).</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Listening for new photos</span></div>
+<pre><code>private void OnPhotoSaved(string fileName)
+{
+    JournalEntry entry = new JournalEntry
+    {
+        fileName = fileName,
+        caption = "",
+        locationName = currentLocation,
+        timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
+    };
+    data.entries.Add(entry);
+    Save();
+    JournalChanged?.Invoke();
+}</code></pre>
+            <div class="step-explain">This runs whenever <code>PhotoCapture</code> raises <code>PhotoSaved</code>. It builds a new record, adds it, saves, then raises its <em>own</em> event, <code>JournalChanged</code>, which Lesson 6's journal screen will listen for.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">Crash-safe saving</span></div>
+<pre><code>private void Save()
+{
+    string json = JsonUtility.ToJson(data, true);
+    File.WriteAllText(tempPath, json);                  // 1. write the new version beside the old one
+    if (File.Exists(savePath)) File.Delete(savePath);   // 2. remove the old version
+    File.Move(tempPath, savePath);                      // 3. rename the new version into place
+}</code></pre>
+            <div class="step-explain">The <code>true</code> in <code>ToJson</code> means "pretty print", which adds line breaks so you can read the file. The three numbered comments match pseudocode lines 3, 4–6 and 7.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">Loading with recovery and a safety net</span></div>
+<pre><code>private void Load()
+{
+    string path = savePath;
+    if (!File.Exists(path))
+    {
+        if (!File.Exists(tempPath)) return;     // guard clause: first time playing
+        path = tempPath;                        // recover from an interrupted save
+    }
+
+    try
+    {
+        data = JsonUtility.FromJson&lt;JournalData&gt;(File.ReadAllText(path)) ?? new JournalData();
+    }
+    catch (ArgumentException)
+    {
+        Debug.LogWarning("journal.json was damaged, so the journal is starting empty.");
+        data = new JournalData();
+        return;
+    }
+
+    RemoveMissingPhotos();
+    Save();                                     // tidy up: one clean, valid save file
+}</code></pre>
+            <div class="step-explain">If the code inside <code>try</code> throws an exception, the program jumps straight to <code>catch</code> instead of crashing. <code>?? new JournalData()</code> means "if the result is null, use an empty journal instead". The final <code>Save()</code> leaves exactly one clean, validated <code>journal.json</code>.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">Validation: removing missing photos</span></div>
+<pre><code>private void RemoveMissingPhotos()
+{
+    for (int i = data.entries.Count - 1; i &gt;= 0; i--)   // count backwards when removing
+    {
+        string photoPath = Path.Combine(photoFolder, data.entries[i].fileName);
+        if (!File.Exists(photoPath))
+        {
+            data.entries.RemoveAt(i);
+        }
+    }
+}</code></pre>
+            <div class="step-explain">A <code>for</code> loop is a counted loop. This one starts at the last index and counts down to 0, matching pseudocode lines 16–22.</div>
+          </div>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-r">
+          <p class="paper-sticky__label">Why InvariantCulture?</p>
+          <p>Date formats depend on a computer's language settings. On a computer set to Thai, this same code would write the year as 2569 (Buddhist calendar). <code>CultureInfo.InvariantCulture</code> makes every computer write 2026-10-02T14:30:12. We checked both by running them.</p>
+        </aside>
+      </section>
+
+      <!-- ═══ CRASH DESK CHECK ═══ -->
+      <section class="content-section" id="crash">
+        <h2>Desk check: crashes</h2>
+        <p>The journal already holds one photo ("old"). The player takes a second ("new"), and the game crashes at different points during <code>Save</code>. What's on disk, and what does <code>Load</code> find next time?</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Crash after</th><th scope="col">Files on disk</th><th scope="col">Load uses</th><th scope="col">Journal after restart</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">Step 1 (write .tmp)</td><td class="td-code">journal.json, journal.json.tmp</td><td class="td-var">journal.json</td><td class="td-output">old, which is safe (newest photo lost)</td></tr>
+              <tr><td class="td-step">Step 2 (delete old)</td><td class="td-code">journal.json.tmp</td><td class="td-var">journal.json.tmp</td><td class="td-output">old + new, recovered</td></tr>
+              <tr><td class="td-step">No crash</td><td class="td-code">journal.json</td><td class="td-var">journal.json</td><td class="td-output">old + new</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>In every case the player keeps a working journal. Compare that with writing straight into <code>journal.json</code>: a crash halfway through would leave a half-written file and lose <em>everything</em>. These three results came from running the save code and stopping it at each step.</p>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>One missing photo survives</h3>
+          <p>A classmate counts forwards instead. Their journal holds entries A, B and C. The player deleted the PNGs for A <em>and</em> B, but after loading, the journal still shows B.</p>
+<pre><span class="bug-line">for (int i = 0; i &lt; data.entries.Count; i++)</span>
+{
+    string photoPath = Path.Combine(photoFolder, data.entries[i].fileName);
+    if (!File.Exists(photoPath))
+    {
+        data.entries.RemoveAt(i);
+    }
+}</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            When i = 0, A is removed and everything shifts left: B moves to index 0 and C to index 1. Then i becomes 1, which checks C. B was never checked. Counting backwards avoids this, because removing an item only shifts the items <em>after</em> it, and those have already been checked. We ran both loops: forwards leaves [B, C], backwards leaves [C].
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ PHOTOCAPTURE UPDATE ═══ -->
+      <section class="content-section" id="capture">
+        <h2>Updating PhotoCapture</h2>
+        <p>Lesson 2's algorithm had a journal-full guard that we couldn't build until the journal existed. Now it does. Add two fields and one more guard to <code>PhotoCapture</code>:</p>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">6</span><span class="step-label">PhotoCapture.cs: new fields</span></div>
+            <div class="code-change-banner">ADD BELOW THE photoMode FIELD</div>
+<pre><code>[SerializeField] private Journal journal;
+[SerializeField] private GameObject journalFullMessage; // hidden "Journal full" text</code></pre>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">7</span><span class="step-label">PhotoCapture.cs: the third guard clause</span></div>
+            <div class="code-change-banner">REPLACE OnCapture AND ADD ShowFullMessage</div>
+<pre><code>private void OnCapture(InputAction.CallbackContext context)
+{
+    if (!photoMode.IsActive) return;     // guard clause: not in photo mode
+    if (isCapturing) return;             // guard clause: already taking a photo
+    if (journal != null &amp;&amp; journal.IsFull)   // guard clause: no room left
+    {
+        StartCoroutine(ShowFullMessage());
+        return;
+    }
+    StartCoroutine(CaptureRoutine());
+}
+
+private IEnumerator ShowFullMessage()
+{
+    if (journalFullMessage == null) yield break;   // guard clause
+    journalFullMessage.SetActive(true);
+    yield return new WaitForSecondsRealtime(2f);   // real seconds: the world is frozen
+    journalFullMessage.SetActive(false);
+}</code></pre>
+            <div class="step-explain"><code>WaitForSecondsRealtime</code> is the real-time version of <code>WaitForSeconds</code>. You know why by now: the world is frozen in photo mode.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETUP ═══ -->
+      <section class="content-section" id="setup">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Set it up</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 8 min</p>
+          <ol>
+            <li>Create <code>Journal.cs</code> (full script below) and add it to the <strong>PhotoMode</strong> object. Drag in the <code>PhotoCapture</code> component.</li>
+            <li>Update <code>PhotoCapture.cs</code> as shown above. Drag in the <code>Journal</code>, and a hidden UI text saying "Journal full" for <em>Journal Full Message</em>.</li>
+            <li>Create <code>LocationZone.cs</code>. In your world, add an empty object with a Box Collider, tick <em>Is Trigger</em>, size it around an area, and add <code>LocationZone</code>. Type the area's name and drag in the Journal.</li>
+            <li>Make sure your player object has the <strong>Player</strong> tag.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: Journal.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: Journal.cs
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using UnityEngine;
+
+[Serializable]
+public class JournalEntry
+{
+    public string fileName;
+    public string caption;
+    public string locationName;
+    public string timestamp;
+}
+
+// JsonUtility can't save a List on its own, so it goes inside a wrapper class.
+[Serializable]
+public class JournalData
+{
+    public List&lt;JournalEntry&gt; entries = new List&lt;JournalEntry&gt;();
+}
+
+public class Journal : MonoBehaviour
+{
+    [SerializeField] private PhotoCapture photoCapture;
+    [SerializeField] private int maxPhotos = 50;
+
+    // Lesson 6's journal screen listens for this.
+    public event Action JournalChanged;
+
+    public IReadOnlyList&lt;JournalEntry&gt; Entries =&gt; data.entries;
+    public bool IsFull =&gt; data.entries.Count &gt;= maxPhotos;
+    public string PhotoFolder =&gt; photoFolder;
+
+    private JournalData data = new JournalData();
+    private string currentLocation = "Unknown trail";
+    private string photoFolder;
+    private string savePath;
+    private string tempPath;
+
+    private void Awake()
+    {
+        photoFolder = Path.Combine(Application.persistentDataPath, "Journal");
+        Directory.CreateDirectory(photoFolder);
+        savePath = Path.Combine(photoFolder, "journal.json");
+        tempPath = savePath + ".tmp";
+        Load();
+    }
+
+    private void OnEnable()
+    {
+        photoCapture.PhotoSaved += OnPhotoSaved;
+    }
+
+    private void OnDisable()
+    {
+        photoCapture.PhotoSaved -= OnPhotoSaved;
+    }
+
+    // A second hook: location zones in your world call this.
+    public void SetLocation(string locationName)
+    {
+        currentLocation = locationName;
+    }
+
+    private void OnPhotoSaved(string fileName)
+    {
+        JournalEntry entry = new JournalEntry
+        {
+            fileName = fileName,
+            caption = "",
+            locationName = currentLocation,
+            timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
+        };
+        data.entries.Add(entry);
+        Save();
+        JournalChanged?.Invoke();
+    }
+
+    public void DeleteEntry(JournalEntry entry)
+    {
+        if (!data.entries.Contains(entry)) return;      // guard clause
+
+        string photoPath = Path.Combine(photoFolder, entry.fileName);
+        if (File.Exists(photoPath)) File.Delete(photoPath);
+        data.entries.Remove(entry);
+        Save();
+        JournalChanged?.Invoke();
+    }
+
+    private void Save()
+    {
+        string json = JsonUtility.ToJson(data, true);
+        File.WriteAllText(tempPath, json);                  // 1. write the new version beside the old one
+        if (File.Exists(savePath)) File.Delete(savePath);   // 2. remove the old version
+        File.Move(tempPath, savePath);                      // 3. rename the new version into place
+    }
+
+    private void Load()
+    {
+        string path = savePath;
+        if (!File.Exists(path))
+        {
+            if (!File.Exists(tempPath)) return;     // guard clause: first time playing
+            path = tempPath;                        // recover from an interrupted save
+        }
+
+        try
+        {
+            data = JsonUtility.FromJson&lt;JournalData&gt;(File.ReadAllText(path)) ?? new JournalData();
+        }
+        catch (ArgumentException)
+        {
+            Debug.LogWarning("journal.json was damaged, so the journal is starting empty.");
+            data = new JournalData();
+            return;
+        }
+
+        RemoveMissingPhotos();
+        Save();                                     // tidy up: one clean, valid save file
+    }
+
+    private void RemoveMissingPhotos()
+    {
+        for (int i = data.entries.Count - 1; i &gt;= 0; i--)   // count backwards when removing
+        {
+            string photoPath = Path.Combine(photoFolder, data.entries[i].fileName);
+            if (!File.Exists(photoPath))
+            {
+                data.entries.RemoveAt(i);
+            }
+        }
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: LocationZone.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: LocationZone.cs
+using UnityEngine;
+
+[RequireComponent(typeof(Collider))]
+public class LocationZone : MonoBehaviour
+{
+    [SerializeField] private string locationName = "Lookout Point";
+    [SerializeField] private Journal journal;
+    [SerializeField] private string playerTag = "Player";
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!other.CompareTag(playerTag)) return;   // guard clause: only the player counts
+        journal.SetLocation(locationName);
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: PhotoCapture.cs (updated for Lesson 5)
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: PhotoCapture.cs
+using System;
+using System.Collections;
+using System.IO;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class PhotoCapture : MonoBehaviour
+{
+    [Header("Input (defaults are set when you add the component)")]
+    [SerializeField] private InputAction captureAction;
+
+    [Header("Scene references")]
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private Journal journal;
+    [SerializeField] private GameObject journalFullMessage; // hidden "Journal full" text
+    [SerializeField] private GameObject photoModeOverlay;   // button prompts shown in photo mode
+    [SerializeField] private AudioSource shutterSound;
+    [SerializeField] private Image flashImage;              // full-screen white Image on its own canvas
+
+    [Header("Feedback")]
+    [SerializeField] private float flashDuration = 0.25f;   // seconds
+
+    // Lesson 5's journal listens for this.
+    public event Action&lt;string&gt; PhotoSaved;
+
+    private bool isCapturing;
+    private string photoFolder;
+
+    // Runs when the component is first added: fills in default controls.
+    private void Reset()
+    {
+        captureAction = new InputAction("Capture", InputActionType.Button);
+        captureAction.AddBinding("&lt;Keyboard&gt;/space");
+        captureAction.AddBinding("&lt;Gamepad&gt;/buttonSouth");
+    }
+
+    private void Awake()
+    {
+        photoFolder = Path.Combine(Application.persistentDataPath, "Journal");
+        Directory.CreateDirectory(photoFolder);     // does nothing if it already exists
+        Debug.Log("Photos are saved to: " + photoFolder);
+    }
+
+    private void OnEnable()
+    {
+        captureAction.performed += OnCapture;
+        captureAction.Enable();
+    }
+
+    private void OnDisable()
+    {
+        captureAction.performed -= OnCapture;
+        captureAction.Disable();
+    }
+
+    // Keeps the photo mode prompts in step with photo mode.
+    private void Update()
+    {
+        if (photoModeOverlay == null || isCapturing) return;   // guard clause
+        photoModeOverlay.SetActive(photoMode.IsActive);
+    }
+
+    private void OnCapture(InputAction.CallbackContext context)
+    {
+        if (!photoMode.IsActive) return;     // guard clause: not in photo mode
+        if (isCapturing) return;             // guard clause: already taking a photo
+        if (journal != null &amp;&amp; journal.IsFull)   // guard clause: no room left
+        {
+            StartCoroutine(ShowFullMessage());
+            return;
+        }
+        StartCoroutine(CaptureRoutine());
+    }
+
+    private IEnumerator ShowFullMessage()
+    {
+        if (journalFullMessage == null) yield break;   // guard clause
+        journalFullMessage.SetActive(true);
+        yield return new WaitForSecondsRealtime(2f);   // real seconds: the world is frozen
+        journalFullMessage.SetActive(false);
+    }
+
+    private IEnumerator CaptureRoutine()
+    {
+        isCapturing = true;
+        if (photoModeOverlay != null) photoModeOverlay.SetActive(false);
+
+        yield return new WaitForEndOfFrame();       // wait until the frame is fully drawn
+
+        Texture2D shot = ScreenCapture.CaptureScreenshotAsTexture();
+        byte[] png = shot.EncodeToPNG();
+        Destroy(shot);                              // free the texture's memory
+
+        string fileName = MakeUniqueFileName();
+        File.WriteAllBytes(Path.Combine(photoFolder, fileName), png);
+
+        if (shutterSound != null) shutterSound.Play();
+        yield return Flash();
+
+        PhotoSaved?.Invoke(fileName);
+        isCapturing = false;
+    }
+
+    private string MakeUniqueFileName()
+    {
+        string baseName = "photo_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = baseName + ".png";
+        int copy = 2;
+        while (File.Exists(Path.Combine(photoFolder, fileName)))   // same second? add a number
+        {
+            fileName = baseName + "_" + copy + ".png";
+            copy++;
+        }
+        return fileName;
+    }
+
+    private IEnumerator Flash()
+    {
+        if (flashImage == null) yield break;        // guard clause
+
+        float elapsed = 0f;
+        while (elapsed &lt; flashDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;      // real time: the world is frozen
+            float alpha = 1f - (elapsed / flashDuration);
+            flashImage.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;                      // wait one frame
+        }
+        flashImage.color = new Color(1f, 1f, 1f, 0f);
+    }
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <p>Each test matches a risk from the start of the lesson. Keep the Journal folder open beside Unity while you test.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Risk</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T11</td><td>Take two photos in different zones, then open journal.json</td><td>Two entries with the right file names, zone names and times</td><td>–</td><td></td></tr>
+              <tr><td>T12</td><td>Stop and restart the game</td><td>The Console shows no errors and journal.json still lists both photos</td><td>–</td><td></td></tr>
+              <tr><td>T13</td><td>Delete journal.json, then start the game</td><td>Game starts with an empty journal and no errors</td><td>1</td><td></td></tr>
+              <tr><td>T14</td><td>Delete one PNG, then restart</td><td>Its entry disappears from journal.json</td><td>3</td><td></td></tr>
+              <tr><td>T15</td><td>Type random characters into journal.json, then restart</td><td>A warning in the Console, an empty journal and no crash</td><td>4</td><td></td></tr>
+              <tr><td>T16</td><td>Set Max Photos to 3, then take 4 photos</td><td>"Journal full" appears on the 4th and no 4th PNG is created</td><td>5</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="paper-margin-note">Risk 2 (power loss) is hard to test safely in class, which is exactly why we desk-checked it.</p>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>It remembers</h4>
+            <ul>
+              <li>Complete setup steps 1, 2 and 4. Skip zones for now; the location will read "Unknown trail".</li>
+              <li>Run T11, T12 and T13.</li>
+              <li>Open journal.json and label each field with the matching row of your data dictionary.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>It's robust</h4>
+            <ul>
+              <li>Add at least two location zones using your game's real area names.</li>
+              <li>Run all six tests and fix any failures.</li>
+              <li>Desk-check the backwards loop for entries A, B, C, D where only B and D are missing.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Full validation</h4>
+            <ul>
+              <li>Extend <code>RemoveMissingPhotos</code> into <code>ValidateEntries</code>, enforcing every rule in your Lesson 2 data dictionary. For example, cut captions to 60 characters, and remove entries whose timestamp fails <code>DateTime.TryParseExact</code>.</li>
+              <li>Pseudocode first, then a test for each rule.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="D"
+             data-feedback-a="Not quite. Nothing saves automatically. Our code decides when to call Save."
+             data-feedback-b="Not quite. Making a class read-only is a different idea. [Serializable] is about converting to JSON."
+             data-feedback-c="Not quite. The Hierarchy shows GameObjects. JournalEntry is a plain data class, not a GameObject."
+             data-feedback-d="✓ Correct. Without [Serializable], JsonUtility skips the class and journal.json comes out nearly empty.">
+          <div class="mcq-question">1. Why is the <code>JournalEntry</code> class marked <code>[Serializable]</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>So it is written to disk automatically every frame</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So other scripts are never allowed to change it</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>So Unity lists each entry in the Hierarchy window</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So JsonUtility can convert it to and from JSON</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="A"
+             data-feedback-a="✓ Correct. Load runs once in Awake. After that, the journal works from memory and only writes to disk when something changes."
+             data-feedback-b="Not quite. Reading a file every frame would be slow, and memory already holds the current journal."
+             data-feedback-c="Not quite. The journal is needed whenever the game runs, not just in photo mode."
+             data-feedback-d="Not quite. Missing photos are checked during Load, which runs when the game starts.">
+          <div class="mcq-question">2. When does the journal read <code>journal.json</code> from disk?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Once, in Awake, as soon as the game starts up</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Every frame in Update, so it's always up to date</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Only at the moment the player opens photo mode</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Whenever a PNG is deleted from the Journal folder</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="B"
+             data-feedback-a="Not quite. Step 1 already wrote journal.json.tmp, and it wasn't deleted."
+             data-feedback-b="✓ Correct. The old file is gone but the complete new version is in journal.json.tmp, and Load recovers from it."
+             data-feedback-c="Not quite. Step 2 deleted journal.json, so only one file remains."
+             data-feedback-d="Not quite. journal.json was deleted cleanly, not half-written. The new data is safe in the .tmp file.">
+          <div class="mcq-question">3. The game crashes after step 2 of <code>Save</code> (the old <code>journal.json</code> was deleted) but before step 3 (the rename). What happens on the next launch?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>No save files exist, so the journal starts empty</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Only the .tmp file exists, and Load recovers it</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Both files exist, so Load picks whichever is newer</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>journal.json is half-written, so the game crashes again</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="C"
+             data-feedback-a="Not quite. That's what should happen, but the forward loop skips an entry."
+             data-feedback-b="Not quite. The loop does remove A at i = 0."
+             data-feedback-c="✓ Correct. Removing A shifts B into index 0, but i moves on to 1, so B is never checked."
+             data-feedback-d="Not quite. A's photo is missing, so A is the one entry that definitely gets removed.">
+          <div class="mcq-question">4. A loop counts <em>forwards</em> from <code>i = 0</code>, removing entries whose photo is missing. The list is A, B, C and only C's photo exists. Which entries are left afterwards?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Only C, because A and B are both removed</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>A, B and C, because nothing at all is removed</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>B and C, because the loop skips over B</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>A and C, because only B gets removed</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="A"
+             data-feedback-a="✓ Correct. Until the final rename, the old journal.json is untouched, so a crash mid-write can't damage it."
+             data-feedback-b="Not quite. A .tmp file writes at the same speed. The benefit is safety, not speed."
+             data-feedback-c="Not quite. JsonUtility only makes the text. File.WriteAllText can write to any file name."
+             data-feedback-d="Not quite. The .tmp file is renamed away at the end. Players only ever see one journal.">
+          <div class="mcq-question">5. Why does <code>Save</code> write to <code>journal.json.tmp</code> first, instead of straight into <code>journal.json</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>A crash mid-write can't damage the old save</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Temporary files are written to disk much faster</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>JsonUtility can only create files ending in .tmp</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So the player can browse both versions of the journal</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="D"
+             data-feedback-a="Not quite. InvariantCulture doesn't change time zones. DateTime.Now is still local time."
+             data-feedback-b="Not quite. The format string decides the length, not the culture."
+             data-feedback-c="Not quite. That's the opposite. InvariantCulture ignores the player's language settings."
+             data-feedback-d="✓ Correct. Without it, the computer's settings can change the calendar or separators. A Thai-language computer writes the year as 2569.">
+          <div class="mcq-question">6. Why does the timestamp use <code>CultureInfo.InvariantCulture</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>So the time is converted to universal time (UTC)</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So the timestamp takes up fewer characters</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>So dates appear in the player's own language</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So every computer writes dates the same way</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for safe, secure and ethical use of data. Protecting a player's saved work is part of using data responsibly. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Selects and applies safe, secure and ethical practices in the use of data.</strong> Validates every data dictionary rule on load, tests each one, and explains how each choice protects the player's data.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Selects and applies safe, secure and ethical practices in the use of data.</strong> Passes all six tests and explains, using the crash desk check, why the save can't be corrupted.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Applies safe, secure and ethical practices in the use of data.</strong> Gets the journal saving and reloading with location zones, and handles missing files without crashing.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Uses data safely and responsibly.</strong> Gets the journal saving and reloading, and can identify each field in journal.json.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Works safely with data.</strong> Identifies risks to a save file and describes what should happen in each case.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Which of the five risks surprised you most, and how does your journal now handle it?
+            <span class="sentence-starter">I hadn't thought about ___. Now my journal…</span></li>
+          <li>A player says, "It's just a game, who cares if a save gets lost?" How would you respond as the developer?
+            <span class="sentence-starter">As the developer, I care because…</span></li>
+        </ul>
+        <label for="reflection-l5" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l5" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson04.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 4: Capturing the shot</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson06.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 6: Journal UI</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson05',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

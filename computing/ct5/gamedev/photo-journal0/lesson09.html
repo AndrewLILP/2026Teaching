@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 9: Steamworks in practice | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 9 of 12: read and trace a real Steamworks integration, change an interface safely, and add captions with Steam Deck's on-screen keyboard.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+    /* .code-change-banner uses dark-theme pink (#f472b6), which is too faint
+       on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .code-change-banner { color: #be185d; }
+
+    .tier-card { min-width: 0; }
+    .tier-card code { overflow-wrap: anywhere; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .error-output {
+      background: #2b2418;
+      color: #fca5a5;
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      margin: var(--space-4) 0;
+    }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 9</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#business">Why is Steamworks free?</a>
+          <a href="#docs">Read the documentation</a>
+          <a href="#startup">Who registers first?</a>
+          <a href="#steam">Tracing the Steam version</a>
+          <a href="#contract">Changing the contract</a>
+          <a href="#captions">Captions</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#setup">Set it up</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-EVL-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 9 of 12 · 50 minutes</p>
+        <h1>Steamworks in practice</h1>
+        <p class="page-intro">Last lesson's interface was a promise. Today you'll read the real Steam version that keeps it: the code that unlocks achievements on Steam, sends photos to the Steam screenshot library and opens Steam Deck's on-screen keyboard. Steam can't run at school, so you'll learn it the way developers learn any unfamiliar code: by reading the documentation and tracing. Then you'll use it to add the last missing feature, captions.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> <code>IPlatformService</code> defined what a platform must do, <code>MockPlatformService</code> kept that promise without Steam, and the achievement table stored a Spacewar ID for each achievement. Today that last column finally gets used.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · business case 4 min · documentation reading 7 min · startup trace 5 min · Steam code trace 8 min · interface change 4 min · captions, setup and tests 13 min · checkpoint 5 min.</p>
+        <p><strong>No Steam needed:</strong> <code>SteamPlatformService.cs</code> is wrapped in <code>#if STEAMWORKS_NET</code>. On computers without the Steamworks.NET package, Unity skips the whole file and the project still compiles. Students can add the file and read it, while the mock keeps working.</p>
+        <p><strong>If you can demonstrate with Steam</strong> (a staff machine or a Steam Deck): install Steamworks.NET, put a text file named <code>steam_appid.txt</code> containing <code>480</code> in the project folder, and run with Steam open. Before teaching, check the Spacewar achievement IDs against Valve's list, and check whether your Steamworks.NET version needs <code>SteamUserStats.RequestCurrentStats()</code> after <code>Init</code>. Older versions did; newer ones load stats automatically.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>read API documentation and use it to trace unfamiliar code</li>
+          <li>explain how a game falls back to a mock when a service isn't available</li>
+          <li>explain why changing an interface affects every class that implements it</li>
+          <li>add a text-entry feature that works with a keyboard or Steam Deck's on-screen keyboard.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> my project compiles with the Steam version included, I can explain what each Steam call does, and players can add, change and keep captions of up to 60 characters.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">API</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Application Programming Interface: the set of methods one system offers for other code to use.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">SDK</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Software Development Kit: the libraries, tools and documentation for building on a platform.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Wrapper</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Code that lets one language use a library written in another. Steamworks.NET wraps Steam's C++ SDK for C#.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">App ID</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The number that identifies a game on Steam. 480 is Spacewar, Valve's free test app.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Callback</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A message a service sends back later. Steam delivers its callbacks when the game calls RunCallbacks.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Conditional compilation</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Including or skipping code at build time using <code>#if</code>, depending on what's installed or which platform it's for.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Fallback</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A backup option used automatically when the first choice isn't available.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Breaking change</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A change to shared code, like an interface, that forces other code to change too.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ BUSINESS ═══ -->
+      <section class="content-section" id="business">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Why is Steamworks free?</h2>
+        <div class="case-study-box">
+          <p class="case-study-box__eyebrow">Case study · enterprise</p>
+          <h3>A platform is a business</h3>
+          <p>Valve gives developers the Steamworks SDK, a free test app called Spacewar and documentation, at no cost. A volunteer project, Steamworks.NET, wraps the SDK so Unity developers can use it from C#. Valve earns money by taking a share of each game sold on Steam, typically 30%.</p>
+          <p>Features like achievements, screenshot libraries and Steam Deck support keep players coming back to Steam and make it more attractive than other stores. The easier Valve makes it to add these features, the more games use them, and the more valuable Steam becomes for everyone.</p>
+          <p class="case-study-box__question"><strong>Discuss:</strong> Who benefits when a small studio adds Steam achievements to its game: the studio, the players, Valve, or all three? Is there anyone it could disadvantage?</p>
+        </div>
+      </section>
+
+      <!-- ═══ DOCS ═══ -->
+      <section class="content-section" id="docs">
+        <span class="section-phase-tag research"><span class="dot"></span>Researching</span>
+        <h2>Read the documentation</h2>
+        <p>Professional developers rarely memorise an API. They read its reference. Here are the five Steam calls our code uses, summarised in plain English from the Steamworks documentation.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Call</th><th scope="col">What it does</th><th scope="col">Returns</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>SteamAPI.Init()</code></td><td>Connects the game to the running Steam client. Must succeed before any other Steam call.</td><td><code>true</code> if connected, <code>false</code> if not (e.g. Steam isn't running)</td></tr>
+              <tr><td><code>SteamUserStats.SetAchievement(name)</code></td><td>Marks an achievement as unlocked <em>on this computer only</em>. Nothing is sent to Steam yet.</td><td><code>true</code> if the name exists</td></tr>
+              <tr><td><code>SteamUserStats.StoreStats()</code></td><td>Uploads changed stats and achievements to Steam's servers. This is what makes Steam show its own unlock pop-up.</td><td><code>true</code> if the upload was started</td></tr>
+              <tr><td><code>SteamScreenshots.AddScreenshotToLibrary(file, thumbnail, width, height)</code></td><td>Copies an image file into the player's Steam screenshot library. Pass <code>null</code> as the thumbnail and Steam makes one.</td><td>A handle that identifies the new screenshot</td></tr>
+              <tr><td><code>SteamUtils.ShowFloatingGamepadTextInput(mode, x, y, width, height)</code></td><td>On Steam Deck, opens the on-screen keyboard positioned so it doesn't cover the text box. Typed letters arrive as normal key presses.</td><td><code>true</code> if the keyboard was shown</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">DART · reading for detail · pairs · 5 min</p>
+          <p>Use only the table above to answer:</p>
+          <ol>
+            <li>A developer calls <code>SetAchievement</code> but forgets <code>StoreStats</code>. What does the player see on Steam?</li>
+            <li>What should the game do if <code>SteamAPI.Init()</code> returns <code>false</code>?</li>
+            <li>The table says typed letters "arrive as normal key presses". Why might that cause a problem in a game that uses letter keys as controls?</li>
+          </ol>
+        </div>
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Answers
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>Nothing. The unlock exists only locally and never reaches Steam's servers, so there's no pop-up and nothing on their profile.</li>
+              <li>Make no other Steam calls, and fall back to something else, which for us is the mock.</li>
+              <li>Typing a caption containing "j" would also trigger our ToggleJournal control. Hold that thought until the bug detective.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ STARTUP ═══ -->
+      <section class="content-section" id="startup">
+        <h2>Who registers first?</h2>
+        <p>Both platform services exist in the scene. <code>[DefaultExecutionOrder]</code> makes the Steam version's <code>Awake</code> run first (−100), then the mock's (−50). Remember that <code>Platform.Register</code> keeps whichever registers first.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · SteamPlatformService.Awake</p>
+<pre>1   BEGIN Awake
+2       TRY
+3           SET initialised TO SteamAPI.Init()
+4       CATCH Steam library missing
+5           SET initialised TO FALSE
+6       ENDTRY
+7       IF initialised = FALSE THEN
+8           DISPLAY "Steam not available, so the mock will be used."
+9           RETURN
+10      ENDIF
+11      Platform.Register(this)
+12  END Awake</pre>
+        </div>
+
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Situation</th><th scope="col">Steam Awake (−100)</th><th scope="col">Mock Awake (−50)</th><th scope="col">Platform.Current</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">School PC, no Steamworks.NET</td><td class="td-code">File skipped by <code>#if</code>, so it never runs</td><td class="td-code">Registers</td><td class="td-output">Mock</td></tr>
+              <tr><td class="td-step">Steamworks.NET installed, Steam closed</td><td class="td-code">Init → false, guard clause returns</td><td class="td-code">Registers</td><td class="td-output">Mock</td></tr>
+              <tr><td class="td-step">Steam running (PC or Steam Deck)</td><td class="td-code">Init → true, registers</td><td class="td-code">Register ignored (already set)</td><td class="td-output">Steam</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>In every situation the game works, and no other script needs to know which row it's in. This is the payoff of designing the interface first.</p>
+      </section>
+
+      <!-- ═══ STEAM ═══ -->
+      <section class="content-section" id="steam">
+        <span class="section-phase-tag produce"><span class="dot"></span>Tracing</span>
+        <h2>Tracing the Steam version</h2>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">Conditional compilation</span></div>
+<pre><code>// Recommended filename: SteamPlatformService.cs
+// Only compiles when Steamworks.NET is installed. Without it, this whole file is skipped
+// and the mock takes over, so the project still builds on computers without Steam.
+#if STEAMWORKS_NET &amp;&amp; !DISABLESTEAMWORKS
+using System;
+using Steamworks;
+using UnityEngine;
+...
+#endif</code></pre>
+            <div class="step-explain"><code>#if</code> isn't an ordinary IF. It runs when the code is <em>compiled</em>, not when the game plays. Steamworks.NET defines the symbol <code>STEAMWORKS_NET</code> when it's installed. Without it, Unity treats everything down to <code>#endif</code> as if it didn't exist.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Achievements: our ID → Steam's ID</span></div>
+<pre><code>public void UnlockAchievement(string achievementId)
+{
+    if (IsUnlocked(achievementId)) return;  // guard clause: unlock once only
+
+    AchievementInfo info = Achievements.Find(achievementId);
+    if (info == null) return;               // guard clause
+
+    SteamUserStats.SetAchievement(info.spacewarId);     // Steam's name comes from the table
+    SteamUserStats.StoreStats();                        // upload it, and show Steam's pop-up
+}</code></pre>
+            <div class="step-explain">Compare this with the mock's version: same guard clause, same table lookup, different final two lines. <code>info.spacewarId</code> turns our <code>FIRST_PHOTO</code> into Spacewar's <code>ACH_WIN_ONE_GAME</code>. A real release would only change the table.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">Screenshots with a location</span></div>
+<pre><code>public void AddScreenshot(string filePath, string locationName)
+{
+    // null thumbnail: Steam makes its own. The size is the screen the photo was taken from.
+    ScreenshotHandle handle = SteamScreenshots.AddScreenshotToLibrary(filePath, null, Screen.width, Screen.height);
+    SteamScreenshots.SetLocation(handle, locationName);
+}</code></pre>
+            <div class="step-explain">The location name from your <code>LocationZone</code> becomes a label on the screenshot in the player's Steam library. Data from Lesson 5 now appears outside your game.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">The on-screen keyboard</span></div>
+<pre><code>public bool ShowOnScreenKeyboard(Rect screenArea)
+{
+    if (!SteamUtils.IsSteamRunningOnSteamDeck()) return false;   // guard clause: PCs have keyboards
+
+    // Unity measures y from the bottom of the screen; Steam measures from the top.
+    int topY = Screen.height - (int)(screenArea.y + screenArea.height);
+    return SteamUtils.ShowFloatingGamepadTextInput(
+        EFloatingGamepadTextInputMode.k_EFloatingGamepadTextInputModeModeSingleLine,
+        (int)screenArea.x, topY, (int)screenArea.width, (int)screenArea.height);
+}</code></pre>
+            <div class="step-explain">Unity measures y from the <em>bottom</em> of the screen, but Steam measures from the <em>top</em>, so the code converts. On a 1280 × 800 screen, a text box starting 300 px from the bottom and 60 px tall has its top edge at 800 − (300 + 60) = <strong>440</strong> px from the top. We ran this calculation to check it.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CONTRACT ═══ -->
+      <section class="content-section" id="contract">
+        <h2>Changing the contract</h2>
+        <p>Captions need a keyboard on Steam Deck, so <code>IPlatformService</code> gets a fourth method. Watch what happens the moment it's added:</p>
+        <div class="code-change-banner">IPlatformService.cs: ADD ONE LINE</div>
+<pre><code>bool ShowOnScreenKeyboard(UnityEngine.Rect screenArea);   // added in Lesson 9</code></pre>
+        <p>Unity immediately refuses to compile. This is the error we got when we tried it:</p>
+<pre class="error-output">error CS0535: 'MockPlatformService' does not implement interface member
+'IPlatformService.ShowOnScreenKeyboard(UnityEngine.Rect)'</pre>
+        <p>The compiler is enforcing the promise: <code>MockPlatformService</code> said it implements <code>IPlatformService</code>, and now it doesn't. This is a <strong>breaking change</strong>. Every class that implements the interface must change too, which is why interfaces should be designed carefully and changed rarely. The fix is to keep the promise:</p>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">MockPlatformService.cs: the new method</span></div>
+<pre><code>// A PC player has a real keyboard, so the mock never needs to show one.
+public bool ShowOnScreenKeyboard(Rect screenArea)
+{
+    Debug.Log("[Mock] On-screen keyboard not needed on this computer.");
+    return false;
+}</code></pre>
+            <div class="step-explain">Returning <code>false</code> means "no keyboard was shown", which is true on a PC. The mock doesn't have to do anything clever. It just has to keep the promise honestly.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CAPTIONS ═══ -->
+      <section class="content-section" id="captions">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Captions</h2>
+        <p>Your Lesson 2 storyboard had a Caption button and your data dictionary limited captions to 60 characters. Both now get built.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · editing a caption</p>
+<pre>1   BEGIN OpenCaption
+2       SET editing TO selected entry
+3       IF editing = nothing THEN
+4           RETURN
+5       ENDIF
+6       DISABLE journal controls
+7       SHOW caption box WITH editing.caption
+8       Platform.ShowOnScreenKeyboard(caption box area)
+9   END OpenCaption
+
+10  BEGIN SetCaption(entry, text)
+11      SET text TO text WITHOUT spaces at either end
+12      IF length of text &gt; 60 THEN
+13          SET text TO first 60 characters of text
+14      ENDIF
+15      SET entry.caption TO text
+16      Save()
+17  END SetCaption</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">6</span><span class="step-label">Journal.cs: SetCaption</span></div>
+            <div class="code-change-banner">ADD TO Journal</div>
+<pre><code>public void SetCaption(JournalEntry entry, string caption)
+{
+    if (!data.entries.Contains(entry)) return;      // guard clause
+
+    caption = (caption ?? "").Trim();
+    if (caption.Length &gt; MaxCaptionLength)          // enforce the data dictionary rule
+    {
+        caption = caption.Substring(0, MaxCaptionLength);
+    }
+    entry.caption = caption;
+    Save();
+    JournalChanged?.Invoke();
+}</code></pre>
+            <div class="step-explain">The input box already stops at 60 characters, so why check again? Because the journal can't trust that every caller used that box. Validating where data is <em>stored</em> protects it from every path. We tested it with a 70-character caption (cut to 60) and a caption with spaces around it (trimmed).</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">7</span><span class="step-label">CaptionEditor.cs: opening and closing</span></div>
+<pre><code>// Caption button → On Click
+public void Open()
+{
+    editing = journalScreen.SelectedEntry;
+    if (editing == null) return;                // guard clause: no photo selected
+
+    journalScreen.enabled = false;              // so typing "j" can't close the journal
+    captionPanel.SetActive(true);
+    inputField.text = editing.caption;
+    inputField.Select();
+    inputField.ActivateInputField();
+
+    RectTransform field = (RectTransform)inputField.transform;
+    Platform.Current?.ShowOnScreenKeyboard(ScreenRect(field));
+}
+
+private void Save(string text)
+{
+    if (editing == null) return;                // guard clause: already closed
+    JournalEntry entry = editing;
+    Close();
+    journal.SetCaption(entry, text);            // JournalScreen is listening again by now
+}
+
+private void OnEndEdit(string text)
+{
+    if (editing == null) return;                // guard clause: Save already ran
+    Close();                                    // ended without submitting: cancel
+}</code></pre>
+            <div class="step-explain">Two ways out: <code>onSubmit</code> (Enter) saves, and <code>onEndEdit</code> without a submit (Escape, or clicking away) cancels. Both use the same guard clause, <code>editing == null</code>, so whichever runs second does nothing.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">8</span><span class="step-label">JournalScreen.cs: keep the same photo selected</span></div>
+            <div class="code-change-banner">CHANGE THE START OF BuildGrid AND THE SELECTION LINE</div>
+<pre><code>private IEnumerator BuildGrid()
+{
+    JournalEntry keep = SelectedEntry;          // remember the selection across a rebuild
+    ClearGrid();
+
+    int count = journal.Entries.Count;
+    countText.text = count == 1 ? "1 photo" : count + " photos";
+    emptyMessage.SetActive(count == 0);
+    if (count == 0)
+    {
+        ShowDetail(null);
+        yield break;
+    }
+
+    // 1. Make every button now, newest first, so the layout appears at once.
+    for (int i = count - 1; i &gt;= 0; i--)
+    {
+        JournalThumbnail thumb = Instantiate(thumbnailPrefab, gridContent);
+        thumb.Setup(journal.Entries[i], this);
+        thumbnails.Add(thumb);
+    }
+    JournalThumbnail first = thumbnails[0];
+    foreach (JournalThumbnail thumb in thumbnails)
+    {
+        if (thumb.Entry == keep) first = thumb;     // same photo as before, if it still exists
+    }
+    EventSystem.current.SetSelectedGameObject(first.gameObject);
+    // ...then load the photos as before</code></pre>
+            <div class="step-explain">Saving a caption raises <code>JournalChanged</code>, which rebuilds the grid. Without this change the selection would jump back to the newest photo after every caption, which is irritating for the player. The screen also gains a small <code>SelectedEntry</code> property so <code>CaptionEditor</code> can ask which photo is selected.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>"Journey home" closes the journal</h3>
+          <p>A classmate's caption box works until they type a word with a "j" in it, like "journey". Then the journal snaps shut and the caption is lost. Here's their <code>Open</code>:</p>
+<pre>public void Open()
+{
+    editing = journalScreen.SelectedEntry;
+    if (editing == null) return;
+    captionPanel.SetActive(true);
+    inputField.text = editing.caption;
+    inputField.ActivateInputField();
+}</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            The journal's controls are still switched on. <kbd>J</kbd> is bound to ToggleJournal, so typing "j" in the caption is also a press of the journal button. The fix is <code>journalScreen.enabled = false;</code> while typing, and back to <code>true</code> when the box closes. Disabling the script runs its <code>OnDisable</code>, which disables its input actions. On Steam Deck this matters too: the on-screen keyboard sends letters as normal key presses.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ SETUP ═══ -->
+      <section class="content-section" id="setup">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Set it up</h2>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 8 min</p>
+          <ol>
+            <li>Add the new line to <code>IPlatformService</code>, read the error, then fix <code>MockPlatformService</code>.</li>
+            <li>Add <code>SetCaption</code> to <code>Journal</code> and replace <code>JournalScreen</code> with the Lesson 9 version.</li>
+            <li>Add <code>SteamPlatformService.cs</code> to your project and add the component to the <strong>PhotoMode</strong> object. Without Steamworks.NET, Unity won't let you add it because the file is skipped. That's expected, so leave it out.</li>
+            <li>In the journal's detail panel, add a <strong>Caption</strong> button and a hidden <strong>CaptionPanel</strong> containing a TMP Input Field.</li>
+            <li>Add <code>CaptionEditor</code> to <strong>PhotoMode</strong>, drag in the references, and set the Caption button's <em>On Click</em> to <code>CaptionEditor.Open</code>.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: SteamPlatformService.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: SteamPlatformService.cs
+// Only compiles when Steamworks.NET is installed. Without it, this whole file is skipped
+// and the mock takes over, so the project still builds on computers without Steam.
+#if STEAMWORKS_NET &amp;&amp; !DISABLESTEAMWORKS
+using System;
+using Steamworks;
+using UnityEngine;
+
+[DefaultExecutionOrder(-100)]                   // tries before the mock (-50)
+public class SteamPlatformService : MonoBehaviour, IPlatformService
+{
+    public string Name =&gt; "Steam (App ID 480)";
+
+    private bool initialised;
+
+    private void Awake()
+    {
+        try
+        {
+            initialised = SteamAPI.Init();      // false if the Steam client isn't running
+        }
+        catch (DllNotFoundException)
+        {
+            initialised = false;                // Steam's library file is missing
+        }
+
+        if (!initialised)                       // guard clause: leave it to the mock
+        {
+            Debug.Log("Steam not available, so the mock will be used.");
+            enabled = false;
+            return;
+        }
+        Platform.Register(this);
+    }
+
+    private void Update()
+    {
+        SteamAPI.RunCallbacks();                // lets Steam deliver its messages each frame
+    }
+
+    private void OnApplicationQuit()
+    {
+        if (initialised) SteamAPI.Shutdown();
+    }
+
+    public bool IsUnlocked(string achievementId)
+    {
+        AchievementInfo info = Achievements.Find(achievementId);
+        if (info == null) return false;         // guard clause: not in the table
+
+        SteamUserStats.GetAchievement(info.spacewarId, out bool achieved);
+        return achieved;
+    }
+
+    public void UnlockAchievement(string achievementId)
+    {
+        if (IsUnlocked(achievementId)) return;  // guard clause: unlock once only
+
+        AchievementInfo info = Achievements.Find(achievementId);
+        if (info == null) return;               // guard clause
+
+        SteamUserStats.SetAchievement(info.spacewarId);     // Steam's name comes from the table
+        SteamUserStats.StoreStats();                        // upload it, and show Steam's pop-up
+    }
+
+    public void AddScreenshot(string filePath, string locationName)
+    {
+        // null thumbnail: Steam makes its own. The size is the screen the photo was taken from.
+        ScreenshotHandle handle = SteamScreenshots.AddScreenshotToLibrary(filePath, null, Screen.width, Screen.height);
+        SteamScreenshots.SetLocation(handle, locationName);
+    }
+
+    public bool ShowOnScreenKeyboard(Rect screenArea)
+    {
+        if (!SteamUtils.IsSteamRunningOnSteamDeck()) return false;   // guard clause: PCs have keyboards
+
+        // Unity measures y from the bottom of the screen; Steam measures from the top.
+        int topY = Screen.height - (int)(screenArea.y + screenArea.height);
+        return SteamUtils.ShowFloatingGamepadTextInput(
+            EFloatingGamepadTextInputMode.k_EFloatingGamepadTextInputModeModeSingleLine,
+            (int)screenArea.x, topY, (int)screenArea.width, (int)screenArea.height);
+    }
+}
+#endif</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: CaptionEditor.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: CaptionEditor.cs
+using TMPro;
+using UnityEngine;
+
+public class CaptionEditor : MonoBehaviour
+{
+    [SerializeField] private Journal journal;
+    [SerializeField] private JournalScreen journalScreen;
+    [SerializeField] private GameObject captionPanel;
+    [SerializeField] private TMP_InputField inputField;
+
+    private JournalEntry editing;
+
+    private void Awake()
+    {
+        inputField.characterLimit = Journal.MaxCaptionLength;   // the data dictionary rule, again
+        inputField.onSubmit.AddListener(Save);                  // Enter, or Done on a keyboard
+        inputField.onEndEdit.AddListener(OnEndEdit);            // also fires for Escape or clicking away
+        captionPanel.SetActive(false);
+    }
+
+    // Caption button → On Click
+    public void Open()
+    {
+        editing = journalScreen.SelectedEntry;
+        if (editing == null) return;                // guard clause: no photo selected
+
+        journalScreen.enabled = false;              // so typing "j" can't close the journal
+        captionPanel.SetActive(true);
+        inputField.text = editing.caption;
+        inputField.Select();
+        inputField.ActivateInputField();
+
+        RectTransform field = (RectTransform)inputField.transform;
+        Platform.Current?.ShowOnScreenKeyboard(ScreenRect(field));
+    }
+
+    private void Save(string text)
+    {
+        if (editing == null) return;                // guard clause: already closed
+        JournalEntry entry = editing;
+        Close();
+        journal.SetCaption(entry, text);            // JournalScreen is listening again by now
+    }
+
+    private void OnEndEdit(string text)
+    {
+        if (editing == null) return;                // guard clause: Save already ran
+        Close();                                    // ended without submitting: cancel
+    }
+
+    private void Close()
+    {
+        editing = null;
+        captionPanel.SetActive(false);
+        journalScreen.enabled = true;
+    }
+
+    // For a Screen Space - Overlay canvas, world corners are screen pixels.
+    private static Rect ScreenRect(RectTransform rect)
+    {
+        Vector3[] corners = new Vector3[4];         // 0 = bottom-left, 2 = top-right
+        rect.GetWorldCorners(corners);
+        return new Rect(corners[0].x, corners[0].y, corners[2].x - corners[0].x, corners[2].y - corners[0].y);
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: Journal.cs (Lesson 9)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: Journal.cs
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using UnityEngine;
+
+[Serializable]
+public class JournalEntry
+{
+    public string fileName;
+    public string caption;
+    public string locationName;
+    public string timestamp;
+}
+
+// JsonUtility can't save a List on its own, so it goes inside a wrapper class.
+[Serializable]
+public class JournalData
+{
+    public List&lt;JournalEntry&gt; entries = new List&lt;JournalEntry&gt;();
+}
+
+public class Journal : MonoBehaviour
+{
+    [SerializeField] private PhotoCapture photoCapture;
+    [SerializeField] private int maxPhotos = 50;
+
+    public const int MaxCaptionLength = 60;     // from the Lesson 2 data dictionary
+
+    // Lesson 6's journal screen listens for this.
+    public event Action JournalChanged;
+
+    public IReadOnlyList&lt;JournalEntry&gt; Entries =&gt; data.entries;
+    public bool IsFull =&gt; data.entries.Count &gt;= maxPhotos;
+    public string PhotoFolder =&gt; photoFolder;
+
+    private JournalData data = new JournalData();
+    private string currentLocation = "Unknown trail";
+    private string photoFolder;
+    private string savePath;
+    private string tempPath;
+
+    private void Awake()
+    {
+        photoFolder = Path.Combine(Application.persistentDataPath, "Journal");
+        Directory.CreateDirectory(photoFolder);
+        savePath = Path.Combine(photoFolder, "journal.json");
+        tempPath = savePath + ".tmp";
+        Load();
+    }
+
+    private void OnEnable()
+    {
+        photoCapture.PhotoSaved += OnPhotoSaved;
+    }
+
+    private void OnDisable()
+    {
+        photoCapture.PhotoSaved -= OnPhotoSaved;
+    }
+
+    // A second hook: location zones in your world call this.
+    public void SetLocation(string locationName)
+    {
+        currentLocation = locationName;
+    }
+
+    private void OnPhotoSaved(string fileName)
+    {
+        JournalEntry entry = new JournalEntry
+        {
+            fileName = fileName,
+            caption = "",
+            locationName = currentLocation,
+            timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture)
+        };
+        data.entries.Add(entry);
+        Save();
+        JournalChanged?.Invoke();
+    }
+
+    public void SetCaption(JournalEntry entry, string caption)
+    {
+        if (!data.entries.Contains(entry)) return;      // guard clause
+
+        caption = (caption ?? "").Trim();
+        if (caption.Length &gt; MaxCaptionLength)          // enforce the data dictionary rule
+        {
+            caption = caption.Substring(0, MaxCaptionLength);
+        }
+        entry.caption = caption;
+        Save();
+        JournalChanged?.Invoke();
+    }
+
+    public void DeleteEntry(JournalEntry entry)
+    {
+        if (!data.entries.Contains(entry)) return;      // guard clause
+
+        string photoPath = Path.Combine(photoFolder, entry.fileName);
+        if (File.Exists(photoPath)) File.Delete(photoPath);
+        data.entries.Remove(entry);
+        Save();
+        JournalChanged?.Invoke();
+    }
+
+    private void Save()
+    {
+        string json = JsonUtility.ToJson(data, true);
+        File.WriteAllText(tempPath, json);                  // 1. write the new version beside the old one
+        if (File.Exists(savePath)) File.Delete(savePath);   // 2. remove the old version
+        File.Move(tempPath, savePath);                      // 3. rename the new version into place
+    }
+
+    private void Load()
+    {
+        string path = savePath;
+        if (!File.Exists(path))
+        {
+            if (!File.Exists(tempPath)) return;     // guard clause: first time playing
+            path = tempPath;                        // recover from an interrupted save
+        }
+
+        try
+        {
+            data = JsonUtility.FromJson&lt;JournalData&gt;(File.ReadAllText(path)) ?? new JournalData();
+        }
+        catch (ArgumentException)
+        {
+            Debug.LogWarning("journal.json was damaged, so the journal is starting empty.");
+            data = new JournalData();
+            return;
+        }
+
+        RemoveMissingPhotos();
+        Save();                                     // tidy up: one clean, valid save file
+    }
+
+    private void RemoveMissingPhotos()
+    {
+        for (int i = data.entries.Count - 1; i &gt;= 0; i--)   // count backwards when removing
+        {
+            string photoPath = Path.Combine(photoFolder, data.entries[i].fileName);
+            if (!File.Exists(photoPath))
+            {
+                data.entries.RemoveAt(i);
+            }
+        }
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: JournalScreen.cs (Lesson 9)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: JournalScreen.cs
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
+
+public class JournalScreen : MonoBehaviour
+{
+    [Header("Input (from the PhotoJournalControls asset)")]
+    [SerializeField] private InputActionReference toggleAction;
+    [SerializeField] private InputActionReference backAction;
+
+    [Header("Data and game")]
+    [SerializeField] private Journal journal;
+    [SerializeField] private PhotoModeController photoMode;
+    [SerializeField] private Behaviour[] disableWhileOpen;  // movement, camera, PhotoModeController, PhotoCapture
+
+    [Header("Grid")]
+    [SerializeField] private GameObject screenRoot;         // the journal canvas
+    [SerializeField] private ScrollRect gridScroll;         // set Movement Type to Clamped
+    [SerializeField] private Transform gridContent;         // ScrollRect content with a GridLayoutGroup
+    [SerializeField] private JournalThumbnail thumbnailPrefab;
+    [SerializeField] private GameObject emptyMessage;
+    [SerializeField] private TMP_Text countText;
+    [SerializeField] private int thumbnailWidth = 480;
+    [SerializeField] private int thumbnailHeight = 270;
+
+    [Header("Detail panel")]
+    [SerializeField] private RawImage detailImage;
+    [SerializeField] private TMP_Text captionText;
+    [SerializeField] private TMP_Text locationText;
+    [SerializeField] private TMP_Text dateText;
+
+    [Header("Delete confirmation")]
+    [SerializeField] private GameObject confirmPanel;
+    [SerializeField] private Button confirmNoButton;
+
+    public bool IsOpen { get; private set; }
+    public JournalEntry SelectedEntry =&gt; selected != null ? selected.Entry : null;
+
+    private readonly List&lt;JournalThumbnail&gt; thumbnails = new List&lt;JournalThumbnail&gt;();
+    private JournalThumbnail selected;
+    private float savedTimeScale = 1f;
+
+    private void OnEnable()
+    {
+        toggleAction.action.performed += OnToggle;
+        backAction.action.performed += OnBack;
+        toggleAction.action.Enable();
+        backAction.action.Enable();
+        journal.JournalChanged += OnJournalChanged;
+    }
+
+    private void OnDisable()
+    {
+        toggleAction.action.performed -= OnToggle;
+        backAction.action.performed -= OnBack;
+        toggleAction.action.Disable();
+        backAction.action.Disable();
+        journal.JournalChanged -= OnJournalChanged;
+    }
+
+    private void OnToggle(InputAction.CallbackContext context)
+    {
+        if (IsOpen) Close();
+        else Open();
+    }
+
+    private void OnBack(InputAction.CallbackContext context)
+    {
+        if (!IsOpen) return;                        // guard clause: nothing to go back from
+        if (confirmPanel.activeSelf) CancelDelete(); // back out of the question first
+        else Close();
+    }
+
+    private void Open()
+    {
+        if (photoMode != null &amp;&amp; photoMode.IsActive) return;   // guard clause: finish photo mode first
+
+        IsOpen = true;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = false;
+        }
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 0f;
+
+        screenRoot.SetActive(true);
+        confirmPanel.SetActive(false);
+        StartCoroutine(BuildGrid());
+    }
+
+    private void Close()
+    {
+        StopAllCoroutines();
+        ClearGrid();
+        screenRoot.SetActive(false);
+
+        Time.timeScale = savedTimeScale;
+        foreach (Behaviour script in disableWhileOpen)
+        {
+            script.enabled = true;
+        }
+        IsOpen = false;
+    }
+
+    private void OnJournalChanged()
+    {
+        if (!IsOpen) return;                        // guard clause
+        StopAllCoroutines();
+        StartCoroutine(BuildGrid());
+    }
+
+    private IEnumerator BuildGrid()
+    {
+        JournalEntry keep = SelectedEntry;          // remember the selection across a rebuild
+        ClearGrid();
+
+        int count = journal.Entries.Count;
+        countText.text = count == 1 ? "1 photo" : count + " photos";
+        emptyMessage.SetActive(count == 0);
+        if (count == 0)
+        {
+            ShowDetail(null);
+            yield break;
+        }
+
+        // 1. Make every button now, newest first, so the layout appears at once.
+        for (int i = count - 1; i &gt;= 0; i--)
+        {
+            JournalThumbnail thumb = Instantiate(thumbnailPrefab, gridContent);
+            thumb.Setup(journal.Entries[i], this);
+            thumbnails.Add(thumb);
+        }
+        JournalThumbnail first = thumbnails[0];
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            if (thumb.Entry == keep) first = thumb;     // same photo as before, if it still exists
+        }
+        EventSystem.current.SetSelectedGameObject(first.gameObject);
+
+        // 2. Load one photo per frame, so the screen never freezes.
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            thumb.SetTexture(LoadThumbnail(thumb.Entry));
+            if (thumb == selected) detailImage.texture = thumb.Texture;
+            yield return null;
+        }
+    }
+
+    private void ClearGrid()
+    {
+        foreach (JournalThumbnail thumb in thumbnails)
+        {
+            if (thumb.Texture != null) Destroy(thumb.Texture);   // free its memory
+            Destroy(thumb.gameObject);
+        }
+        thumbnails.Clear();
+        selected = null;
+        detailImage.texture = null;
+    }
+
+    private Texture2D LoadThumbnail(JournalEntry entry)
+    {
+        string path = Path.Combine(journal.PhotoFolder, entry.fileName);
+        if (!File.Exists(path)) return null;        // guard clause
+
+        Texture2D full = new Texture2D(2, 2);
+        full.LoadImage(File.ReadAllBytes(path));    // decodes the PNG and resizes to fit
+        Texture2D thumb = Shrink(full, thumbnailWidth, thumbnailHeight);
+        Destroy(full);                              // keep only the small copy
+        return thumb;
+    }
+
+    private static Texture2D Shrink(Texture2D source, int width, int height)
+    {
+        RenderTexture temp = RenderTexture.GetTemporary(width, height);
+        Graphics.Blit(source, temp);                // GPU draws the photo at the new size
+
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture.active = temp;
+        Texture2D small = new Texture2D(width, height, TextureFormat.RGB24, false);
+        small.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        small.Apply();
+
+        RenderTexture.active = previous;
+        RenderTexture.ReleaseTemporary(temp);
+        return small;
+    }
+
+    public void ShowDetail(JournalThumbnail thumb)
+    {
+        selected = thumb;
+        if (thumb == null)
+        {
+            detailImage.texture = null;
+            captionText.text = "";
+            locationText.text = "";
+            dateText.text = "";
+            return;
+        }
+
+        JournalEntry entry = thumb.Entry;
+        detailImage.texture = thumb.Texture;
+        captionText.text = string.IsNullOrEmpty(entry.caption) ? "No caption yet" : entry.caption;
+        locationText.text = entry.locationName;
+
+        // Saved in one fixed format, shown in the player's own format.
+        if (DateTime.TryParseExact(entry.timestamp, "yyyy-MM-ddTHH:mm:ss",
+                CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime taken))
+        {
+            dateText.text = taken.ToString("g", CultureInfo.CurrentCulture);   // e.g. 2/10/2026 2:30 PM in Australia
+        }
+        else
+        {
+            dateText.text = "Unknown date";
+        }
+    }
+
+    // Scrolls the grid just enough to keep a selected thumbnail on screen.
+    public void KeepVisible(RectTransform item)
+    {
+        Vector3[] itemCorners = new Vector3[4];     // 0 = bottom-left, 1 = top-left
+        Vector3[] viewCorners = new Vector3[4];
+        item.GetWorldCorners(itemCorners);
+        gridScroll.viewport.GetWorldCorners(viewCorners);
+
+        float belowBottom = viewCorners[0].y - itemCorners[0].y;
+        float aboveTop = itemCorners[1].y - viewCorners[1].y;
+
+        float shift = 0f;
+        if (belowBottom &gt; 0f) shift = belowBottom;      // item hidden below: move content up
+        else if (aboveTop &gt; 0f) shift = -aboveTop;      // item hidden above: move content down
+        if (shift == 0f) return;                        // guard clause: already visible
+
+        gridScroll.StopMovement();
+        gridScroll.content.position += new Vector3(0f, shift, 0f);
+    }
+
+    // Delete button: ask first.
+    public void RequestDelete()
+    {
+        if (selected == null) return;               // guard clause
+        confirmPanel.SetActive(true);
+        EventSystem.current.SetSelectedGameObject(confirmNoButton.gameObject);  // safe default
+    }
+
+    // "Yes, delete" button.
+    public void ConfirmDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected == null) return;               // guard clause
+        journal.DeleteEntry(selected.Entry);        // raises JournalChanged, which rebuilds the grid
+    }
+
+    // "No, keep it" button.
+    public void CancelDelete()
+    {
+        confirmPanel.SetActive(false);
+        if (selected != null) EventSystem.current.SetSelectedGameObject(selected.gameObject);
+    }
+}</code></pre></div></div>
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full scripts: IPlatformService.cs and MockPlatformService.cs (Lesson 9)<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: IPlatformService.cs
+// The contract: what any platform (Steam, a mock, a future console) must be able to do.
+public interface IPlatformService
+{
+    string Name { get; }
+    bool IsUnlocked(string achievementId);
+    void UnlockAchievement(string achievementId);
+    void AddScreenshot(string filePath, string locationName);
+    bool ShowOnScreenKeyboard(UnityEngine.Rect screenArea);   // added in Lesson 9
+}
+
+// Recommended filename: MockPlatformService.cs
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using TMPro;
+using UnityEngine;
+
+[DefaultExecutionOrder(-50)]                // registers before other scripts start
+public class MockPlatformService : MonoBehaviour, IPlatformService
+{
+    [Header("Achievement pop-up (on its own canvas)")]
+    [SerializeField] private GameObject toastPanel;
+    [SerializeField] private TMP_Text toastTitle;
+    [SerializeField] private TMP_Text toastDescription;
+    [SerializeField] private float toastSeconds = 3f;
+
+    public string Name =&gt; "Mock (no Steam)";
+
+    private readonly Queue&lt;AchievementInfo&gt; toastQueue = new Queue&lt;AchievementInfo&gt;();
+    private bool showingToasts;
+
+    private void Awake()
+    {
+        Platform.Register(this);
+        toastPanel.SetActive(false);
+    }
+
+    public bool IsUnlocked(string achievementId)
+    {
+        return PlayerPrefs.GetInt("mock_ach_" + achievementId, 0) == 1;
+    }
+
+    public void UnlockAchievement(string achievementId)
+    {
+        if (IsUnlocked(achievementId)) return;              // guard clause: unlock once only
+
+        AchievementInfo info = Achievements.Find(achievementId);
+        if (info == null)                                   // guard clause: not in the table
+        {
+            Debug.LogWarning("Unknown achievement: " + achievementId);
+            return;
+        }
+
+        PlayerPrefs.SetInt("mock_ach_" + achievementId, 1);
+        PlayerPrefs.Save();
+
+        toastQueue.Enqueue(info);                           // join the back of the queue
+        if (!showingToasts) StartCoroutine(ShowToasts());
+    }
+
+    public void AddScreenshot(string filePath, string locationName)
+    {
+        Debug.Log("[Mock] Screenshot added: " + Path.GetFileName(filePath) + " at " + locationName);
+    }
+
+    // A PC player has a real keyboard, so the mock never needs to show one.
+    public bool ShowOnScreenKeyboard(Rect screenArea)
+    {
+        Debug.Log("[Mock] On-screen keyboard not needed on this computer.");
+        return false;
+    }
+
+    private IEnumerator ShowToasts()
+    {
+        showingToasts = true;
+        while (toastQueue.Count &gt; 0)
+        {
+            AchievementInfo info = toastQueue.Dequeue();    // take from the front
+            toastTitle.text = "Achievement unlocked: " + info.title;
+            toastDescription.text = info.description;
+            toastPanel.SetActive(true);
+            yield return new WaitForSecondsRealtime(toastSeconds);
+            toastPanel.SetActive(false);
+            yield return new WaitForSecondsRealtime(0.3f);  // short gap between pop-ups
+        }
+        showingToasts = false;
+    }
+
+    // Right-click the component's title in the Inspector to test achievements again.
+    [ContextMenu("Reset mock achievements")]
+    private void ResetMockAchievements()
+    {
+        foreach (AchievementInfo info in Achievements.All)
+        {
+            PlayerPrefs.DeleteKey("mock_ach_" + info.id);
+        }
+        Debug.Log("[Mock] Achievements reset.");
+    }
+}</code></pre></div></div>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T35</td><td>Start the game</td><td>Compiles and runs. Console shows the mock was chosen</td><td></td></tr>
+              <tr><td>T36</td><td>Select a photo, press Caption</td><td>Box opens with the current caption. Console logs "[Mock] On-screen keyboard not needed"</td><td></td></tr>
+              <tr><td>T37</td><td>Type "Joyful jump at the jetty", press Enter</td><td>Journal stays open. Caption saved, shown in the detail panel, same photo still selected</td><td></td></tr>
+              <tr><td>T38</td><td>Try typing more than 60 characters</td><td>The box stops at 60</td><td></td></tr>
+              <tr><td>T39</td><td>Open Caption, type something, press Escape</td><td>Box closes and the old caption is unchanged</td><td></td></tr>
+              <tr><td>T40</td><td>Restart the game, open the journal</td><td>Caption from T37 is still there</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Then regression-test T17, T21 and T29–T31 to check the journal screen and achievements still work after the interface change.</p>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Keep the promise</h4>
+            <ul>
+              <li>Make the interface change, read the error, and fix the mock.</li>
+              <li>Get captions working and run T35–T38.</li>
+              <li>Complete the startup trace table in your notebook from memory.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Trace and test</h4>
+            <ul>
+              <li>Run all six tests plus the regression set.</li>
+              <li>Write the pseudocode for <code>SteamPlatformService.AddScreenshot</code>.</li>
+              <li>Explain, using the documentation table, what would go wrong if <code>StoreStats</code> were removed.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Data leaves the game</h4>
+            <ul>
+              <li>If you have Steam at home: install Steamworks.NET, add <code>steam_appid.txt</code> (480), and confirm achievements and screenshots appear in Steam.</li>
+              <li>Either way, investigate: playing with App ID 480 adds Spacewar to the player's Steam activity. What data about the player leaves your game, and should players be told?</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="B"
+             data-feedback-a="Not quite. Init returning false is handled by a guard clause, so nothing crashes."
+             data-feedback-b="✓ Correct. The guard clause returns before registering, so the mock registers instead and the game carries on."
+             data-feedback-c="Not quite. Nothing is queued for Steam. The mock stores unlocks only on this computer."
+             data-feedback-d="Not quite. The game never asks. It quietly falls back to the mock.">
+          <div class="mcq-question">1. Steamworks.NET is installed, but the Steam client isn't running. What happens when the game starts?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The game crashes because Steam is missing</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Init returns false and the mock takes over</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Achievements are queued and sent to Steam later</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The game asks the player to install Steam first</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="C"
+             data-feedback-a="Not quite. The mock shows achievement pop-ups, so it can show interface elements."
+             data-feedback-b="Not quite. The interface only says the method must exist. Each class decides what it does."
+             data-feedback-c="✓ Correct. A PC player can type on a real keyboard, so no on-screen keyboard is needed."
+             data-feedback-d="Not quite. Unity can show interfaces on Windows. The mock simply doesn't need to.">
+          <div class="mcq-question">2. Why does the mock's <code>ShowOnScreenKeyboard</code> just return <code>false</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Mocks aren't allowed to show anything on the screen</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The interface says every keyboard method must fail</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>On a PC the player can type on a real keyboard</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unity has no way to display keyboards on Windows</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="D"
+             data-feedback-a="Not quite. The guard clause stops a second unlock, and without StoreStats nothing is sent at all."
+             data-feedback-b="Not quite. Steam doesn't delete anything. It just never hears about the unlock."
+             data-feedback-c="Not quite. The code compiles fine. This is a logic error, not a syntax error."
+             data-feedback-d="✓ Correct. SetAchievement only changes it on this computer. StoreStats is what uploads it and triggers Steam's pop-up.">
+          <div class="mcq-question">3. A developer calls <code>SetAchievement</code> but never calls <code>StoreStats</code>. What happens?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The achievement is unlocked twice on Steam's servers</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Steam deletes the achievement from the player's profile</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The project stops compiling until StoreStats is added</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The unlock is never sent on to Steam's servers</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="A"
+             data-feedback-a="✓ Correct. 800 − (300 + 60) = 440. The box's top edge is 440 px from the top of the screen."
+             data-feedback-b="Not quite. 300 is measured from the bottom. Steam needs the distance from the top."
+             data-feedback-c="Not quite. 360 is where the top edge is measured from the bottom (300 + 60). Subtract it from 800."
+             data-feedback-d="Not quite. That's 800 − 300, which forgets the box's own height.">
+          <div class="mcq-question">4. The screen is 800 px tall. A text box starts 300 px from the <em>bottom</em> and is 60 px tall. What value does the Steam service send as the box's top edge, measured from the <em>top</em>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>440</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>300</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>360</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>500</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="C"
+             data-feedback-a="Not quite. Skipped code is never compiled, so it can't run or crash."
+             data-feedback-b="Not quite. Unity never installs packages by itself."
+             data-feedback-c="✓ Correct. #if is checked at compile time. Without the symbol, the code is treated as if it doesn't exist."
+             data-feedback-d="Not quite. There's no error, which is the whole point of the #if.">
+          <div class="mcq-question">5. <code>SteamPlatformService.cs</code> starts with <code>#if STEAMWORKS_NET</code>. On a computer without Steamworks.NET, what happens to this file?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>It compiles normally, then crashes when the game starts</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Unity downloads and installs Steamworks.NET automatically</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>It's skipped completely, so the project still compiles</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unity shows a compile error until the file is deleted</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="D"
+             data-feedback-a="Not quite. Being a MonoBehaviour doesn't change what the interface requires."
+             data-feedback-b="Not quite. Interfaces can have any number of members."
+             data-feedback-c="Not quite. Steam has no say in your code. The C# compiler enforces this."
+             data-feedback-d="✓ Correct. Implementing an interface is a promise to provide every member, so a new member breaks every class that doesn't have it yet.">
+          <div class="mcq-question">6. After a method is added to <code>IPlatformService</code>, the project won't compile until <code>MockPlatformService</code> changes. Why?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The mock is a MonoBehaviour, so it compiles before others</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>An interface is only allowed to contain three methods</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Valve must approve every change to a Steam interface</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>A class must provide every member of its interface</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for enterprise, innovation and automation. Platforms like Steam are businesses that shape how games are built. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Demonstrates an extensive understanding of the influence of enterprise, innovation and automation on the evolution of computing technology.</strong> Explains how Valve's business model shapes the tools developers use, and evaluates what player data leaves the game through Steam.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Demonstrates a thorough understanding of the influence of enterprise, innovation and automation on the evolution of computing technology.</strong> Explains who benefits from platform features, and uses the documentation to explain each Steam call.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Demonstrates a sound understanding of the influence of enterprise, innovation and automation on the evolution of computing technology.</strong> Explains why Valve provides Steamworks for free and traces how the game chooses Steam or the mock.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Demonstrates a basic understanding of the influence of enterprise and innovation on the evolution of computing technology.</strong> Describes what Steam features like achievements and screenshots offer players.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Identifies the evolution of, and/or innovations in, computing technology.</strong> Identifies features that platforms like Steam add to games.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>You couldn't run the Steam code today. How confident are you that it works, and what evidence do you have?
+            <span class="sentence-starter">I'm ___ confident because…</span></li>
+          <li>Which earlier design decision made today's changes easiest?
+            <span class="sentence-starter">The decision that helped most was ___ because…</span></li>
+        </ul>
+        <label for="reflection-l9" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l9" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson08.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 8: Platform services</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson10.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 10: Steam Deck readiness</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson09',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

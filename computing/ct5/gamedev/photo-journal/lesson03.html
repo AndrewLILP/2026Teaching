@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 3: Photo mode hook and camera | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 3 of 12: connect photo mode to your own player controller and build a limited photo camera in Unity 6.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+
+    .state-diagram { margin: var(--space-5) 0 var(--space-6); }
+    .state-diagram svg { width: 100%; height: auto; display: block; }
+    .state-diagram figcaption {
+      margin-top: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      font-style: italic;
+    }
+    .sd-state rect { fill: var(--color-surface-2); stroke: var(--accent); stroke-width: 2; }
+    .sd-state--new rect { fill: var(--accent-surface); stroke-dasharray: 6 4; }
+    .sd-state text { fill: var(--color-text-primary); font-family: var(--font-body); font-size: 18px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+    .sd-arrow { stroke: var(--color-text-secondary); stroke-width: 2; fill: none; }
+    .sd-label { fill: var(--color-text-secondary); font-family: var(--font-body); font-size: 14px; text-anchor: middle; }
+    .sd-block { stroke: #b91c1c; stroke-width: 2; fill: none; stroke-dasharray: 5 4; }
+    .sd-block-label { fill: #b91c1c; font-family: var(--font-body); font-size: 14px; font-weight: 700; text-anchor: middle; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 3</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#states">Analyse your game's states</a>
+          <a href="#hook">Designing the hook</a>
+          <a href="#pseudo">Pseudocode first</a>
+          <a href="#code">Into C#</a>
+          <a href="#camera">The photo camera</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#connect">Connect your controller</a>
+          <a href="#tests">Test it</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-OPL-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 3 of 12 · 50 minutes</p>
+        <h1>Photo mode hook and camera</h1>
+        <p class="page-intro">Today the design becomes code. You'll add one script to your game that switches photo mode on and off, freezes the world, and gives the player a camera they can move, but only so far. Your own player controller connects to it with a single method call: the <strong>hook</strong>.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-produce">Producing &amp; implementing</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you designed the journal's data, wrote <code>CapturePhoto</code> in pseudocode and met the <strong>guard pattern</strong>: checks that can stop an algorithm go at the top. Today's script uses the guard pattern three times. See if you can spot them all.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 5 min · analyse states 5 min · hook design and pseudocode 8 min · code walkthrough 10 min · setup and connect 15 min · tests and checkpoint 7 min.</p>
+        <p><strong>Before class:</strong> students back up or commit their projects. Install the <strong>Input System</strong> package (Window → Package Manager → Unity Registry). When Unity asks to switch input backends, choose <strong>Both</strong> under Project Settings → Player → Active Input Handling. This keeps students' existing <code>Input.GetAxis</code> code working alongside the new script.</p>
+        <p><strong>Design choice:</strong> the camera is plain C# rather than Cinemachine, so every line can be traced and it works with any camera setup. Students already using Cinemachine add their <code>CinemachineBrain</code> to the script's disable list. Mouse look is added in Lesson 7. Today, look uses the right stick or arrow keys.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>translate pseudocode into C# methods that use guard clauses</li>
+          <li>explain why photo mode uses a hook instead of checking the player's state itself</li>
+          <li>connect photo mode to my own controller and test that it meets requirement R1.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> in my game, photo mode opens only while on foot, freezes the world, limits the camera to 4 metres, and puts everything back exactly as it was on exit.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">State</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">One mode the game or player can be in, like Hiking, Driving or Photo mode.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Transition</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A change from one state to another, caused by an event such as a button press.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Hook</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A public method that other code calls to connect to a feature, without knowing how it works inside.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Coupling</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How much one part of a program depends on another. Low coupling makes code easier to reuse.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Input action</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A named control, like "TogglePhotoMode", that can be bound to keys and gamepad buttons at once.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Time.timeScale</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How fast game time runs. 1 is normal speed and 0 freezes the world.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Unscaled time</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Real time that keeps ticking even when timeScale is 0. Used for menus and photo cameras.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Clamp</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Limit a value to a range. Clamp(75, -60, 70) gives 70.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ STATES ═══ -->
+      <section class="content-section" id="states">
+        <span class="section-phase-tag research"><span class="dot"></span>Analysing</span>
+        <h2>Analyse your game's states</h2>
+        <p>Your player is always in some <strong>state</strong>. Photo mode is a new state, but it can only be reached from one of them. Here's a typical game with the new state added (dashed outline).</p>
+
+        <figure class="state-diagram">
+          <svg viewBox="0 55 720 245" role="img" aria-labelledby="sd-title sd-desc">
+            <title id="sd-title">Player state diagram with photo mode</title>
+            <desc id="sd-desc">Three states, Driving, Hiking and Photo mode. Driving and Hiking connect both ways with "get in or out of car". Hiking connects to Photo mode both ways with "press Y". A crossed-out dashed line from Driving to Photo mode is labelled "not allowed".</desc>
+            <defs>
+              <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor" style="fill: var(--color-text-secondary)"/>
+              </marker>
+            </defs>
+            <path class="sd-arrow" d="M190 95 L300 95" marker-end="url(#arrowhead)"/>
+            <path class="sd-arrow" d="M300 125 L190 125" marker-end="url(#arrowhead)"/>
+            <text class="sd-label" x="245" y="80">get out of car</text>
+            <text class="sd-label" x="245" y="150">get in car</text>
+            <path class="sd-arrow" d="M480 95 L590 95" marker-end="url(#arrowhead)"/>
+            <path class="sd-arrow" d="M590 125 L480 125" marker-end="url(#arrowhead)"/>
+            <text class="sd-label" x="535" y="80">press Y</text>
+            <text class="sd-label" x="535" y="150">press Y</text>
+            <path class="sd-block" d="M110 150 Q 110 260 380 260 Q 640 260 640 150"/>
+            <text class="sd-block-label" x="380" y="285">✕ Driving → Photo mode: not allowed</text>
+            <g class="sd-state"><rect x="30" y="70" width="160" height="80" rx="14"/><text x="110" y="110">Driving</text></g>
+            <g class="sd-state"><rect x="300" y="70" width="180" height="80" rx="14"/><text x="390" y="110">Hiking (on foot)</text></g>
+            <g class="sd-state sd-state--new"><rect x="590" y="70" width="110" height="80" rx="14"/><text x="645" y="110">Photo</text></g>
+          </svg>
+          <figcaption>Photo mode can only be reached from Hiking. That's requirement R1 from Lesson 1.</figcaption>
+        </figure>
+
+        <div class="analysis-box">
+          <p class="analysis-box__eyebrow">Analysis activity · individual · 5 min</p>
+          <h3>Map your own game</h3>
+          <ol>
+            <li>List every state your player can be in. Don't forget menus, cutscenes and dialogue.</li>
+            <li>Draw your own state diagram, then add Photo mode with a dashed outline.</li>
+            <li>For each state, decide: can photo mode be opened from here? Mark the "not allowed" transitions with a cross.</li>
+            <li>Find the place in your code where the player <em>enters</em> and <em>leaves</em> the on-foot state. That's where the hook will go.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ═══ HOOK ═══ -->
+      <section class="content-section" id="hook">
+        <h2>Designing the hook</h2>
+        <p>There are two ways photo mode could know whether it's allowed to open:</p>
+
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Design</th><th scope="col">How it works</th><th scope="col">Problem</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>A. Photo mode checks</strong></td><td>Photo mode looks at the car script, the menu script, the dialogue script and so on, every frame.</td><td>It has to know about every system in <em>your</em> game, so it can't be shared, and every new state means editing it. This is <strong>high coupling</strong>.</td></tr>
+              <tr><td><strong>B. The game tells it (hook)</strong></td><td>Your code calls <code>SetAvailable(true)</code> when the player starts walking and <code>SetAvailable(false)</code> when they stop.</td><td>None for us. Photo mode knows nothing about cars or menus, so the same script works in every student's game. This is <strong>low coupling</strong>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>We use design B. The method <code>SetAvailable</code> is the <mark class="paper-hl paper-hl--yellow">hook</mark>: the one point where your game and the photo mode connect.</p>
+      </section>
+
+      <!-- ═══ PSEUDOCODE ═══ -->
+      <section class="content-section" id="pseudo">
+        <span class="section-phase-tag produce"><span class="dot"></span>Planning</span>
+        <h2>Pseudocode first</h2>
+        <p>Four short algorithms make up the switching logic. Find the guard clauses before reading on.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · SetAvailable and TogglePhotoMode</p>
+<pre>1   BEGIN SetAvailable(available)
+2       SET isAvailable TO available
+3       IF isAvailable = FALSE AND isActive = TRUE THEN
+4           ExitPhotoMode()
+5       ENDIF
+6   END SetAvailable
+
+7   BEGIN TogglePhotoMode
+8       IF isAvailable = FALSE THEN
+9           RETURN
+10      ENDIF
+11      IF isActive = TRUE THEN
+12          ExitPhotoMode()
+13      ELSE
+14          EnterPhotoMode()
+15      ENDIF
+16  END TogglePhotoMode</pre>
+        </div>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · EnterPhotoMode and ExitPhotoMode</p>
+<pre>1   BEGIN EnterPhotoMode
+2       SET isActive TO TRUE
+3       SAVE camera position and rotation
+4       DISABLE player movement and camera follow
+5       HIDE hud
+6       SET savedTimeScale TO timeScale
+7       SET timeScale TO 0
+8   END EnterPhotoMode
+
+9   BEGIN ExitPhotoMode
+10      SET isActive TO FALSE
+11      SET timeScale TO savedTimeScale
+12      RESTORE camera position and rotation
+13      SHOW hud
+14      ENABLE player movement and camera follow
+15  END ExitPhotoMode</pre>
+        </div>
+
+        <p class="paper-margin-note">Exit undoes Enter in reverse order, like taking off a jacket after a backpack. Undo steps in reverse and nothing gets tangled.</p>
+      </section>
+
+      <!-- ═══ CODE ═══ -->
+      <section class="content-section" id="code">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Into C#</h2>
+        <p>Each C# method matches one pseudocode algorithm. Work through the steps, then compare the full script at the end.</p>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">The hook</span></div>
+<pre><code>// THE HOOK: your own player code calls this.
+public void SetAvailable(bool available)
+{
+    isAvailable = available;
+    if (!isAvailable &amp;&amp; IsActive)
+    {
+        ExitPhotoMode();   // forced out, e.g. a cutscene starts
+    }
+}</code></pre>
+            <div class="step-explain"><strong>public</strong> means other scripts can call it, which is the whole point of a hook. Apart from reading <code>IsActive</code>, everything else in the script is <strong>private</strong>, so no other code can accidentally switch photo mode on.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Toggle with a guard clause</span></div>
+<pre><code>private void OnToggle(InputAction.CallbackContext context)
+{
+    if (!isAvailable) return;            // guard clause
+
+    if (IsActive) ExitPhotoMode();
+    else EnterPhotoMode();
+}</code></pre>
+            <div class="step-explain">The Input System calls <code>OnToggle</code> when the toggle button is pressed. The first line is the guard clause: <code>!isAvailable</code> means "not available". Compare it with pseudocode lines 8–10.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">Entering photo mode</span></div>
+<pre><code>private void EnterPhotoMode()
+{
+    IsActive = true;
+
+    savedPosition = cameraTransform.position;
+    savedRotation = cameraTransform.rotation;
+
+    foreach (Behaviour script in disableWhileActive)
+    {
+        script.enabled = false;
+    }
+    if (hud != null) hud.SetActive(false);
+
+    offset = Vector3.ClampMagnitude(cameraTransform.position - pivot.position, maxDistance);
+    yaw = cameraTransform.eulerAngles.y;
+    pitch = NormaliseAngle(cameraTransform.eulerAngles.x);
+
+    savedTimeScale = Time.timeScale;
+    Time.timeScale = 0f;                 // freeze the world
+}</code></pre>
+            <div class="step-explain"><code>disableWhileActive</code> is an array you fill in the Inspector with your own movement and camera scripts. The <code>foreach</code> loop switches each one off, so the script works no matter how your controller is built. The last line freezes the world: animals, water and other characters stop while the player frames the shot.</div>
+          </div>
+
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">4</span><span class="step-label">Exiting photo mode</span></div>
+<pre><code>private void ExitPhotoMode()
+{
+    IsActive = false;
+    Time.timeScale = savedTimeScale;
+
+    cameraTransform.SetPositionAndRotation(savedPosition, savedRotation);
+    if (hud != null) hud.SetActive(true);
+
+    foreach (Behaviour script in disableWhileActive)
+    {
+        script.enabled = true;
+    }
+}</code></pre>
+            <div class="step-explain">Everything Enter changed is put back in reverse order. Restoring <code>savedTimeScale</code> instead of writing <code>1f</code> means photo mode won't break a game that was already in slow motion.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CAMERA ═══ -->
+      <section class="content-section" id="camera">
+        <h2>The photo camera</h2>
+        <p>While photo mode is active, the camera turns with the right stick (or arrow keys) and moves with the left stick (or WASD). It can't move more than <code>maxDistance</code> metres from the hiker. This stops players flying through cliffs or seeing parts of the map that aren't finished.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · UpdatePhotoCamera (runs every frame)</p>
+<pre>1   BEGIN UpdatePhotoCamera
+2       IF isActive = FALSE THEN
+3           RETURN
+4       ENDIF
+5       SET dt TO unscaled time since last frame
+6       SET yaw TO yaw + lookX × lookSpeed × dt
+7       SET pitch TO pitch − lookY × lookSpeed × dt
+8       SET pitch TO Clamp(pitch, minPitch, maxPitch)
+9       SET offset TO offset + movement in the direction the camera faces
+10      SET offset TO ClampLength(offset, maxDistance)
+11      SET camera position TO pivot + offset
+12  END UpdatePhotoCamera</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">5</span><span class="step-label">LateUpdate: moving the camera</span></div>
+<pre><code>private void LateUpdate()
+{
+    if (!IsActive) return;               // guard clause
+
+    float dt = Time.unscaledDeltaTime;   // keeps ticking while time is frozen
+
+    Vector2 look = lookAction.ReadValue&lt;Vector2&gt;();
+    yaw += look.x * lookSpeed * dt;
+    pitch -= look.y * lookSpeed * dt;
+    pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+    Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+
+    Vector2 move = moveAction.ReadValue&lt;Vector2&gt;();
+    Vector3 step = rotation * new Vector3(move.x, 0f, move.y) * moveSpeed * dt;
+    offset = Vector3.ClampMagnitude(offset + step, maxDistance);
+
+    cameraTransform.SetPositionAndRotation(pivot.position + offset, rotation);
+}</code></pre>
+            <div class="step-explain"><code>LateUpdate</code> runs after all other updates each frame, so nothing else moves the camera after us. <code>Vector3.ClampMagnitude</code> keeps the direction of <code>offset</code> but shortens it to at most <code>maxDistance</code>. That one line is the invisible wall.</div>
+          </div>
+        </div>
+
+        <h3>Desk check: the invisible wall</h3>
+        <p>Test values: <code>maxDistance = 4</code>, <code>dt = 0.02</code> s (50 frames per second), <code>lookSpeed = 90</code>, <code>maxPitch = 70</code>. The camera starts 3.8 m straight behind the pivot, the player pushes forward, and each frame moves 0.5 m.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Line</th><th scope="col">Calculation</th><th scope="col">Value</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">9</td><td class="td-code">3.8 + 0.5</td><td class="td-var">offset length 4.3</td><td class="td-note">Past the wall</td></tr>
+              <tr><td class="td-step">10</td><td class="td-code">ClampLength(4.3, 4)</td><td class="td-var">offset length 4.0</td><td class="td-note">Pulled back to exactly 4 m</td></tr>
+              <tr><td class="td-step">7</td><td class="td-code">69 − (−1 × 90 × 0.02)</td><td class="td-var">pitch 70.8</td><td class="td-note">Stick pulled down fully</td></tr>
+              <tr><td class="td-step">8</td><td class="td-code">Clamp(70.8, −60, 70)</td><td class="td-var">pitch 70</td><td class="td-output">Can't look further down</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>The frozen camera</h3>
+          <p>A classmate's photo mode opens, the HUD disappears and the world freezes. But the camera won't move at all, whatever they press. Their input works in other scenes. Here is the start of their <code>LateUpdate</code>:</p>
+<pre>private void LateUpdate()
+{
+    if (!IsActive) return;
+<span class="bug-line">    float dt = Time.deltaTime;</span>
+    Vector2 look = lookAction.ReadValue&lt;Vector2&gt;();
+    yaw += look.x * lookSpeed * dt;</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            <code>Time.deltaTime</code> is scaled by <code>Time.timeScale</code>. Photo mode set timeScale to 0, so deltaTime is 0 every frame. Anything multiplied by 0 is 0, so the camera never moves. The fix is <code>Time.unscaledDeltaTime</code>, which measures real time and keeps ticking while the world is frozen.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CONNECT ═══ -->
+      <section class="content-section" id="connect">
+        <span class="section-phase-tag produce"><span class="dot"></span>Producing</span>
+        <h2>Connect your controller</h2>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · follow along · 8 min</p>
+          <ol>
+            <li>Create a script called <code>PhotoModeController</code> and paste in the full script below.</li>
+            <li>Create an empty GameObject called <strong>PhotoMode</strong> and add the script. The default controls fill in automatically: P or gamepad Y to toggle, WASD or left stick to move, arrows or right stick to look.</li>
+            <li>Make an empty child of your player at head height called <strong>PhotoPivot</strong>.</li>
+            <li>Drag in the references: your main camera to <em>Camera Transform</em>, PhotoPivot to <em>Pivot</em>, your HUD canvas to <em>Hud</em>.</li>
+            <li>Add your movement script and any camera-follow script (including <code>CinemachineBrain</code> if you use it) to <em>Disable While Active</em>.</li>
+          </ol>
+        </div>
+
+        <div class="expand-card full-script">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Full script: PhotoModeController.cs
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+<pre><code>// Recommended filename: PhotoModeController.cs
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+public class PhotoModeController : MonoBehaviour
+{
+    [Header("Input (defaults are set when you add the component)")]
+    [SerializeField] private InputAction toggleAction;
+    [SerializeField] private InputAction moveAction;
+    [SerializeField] private InputAction lookAction;
+
+    [Header("Scene references")]
+    [SerializeField] private Transform cameraTransform;   // your main camera
+    [SerializeField] private Transform pivot;             // an empty object at the hiker's head
+    [SerializeField] private GameObject hud;              // your HUD canvas
+    [SerializeField] private Behaviour[] disableWhileActive; // movement and camera-follow scripts
+
+    [Header("Camera limits")]
+    [SerializeField] private float maxDistance = 4f;      // metres from the pivot
+    [SerializeField] private float moveSpeed = 2f;        // metres per second
+    [SerializeField] private float lookSpeed = 90f;       // degrees per second
+    [SerializeField] private float minPitch = -60f;
+    [SerializeField] private float maxPitch = 70f;
+
+    public bool IsActive { get; private set; }
+
+    private bool isAvailable;
+    private Vector3 offset;
+    private float yaw;
+    private float pitch;
+    private Vector3 savedPosition;
+    private Quaternion savedRotation;
+    private float savedTimeScale = 1f;
+
+    // Runs when the component is first added: fills in default controls.
+    private void Reset()
+    {
+        toggleAction = new InputAction("TogglePhotoMode", InputActionType.Button);
+        toggleAction.AddBinding("&lt;Keyboard&gt;/p");
+        toggleAction.AddBinding("&lt;Gamepad&gt;/buttonNorth");
+
+        moveAction = new InputAction("PhotoMove", InputActionType.Value, expectedControlType: "Vector2");
+        moveAction.AddCompositeBinding("2DVector")
+            .With("Up", "&lt;Keyboard&gt;/w")
+            .With("Down", "&lt;Keyboard&gt;/s")
+            .With("Left", "&lt;Keyboard&gt;/a")
+            .With("Right", "&lt;Keyboard&gt;/d");
+        moveAction.AddBinding("&lt;Gamepad&gt;/leftStick");
+
+        lookAction = new InputAction("PhotoLook", InputActionType.Value, expectedControlType: "Vector2");
+        lookAction.AddBinding("&lt;Gamepad&gt;/rightStick");
+        lookAction.AddCompositeBinding("2DVector")
+            .With("Up", "&lt;Keyboard&gt;/upArrow")
+            .With("Down", "&lt;Keyboard&gt;/downArrow")
+            .With("Left", "&lt;Keyboard&gt;/leftArrow")
+            .With("Right", "&lt;Keyboard&gt;/rightArrow");
+    }
+
+    private void OnEnable()
+    {
+        toggleAction.performed += OnToggle;
+        toggleAction.Enable();
+        moveAction.Enable();
+        lookAction.Enable();
+    }
+
+    private void OnDisable()
+    {
+        toggleAction.performed -= OnToggle;
+        toggleAction.Disable();
+        moveAction.Disable();
+        lookAction.Disable();
+    }
+
+    // THE HOOK: your own player code calls this.
+    public void SetAvailable(bool available)
+    {
+        isAvailable = available;
+        if (!isAvailable &amp;&amp; IsActive)
+        {
+            ExitPhotoMode();   // forced out, e.g. a cutscene starts
+        }
+    }
+
+    private void OnToggle(InputAction.CallbackContext context)
+    {
+        if (!isAvailable) return;            // guard clause
+
+        if (IsActive) ExitPhotoMode();
+        else EnterPhotoMode();
+    }
+
+    private void EnterPhotoMode()
+    {
+        IsActive = true;
+
+        savedPosition = cameraTransform.position;
+        savedRotation = cameraTransform.rotation;
+
+        foreach (Behaviour script in disableWhileActive)
+        {
+            script.enabled = false;
+        }
+        if (hud != null) hud.SetActive(false);
+
+        offset = Vector3.ClampMagnitude(cameraTransform.position - pivot.position, maxDistance);
+        yaw = cameraTransform.eulerAngles.y;
+        pitch = NormaliseAngle(cameraTransform.eulerAngles.x);
+
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 0f;                 // freeze the world
+    }
+
+    private void ExitPhotoMode()
+    {
+        IsActive = false;
+        Time.timeScale = savedTimeScale;
+
+        cameraTransform.SetPositionAndRotation(savedPosition, savedRotation);
+        if (hud != null) hud.SetActive(true);
+
+        foreach (Behaviour script in disableWhileActive)
+        {
+            script.enabled = true;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!IsActive) return;               // guard clause
+
+        float dt = Time.unscaledDeltaTime;   // keeps ticking while time is frozen
+
+        Vector2 look = lookAction.ReadValue&lt;Vector2&gt;();
+        yaw += look.x * lookSpeed * dt;
+        pitch -= look.y * lookSpeed * dt;
+        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+        Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
+
+        Vector2 move = moveAction.ReadValue&lt;Vector2&gt;();
+        Vector3 step = rotation * new Vector3(move.x, 0f, move.y) * moveSpeed * dt;
+        offset = Vector3.ClampMagnitude(offset + step, maxDistance);
+
+        cameraTransform.SetPositionAndRotation(pivot.position + offset, rotation);
+    }
+
+    private static float NormaliseAngle(float angle)
+    {
+        return angle &gt; 180f ? angle - 360f : angle;
+    }
+}</code></pre>
+          </div>
+        </div>
+
+        <p>Now add the hook to your own code. Pick the version that matches how your controller is built.</p>
+
+        <div class="lang-tabs" role="tablist" aria-label="Controller style">
+          <button class="lang-tab" type="button" data-lang="simple">Simple controller</button>
+          <button class="lang-tab" type="button" data-lang="state">State Pattern</button>
+        </div>
+        <div class="lang-panel" data-lang="simple">
+          <p>If your game has methods (or places in <code>Update</code>) where the player gets in and out of a vehicle, call the hook there:</p>
+<pre><code>// In your own player or vehicle script
+[SerializeField] private PhotoModeController photoMode;
+
+private void Start()
+{
+    photoMode.SetAvailable(true);    // the player starts on foot
+}
+
+private void GetInCar()
+{
+    photoMode.SetAvailable(false);
+    // ...your existing code
+}
+
+private void GetOutOfCar()
+{
+    photoMode.SetAvailable(true);
+    // ...your existing code
+}</code></pre>
+        </div>
+        <div class="lang-panel" data-lang="state">
+          <p>If your player uses a state machine with <code>Enter</code> and <code>Exit</code> methods, the on-foot state is the natural place for the hook. It runs once when the player starts walking and once when they stop:</p>
+<pre><code>// In PlayerStateManager, add:  public PhotoModeController PhotoMode;
+public class OnFootState : PlayerState
+{
+    public OnFootState(PlayerStateManager manager) : base(manager) { }
+
+    public override void Enter()
+    {
+        stateManager.PhotoMode.SetAvailable(true);
+        // ...your existing setup
+    }
+
+    public override void Update()
+    {
+        // ...your existing movement code
+    }
+
+    public override void Exit()
+    {
+        stateManager.PhotoMode.SetAvailable(false);
+        // ...your existing clean-up
+    }
+}</code></pre>
+          <p>This is the <strong>State Pattern</strong>: every state handles its own setup and clean-up, so no other state needs to know about photo mode.</p>
+        </div>
+
+        <aside class="paper-sticky paper-sticky--rotate-r">
+          <p class="paper-sticky__label">Don't forget the start</p>
+          <p>If your player starts the game on foot, call <code>SetAvailable(true)</code> in <code>Start</code> too. Otherwise photo mode waits for a transition that never comes.</p>
+        </aside>
+      </section>
+
+      <!-- ═══ TESTS ═══ -->
+      <section class="content-section" id="tests">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Test it</h2>
+        <p>Copy this table into your notebook, run each test in your game and record the result.</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Input</th><th scope="col">Expected output</th><th scope="col">Req.</th><th scope="col">Pass?</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>T1</td><td>On foot, press toggle</td><td>HUD hides, world freezes, camera can move</td><td>R1</td><td></td></tr>
+              <tr><td>T2</td><td>In a vehicle (or menu), press toggle</td><td>Nothing happens</td><td>R1</td><td></td></tr>
+              <tr><td>T3</td><td>In photo mode, hold forward for 5 seconds</td><td>Camera stops about 4 m from the hiker</td><td>Camera limit</td><td></td></tr>
+              <tr><td>T4</td><td>In photo mode, press toggle again</td><td>Camera, HUD, movement and time all return to normal</td><td>R1</td><td></td></tr>
+              <tr><td>T5</td><td>Unplug keyboard and mouse, repeat T1 and T4 with a gamepad</td><td>Same results using only the gamepad</td><td>R5</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Get it working</h4>
+            <ul>
+              <li>Complete the setup steps and connect the hook using the version that fits your controller.</li>
+              <li>Run tests T1, T2 and T4 and record the results.</li>
+              <li>Label the three guard clauses in the full script with comments.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Make it yours</h4>
+            <ul>
+              <li>Run all five tests and fix any that fail.</li>
+              <li>Tune <code>maxDistance</code>, <code>moveSpeed</code> and the pitch limits to suit your world. Record each change and the reason in your notebook.</li>
+              <li>Explain in two sentences why <code>ExitPhotoMode</code> restores <code>savedTimeScale</code> instead of setting it to 1.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Solid walls</h4>
+            <ul>
+              <li>The camera can still pass through a cliff that is closer than 4 m. Use <code>Physics.SphereCast</code> from the pivot towards the new position, and stop the camera at the hit point.</li>
+              <li>Write the pseudocode first, then the C#, then add a test T6 for it.</li>
+              <li>Remember: physics queries still work while <code>timeScale</code> is 0.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="D"
+             data-feedback-a="Not quite. SetAvailable(true) would allow photo mode while driving, which breaks requirement R1."
+             data-feedback-b="Not quite. EnterPhotoMode is private, and calling it would open photo mode rather than block it."
+             data-feedback-c="Not quite. IsActive has a private setter, so other scripts can't change it. That protects photo mode from being half-switched off."
+             data-feedback-d="✓ Correct. SetAvailable(false) tells photo mode it can't open. If it's already open, it exits.">
+          <div class="mcq-question">1. The player gets into a car. Which line should the car code call so photo mode can't be opened while driving?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span><code>photoMode.SetAvailable(true);</code></button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span><code>photoMode.EnterPhotoMode();</code></button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span><code>photoMode.IsActive = false;</code></button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span><code>photoMode.SetAvailable(false);</code></button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="B"
+             data-feedback-a="Not quite. Disabling scripts doesn't free memory in any meaningful way. It stops them running each frame."
+             data-feedback-b="✓ Correct. With movement and camera-follow switched off, only the photo camera responds to the controls."
+             data-feedback-c="Not quite. Unity runs many scripts every frame. Disabling is about which scripts react to input."
+             data-feedback-d="Not quite. The HUD is hidden separately with hud.SetActive(false).">
+          <div class="mcq-question">2. Why does EnterPhotoMode switch off every script in <code>disableWhileActive</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>To free up memory so the photo can be saved</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>So the hiker and normal camera don't react</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Because Unity can only run one script at once</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So that the HUD canvas disappears from view</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="C"
+             data-feedback-a="Not quite. 3.8 + 0.5 = 4.3, but line 10 clamps the length to maxDistance."
+             data-feedback-b="Not quite. The move isn't cancelled. It's shortened to fit inside the limit."
+             data-feedback-c="✓ Correct. ClampMagnitude keeps the direction and shortens the length to the maximum, 4 m."
+             data-feedback-d="Not quite. The offset is added to, not replaced. Only its length is limited.">
+          <div class="mcq-question">3. The camera's offset is 3.8 m long. This frame adds 0.5 m in the same direction, then the offset is clamped to <code>maxDistance = 4</code>. How far from the pivot is the camera?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>4.3 m, because 3.8 + 0.5 = 4.3 metres</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>3.8 m, because the whole move is cancelled</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>4.0 m, because the length is clamped</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>0.5 m, because the offset is replaced</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="A"
+             data-feedback-a="✓ Correct. Time.deltaTime is scaled by timeScale, so with timeScale at 0 it's 0, and the camera would never move."
+             data-feedback-b="Not quite. Both values are about the same at normal speed. The difference only appears when time is scaled."
+             data-feedback-c="Not quite. Time.deltaTime works in LateUpdate. The problem is that it's scaled to 0."
+             data-feedback-d="Not quite. The player is stopped by disabling their movement script, not by the time value.">
+          <div class="mcq-question">4. In photo mode <code>Time.timeScale</code> is 0. Why does <code>LateUpdate</code> use <code>Time.unscaledDeltaTime</code>?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>deltaTime would be 0, so the camera couldn't move</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Unscaled time makes the photo camera move twice as fast</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>deltaTime only works inside FixedUpdate, not LateUpdate</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Unscaled time is what stops the hiker from walking away</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="B"
+             data-feedback-a="Not quite. Speed isn't the reason. One if statement per frame costs almost nothing."
+             data-feedback-b="✓ Correct. With a hook, photo mode has low coupling: it never needs to know about cars, menus or cutscenes, so it works in any game."
+             data-feedback-c="Not quite. Scripts can read each other. The question is whether they should."
+             data-feedback-d="Not quite. Achievements aren't connected to driving, and they come later through the platform service.">
+          <div class="mcq-question">5. Why does photo mode rely on other code calling <code>SetAvailable</code>, instead of checking every frame whether the player is driving?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>It runs faster because it skips one if statement per frame</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>It can work in any game without knowing its states</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Unity doesn't allow one script to read another script</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>So it can unlock achievements whenever the player drives</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="D"
+             data-feedback-a="Not quite. The guard clause is in OnToggle, not SetAvailable. SetAvailable always runs."
+             data-feedback-b="Not quite. The player can't press toggle to leave once isAvailable is false, so this would trap them."
+             data-feedback-c="Not quite. ExitPhotoMode restores savedTimeScale, so time doesn't stay frozen."
+             data-feedback-d="✓ Correct. Line 3 of SetAvailable sees isAvailable is FALSE and isActive is TRUE, so it calls ExitPhotoMode, which restores everything.">
+          <div class="mcq-question">6. A cutscene starts while photo mode is open and calls <code>SetAvailable(false)</code>. What does the script do?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Nothing happens, because a guard clause blocks the call</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>Stays in photo mode until the player presses Y again</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Leaves time frozen at 0 until the game restarts</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Exits photo mode and restores time and camera</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for algorithms and programming. Tap a grade to see what it looks like in today's lesson.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Skilfully develops, tests and implements technically concise algorithms in a general-purpose programming language.</strong> Adds SphereCast collision from their own pseudocode, tests it with a new test case, and keeps every guard clause in place.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Develops, tests and implements functional algorithms in a general-purpose programming language.</strong> Passes all five tests, tunes the camera with documented reasons, and explains savedTimeScale.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Develops common algorithms and implements them in a general-purpose programming language.</strong> Connects the hook correctly in their own controller and passes tests T1, T2 and T4.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Develops basic algorithms and/or implements them in a general-purpose programming language.</strong> Adds the script and gets photo mode toggling, with some help connecting the hook.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Follows algorithms and/or partially implements them in a general-purpose programming language.</strong> Matches pseudocode lines to C# methods and identifies the guard clauses.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Where did you put the hook in your own code, and why there?
+            <span class="sentence-starter">I called SetAvailable in ___ because…</span></li>
+          <li>Which test failed first, and what did you change to fix it?
+            <span class="sentence-starter">Test ___ failed because… I fixed it by…</span></li>
+        </ul>
+        <label for="reflection-l3" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l3" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson02.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 2: Designing the journal</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson04.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 4: Capturing the shot</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson03',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>

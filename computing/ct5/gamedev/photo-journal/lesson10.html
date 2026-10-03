@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lesson 10: Steam Deck readiness | Hiking Photo Journal | CT Stage 5</title>
+  <meta name="description" content="Stage 5 Computing Technology — Creating games and simulations. Lesson 10 of 12: audit your game against Steam Deck compatibility criteria, measure performance with a rolling average, automate a text-size check and build for Linux.">
+
+  <link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+  <link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+
+  <!-- Page-level accent: Software development — creating games and simulations (violet, paper-safe) -->
+  <style>
+    :root {
+      --accent:         #6d28d9;
+      --accent-dim:     #5b21b6;
+      --accent-bright:  #6d28d9;
+      --accent-surface: rgba(109, 40, 217, 0.08);
+      --accent-border:  rgba(109, 40, 217, 0.28);
+    }
+    /* Grid items default to min-width:auto, so wide tables pushed the
+       column past the viewport on phones. Candidate for ct-shared.css. */
+    .page-wrap > * { min-width: 0; }
+    /* mark.paper-hl { background:none } out-ranks .paper-hl--* in
+       ct-lessons.css, so highlights never showed. Candidate for ct-lessons.css. */
+    mark.paper-hl--yellow { background: rgba(250, 204, 21, 0.45); }
+
+    .tier-card { min-width: 0; }
+    .tier-card code { overflow-wrap: anywhere; }
+    .full-script pre { max-height: 520px; overflow: auto; font-size: var(--text-sm); }
+    .audit-table td:last-child, .audit-table th:last-child { width: 4.5rem; text-align: center; }
+    /* .bug-detective uses dark-theme pink and green (#f472b6, #34d399), which are
+       too faint on paper. Candidate for the ct-lessons.css hardcoded-colour fixups. */
+    .bug-detective__eyebrow, .bug-reveal-btn { color: #be185d; }
+    .bug-detective__reveal { color: #166534; }
+  </style>
+</head>
+
+<body class="font-nunito">
+
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="ct-nav">
+    <a class="ct-logo" href="../../../index.html">CT<span>_</span><em>5</em></a>
+    <div class="ct-nav-context">
+      <span class="ct-nav-course">Stage 5</span>
+      <span class="ct-nav-sep" aria-hidden="true">/</span>
+      <span>Hiking Photo Journal</span>
+    </div>
+    <div class="ct-nav-actions">
+      <div class="font-toggle" role="group" aria-label="Font preference">
+        <button class="font-btn" type="button" data-font="nunito" aria-pressed="true">Aa</button>
+        <button class="font-btn" type="button" data-font="system" aria-pressed="false">Sys</button>
+        <button class="font-btn" type="button" data-font="dyslexia" aria-pressed="false">Dys</button>
+      </div>
+      <a class="ct-nav-btn" href="index.html">Unit hub</a>
+    </div>
+  </header>
+
+  <nav class="ct-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+      <li><a href="../../../index.html">Computing</a></li>
+      <li><a href="../../index.html">Stage 5</a></li>
+      <li><a href="../index.html">Game development</a></li>
+      <li><a href="index.html">Hiking Photo Journal</a></li>
+      <li aria-current="page">Lesson 10</li>
+    </ol>
+  </nav>
+
+  <div class="page-wrap">
+
+    <aside class="ct-sidebar" aria-label="Lesson sidebar">
+      <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">On this page</p>
+        <nav class="sidebar-toc" id="sidebar-toc" aria-label="Table of contents">
+          <a href="#intentions">Learning intentions</a>
+          <a href="#vocab">Key vocabulary</a>
+          <a href="#criteria">How Steam Deck games are rated</a>
+          <a href="#frames">Frame rate and frame time</a>
+          <a href="#monitor">Measuring performance</a>
+          <a href="#bug">Bug detective</a>
+          <a href="#textaudit">Automating the text check</a>
+          <a href="#linux">Building for Linux</a>
+          <a href="#audit">The self-audit</a>
+          <a href="#tasks">Your task</a>
+          <a href="#checkpoint">Checkpoint</a>
+          <a href="#grades">What success looks like</a>
+          <a href="#reflect">Reflection</a>
+        </nav>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Phase</p>
+        <span class="phase-pill phase-test">Testing &amp; evaluating</span>
+      </div>
+
+      <div class="sidebar-section">
+        <p class="sidebar-label">Outcomes</p>
+        <div class="outcome-tags">
+          <span class="outcome-tag">CT5-DPM-01</span>
+          <span class="outcome-tag">CT5-THI-01</span>
+          <span class="outcome-tag">CT5-DES-01</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-col" id="main" tabindex="-1">
+
+      <!-- ═══ HERO ═══ -->
+      <header class="page-hero">
+        <p class="page-eyebrow">Lesson 10 of 12 · 50 minutes</p>
+        <h1>Steam Deck readiness</h1>
+        <p class="page-intro">Since Lesson 1, Steam Deck has shaped your requirements. Now you'll find out how close you came. Today you'll audit your game against the criteria Valve uses to rate Steam Deck games, build two tools that collect evidence for you, and make a Linux build. The goal isn't a perfect score. It's an honest, evidence-based judgement of where your game stands.</p>
+        <div class="phase-pills">
+          <span class="phase-pill phase-test">Testing &amp; evaluating</span>
+        </div>
+      </header>
+
+      <div class="concept-recap">
+        <strong>Last lesson:</strong> you traced the Steam version of the platform service, changed an interface safely, and added captions with Steam Deck's on-screen keyboard. Many of today's audit checks have evidence already: your tests from Lessons 3–9.
+      </div>
+
+      <aside class="teaching-advice">
+        <h4>Teaching advice</h4>
+        <p><strong>Timing:</strong> recap and vocabulary 4 min · rating criteria 6 min · frame-time maths 4 min · performance tool and desk check 10 min · bug detective 3 min · text audit 5 min · self-audit 13 min · checkpoint 5 min.</p>
+        <p><strong>No Steam Deck needed:</strong> students simulate the Deck with the Game view at 1280 × 800 and a gamepad with the keyboard and mouse unplugged. If the school has a Deck, a live demo of one student's Linux build is a strong finish.</p>
+        <p><strong>Before class:</strong> the Linux build needs the <em>Linux Build Support</em> module, added to the Unity 6 install through Unity Hub. It's a sizeable download, so install it ahead of time or treat the Linux build as Extension only. The rating criteria here are summarised from Valve's public Steam Deck compatibility information. Check Valve's current page in case details have changed.</p>
+      </aside>
+
+      <!-- ═══ INTENTIONS ═══ -->
+      <section class="content-section" id="intentions">
+        <h2>Learning intentions</h2>
+        <p>By the end of this lesson I can:</p>
+        <ul class="dot-points">
+          <li>evaluate my game against external criteria, using evidence rather than opinion</li>
+          <li>measure performance with a rolling average, and explain why the worst frame matters</li>
+          <li>automate a repetitive check with code</li>
+          <li>identify problems that only appear on a different operating system.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Success criteria:</strong> I have a completed self-audit where every row has evidence, a justified overall rating, and at least one issue I found and fixed.
+        </div>
+      </section>
+
+      <!-- ═══ VOCAB ═══ -->
+      <section class="content-section" id="vocab">
+        <h2>Key vocabulary</h2>
+        <div class="flip-card-grid">
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Compatibility</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How well software works on particular hardware or another system without changes.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Frame rate</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How many frames are drawn per second (fps). Higher feels smoother.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Frame time</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How long one frame takes, in milliseconds. 1000 ÷ frame time = frame rate.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Stutter</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A visible jerk caused by one frame taking much longer than the others.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Rolling average</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">The average of only the most recent values, updated as each new value arrives.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Circular buffer</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">A fixed-size array where new values overwrite the oldest, wrapping from the end back to the start.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Portability</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">How easily software can run on a different operating system or device.</span>
+              </span>
+            </span>
+          </button>
+          <button class="flip-card" type="button" aria-pressed="false">
+            <span class="flip-card__inner">
+              <span class="flip-card__face flip-card__face--front" aria-hidden="false">
+                <span class="flip-card__term">Case-sensitive</span>
+                <span class="flip-card__hint">Tap to reveal</span>
+              </span>
+              <span class="flip-card__face flip-card__face--back" aria-hidden="true">
+                <span class="flip-card__def">Treating capital and lower-case letters as different. Linux file names are; Windows file names usually aren't.</span>
+              </span>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- ═══ CRITERIA ═══ -->
+      <section class="content-section" id="criteria">
+        <span class="section-phase-tag research"><span class="dot"></span>Researching</span>
+        <h2>How Steam Deck games are rated</h2>
+        <p>Valve tests games on Steam Deck and shows a rating on each game's store page. The ratings are <strong>Verified</strong> (works great out of the box), <strong>Playable</strong> (works, but the player may need to adjust something, such as using the touchscreen or a mouse mode), <strong>Unsupported</strong> and <strong>Unknown</strong>. The checks fall into four categories. These are summarised in our own words:</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table">
+            <thead>
+              <tr><th scope="col">Category</th><th scope="col">The question it asks</th><th scope="col">Where our unit addressed it</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Input</strong></td><td>Can every part of the game be used with the Deck's built-in controls? Do on-screen prompts show Deck buttons? Does typing bring up an on-screen keyboard?</td><td>Lessons 3, 6, 7 and 9: R5, prompts, keyboard</td></tr>
+              <tr><td><strong>Display</strong></td><td>Does the game support the Deck's 1280 × 800 screen, and is all text easy to read at that size?</td><td>Lessons 2 and 6: storyboard, 24 px rule</td></tr>
+              <tr><td><strong>Seamlessness</strong></td><td>Does the game run smoothly without stopping to show warnings, or needing a mouse-only screen such as a launcher?</td><td>Lessons 5 and 7: no crashes on bad saves, no mouse-only screens</td></tr>
+              <tr><td><strong>System support</strong></td><td>Does the game run on the Deck's operating system, which is Linux-based (natively or through Valve's Proton compatibility layer)?</td><td>Today: Linux build</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="paper-margin-note">Notice that most of these are non-functional requirements, the "how well" requirements from Lesson 1. A game can have every feature and still not be Verified.</p>
+      </section>
+
+      <!-- ═══ FRAMES ═══ -->
+      <section class="content-section" id="frames">
+        <h2>Frame rate and frame time</h2>
+        <p>Performance is part of "runs smoothly". Developers usually think in <strong>frame time</strong>, because that's the budget each frame must fit inside.</p>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">We do · calculation · 3 min</p>
+          <ol>
+            <li>At 30 fps, how many milliseconds does each frame have? (1 second = 1000 ms.)</li>
+            <li>At 60 fps?</li>
+            <li>A game averages 16 ms per frame, but every few seconds one frame takes 120 ms. What will the player notice?</li>
+          </ol>
+        </div>
+        <div class="expand-card">
+          <button class="expand-card__header" type="button" aria-expanded="false">
+            Worked answers
+            <svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg>
+          </button>
+          <div class="expand-card__body">
+            <ol>
+              <li>1000 ÷ 30 ≈ 33.3 ms.</li>
+              <li>1000 ÷ 60 ≈ 16.7 ms.</li>
+              <li>The average is about 60 fps, which looks great on paper, but each 120 ms frame is a visible freeze: a stutter. That's why our tool reports the <em>worst</em> frame as well as the average. The capture hitch from Lesson 4 is exactly this kind of spike.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ MONITOR ═══ -->
+      <section class="content-section" id="monitor">
+        <span class="section-phase-tag test"><span class="dot"></span>Testing</span>
+        <h2>Measuring performance</h2>
+        <p>One frame's time jumps around too much to read, and an average since the game started would hide recent problems. A <mark class="paper-hl paper-hl--yellow">rolling average</mark> of the last 60 frames shows what the game is doing <em>right now</em>. We store the times in a <strong>circular buffer</strong>: an array of 60 slots where each new time overwrites the oldest.</p>
+
+        <div class="pseudo-block">
+          <p class="pseudo-block__label">NSW pseudocode · RecordFrame and the readout</p>
+<pre>1   BEGIN RecordFrame(frameTime)
+2       SET samples[index] TO frameTime
+3       SET index TO (index + 1) MOD length of samples
+4       IF count &lt; length of samples THEN
+5           SET count TO count + 1
+6       ENDIF
+7   END RecordFrame
+
+8   BEGIN ShowReadout
+9       SET total TO 0
+10      SET worst TO 0
+11      FOR i FROM 0 TO count − 1
+12          SET total TO total + samples[i]
+13          IF samples[i] &gt; worst THEN
+14              SET worst TO samples[i]
+15          ENDIF
+16      NEXT i
+17      SET average TO total ÷ count
+18      DISPLAY 1 ÷ average AS fps, average, worst
+19  END ShowReadout</pre>
+        </div>
+
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">1</span><span class="step-label">The circular buffer</span></div>
+<pre><code>// A circular buffer: the newest time replaces the oldest once the array is full.
+private void RecordFrame(float frameTime)
+{
+    samples[index] = frameTime;
+    index = (index + 1) % samples.Length;           // 59 + 1 wraps back to 0
+    if (count &lt; samples.Length) count++;
+}</code></pre>
+            <div class="step-explain"><code>%</code> is MOD: the remainder after dividing. Counting 57, 58, 59, then 60 % 60 = <strong>0</strong>, so the index wraps to the start. <code>count</code> stops at 60, so the average only uses slots that have been filled.</div>
+          </div>
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">2</span><span class="step-label">Average, worst and memory</span></div>
+<pre><code>private void ShowReadout()
+{
+    float total = 0f;
+    float worst = 0f;
+    for (int i = 0; i &lt; count; i++)
+    {
+        total += samples[i];
+        if (samples[i] &gt; worst) worst = samples[i];
+    }
+    float average = total / count;
+    float fps = 1f / average;
+    float memoryMB = Profiler.GetTotalAllocatedMemoryLong() / 1000000f;
+
+    readout.text = $"{fps:0} fps   avg {average * 1000f:0.0} ms   worst {worst * 1000f:0.0} ms   {memoryMB:0} MB";
+    readout.color = fps &gt;= targetFps ? Color.green : Color.red;
+}</code></pre>
+            <div class="step-explain">One loop finds both the total and the worst. Memory comes from Unity's Profiler. Opening and closing your journal ten times is a quick check that the Lesson 6 leak fix is still working: memory should go up and back down, not keep climbing. Red text means below the 30 fps target.</div>
+          </div>
+        </div>
+
+        <h3>Desk check: a buffer of 4</h3>
+        <p>To trace by hand, shrink the buffer to 4 slots. Frame times arrive: 20, 20, 40, 20, 60 ms.</p>
+        <div class="trace-table-wrap">
+          <table class="trace-table">
+            <thead>
+              <tr><th scope="col">Frame time in</th><th scope="col">samples after</th><th scope="col">index</th><th scope="col">count</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="td-step">20</td><td class="td-var">[20, 0, 0, 0]</td><td class="td-code">1</td><td class="td-code">1</td></tr>
+              <tr><td class="td-step">20</td><td class="td-var">[20, 20, 0, 0]</td><td class="td-code">2</td><td class="td-code">2</td></tr>
+              <tr><td class="td-step">40</td><td class="td-var">[20, 20, 40, 0]</td><td class="td-code">3</td><td class="td-code">3</td></tr>
+              <tr><td class="td-step">20</td><td class="td-var">[20, 20, 40, 20]</td><td class="td-code">4 % 4 = 0</td><td class="td-code">4</td></tr>
+              <tr><td class="td-step">60</td><td class="td-var">[60, 20, 40, 20]</td><td class="td-code">1</td><td class="td-output">4 (oldest 20 overwritten)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Average = (60 + 20 + 40 + 20) ÷ 4 = <strong>35 ms</strong> (about 28.6 fps), and worst = 60 ms. We ran the buffer code on these values to confirm every row.</p>
+      </section>
+
+      <!-- ═══ BUG ═══ -->
+      <section class="content-section" id="bug">
+        <div class="bug-detective">
+          <p class="bug-detective__eyebrow">Bug detective</p>
+          <h3>The readout crashes after one second</h3>
+          <p>A classmate's performance readout works for about a second, then the Console fills with <code>IndexOutOfRangeException</code> errors every frame.</p>
+<pre>private void RecordFrame(float frameTime)
+{
+    samples[index] = frameTime;
+<span class="bug-line">    index++;</span>
+    if (count &lt; samples.Length) count++;
+}</pre>
+          <button class="bug-reveal-btn" type="button">Reveal the answer</button>
+          <div class="bug-detective__reveal">
+            <code>index</code> never wraps. After 60 frames (about a second at 60 fps) it reaches 60, but the array's last slot is 59, so <code>samples[60]</code> is out of range. The fix is <code>index = (index + 1) % samples.Length;</code>. We ran the unwrapped version, and it throws exactly this exception on the first frame past the end.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ TEXT AUDIT ═══ -->
+      <section class="content-section" id="textaudit">
+        <h2>Automating the text check</h2>
+        <p>Checking every text by eye is slow, and it's easy to miss one hidden on a panel you rarely open. When a check is repetitive and rule-based, let code do it.</p>
+        <div class="walkthrough">
+          <div class="walkthrough-step">
+            <div class="walkthrough-step__header"><span class="step-number">3</span><span class="step-label">AuditTextSizes (press F4)</span></div>
+<pre><code>// Lists every TextMesh Pro text in the scene smaller than the design rule.
+private void AuditTextSizes()
+{
+    int problems = 0;
+    TMP_Text[] texts = FindObjectsByType&lt;TMP_Text&gt;(FindObjectsInactive.Include, FindObjectsSortMode.None);
+    foreach (TMP_Text text in texts)
+    {
+        float smallest = text.enableAutoSizing ? text.fontSizeMin : text.fontSize;
+        if (smallest &lt; minTextSize)
+        {
+            Debug.LogWarning($"Text too small ({smallest} px): {text.name}", text);
+            problems++;
+        }
+    }
+    Debug.Log($"Text audit: checked {texts.Length} texts, {problems} below {minTextSize} px.");
+}</code></pre>
+            <div class="step-explain"><code>FindObjectsInactive.Include</code> also finds texts on hidden panels, like the caption box and delete confirmation, which are the ones most likely to be missed. Passing <code>text</code> as the second argument to <code>LogWarning</code> means clicking the warning in the Console highlights that object in the Hierarchy. This assumes your Canvas Scaler's reference resolution is 1280 × 800, as set in Lesson 6, so font sizes equal pixels on Steam Deck.</div>
+          </div>
+        </div>
+
+        <div class="expand-card full-script"><button class="expand-card__header" type="button" aria-expanded="false">Full script: DeckReadinessTools.cs<svg class="expand-card__icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 8l5 5 5-5"/></svg></button>
+          <div class="expand-card__body"><pre><code>// Recommended filename: DeckReadinessTools.cs
+// Developer tools for Lesson 10. F3 shows performance; F4 audits text sizes.
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Profiling;
+
+public class DeckReadinessTools : MonoBehaviour
+{
+    [Header("Performance readout (F3)")]
+    [SerializeField] private TMP_Text readout;
+    [SerializeField] private float targetFps = 30f;
+
+    [Header("Text audit (F4)")]
+    [SerializeField] private float minTextSize = 24f;   // our design rule at 1280 × 800
+
+    private readonly float[] samples = new float[60];   // the last 60 frame times
+    private int index;
+    private int count;
+    private bool visible;
+
+    private void Awake()
+    {
+        readout.gameObject.SetActive(false);
+    }
+
+    private void Update()
+    {
+        RecordFrame(Time.unscaledDeltaTime);
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null &amp;&amp; keyboard.f3Key.wasPressedThisFrame)
+        {
+            visible = !visible;
+            readout.gameObject.SetActive(visible);
+        }
+        if (keyboard != null &amp;&amp; keyboard.f4Key.wasPressedThisFrame)
+        {
+            AuditTextSizes();
+        }
+
+        if (!visible) return;                           // guard clause: nothing to draw
+        ShowReadout();
+    }
+
+    // A circular buffer: the newest time replaces the oldest once the array is full.
+    private void RecordFrame(float frameTime)
+    {
+        samples[index] = frameTime;
+        index = (index + 1) % samples.Length;           // 59 + 1 wraps back to 0
+        if (count &lt; samples.Length) count++;
+    }
+
+    private void ShowReadout()
+    {
+        float total = 0f;
+        float worst = 0f;
+        for (int i = 0; i &lt; count; i++)
+        {
+            total += samples[i];
+            if (samples[i] &gt; worst) worst = samples[i];
+        }
+        float average = total / count;
+        float fps = 1f / average;
+        float memoryMB = Profiler.GetTotalAllocatedMemoryLong() / 1000000f;
+
+        readout.text = $"{fps:0} fps   avg {average * 1000f:0.0} ms   worst {worst * 1000f:0.0} ms   {memoryMB:0} MB";
+        readout.color = fps &gt;= targetFps ? Color.green : Color.red;
+    }
+
+    // Lists every TextMesh Pro text in the scene smaller than the design rule.
+    private void AuditTextSizes()
+    {
+        int problems = 0;
+        TMP_Text[] texts = FindObjectsByType&lt;TMP_Text&gt;(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (TMP_Text text in texts)
+        {
+            float smallest = text.enableAutoSizing ? text.fontSizeMin : text.fontSize;
+            if (smallest &lt; minTextSize)
+            {
+                Debug.LogWarning($"Text too small ({smallest} px): {text.name}", text);
+                problems++;
+            }
+        }
+        Debug.Log($"Text audit: checked {texts.Length} texts, {problems} below {minTextSize} px.");
+    }
+}</code></pre></div></div>
+
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Setup · 4 min</p>
+          <ol>
+            <li>Create <code>DeckReadinessTools.cs</code> and add it to the <strong>PhotoMode</strong> object.</li>
+            <li>Add a TMP text in a top corner of the ToastCanvas for the readout and drag it in.</li>
+            <li>Play at 1280 × 800. Press <kbd>F3</kbd> for performance and <kbd>F4</kbd> for the text audit.</li>
+          </ol>
+        </div>
+        <p class="paper-margin-note">These are developer tools, so they use F-keys directly rather than the Input Action Asset. Players never need them. Remove or disable the component before a public release.</p>
+      </section>
+
+      <!-- ═══ LINUX ═══ -->
+      <section class="content-section" id="linux">
+        <h2>Building for Linux</h2>
+        <p>Steam Deck runs SteamOS, which is based on Linux. Windows games can run through Proton, Valve's compatibility layer, but a native Linux build removes that extra step. Unity can build one from the same project.</p>
+        <div class="guided-box">
+          <p class="guided-box__eyebrow">Build steps</p>
+          <ol>
+            <li>Open <strong>File → Build Profiles</strong>, select <strong>Linux</strong> and switch to it. If it's missing, add <em>Linux Build Support</em> to your Unity install through Unity Hub.</li>
+            <li>Build into a new folder called <code>Build-Linux</code>.</li>
+            <li>Check the build folder contains an executable named after your product, plus a <code>_Data</code> folder.</li>
+          </ol>
+        </div>
+        <div class="case-study-box">
+          <p class="case-study-box__eyebrow">What changes on Linux?</p>
+          <h3>Three portability checks</h3>
+          <ol>
+            <li><strong>Save location:</strong> <code>persistentDataPath</code> becomes a folder under <code>~/.config/unity3d/</code>. Our code never hard-codes a path, so this just works.</li>
+            <li><strong>Path separators:</strong> Linux uses <code>/</code> and Windows uses <code>\</code>. Every path in our code is built with <code>Path.Combine</code>, which picks the right one.</li>
+            <li><strong>Case-sensitivity:</strong> on Linux, <code>Photo_1.png</code> and <code>photo_1.png</code> are <em>different files</em>. Code that saves one spelling and loads another works on Windows but fails on Linux. Our file names are always built by the same method, so they always match.</li>
+          </ol>
+          <p class="case-study-box__question"><strong>Discuss:</strong> which decisions from earlier lessons made our game more portable without us realising it at the time?</p>
+        </div>
+      </section>
+
+      <!-- ═══ AUDIT ═══ -->
+      <section class="content-section" id="audit">
+        <span class="section-phase-tag test"><span class="dot"></span>Evaluating</span>
+        <h2>The self-audit</h2>
+        <p>Copy this table into your notebook. For each row, run the check and record your <strong>evidence</strong>: a test number, a measurement or a screenshot. "I think it works" is not evidence. Mark each row ✓ (passes), ~ (partly) or ✗ (fails).</p>
+        <div class="spec-table-wrap">
+          <table class="spec-table audit-table">
+            <thead>
+              <tr><th scope="col">#</th><th scope="col">Category</th><th scope="col">Check</th><th scope="col">How to test (record the evidence)</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>A1</td><td>Input</td><td>Every feature works with only a gamepad</td><td>Re-run T5 and T23 with keyboard and mouse unplugged</td><td></td></tr>
+              <tr><td>A2</td><td>Input</td><td>Prompts show gamepad buttons when a gamepad is used</td><td>Re-run T26 and T27</td><td></td></tr>
+              <tr><td>A3</td><td>Input</td><td>Typing opens an on-screen keyboard on Deck</td><td>Trace from Lesson 9 (can't run without Steam)</td><td></td></tr>
+              <tr><td>A4</td><td>Display</td><td>Every screen fits 1280 × 800 with nothing cut off</td><td>Game view at 1280 × 800: hiking, photo mode, journal, caption box, delete confirmation</td><td></td></tr>
+              <tr><td>A5</td><td>Display</td><td>No text smaller than 24 px</td><td>F4 text audit: record the number of problems</td><td></td></tr>
+              <tr><td>A6</td><td>Display</td><td>At least 30 fps in your busiest area</td><td>F3 readout at 1280 × 800: record fps and worst frame</td><td></td></tr>
+              <tr><td>A7</td><td>Seamlessness</td><td>Capturing a photo has no noticeable stutter</td><td>F3 readout: worst frame while capturing 5 photos</td><td></td></tr>
+              <tr><td>A8</td><td>Seamlessness</td><td>A damaged or missing save never stops the game</td><td>Re-run T13 and T15</td><td></td></tr>
+              <tr><td>A9</td><td>Seamlessness</td><td>No screen needs a mouse to get past</td><td>Gamepad only, from game start to quitting</td><td></td></tr>
+              <tr><td>A10</td><td>System support</td><td>Builds and starts on Linux</td><td>Linux build completes (and runs, if a Linux machine or Deck is available)</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="info-box">
+          <strong>Your rating:</strong> under the table, write which rating you'd give your game (Verified, Playable or Unsupported) and justify it in 2–3 sentences using row numbers as evidence. Then fix at least one ✗ or ~ row and re-test it.
+        </div>
+      </section>
+
+      <!-- ═══ TASKS ═══ -->
+      <section class="content-section tier-tasks" id="tasks">
+        <h2>Your task</h2>
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation</span>
+            <h4>Gather evidence</h4>
+            <ul>
+              <li>Set up the tools and record your F3 and F4 results.</li>
+              <li>Complete rows A1, A2, A4, A5 and A6 with evidence.</li>
+              <li>Answer the frame-time calculation questions.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core</span>
+            <h4>Full audit</h4>
+            <ul>
+              <li>Complete all ten rows with evidence.</li>
+              <li>Give a justified rating, then fix one failing row and re-test.</li>
+              <li>Desk-check the circular buffer with 5 slots and the frame times 10, 30, 30, 10, 20, 40.</li>
+            </ul>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension</span>
+            <h4>Ship it to Linux</h4>
+            <ul>
+              <li>Make the Linux build (row A10). If you can, run it on a Linux machine or Steam Deck and record what changed.</li>
+              <li>If A7 failed, apply the Lesson 4 Extension (saving on a background thread) and compare worst-frame times before and after.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CHECKPOINT ═══ -->
+      <section class="content-section" id="checkpoint">
+        <h2>Checkpoint</h2>
+        <p>Answer all six. The first two are Foundation, the middle two are Core and the last two are Extension.</p>
+
+        <div class="mcq-card" data-q="1" data-correct="C"
+             data-feedback-a="Not quite. That's the frame rate number, not the time. Divide 1000 ms by 30."
+             data-feedback-b="Not quite. That's 100 ÷ 30. A second is 1000 ms, not 100."
+             data-feedback-c="✓ Correct. 1000 ms ÷ 30 frames ≈ 33.3 ms per frame."
+             data-feedback-d="Not quite. That's ten times too long. 1000 ÷ 30 is about 33.">
+          <div class="mcq-question">1. A game runs at a steady 30 frames per second. About how long does each frame take?</div>
+          <div class="mcq-options" role="group" aria-label="Question 1 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>30.0 ms</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>3.33 ms</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>33.3 ms</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>300 ms</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-1" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-1">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="2" data-correct="D"
+             data-feedback-a="Not quite. Readable text at 1280 × 800 belongs in the Display category."
+             data-feedback-b="Not quite. Running on Steam Deck's operating system belongs in System support."
+             data-feedback-c="Not quite. Performance falls under how smoothly the game runs, not input."
+             data-feedback-d="✓ Correct. Input is about whether the Deck's built-in controls can do everything.">
+          <div class="mcq-question">2. Which check belongs in the <strong>Input</strong> category of a Steam Deck rating?</div>
+          <div class="mcq-options" role="group" aria-label="Question 2 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>All on-screen text is easy to read at 1280 × 800</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>The game runs on Steam Deck's own operating system</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>The game reaches at least 30 frames per second</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Every feature works with built-in controls</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-2" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-2">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="3" data-correct="A"
+             data-feedback-a="✓ Correct. The 60 overwrites the oldest 20, leaving 60, 20, 40, 20. Their total is 140, and 140 ÷ 4 = 35 ms."
+             data-feedback-b="Not quite. 32 is the average of all five, but the buffer only holds the last four."
+             data-feedback-c="Not quite. 40 is one of the values, not the average."
+             data-feedback-d="Not quite. 60 is the worst frame, not the average.">
+          <div class="mcq-question">3. A circular buffer holds 4 frame times. Frames of 20, 20, 40, 20 and then 60 ms arrive. What is the rolling average?</div>
+          <div class="mcq-options" role="group" aria-label="Question 3 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>35 ms</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>32 ms</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>40 ms</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>60 ms</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-3" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-3">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="4" data-correct="B"
+             data-feedback-a="Not quite. Every sample is measured the same way. None is more accurate."
+             data-feedback-b="✓ Correct. One 120 ms frame among sixty 16 ms frames barely moves the average, but the player sees it as a freeze."
+             data-feedback-c="Not quite. Steam doesn't require any on-screen readout. This is a developer tool."
+             data-feedback-d="Not quite. The average only needs the total and the count.">
+          <div class="mcq-question">4. Why does the performance readout show the <em>worst</em> frame time as well as the average?</div>
+          <div class="mcq-options" role="group" aria-label="Question 4 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>The worst frame is always the most accurate measurement</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>One slow frame is a visible stutter the average hides</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Steam requires every game to show its worst frame on screen</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>The average can't be calculated without the worst frame</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-4" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-4">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="5" data-correct="D"
+             data-feedback-a="Not quite. Linux reads PNG files without any plugin."
+             data-feedback-b="Not quite. persistentDataPath exists on Linux, under ~/.config/unity3d/."
+             data-feedback-c="Not quite. Path.Combine picks the right separator automatically."
+             data-feedback-d="✓ Correct. On Linux, Photo_ and photo_ are different names, so the file isn't found. Windows treats them as the same.">
+          <div class="mcq-question">5. A game saves <code>Photo_20261002.png</code> but later tries to load <code>photo_20261002.png</code>. It works on Windows but fails on Linux. Why?</div>
+          <div class="mcq-options" role="group" aria-label="Question 5 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>Linux can't open PNG image files without an extra plugin</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>persistentDataPath doesn't exist when running on Linux</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>Path.Combine always uses the Windows slash on Linux</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>Linux file names are case-sensitive; Windows' aren't</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-5" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-5">↩ Try again</button>
+        </div>
+
+        <div class="mcq-card" data-q="6" data-correct="C"
+             data-feedback-a="Not quite. Nothing is sorted. Values stay in the slot they were written to."
+             data-feedback-b="Not quite. Every frame is recorded. MOD only changes which slot is used."
+             data-feedback-c="✓ Correct. When index reaches the end, MOD wraps it to 0, so the newest time replaces the oldest."
+             data-feedback-d="Not quite. The buffer never stops. It keeps overwriting, which is what keeps the average current.">
+          <div class="mcq-question">6. What does <code>index = (index + 1) % samples.Length</code> achieve in the circular buffer?</div>
+          <div class="mcq-options" role="group" aria-label="Question 6 options">
+            <button class="mcq-option" type="button" data-idx="A"><span class="mcq-option-letter">A</span>It sorts all of the samples from the smallest to the largest</button>
+            <button class="mcq-option" type="button" data-idx="B"><span class="mcq-option-letter">B</span>It skips every second frame so the game runs faster</button>
+            <button class="mcq-option" type="button" data-idx="C"><span class="mcq-option-letter">C</span>It wraps to 0 so the oldest sample is overwritten</button>
+            <button class="mcq-option" type="button" data-idx="D"><span class="mcq-option-letter">D</span>It stops recording once all 60 samples have been stored</button>
+          </div>
+          <div class="mcq-feedback" id="mcq-feedback-6" aria-live="polite"></div>
+          <button class="mcq-reset" type="button" id="mcq-reset-6">↩ Try again</button>
+        </div>
+
+        <div class="progress-recap" data-progress-recap></div>
+      </section>
+
+      <!-- ═══ CPD ═══ -->
+      <section class="cpd-section" id="grades">
+        <h2>What success looks like</h2>
+        <p class="cpd-intro">These are the course performance descriptors for communicating information with data. A self-audit is only as convincing as its evidence. Tap a grade to see what it looks like today.</p>
+        <div class="cpd-strip">
+          <div class="cpd-grade cpd-grade-a" tabindex="0" role="button">
+            <span class="grade-label">A</span>
+            <p><strong>Selects relevant data, media and processes to effectively communicate information in a range of contexts.</strong> Completes all ten rows with measured evidence, justifies a rating persuasively, and shows before-and-after data for a fix.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-b" tabindex="0" role="button">
+            <span class="grade-label">B</span>
+            <p><strong>Selects relevant data, media and processes to communicate appropriate information in a range of contexts.</strong> Completes the full audit with evidence and a justified rating, and fixes one issue.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-c" tabindex="0" role="button">
+            <span class="grade-label">C</span>
+            <p><strong>Selects appropriate data, media and processes to communicate information in a range of contexts.</strong> Records F3 and F4 results and completes most audit rows with evidence.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-d" tabindex="0" role="button">
+            <span class="grade-label">D</span>
+            <p><strong>Uses data to communicate basic information.</strong> Records the frame rate and text audit result for their game.</p>
+          </div>
+          <div class="cpd-grade cpd-grade-e" tabindex="0" role="button">
+            <span class="grade-label">E</span>
+            <p><strong>Uses data to communicate information in a very limited way.</strong> Identifies which category each audit check belongs to.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ REFLECTION ═══ -->
+      <section class="notebook-prompt" id="reflect">
+        <p class="notebook-prompt__label">Notebook reflection</p>
+        <ul>
+          <li>Which audit result surprised you most, and what does it tell you about testing?
+            <span class="sentence-starter">I expected ___ but the evidence showed…</span></li>
+          <li>Looking back to Lesson 1, which Steam Deck requirement was hardest to meet, and why?
+            <span class="sentence-starter">The hardest requirement was ___ because…</span></li>
+        </ul>
+        <label for="reflection-l10" class="sidebar-label">Your reflection (saves automatically on this device)</label>
+        <textarea id="reflection-l10" class="reflection-textarea" data-progress-reflection></textarea>
+        <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      </section>
+
+      <nav class="lesson-nav" aria-label="Lesson navigation">
+        <a class="lesson-nav__link lesson-nav__link--prev" href="lesson09.html">
+          <span class="lesson-nav__dir">← Previous</span>
+          <span class="lesson-nav__title">Lesson 9: Steamworks in practice</span>
+        </a>
+        <a class="lesson-nav__link lesson-nav__link--next" href="lesson11.html">
+          <span class="lesson-nav__dir">Next →</span>
+          <span class="lesson-nav__title">Lesson 11: Testing</span>
+        </a>
+      </nav>
+
+    </main>
+  </div>
+
+  <script src="../../../assets/js/ct-core.js"></script>
+  <script src="../../../assets/js/ct-interactive.js"></script>
+  <script src="../../../assets/js/ct-progress.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      function boot() {
+        if (!window.CTProgress) return;
+        window.CTProgress.initLessonPage({
+          unitId: 'photo-journal-2026',
+          lessonId: 'lesson10',
+          totalQuestions: 6
+        });
+      }
+      if (document.readyState !== 'loading') {
+        boot();
+      } else {
+        var onReady = function () {
+          if (document.readyState === 'loading') return;
+          document.removeEventListener('readystatechange', onReady);
+          boot();
+        };
+        document.addEventListener('readystatechange', onReady);
+      }
+    }());
+  </script>
+</body>
+</html>
