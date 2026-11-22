@@ -131,13 +131,103 @@
 
 
   /* ─────────────────────────────────────────────────────────────
-     3. DRAG-AND-DROP CLASSIFIER
-     Markup: <div class="dnd-classifier" data-categories="A,B,C">
-     Students drag items into category buckets.
+     3. CLICK-TO-SORT CLASSIFIER
+     First built for Interactive Marketing theory.html (data vs
+     information sort). Click-to-sort rather than drag-and-drop:
+     buttons work with keyboard, touch and screen readers with no
+     extra code, and the sorting decision is the learning, not the
+     dragging.
+
+     Markup:
+     <div class="sort-activity">
+       <ol class="sort-items">
+         <li class="sort-item" data-answer="data"
+             data-explain="Why this item belongs in its category.">
+           <p class="sort-item__text">Item text</p>
+           <div class="sort-item__choices" role="group" aria-label="Sort: item text">
+             <button type="button" class="sort-choice" data-choice="data" aria-pressed="false">Data</button>
+             <button type="button" class="sort-choice" data-choice="information" aria-pressed="false">Information</button>
+           </div>
+           <p class="sort-item__feedback" aria-live="polite"></p>
+         </li>
+       </ol>
+       <div class="sort-actions">
+         <button type="button" class="sort-check">Check my sort</button>
+         <button type="button" class="sort-reset">Start again</button>
+       </div>
+       <p class="sort-score" aria-live="polite"></p>
+     </div>
+
+     Feedback always pairs colour with a ✓ / ✗ symbol and words,
+     so colour is never the only signal.
   ───────────────────────────────────────────────────────────── */
 
   function initDragClassifier() {
-    // Implemented when first skills page that needs it is built.
+    document.querySelectorAll('.sort-activity').forEach(function (activity) {
+      var items = activity.querySelectorAll('.sort-item');
+      var check = activity.querySelector('.sort-check');
+      var reset = activity.querySelector('.sort-reset');
+      var score = activity.querySelector('.sort-score');
+
+      // Choosing a category: only one button per item can be pressed
+      items.forEach(function (item) {
+        var choices = item.querySelectorAll('.sort-choice');
+        choices.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            choices.forEach(function (c) {
+              c.setAttribute('aria-pressed', String(c === btn));
+            });
+            // A new choice clears old feedback for this item
+            item.classList.remove('is-correct', 'is-incorrect');
+            var fb = item.querySelector('.sort-item__feedback');
+            if (fb) fb.textContent = '';
+          });
+        });
+      });
+
+      // Checking: mark each item and report a score
+      if (check) {
+        check.addEventListener('click', function () {
+          var right = 0;
+          var answered = 0;
+          items.forEach(function (item) {
+            var pressed = item.querySelector('.sort-choice[aria-pressed="true"]');
+            var fb = item.querySelector('.sort-item__feedback');
+            item.classList.remove('is-correct', 'is-incorrect');
+            if (!pressed) {
+              if (fb) fb.textContent = 'Choose a category for this one first.';
+              return;
+            }
+            answered += 1;
+            var ok = pressed.dataset.choice === item.dataset.answer;
+            if (ok) right += 1;
+            item.classList.add(ok ? 'is-correct' : 'is-incorrect');
+            if (fb) {
+              fb.textContent = (ok ? '✓ Correct. ' : '✗ Not quite. ') + (item.dataset.explain || '');
+            }
+          });
+          if (score) {
+            score.textContent = right + ' of ' + items.length + ' correct' +
+              (answered < items.length ? ' (' + (items.length - answered) + ' not sorted yet)' : '') + '.';
+          }
+        });
+      }
+
+      // Reset: clear every choice and all feedback
+      if (reset) {
+        reset.addEventListener('click', function () {
+          items.forEach(function (item) {
+            item.classList.remove('is-correct', 'is-incorrect');
+            item.querySelectorAll('.sort-choice').forEach(function (c) {
+              c.setAttribute('aria-pressed', 'false');
+            });
+            var fb = item.querySelector('.sort-item__feedback');
+            if (fb) fb.textContent = '';
+          });
+          if (score) score.textContent = '';
+        });
+      }
+    });
   }
 
 
