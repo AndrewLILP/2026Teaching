@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dodgeball Data · Teacher Display · MA4-DAT-C-01 / C-02</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EFE9; --card:#FFFFFF; --ink:#22303F; --ink2:#4A5866; --muted:#6B7480;
+  --slate:#3D5A80; --forest:#4A7C59; --amber:#E89C2F; --terra:#C1614F;
+  --accent:#A3262A; /* Trinity Red Kangaroos red: 7.3:1 on white, 6.4:1 on bg */
+  --line:#DCD3C8; --good:#2F6B44; --okay:#8A5A00; --poor:#A33A2B;
+  --body:'Nunito Sans',system-ui,sans-serif;
+}
+body.f-system{--body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+body.f-atkinson{--body:'Atkinson Hyperlegible',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden}
+body{font-size:clamp(17px,1.55vw,34px);line-height:1.4}
+h1,h2,h3{font-family:'Nunito',sans-serif;margin:0;color:var(--slate);line-height:1.15}
+h1{font-size:2.6em;font-weight:900}
+h2{font-size:1.75em;font-weight:900;margin-bottom:.45em}
+h3{font-size:1.1em;font-weight:800;margin-bottom:.3em}
+.kicker{font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.62em;color:var(--accent);margin-bottom:.3em}
+.deck{position:relative;width:100vw;height:100vh}
+.slide{position:absolute;inset:0;padding:3.2vh 4vw 9vh;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide-body{flex:1;min-height:0;display:flex;gap:2.2vw}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:1.4vh}
+.card{background:var(--card);border-radius:14px;padding:1.1em 1.3em;box-shadow:0 2px 0 rgba(0,0,0,.04),0 6px 20px rgba(61,90,128,.08);border:1px solid #EBE4DB}
+.card.tint{background:#FBF7F2}
+ul.big{margin:.2em 0;padding-left:1.1em} ul.big li{margin:.35em 0}
+.step{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+.step.shown{opacity:1;transform:none}
+svg .step{transform:none}
+svg{font-family:var(--body)}
+.pill{display:inline-block;padding:.12em .6em;border-radius:999px;font-weight:800;font-size:.8em;font-family:'Nunito',sans-serif}
+.pill.slate{background:#E3E9F1;color:var(--slate)} .pill.red{background:#F6E1E1;color:var(--accent)}
+.hand{font-family:'Caveat',cursive;font-size:1.35em;color:var(--slate)}
+.small{font-size:.75em;color:var(--ink2)}
+.muted{color:var(--muted)}
+.title-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.2vh;max-width:72vw}
+.title-wrap h1 span{color:var(--accent)}
+table.guide{border-collapse:separate;border-spacing:0;width:100%;font-size:.86em}
+table.guide th,table.guide td{text-align:left;padding:.42em .7em;border-bottom:1px solid var(--line);vertical-align:top}
+table.guide th{font-family:'Nunito',sans-serif;color:var(--slate);font-weight:800;background:#F7F2EC}
+table.guide td:first-child{font-weight:700}
+table.data{border-collapse:collapse;font-size:.78em;width:100%}
+table.data th,table.data td{padding:.18em .55em;border-bottom:1px solid var(--line);text-align:left}
+table.data th{font-family:'Nunito';color:var(--slate)}
+table.data td.n,table.data th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.data tr.flag td{background:#FBEDED}
+.qf{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;flex:1}
+.qf .card{display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+.qf .q{font-size:1.1em}
+.qf .ans{margin-top:.5em;font-weight:800;color:var(--good);visibility:hidden;font-size:1.05em}
+.qf .card.open .ans{visibility:visible}
+.qf .num{font-family:'Nunito';font-weight:900;color:var(--accent)}
+button{font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer}
+.btnrow{display:flex;flex-wrap:wrap;gap:.45em}
+.tbtn{font-size:.78em;padding:.45em .9em;border-radius:10px;border:2px solid var(--slate);background:#fff;color:var(--slate)}
+.tbtn[aria-pressed="true"]{background:var(--slate);color:#fff}
+.tbtn.alt{border-color:var(--accent);color:var(--accent)}
+.tbtn.alt[aria-pressed="true"]{background:var(--accent);color:#fff}
+.tbtn:focus-visible,.navbtn:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.chartbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.chartbox svg{width:100%;height:100%;max-height:100%}
+.verdict{font-size:.9em;border-radius:12px;padding:.6em .9em;border-left:8px solid var(--line);background:#fff;min-height:3.2em}
+.verdict.best{border-color:var(--good)} .verdict.ok{border-color:var(--okay)} .verdict.poor{border-color:var(--poor)}
+.verdict b.best{color:var(--good)} .verdict b.ok{color:var(--okay)} .verdict b.poor{color:var(--poor)}
+.frame{font-size:1.05em;line-height:1.9}
+.frame .blank{display:inline-block;min-width:6em;border-bottom:3px solid var(--slate);text-align:center;font-family:'Caveat',cursive;font-size:1.3em;color:var(--accent);line-height:1.1}
+.mcq{display:flex;flex-direction:column;gap:.4em}
+.opt{display:block;width:100%;text-align:left;font-family:var(--body);font-weight:600;font-size:.86em;padding:.45em .8em;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.opt.right{border-color:var(--good);background:#E9F3EC}
+.opt.wrong{border-color:var(--poor);background:#F9E9E6}
+.fb{font-size:.8em;min-height:1.3em}
+/* number cards for centre & spread */
+.nums{display:flex;flex-wrap:wrap;gap:.35em}
+.nums span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1em;height:2.1em;border-radius:10px;background:#fff;border:2px solid var(--line);font-family:'Nunito';font-weight:900;font-size:1.05em;color:var(--ink)}
+.nums span.mid{border-color:var(--accent);background:#F6E1E1;color:var(--accent)}
+.nums span.mode{border-color:var(--slate);background:#E3E9F1}
+.nums span.out{border-style:dashed;border-color:var(--poor);color:var(--poor)}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1vw}
+.stat{background:#fff;border:1px solid #EBE4DB;border-radius:14px;padding:.6em .8em}
+.stat b{display:block;font-family:'Nunito';font-size:.75em;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)}
+.stat .v{font-family:'Nunito';font-weight:900;font-size:2em;color:var(--accent);line-height:1.1}
+.stat .w{font-size:.72em;color:var(--ink2)}
+.nav{position:fixed;left:0;right:0;bottom:0;height:6.5vh;min-height:44px;display:flex;align-items:center;gap:.6em;padding:0 1.2vw;background:rgba(244,239,233,.95);border-top:1px solid var(--line);font-size:14px;z-index:10}
+.navbtn{border:1px solid var(--line);background:#fff;color:var(--slate);border-radius:8px;padding:.45em .8em;font-size:14px}
+.prog{flex:1;height:6px;background:#E6DED4;border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.count{font-family:'Nunito';font-weight:800;color:var(--ink2);min-width:4.5em;text-align:center}
+select.navbtn{font-family:'Nunito';font-weight:700}
+.notes{display:none}
+#notesPanel{position:fixed;right:1vw;bottom:7.5vh;width:min(560px,44vw);max-height:70vh;overflow:auto;background:#FFFDF9;border:2px solid var(--accent);border-radius:14px;padding:14px 18px;font-size:15px;line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.18);display:none;z-index:11;color:var(--ink)}
+#notesPanel.open{display:block}
+#notesPanel h4{margin:0 0 6px;font-family:'Nunito';color:var(--accent)}
+#notesPanel p{margin:.4em 0}
+.hidden-hook{filter:blur(18px);opacity:.15;transition:filter .4s,opacity .4s}
+@media (max-aspect-ratio:4/3){.slide-body{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 TITLE -->
+<section class="slide" data-title="Title">
+  <div class="title-wrap">
+    <div class="kicker">MA4-DAT-C-01 &amp; MA4-DAT-C-02 · Year 8 · Fictional season data</div>
+    <h1>Dodgeball by the numbers:<br><span>the Trinity Red Kangaroos</span></h1>
+    <p style="font-size:1.15em;margin:.2em 0;color:var(--ink2)">Choose the right graph, find the centre and spread, and build a season infographic.</p>
+    <svg viewBox="0 0 300 70" style="width:min(380px,30vw);margin-top:1em" aria-hidden="true">
+      <circle cx="35" cy="35" r="28" fill="#A3262A"/><path d="M13 27 Q35 40 57 27 M13 43 Q35 30 57 43" stroke="#fff" stroke-width="3" fill="none"/>
+      <circle cx="110" cy="35" r="20" fill="#3D5A80"/><circle cx="170" cy="35" r="14" fill="#E89C2F"/><circle cx="215" cy="35" r="9" fill="#4A7C59"/><circle cx="245" cy="35" r="5" fill="#C1614F"/>
+    </svg>
+  </div>
+  <aside class="notes">
+    <h4>Lesson overview · 60 minutes</h4>
+    <p><b>Timing:</b> Opening 2 · Hook 4 · Revision 6 · Meet the data 2 · Graph Swap 8 · Centre &amp; spread 8 · Justify 2 · I Do 8 · We Do 4 · You Do 12 · Check &amp; exit 4.</p>
+    <p><b>You need:</b> printed dodgeball worksheet (5 pages), mini whiteboards, rulers, coloured pencils, calculators optional.</p>
+    <p><b>Keys:</b> → or Space = next step/slide · ← = back · N = notes · F = fullscreen.</p>
+    <p>All data is fictional. Players are listed as student01–student12; no real students are named.</p>
+  </aside>
+</section>
+
+<!-- 2 LI -->
+<section class="slide" data-title="Learning intention">
+  <div class="kicker">Today</div>
+  <h2>What we’re learning</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card"><h3>Learning intention</h3>We are learning to represent a dataset using a statistical infographic, justify the graph we chose, and describe the data using measures of centre and spread.</div>
+    <div class="card"><h3>Success criteria — I can…</h3>
+      <ul class="big">
+        <li class="step">match a dataset to the graph type that suits it best, and explain why another would be poor</li>
+        <li class="step">draw a dot plot and a stem-and-leaf plot accurately</li>
+        <li class="step">calculate the mean, median, mode and range</li>
+        <li class="step">explain how an outlier changes the mean and the median</li>
+      </ul></div>
+  </div></div>
+  <aside class="notes"><h4>Opening · 2 min</h4><p>Begin with your class prayer or reflection as usual. Reveal each criterion; students tick these on worksheet page 5 at the end.</p></aside>
+</section>
+
+<!-- 3 HOOK -->
+<section class="slide" data-title="Hook">
+  <div class="kicker">Hook · 10-second challenge</div>
+  <h2>Season card: what will you remember?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:2"><div class="card" style="flex:1;display:flex"><svg id="hookSvg" viewBox="0 0 900 420" style="width:100%;height:100%" role="img" aria-label="Season infographic: 156 team hits, top thrower student07 with 24 hits, 60 catches, roles 5 throwers 4 catchers 3 all-rounders"></svg></div></div>
+    <div class="col" style="flex:1;justify-content:center">
+      <div class="btnrow"><button class="tbtn alt" id="hookHide" aria-pressed="false">Hide it</button></div>
+      <div class="card step"><h3>Mini whiteboard</h3>Write every fact you remember.<br>Which ones stuck?<br>Why?</div>
+      <div class="card tint step">Big numbers, icons and simple graphs make data easier to remember.<br>Today you’ll make one for the Red Kangaroos.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Hook · 4 min</h4><p>Show for about 10 seconds, press <b>Hide it</b>, students write what they recall. Most remember the big numbers and the top player, rarely exact values. Show again to check.</p></aside>
+</section>
+
+<!-- 4 GUIDE -->
+<section class="slide" data-title="Graph guide">
+  <div class="kicker">Revision · matching graph to data</div>
+  <h2>What job does the graph need to do?</h2>
+  <div class="slide-body"><div class="col"><div class="card" style="padding:.5em .6em">
+    <table class="guide">
+      <thead><tr><th>The data’s job is to show…</th><th>Choose…</th><th>Dodgeball example</th></tr></thead>
+      <tbody>
+        <tr class="step"><td>change over time</td><td>line graph</td><td>one player’s hits each round</td></tr>
+        <tr class="step"><td>compare separate categories</td><td>column or bar graph</td><td>hits by each team in a round</td></tr>
+        <tr class="step"><td>compare two groups across categories</td><td>side-by-side column graph</td><td>hits and catches for each player</td></tr>
+        <tr class="step"><td>parts of one whole (few parts)</td><td>sector or divided bar graph</td><td>the squad split into roles</td></tr>
+        <tr class="step"><td>spread of numerical data (small set)</td><td>dot plot</td><td>hits for each of 12 players</td></tr>
+        <tr class="step"><td>spread of numerical data (wider range)</td><td>stem-and-leaf plot</td><td>throws attempted, 9 to 67</td></tr>
+        <tr class="step"><td>one proportion, memorably</td><td>pictogram</td><td>“7 in 10 throws missed”</td></tr>
+      </tbody>
+    </table></div></div></div>
+  <aside class="notes"><h4>Revision · 2 min</h4><p>Reveal row by row, asking the class first. Highlight the two numerical-data rows — they are new emphasis today, because dot plots and stem-and-leaf plots make the median, mode and range easy to see.</p></aside>
+</section>
+
+<!-- 5 QUICK FIRE -->
+<section class="slide" data-title="Quick-fire">
+  <div class="kicker">Revision · mini whiteboards</div>
+  <h2>Quick-fire: which graph?</h2>
+  <div class="qf">
+    <div class="card" tabindex="0"><div class="q"><span class="num">1</span> Crowd size at each of 8 home games, in order</div><div class="ans">✓ Line graph<br><span class="small">Time order</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">2</span> Total hits by each of 5 teams in the final round</div><div class="ans">✓ Column graph<br><span class="small">Separate categories</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">3</span> How a team’s 60 outs happened: hit, caught, stepped out</div><div class="ans">✓ Sector or divided bar<br><span class="small">Parts of one whole</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">4</span> Throw speeds (km/h) of 30 players at a skills clinic</div><div class="ans">✓ Stem-and-leaf or dot plot<br><span class="small">Spread of numerical data</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">5</span> Wins for the Year 7 and Year 8 teams in each term</div><div class="ans">✓ Side-by-side column<br><span class="small">Two groups, same categories</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">6</span> “7 in every 10 throws missed”</div><div class="ans">✓ Pictogram<br><span class="small">One proportion</span></div></div>
+  </div>
+  <aside class="notes"><h4>4 min</h4><p>Read, students write, “3-2-1 show me”, click to reveal. Push for the <i>because</i>.</p></aside>
+</section>
+
+<!-- 6 MEET THE DATA -->
+<section class="slide" data-title="Meet the data">
+  <div class="kicker">The season · 8 rounds · fictional data</div>
+  <h2>Meet the Red Kangaroos squad</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:1.6"><div class="card" style="padding:.5em .8em">
+      <table class="data">
+        <tr><th>Player</th><th>Role</th><th class="n">Games</th><th class="n">Hits</th><th class="n">Throws</th><th class="n">Catches</th></tr>
+        <tbody id="rosterBody"></tbody>
+      </table></div></div>
+    <div class="col">
+      <div class="card tint" style="font-size:.85em"><b>Hits</b> = opponents hit by a throw.<br><b>Throws</b> = throws attempted.<br><b>Catches</b> = opponents’ throws caught.</div>
+      <div class="card" style="font-size:.85em"><b>Opponents</b> (played twice each):<br>Hillside Blue Wombats · Riverbend Gold Quokkas · Coastal Green Echidnas · Ridgeview Purple Possums</div>
+      <div class="card step" style="font-size:.85em;border-color:var(--poor)"><b>Notice:</b> one player only played 3 of the 8 games.<br>Keep an eye on them.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Meet the data · 2 min</h4><p>student11 was injured after Round 3. Don’t explain yet — the outlier discussion comes on slide 9. Ask: “Which columns are categorical? Which are numerical?” (Role is categorical; games, hits, throws, catches are numerical and discrete.)</p></aside>
+</section>
+
+<!-- 7 GRAPH SWAP -->
+<section class="slide" data-title="Graph Swap">
+  <div class="kicker">Graph Swap · Red Kangaroos season</div>
+  <h2 style="margin-bottom:.25em">Same data, different graph. Does it work?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 28%">
+      <div class="card" style="padding:.7em .9em"><h3>1. Pick a dataset</h3><div class="btnrow" id="dsBtns" style="flex-direction:column;align-items:stretch"></div></div>
+      <div class="card" style="padding:.7em .9em"><h3>2. Pick a graph</h3><div class="btnrow" id="typeBtns"></div></div>
+      <div class="btnrow"><button class="tbtn alt" id="verdictBtn" aria-pressed="false">3. Reveal verdict</button></div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="swapSvg" viewBox="0 0 800 440" role="img" aria-label="Chart"></svg></div>
+      <div class="verdict" id="verdictBox" aria-live="polite"><span class="muted">Discuss: does this graph suit the data? Why or why not?</span></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Graph Swap · 8 min</h4><p>Show a poor choice first, ask “What’s wrong?”, then switch to the best.</p><p>Suggested run: Hits per player → line (✗ players have no order) → column (≈ compares players but hides the spread) → dot plot (✓ cluster, gap and outlier visible).<br>Throws → dot plot (≈ too spread out) → stem-and-leaf (✓).<br>Squad roles → stem-and-leaf (✗ not numbers) → sector (✓).</p></aside>
+</section>
+
+<!-- 8 CENTRE & SPREAD -->
+<section class="slide" data-title="Centre &amp; spread">
+  <div class="kicker">Measures of centre and spread · MA4-DAT-C-02</div>
+  <h2>Hits per player: what’s typical?</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card"><div class="small" style="margin-bottom:.4em">Hits for student01 to student12:</div>
+      <div class="nums">14 · 9 · 17 · 12 · 9 · 21 · 24 · 9 · 15 · 13 · 2 · 11</div></div>
+    <div class="card step"><div class="small" style="margin-bottom:.4em">Step 1 · put them in order:</div>
+      <div class="nums" id="sortedNums"></div></div>
+    <div class="statgrid">
+      <div class="stat step"><b>Median</b><div class="v">12.5</div><div class="w">12 values, so average the 6th and 7th: (12 + 13) ÷ 2</div></div>
+      <div class="stat step"><b>Mode</b><div class="v">9</div><div class="w">9 appears three times</div></div>
+      <div class="stat step"><b>Mean</b><div class="v">13</div><div class="w">Total 156 ÷ 12 players</div></div>
+      <div class="stat step"><b>Range</b><div class="v">22</div><div class="w">24 − 2</div></div>
+    </div>
+  </div></div>
+  <aside class="notes"><h4>Centre &amp; spread · 5 min</h4><p>Students work each measure on mini whiteboards before you reveal it.</p><p>Median: with an even number of values, the median is halfway between the two middle values — 12.5 is not one of the data values, and that is fine.</p><p>Mean: total hits 156 (checked). 156 ÷ 12 = 13.</p><p>Range is a measure of spread, not centre.</p></aside>
+</section>
+
+<!-- 9 OUTLIER -->
+<section class="slide" data-title="Outlier">
+  <div class="kicker">What about student11?</div>
+  <h2>student11 played only 3 of 8 games</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card"><div class="nums" id="outNums"></div><div class="small" style="margin-top:.5em">2 hits is far from the rest — an <b>outlier</b>.</div></div>
+      <div class="card step"><h3>Predict first</h3>If we leave student11 out, will the mean go up or down?<br>Which will change more: the mean or the median?</div>
+    </div>
+    <div class="col">
+      <div class="card step" style="padding:.6em .9em">
+        <table class="guide">
+          <tr><th></th><th>All 12</th><th>Without student11</th></tr>
+          <tr><td>Mean</td><td>13</td><td><b>14</b> &nbsp;<span class="small">(154 ÷ 11)</span></td></tr>
+          <tr><td>Median</td><td>12.5</td><td><b>13</b></td></tr>
+          <tr><td>Mode</td><td>9</td><td>9</td></tr>
+          <tr><td>Range</td><td>22</td><td><b>15</b> &nbsp;<span class="small">(24 − 9)</span></td></tr>
+        </table></div>
+      <div class="card tint step">The <b>mean</b> moved more than the median.<br>An outlier pulls the mean towards it.<br>The <b>median</b> is a better “typical” value when there is an outlier.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Outlier · 3 min</h4><p>Ask whether it is fair to leave student11 out. There is no single right answer: if the question is “how many hits does a typical player get over a full season?”, leaving them out (or using the median) is reasonable. If the question is “how did the whole squad go?”, include everyone.</p><p>This is the “Think deeper” question on worksheet page 5.</p></aside>
+</section>
+
+<!-- 10 JUSTIFY -->
+<section class="slide" data-title="Justify">
+  <div class="kicker">Writing a justification</div>
+  <h2>“Because…” is where the marks are</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card frame">
+      I chose a <span class="blank">dot plot</span><br>
+      because the data is <span class="blank">numerical</span><br>
+      and I want my reader to see <span class="blank">the spread and the outlier</span>.<br>
+      <span class="step">A <span class="blank">line graph</span> would be less suitable because <span class="blank">the players are not in any order</span>.</span>
+    </div>
+    <div class="card tint step small" style="font-size:.85em"><b>Useful words:</b> categorical · numerical · spread · cluster · outlier · median · mode · range · parts of a whole · over time · compare</div>
+  </div></div>
+  <aside class="notes"><h4>2 min</h4><p>The same frame sits under every worksheet panel. Insist on the second sentence.</p></aside>
+</section>
+
+<!-- 11 I DO -->
+<section class="slide" data-title="I Do: Panel 1">
+  <div class="kicker">I Do · Worksheet Panel 1 · copy with me</div>
+  <h2>Panel 1: hits per player as a dot plot</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 28%">
+      <div class="card tint step" style="font-size:.85em"><b>Think aloud:</b><br>Numerical data, 12 values, from 2 to 24 → <b>dot plot</b>.</div>
+      <div class="card tint step" style="font-size:.85em"><b>Scale:</b> number line 0 to 25.<br>Every whole number gets a mark.<br>Label every 5.</div>
+      <div class="card tint step" style="font-size:.85em"><b>Stack</b> equal values: three dots above 9.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="idoSvg" viewBox="0 0 800 440" role="img" aria-label="Dot plot of hits per player being built step by step"></svg></div>
+      <div class="card step hand" style="font-size:1.05em;padding:.5em 1em">I chose a dot plot because the hits are numerical and it shows the cluster from 9 to 15 and the outlier at 2.<br>A line graph would be less suitable because the players are not in any order.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>I Do · 8 min</h4><p>Model on your whiteboard while students copy into Panel 1 (worksheet page 3; the number line is pre-drawn). Press → to build: number line → dots → title &amp; source → median and mean markers → justification.</p><p>Students then fill the four stat boxes under Panel 1 (same values as slide 8).</p></aside>
+</section>
+
+<!-- 12 WE DO -->
+<section class="slide" data-title="We Do: Panel 2">
+  <div class="kicker">We Do · Worksheet Panel 2</div>
+  <h2>Panel 2: how is the squad made up?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 32%">
+      <div class="card"><table class="data">
+        <tr><th>Role</th><th class="n">Players</th></tr>
+        <tr><td>Thrower</td><td class="n">5</td></tr><tr><td>Catcher</td><td class="n">4</td></tr><tr><td>All-rounder</td><td class="n">3</td></tr>
+        <tr><td><b>Total</b></td><td class="n"><b>12</b></td></tr></table></div>
+      <div class="card" style="padding:.7em .9em"><h3>Class vote: which graph?</h3>
+        <div class="btnrow" id="voteBtns">
+          <button class="tbtn" data-t="sector">Sector</button><button class="tbtn" data-t="divided">Divided bar</button>
+          <button class="tbtn" data-t="column">Column</button><button class="tbtn" data-t="stem">Stem-and-leaf</button></div></div>
+      <div class="card tint step" style="font-size:.82em"><b>No protractor needed:</b><br>The circle on your worksheet is split into 12 equal parts.<br>One part = one player = 30°.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="wedoSvg" viewBox="0 0 800 440" role="img" aria-label="Chart of squad roles"></svg></div>
+      <div class="verdict" id="wedoVerdict" aria-live="polite"><span class="muted">Vote first, then click your choice.</span></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>We Do · 4 min</h4><p>Vote on mini whiteboards with a reason. Click the winner, then try “Stem-and-leaf” to show why categorical data can’t go in one.</p><p>Angles: thrower 5 × 30° = 150°, catcher 120°, all-rounder 90°.</p></aside>
+</section>
+
+<!-- 13 YOU DO -->
+<section class="slide" data-title="You Do: Panels 3–5">
+  <div class="kicker">You Do · Worksheet pages 4–5</div>
+  <h2>Your turn: choose, draw, calculate, justify</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card"><span class="pill slate">Panel 3</span> <b>Throws attempted</b> by each player.<br><span class="small">Choose your graph, find the median and range, justify.</span></div>
+      <div class="card"><span class="pill slate">Panel 4</span> <b>student07’s hits</b> in each of the 8 rounds.<br><span class="small">Choose your graph, find the mean, justify.</span></div>
+      <div class="card"><span class="pill red">Panel 5 · Extension</span> <b>Hits and catches</b> for every player.<br><span class="small">Plus a big-number tile and the outlier question.</span></div>
+      <div class="btnrow"><button class="tbtn alt" id="sampleBtn" aria-pressed="false">Show sample answers</button></div>
+    </div>
+    <div class="col" id="sampleCol" style="display:none">
+      <div style="display:flex;gap:1vw;flex:1;min-height:0">
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s3" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s4" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+      </div>
+      <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s5" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>You Do · 12 min</h4>
+    <p><b>Panel 3 (throws):</b> stem-and-leaf is strongest.<br>Sorted: 9, 31, 35, 38, 44, 45, 46, 48, 50, 52, 63, 67.<br>Median (45 + 46) ÷ 2 = 45.5 · range 67 − 9 = 58 · mean 528 ÷ 12 = 44 · no mode (every value appears once).</p>
+    <p><b>Panel 4 (student07 by round):</b> line graph. Hits 2, 3, 1, 4, 3, 5, 2, 4 → total 24, mean 3, median 3, range 4. Modes: 2, 3 and 4 each appear twice.</p>
+    <p><b>Panel 5:</b> side-by-side columns. Catches: total 60, mean 5, median 5.5, mode 6, range 9.</p>
+    <p>Hold sample answers back until most students have committed.</p></aside>
+</section>
+
+<!-- 14 CHECKLIST -->
+<section class="slide" data-title="Checklist">
+  <div class="kicker">Peer check · 2 min</div>
+  <h2>Swap with a partner. Does their infographic have…</h2>
+  <div class="slide-body">
+    <div class="col"><div class="card" style="font-size:1.05em"><ul class="big" style="list-style:none;padding-left:0">
+      <li>☐ a title that tells the story of the season</li>
+      <li>☐ the right graph for each dataset</li>
+      <li>☐ an even scale or number line, with labels</li>
+      <li>☐ a key for stem-and-leaf (e.g. 4 | 5 = 45)</li>
+      <li>☐ mean, median, mode and range worked out correctly</li>
+      <li>☐ a justification with “because…” for each panel</li></ul></div></div>
+    <div class="col" style="justify-content:center"><div class="card tint"><span class="hand">One star ★ and one wish ✎</span><br>Write them in the box on page 5.</div></div>
+  </div>
+  <aside class="notes"><h4>2 min</h4></aside>
+</section>
+
+<!-- 15 EXIT -->
+<section class="slide" data-title="Exit check">
+  <div class="kicker">Exit check · mini whiteboards</div>
+  <h2>Show me: which letter?</h2>
+  <div class="slide-body" style="gap:1.4vw">
+    <div class="col card"><h3>1. Best graph to show the spread of 12 players’ hits?</h3>
+      <div class="mcq">
+        <button class="opt" data-result="wrong" data-msg="✗ A sector graph shows parts of a whole, not spread.">A. Sector graph</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. A dot plot shows every value, the cluster and any outlier.">B. Dot plot</button>
+        <button class="opt" data-result="wrong" data-msg="✗ Players have no order, so a line graph suggests a trend that doesn’t exist.">C. Line graph</button>
+        <button class="opt" data-result="wrong" data-msg="✗ A pictogram suits one proportion.">D. Pictogram</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>2. Hits: 2, 9, 9, 9, 11, 12, 13, 14, 15, 17, 21, 24. Median?</h3>
+      <div class="mcq">
+        <button class="opt" data-result="wrong" data-msg="✗ 13 is the mean. The median is the middle of the ordered list.">A. 13</button>
+        <button class="opt" data-result="wrong" data-msg="✗ 9 is the mode — the most common value.">B. 9</button>
+        <button class="opt" data-result="wrong" data-msg="✗ Check the middle two values: the 6th and 7th.">C. 11.5</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. The 6th and 7th values are 12 and 13, so the median is 12.5.">D. 12.5</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>3. Removing the outlier (2) changes which measure of centre the most?</h3>
+      <div class="mcq">
+        <button class="opt" data-result="wrong" data-msg="✗ The mode stays at 9.">A. Mode</button>
+        <button class="opt" data-result="wrong" data-msg="✗ The median only moves from 12.5 to 13.">B. Median</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. The mean jumps from 13 to 14 — outliers pull the mean.">C. Mean</button>
+        <button class="opt" data-result="wrong" data-msg="✗ Two of the measures do change.">D. None of them</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+  </div>
+  <aside class="notes"><h4>Exit · 2 min</h4><p>Answers: B, D, C. Click the class answer to show feedback.</p></aside>
+</section>
+
+<!-- 16 NOTE -->
+<section class="slide" data-title="About the data">
+  <div class="kicker">About the data</div>
+  <h2>This season is fictional</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card" style="font-size:.95em">The Trinity Red Kangaroos, their opponents and every statistic were made up for this lesson.<br>Players are listed as student01 to student12.<br>The numbers were chosen so the statistics work out neatly.</div>
+    <div class="card tint" style="font-size:.9em"><b>Try it for real:</b> collect your own class data in PE — throws attempted and hits in a short game — and build a second infographic.</div>
+  </div></div>
+  <aside class="notes"><h4>Reference</h4><p>Checks: hits total 156; throws total 528; catches total 60; student07 by round total 24, matching the season total. Every player’s hits ≤ throws.</p></aside>
+</section>
+</div>
+
+<div id="notesPanel" role="region" aria-label="Teacher notes"></div>
+<nav class="nav" aria-label="Slide controls">
+  <button class="navbtn" id="prevBtn" aria-label="Previous">◀</button>
+  <span class="count" id="count">1 / 16</span>
+  <button class="navbtn" id="nextBtn" aria-label="Next">▶</button>
+  <select class="navbtn" id="jump" aria-label="Jump to slide"></select>
+  <div class="prog"><i id="progBar"></i></div>
+  <button class="navbtn" id="notesBtn" aria-pressed="false">Notes (N)</button>
+  <select class="navbtn" id="fontSel" aria-label="Font"><option value="">Nunito Sans</option><option value="f-system">System</option><option value="f-atkinson">Atkinson Hyperlegible</option></select>
+  <button class="navbtn" id="fsBtn">Fullscreen (F)</button>
+</nav>
+
+<script>
+/* ---------- FICTIONAL DATA (verified in Python before build) ---------- */
+var C={red:'#A3262A',slate:'#3D5A80',terra:'#C1614F',amber:'#E89C2F',forest:'#4A7C59',ink:'#22303F',ink2:'#4A5866',muted:'#6B7480',grid:'#E3DBD0',axis:'#8A8F96',track:'#E6E1DA'};
+var PLAYERS=['student01','student02','student03','student04','student05','student06','student07','student08','student09','student10','student11','student12'];
+var SHORT=PLAYERS.map(function(p){return p.slice(-2);});
+var ROLE=['All-rounder','Catcher','Thrower','All-rounder','Catcher','Thrower','Thrower','Catcher','Thrower','Thrower','All-rounder','Catcher'];
+var GAMES=[8,8,8,8,8,8,8,8,8,8,3,8];
+var HITS=[14,9,17,12,9,21,24,9,15,13,2,11];
+var THROWS=[48,35,52,44,31,63,67,38,50,46,9,45];
+var CATCH=[4,7,3,6,8,2,5,9,4,6,0,6];
+var R07=[2,3,1,4,3,5,2,4];
+function fmtN(v){return String(Math.round(v*10)/10);}
+var DS={
+  A:{label:'Hits per player',title:'Hits per player, season total',cats:SHORT,series:[{name:'Hits',vals:HITS,col:C.red}],fmt:fmtN,yMax:25,yStep:5,yLab:'Hits',xLab:'Player (student01 to student12)',num:true,dotMin:0,dotMax:25,unit:'hits'},
+  B:{label:'Squad roles',title:'Red Kangaroos squad by role',cats:['Thrower','Catcher','All-rounder'],series:[{name:'Players',vals:[5,4,3]}],cols:[C.red,C.slate,C.amber],fmt:fmtN,yMax:6,yStep:1,yLab:'Number of players',cat:true},
+  C:{label:'Throws attempted',title:'Throws attempted per player, season total',cats:SHORT,series:[{name:'Throws',vals:THROWS,col:C.slate}],fmt:fmtN,yMax:70,yStep:10,yLab:'Throws attempted',xLab:'Player (student01 to student12)',num:true,dotMin:0,dotMax:70,unit:'throws'},
+  D:{label:'student07 hits by round',title:'student07: hits in each round',cats:['R1','R2','R3','R4','R5','R6','R7','R8'],series:[{name:'Hits',vals:R07,col:C.red}],fmt:fmtN,yMax:6,yStep:1,yLab:'Hits',xLab:'Round',num:true,dotMin:0,dotMax:6,unit:'hits'},
+  E:{label:'Hits and catches',title:'Hits and catches per player, season totals',cats:SHORT,series:[{name:'Hits',vals:HITS,col:C.red},{name:'Catches',vals:CATCH,col:C.slate}],fmt:fmtN,yMax:25,yStep:5,yLab:'Count',xLab:'Player (student01 to student12)'}
+};
+var TYPES=[['column','Column'],['line','Line'],['sector','Sector'],['divided','Divided bar'],['dot','Dot plot'],['stem','Stem-and-leaf']];
+var V={
+ A:{column:['ok','Compares each player, but it is hard to see the spread or a typical value.'],
+    line:['poor','Players have no order. Joining them with a line suggests a trend that doesn’t exist.'],
+    sector:['poor','Twelve slices, and “share of team hits” isn’t the question we’re asking.'],
+    divided:['poor','Twelve thin segments, and the spread of the data is hidden.'],
+    dot:['best','Every value sits on a number line: the cluster from 9 to 15 and the outlier at 2 stand out.<br>Median, mode and range are easy to read.'],
+    stem:['ok','Keeps every value and shows the shape.<br>With only three stems (0, 1, 2) a dot plot shows more detail.']},
+ B:{column:['ok','Three categories are easy to compare, but it hides the “one whole squad” message.'],
+    line:['poor','Roles have no order, so a line means nothing.'],
+    sector:['best','Twelve players make one whole squad: 5 + 4 + 3.<br>Each player is 30° of the circle.'],
+    divided:['best','Also excellent: one bar split into 12 equal parts.'],
+    dot:['ok','One dot per player stacked above each role. Works, but a sector shows the whole better.'],
+    stem:['poor','Roles are categories, not numbers — there are no stems or leaves.']},
+ C:{column:['ok','Compares each player, but with values from 9 to 67 the overall shape is hard to see.'],
+    line:['poor','Players have no order.'],
+    sector:['poor','Twelve slices and no “whole” worth showing.'],
+    divided:['poor','Twelve segments and the spread is hidden.'],
+    dot:['ok','Works, but the values are so spread out that the dots hardly stack.'],
+    stem:['best','Values from 9 to 67 group neatly into tens.<br>Every value is kept, and the shape and median are easy to read.']},
+ D:{column:['ok','Eight rounds compared. A line shows the ups and downs more clearly.'],
+    line:['best','Rounds are in time order.<br>The line shows student07’s form rising and falling across the season.'],
+    sector:['poor','Rounds are not parts of a whole.'],
+    divided:['poor','Rounds are not parts of a whole.'],
+    dot:['ok','Shows how many hits student07 usually gets, but loses the round order.'],
+    stem:['poor','Every value is a single digit, so all the leaves sit on stem 0.']},
+ E:{column:['best','Side-by-side columns compare hits and catches for each player.<br>Throwers and catchers stand out.'],
+    line:['poor','Players have no order, and crossing lines suggest trends that don’t exist.'],
+    sector:['poor','Two pies of twelve slices each are impossible to compare.'],
+    divided:['poor','Two bars of twelve segments each are far too crowded.'],
+    dot:['poor','Two datasets on one dot plot get confusing. Use two dot plots, or side-by-side columns.'],
+    stem:['poor','Catches are all single digits, so a stem-and-leaf plot doesn’t help here.']}
+};
+var VLAB={best:'✓ Best choice',ok:'≈ Could work',poor:'✗ Poor choice'};
+
+/* ---------- SVG helpers ---------- */
+var NS='http://www.w3.org/2000/svg',uid=0;
+function el(tag,a,p,txt){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;if(p)p.appendChild(e);return e;}
+function clear(svg){while(svg.firstChild)svg.removeChild(svg.firstChild);}
+function title(svg,t){el('text',{x:14,y:28,'font-size':21,'font-weight':800,fill:C.ink,'font-family':'Nunito, sans-serif'},svg,t);}
+function source(svg){el('text',{x:14,y:432,'font-size':13,fill:C.muted},svg,'Fictional data · Trinity Red Kangaroos season');}
+function legend(svg,items,x,y){items.forEach(function(it,i){el('rect',{x:x+i*120,y:y-12,width:16,height:16,rx:3,fill:it.col},svg);el('text',{x:x+i*120+22,y:y+1,'font-size':16,fill:C.ink},svg,it.name);});}
+function msg(svg,ds,a,b){title(svg,ds.title);el('text',{x:400,y:215,'text-anchor':'middle','font-size':22,'font-weight':800,fill:C.terra},svg,a);el('text',{x:400,y:250,'text-anchor':'middle','font-size':17,fill:C.ink2},svg,b);}
+function axes(svg,ds,L,T,W,H){
+  for(var v=0;v<=ds.yMax+1e-9;v+=ds.yStep){var y=T+H-(v/ds.yMax)*H;
+    el('line',{x1:L,x2:L+W,y1:y,y2:y,stroke:v===0?C.axis:C.grid,'stroke-width':v===0?2:1},svg);
+    el('text',{x:L-8,y:y+5,'text-anchor':'end','font-size':14,fill:C.ink2},svg,ds.fmt(v));}
+  el('line',{x1:L,x2:L,y1:T,y2:T+H,stroke:C.axis,'stroke-width':2},svg);
+  el('text',{'font-size':14,fill:C.ink2,'text-anchor':'middle',transform:'translate(18,'+(T+H/2)+') rotate(-90)'},svg,ds.yLab);
+  if(ds.xLab)el('text',{x:L+W/2,y:T+H+46,'text-anchor':'middle','font-size':14,fill:C.ink2},svg,ds.xLab);
+}
+function rColumn(svg,ds){var L=90,T=60,W=690,H=290,n=ds.cats.length,m=ds.series.length;
+  title(svg,ds.title);axes(svg,ds,L,T,W,H);var gw=W/n,bw=Math.min(64,gw*0.74/m),lab=n*m<=12;
+  ds.series.forEach(function(s,si){s.vals.forEach(function(v,i){var h=(v/ds.yMax)*H,x=L+i*gw+(gw-bw*m-2*(m-1))/2+si*(bw+2),y=T+H-h;
+    var col=s.col||(ds.cols?ds.cols[i]:C.slate);var r=el('rect',{x:x,y:y,width:bw,height:Math.max(h,0.5),rx:3,fill:col},svg);
+    el('title',{},r,(ds.num||m>1?'student':'')+ds.cats[i]+(m>1?' ('+s.name+')':'')+': '+ds.fmt(v));
+    if(lab)el('text',{x:x+bw/2,y:y-7,'text-anchor':'middle','font-size':14,'font-weight':700,fill:C.ink},svg,ds.fmt(v));});});
+  ds.cats.forEach(function(c,i){el('text',{x:L+i*gw+gw/2,y:T+H+22,'text-anchor':'middle','font-size':15,fill:C.ink},svg,c);});
+  if(m>1)legend(svg,ds.series,540,T-14);source(svg);}
+function rLine(svg,ds){var L=90,T=60,W=690,H=290,n=ds.cats.length;
+  title(svg,ds.title);axes(svg,ds,L,T,W,H);var gw=W/n;
+  ds.series.forEach(function(s){var col=s.col||C.slate;var pts=s.vals.map(function(v,i){return [L+i*gw+gw/2,T+H-(v/ds.yMax)*H];});
+    el('polyline',{points:pts.map(function(p){return p.join(',');}).join(' '),fill:'none',stroke:col,'stroke-width':3,'stroke-linejoin':'round'},svg);
+    pts.forEach(function(p,i){var c=el('circle',{cx:p[0],cy:p[1],r:6,fill:col,stroke:'#fff','stroke-width':2},svg);el('title',{},c,ds.cats[i]+': '+ds.fmt(s.vals[i]));
+      if(ds.series.length===1&&n<=8)el('text',{x:p[0],y:p[1]-14,'text-anchor':'middle','font-size':14,'font-weight':700,fill:C.ink},svg,ds.fmt(s.vals[i]));});});
+  ds.cats.forEach(function(c,i){el('text',{x:L+i*gw+gw/2,y:T+H+22,'text-anchor':'middle','font-size':15,fill:C.ink},svg,c);});
+  if(ds.series.length>1)legend(svg,ds.series,540,T-14);source(svg);}
+function ramp(n){var out=[],base=[[36,57,90],[163,38,42],[232,156,47]];for(var i=0;i<n;i++){var b=base[i%3],t=Math.floor(i/3)*0.22;out.push('rgb('+b.map(function(c){return Math.round(c+(255-c)*t);}).join(',')+')');}return out;}
+function segCols(ds){return ds.cols||ramp(ds.cats.length);}
+function arc(cx,cy,r,a0,a1){var p0=[cx+r*Math.sin(a0),cy-r*Math.cos(a0)],p1=[cx+r*Math.sin(a1),cy-r*Math.cos(a1)];
+  return 'M'+cx+','+cy+' L'+p0[0]+','+p0[1]+' A'+r+','+r+' 0 '+((a1-a0)>Math.PI?1:0)+',1 '+p1[0]+','+p1[1]+' Z';}
+function pie(svg,ds,vals,cx,cy,r,label){var sum=vals.reduce(function(a,b){return a+b;},0),a=0,cols=segCols(ds);
+  vals.forEach(function(v,i){var a1=a+v/sum*2*Math.PI;var p=el('path',{d:arc(cx,cy,r,a,a1),fill:cols[i],stroke:'#fff','stroke-width':2},svg);el('title',{},p,ds.cats[i]+': '+v);a=a1;});
+  if(label)el('text',{x:cx,y:cy+r+26,'text-anchor':'middle','font-size':16,'font-weight':800,fill:C.ink},svg,label);}
+function keyList(svg,ds,vals,x,y,step,labFn){var cols=segCols(ds);
+  ds.cats.forEach(function(c,i){el('rect',{x:x,y:y+i*step-13,width:18,height:18,rx:3,fill:cols[i]},svg);
+    el('text',{x:x+28,y:y+i*step+2,'font-size':step<30?14:16,fill:C.ink},svg,(labFn?labFn(c):c)+(vals?'  '+vals[i]:''));});}
+function rSector(svg,ds){title(svg,ds.title);var lf=ds.num||ds.series.length>1?function(c){return 'student'+c;}:null;
+  if(ds.series.length===1){var vals=ds.series[0].vals;pie(svg,ds,vals,230,235,160);keyList(svg,ds,vals,450,ds.cats.length>6?70:150,ds.cats.length>6?27:40,lf);}
+  else{pie(svg,ds,ds.series[0].vals,160,215,125,ds.series[0].name);pie(svg,ds,ds.series[1].vals,440,215,125,ds.series[1].name);keyList(svg,ds,null,610,70,27,lf);}
+  source(svg);}
+function rDivided(svg,ds){title(svg,ds.title);var L=60,W=680,cols=segCols(ds);
+  ds.series.forEach(function(s,si){var sum=s.vals.reduce(function(a,b){return a+b;},0),x=L,y=90+si*105;
+    if(ds.series.length>1)el('text',{x:L,y:y-10,'font-size':16,'font-weight':800,fill:C.ink},svg,s.name);
+    s.vals.forEach(function(v,i){var w=v/sum*W;var r=el('rect',{x:x,y:y,width:Math.max(w-2,0.5),height:66,fill:cols[i]},svg);el('title',{},r,ds.cats[i]+': '+v);
+      if(w>46){var light=/rgb\((2[0-9]{2})/.test(cols[i])||cols[i]===C.amber;el('text',{x:x+w/2,y:y+40,'text-anchor':'middle','font-size':15,'font-weight':800,fill:light?C.ink:'#fff'},svg,v);}x+=w;});});
+  var ky=ds.series.length>1?310:200,per=ds.cats.length>4?6:3;
+  ds.cats.forEach(function(c,i){var x=L+(i%per)*(ds.cats.length>4?112:220),y=ky+Math.floor(i/per)*34;
+    el('rect',{x:x,y:y-13,width:18,height:18,rx:3,fill:cols[i]},svg);el('text',{x:x+26,y:y+2,'font-size':15,fill:C.ink},svg,(ds.num?'s':'')+c);});
+  source(svg);}
+function rDot(svg,ds,key){
+  if(key==='E'){msg(svg,ds,'Two datasets on one dot plot get confusing.','Try two separate dot plots, or side-by-side columns.');source(svg);return;}
+  title(svg,ds.title);var L=70,R=760,base=340;
+  if(ds.cat){var n=ds.cats.length,gw=(R-L)/n;el('line',{x1:L,x2:R,y1:base,y2:base,stroke:C.ink,'stroke-width':2},svg);
+    ds.series[0].vals.forEach(function(v,i){var cx=L+gw*(i+.5);for(var k=0;k<v;k++)el('circle',{cx:cx,cy:base-22-k*36,r:15,fill:ds.cols[i]},svg);
+      el('text',{x:cx,y:base+28,'text-anchor':'middle','font-size':17,fill:C.ink},svg,ds.cats[i]);});
+    el('text',{x:400,y:base+56,'text-anchor':'middle','font-size':14,fill:C.ink2},svg,'Each dot = 1 player');source(svg);return;}
+  var mn=ds.dotMin,mx=ds.dotMax,sc=(R-L)/(mx-mn),labEvery=mx>30?10:(mx>10?5:1),tickEvery=mx>30?5:1;
+  el('line',{x1:L,x2:R,y1:base,y2:base,stroke:C.ink,'stroke-width':2},svg);
+  for(var t=mn;t<=mx;t+=tickEvery){var x=L+(t-mn)*sc,big=t%labEvery===0;el('line',{x1:x,x2:x,y1:base,y2:base+(big?12:7),stroke:C.ink,'stroke-width':big?2:1.2},svg);
+    if(big)el('text',{x:x,y:base+32,'text-anchor':'middle','font-size':16,fill:C.ink},svg,t);}
+  el('text',{x:(L+R)/2,y:base+58,'text-anchor':'middle','font-size':14,fill:C.ink2},svg,ds.yLab);
+  var cnt={},r=Math.min(13,Math.max(5.5,sc*0.45));
+  ds.series[0].vals.forEach(function(v,i){cnt[v]=(cnt[v]||0)+1;var cx=L+(v-mn)*sc,cy=base-r-4-(cnt[v]-1)*(2*r+4);
+    var c=el('circle',{cx:cx,cy:cy,r:r,fill:ds.series[0].col,stroke:'#fff','stroke-width':2},svg);el('title',{},c,(key==='D'?ds.cats[i]:'student'+ds.cats[i])+': '+v);});
+  source(svg);}
+function rStem(svg,ds,key){
+  if(ds.cat){msg(svg,ds,'Roles are categories, not numbers.','A stem-and-leaf plot needs numerical data.');source(svg);return;}
+  if(key==='E'){msg(svg,ds,'Catches are all single digits.','A stem-and-leaf plot won’t help compare these.');source(svg);return;}
+  title(svg,ds.title);var vals=ds.series[0].vals.slice().sort(function(a,b){return a-b;});
+  var s0=Math.floor(vals[0]/10),s1=Math.floor(vals[vals.length-1]/10),rows=s1-s0+1,rh=Math.min(52,280/rows),x0=170,y0=80;
+  el('text',{x:x0-20,y:y0,'text-anchor':'end','font-size':15,'font-weight':800,fill:C.ink2},svg,'Stem');
+  el('text',{x:x0+20,y:y0,'font-size':15,'font-weight':800,fill:C.ink2},svg,'Leaf');
+  el('line',{x1:x0,x2:x0,y1:y0+10,y2:y0+16+rows*rh,stroke:C.ink,'stroke-width':2.5},svg);
+  for(var s=s0;s<=s1;s++){var y=y0+16+(s-s0+0.65)*rh;el('text',{x:x0-20,y:y,'text-anchor':'end','font-size':28,'font-weight':800,fill:C.ink},svg,s);
+    vals.filter(function(v){return Math.floor(v/10)===s;}).forEach(function(v,j){el('text',{x:x0+28+j*40,y:y,'font-size':28,'font-weight':700,fill:ds.series[0].col,'font-family':'Nunito, sans-serif'},svg,v%10);});}
+  var ex=vals[Math.floor(vals.length/2)];el('text',{x:560,y:y0+40,'font-size':17,'font-weight':800,fill:C.ink},svg,'Key: '+Math.floor(ex/10)+' | '+(ex%10)+' = '+ex+' '+ds.unit);
+  source(svg);}
+function render(svg,key,type){clear(svg);var ds=DS[key];
+  ({column:rColumn,line:rLine,sector:rSector,divided:rDivided,dot:rDot,stem:rStem})[type](svg,ds,key);
+  svg.setAttribute('aria-label',ds.title+' shown as a '+type+' graph');}
+function vtxt(v){return '<b class="'+v[0]+'">'+VLAB[v[0]]+'</b><br>'+v[1];}
+
+/* ---------- roster ---------- */
+(function(){var tb=document.getElementById('rosterBody');PLAYERS.forEach(function(p,i){var tr=document.createElement('tr');if(i===10)tr.className='flag';
+  tr.innerHTML='<td>'+p+'</td><td>'+ROLE[i]+'</td><td class="n">'+GAMES[i]+'</td><td class="n">'+HITS[i]+'</td><td class="n">'+THROWS[i]+'</td><td class="n">'+CATCH[i]+'</td>';tb.appendChild(tr);});})();
+
+/* ---------- number cards ---------- */
+(function(){var s=HITS.slice().sort(function(a,b){return a-b;});
+  var a=document.getElementById('sortedNums');s.forEach(function(v,i){var sp=document.createElement('span');sp.textContent=v;if(i===5||i===6)sp.className='mid';else if(v===9)sp.className='mode';a.appendChild(sp);});
+  var b=document.getElementById('outNums');s.forEach(function(v){var sp=document.createElement('span');sp.textContent=v;if(v===2)sp.className='out';b.appendChild(sp);});})();
+
+/* ---------- Graph Swap ---------- */
+var cur={ds:'A',type:'line'};
+function el2(tag,a,txt){var e=document.createElement(tag);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;return e;}
+(function(){var dsb=document.getElementById('dsBtns'),tb=document.getElementById('typeBtns');
+  Object.keys(DS).forEach(function(k){var b=el2('button',{class:'tbtn','data-k':k},DS[k].label);dsb.appendChild(b);b.onclick=function(){cur.ds=k;swap();};});
+  TYPES.forEach(function(t){var b=el2('button',{class:'tbtn','data-t':t[0]},t[1]);tb.appendChild(b);b.onclick=function(){cur.type=t[0];swap();};});
+  document.getElementById('verdictBtn').onclick=function(){showVerdict(true);};})();
+function swap(){render(document.getElementById('swapSvg'),cur.ds,cur.type);
+  document.querySelectorAll('#dsBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.k===cur.ds);});
+  document.querySelectorAll('#typeBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.t===cur.type);});showVerdict(false);}
+function showVerdict(on){var vb=document.getElementById('verdictBox');document.getElementById('verdictBtn').setAttribute('aria-pressed',on);
+  if(!on){vb.className='verdict';vb.innerHTML='<span class="muted">Discuss: does this graph suit the data? Why or why not?</span>';return;}
+  var v=V[cur.ds][cur.type];vb.className='verdict '+v[0];vb.innerHTML=vtxt(v);}
+swap();
+
+/* ---------- We Do ---------- */
+document.querySelectorAll('#voteBtns .tbtn').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('#voteBtns .tbtn').forEach(function(x){x.setAttribute('aria-pressed',x===b);});
+  render(document.getElementById('wedoSvg'),'B',b.dataset.t);var v=V.B[b.dataset.t],vb=document.getElementById('wedoVerdict');vb.className='verdict '+v[0];vb.innerHTML=vtxt(v);};});
+el('text',{x:400,y:220,'text-anchor':'middle','font-size':24,fill:C.muted,'font-weight':700},document.getElementById('wedoSvg'),'Which graph suits this data best?');
+
+/* ---------- You Do samples ---------- */
+document.getElementById('sampleBtn').onclick=function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);
+  document.getElementById('sampleCol').style.display=on?'flex':'none';
+  if(on){render(document.getElementById('s3'),'C','stem');render(document.getElementById('s4'),'D','line');render(document.getElementById('s5'),'E','column');}};
+
+/* ---------- Hook season card ---------- */
+(function(){var s=document.getElementById('hookSvg');
+  el('rect',{x:0,y:0,width:900,height:420,rx:16,fill:'#FBF7F2'},s);
+  el('rect',{x:0,y:0,width:900,height:70,rx:16,fill:C.red},s);el('rect',{x:0,y:40,width:900,height:30,fill:C.red},s);
+  el('text',{x:30,y:46,'font-size':28,'font-weight':900,fill:'#fff','font-family':'Nunito, sans-serif'},s,'TRINITY RED KANGAROOS · SEASON CARD');
+  el('text',{x:30,y:170,'font-size':96,'font-weight':900,fill:C.red,'font-family':'Nunito, sans-serif'},s,'156');
+  el('text',{x:34,y:205,'font-size':22,fill:C.ink},s,'team hits in 8 rounds');
+  el('text',{x:330,y:170,'font-size':96,'font-weight':900,fill:C.slate,'font-family':'Nunito, sans-serif'},s,'60');
+  el('text',{x:334,y:205,'font-size':22,fill:C.ink},s,'catches');
+  el('text',{x:560,y:130,'font-size':22,'font-weight':800,fill:C.ink},s,'Top thrower');
+  el('text',{x:560,y:178,'font-size':46,'font-weight':900,fill:C.red,'font-family':'Nunito, sans-serif'},s,'student07');
+  el('text',{x:560,y:210,'font-size':22,fill:C.ink},s,'24 hits · 67 throws');
+  var cols=[C.red,C.slate,C.amber],vals=[5,4,3],a=0;vals.forEach(function(v,i){var a1=a+v/12*2*Math.PI;el('path',{d:arc(120,320,62,a,a1),fill:cols[i],stroke:'#fff','stroke-width':2},s);a=a1;});
+  ['5 throwers','4 catchers','3 all-rounders'].forEach(function(t,i){el('rect',{x:210,y:278+i*32,width:18,height:18,rx:3,fill:cols[i]},s);el('text',{x:236,y:293+i*32,'font-size':20,fill:C.ink},s,t);});
+  for(var i=0;i<10;i++)el('circle',{cx:580+(i%5)*44,cy:i<5?290:336,r:16,fill:i<3?C.red:C.track},s);
+  el('text',{x:560,y:390,'font-size':20,'font-weight':800,fill:C.red},s,'About 3 in 10 throws hit');
+  el('text',{x:30,y:408,'font-size':14,fill:C.muted},s,'Fictional data');
+  var hb=document.getElementById('hookHide');hb.onclick=function(){var on=hb.getAttribute('aria-pressed')!=='true';hb.setAttribute('aria-pressed',on);hb.textContent=on?'Show it':'Hide it';s.classList.toggle('hidden-hook',on);};})();
+
+/* ---------- I Do: dot plot in stages ---------- */
+(function(){var s=document.getElementById('idoSvg'),L=70,R=760,base=320,sc=(R-L)/25,r=12;
+  var g1=el('g',{class:'step'},s);el('line',{x1:L,x2:R,y1:base,y2:base,stroke:C.ink,'stroke-width':2.5},g1);
+  for(var t=0;t<=25;t++){var x=L+t*sc,big=t%5===0;el('line',{x1:x,x2:x,y1:base,y2:base+(big?12:7),stroke:C.ink,'stroke-width':big?2:1.2},g1);if(big)el('text',{x:x,y:base+32,'text-anchor':'middle','font-size':16,fill:C.ink},g1,t);}
+  el('text',{x:(L+R)/2,y:base+58,'text-anchor':'middle','font-size':15,fill:C.ink2},g1,'Hits in the season');
+  var g2=el('g',{class:'step'},s),cnt={};
+  HITS.forEach(function(v,i){cnt[v]=(cnt[v]||0)+1;var c=el('circle',{cx:L+v*sc,cy:base-r-4-(cnt[v]-1)*(2*r+4),r:r,fill:C.red,stroke:'#fff','stroke-width':2},g2);el('title',{},c,PLAYERS[i]+': '+v);});
+  var g3=el('g',{class:'step'},s);el('text',{x:L,y:40,'font-size':21,'font-weight':800,fill:C.ink,'font-family':'Nunito, sans-serif'},g3,'Red Kangaroos: hits per player, season total');
+  el('text',{x:786,y:432,'text-anchor':'end','font-size':13,fill:C.muted},g3,'Fictional data · each dot = 1 player');
+  var g4=el('g',{class:'step'},s);
+  [[12.5,'median 12.5',C.slate,110],[13,'mean 13',C.forest,150]].forEach(function(m){var x=L+m[0]*sc;el('line',{x1:x,x2:x,y1:m[3]+8,y2:base,stroke:m[2],'stroke-width':2.5,'stroke-dasharray':'6 5'},g4);
+    el('text',{x:x+(m[0]===13?8:-8),y:m[3],'text-anchor':m[0]===13?'start':'end','font-size':17,'font-weight':800,fill:m[2]},g4,m[1]);});
+  el('text',{x:L+2*sc,y:base-48,'text-anchor':'middle','font-size':16,'font-weight':800,fill:'#A33A2B'},g4,'outlier');
+})();
+
+/* ---------- MCQ ---------- */
+function mcqAns(b){var box=b.parentNode,fb=box.nextElementSibling;
+  if(b.dataset.result==='right'){box.querySelectorAll('.opt').forEach(function(o){o.classList.remove('wrong');});b.classList.add('right');}
+  else{if(box.querySelector('.opt.right'))return;b.classList.add('wrong');}
+  fb.innerHTML=b.dataset.msg;fb.style.color=b.dataset.result==='right'?'var(--good)':'var(--poor)';}
+document.querySelectorAll('.opt').forEach(function(b){b.addEventListener('click',function(){mcqAns(this);});});
+document.querySelectorAll('.qf .card').forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('open');});
+  c.addEventListener('keydown',function(e){if(e.key==='Enter'){c.classList.toggle('open');e.stopPropagation();}});});
+
+/* ---------- Deck navigation ---------- */
+var slides=[].slice.call(document.querySelectorAll('.slide')),idx=0,notesOpen=false,jump=document.getElementById('jump');
+slides.forEach(function(s,i){var o=document.createElement('option');o.value=i;o.textContent=(i+1)+'. '+s.dataset.title;jump.appendChild(o);});
+function steps(){return [].slice.call(slides[idx].querySelectorAll('.step'));}
+function go(i,fromBack){if(i<0||i>=slides.length)return;slides[idx].classList.remove('active');idx=i;slides[idx].classList.add('active');
+  steps().forEach(function(st){st.classList.toggle('shown',!!fromBack);});
+  document.getElementById('count').textContent=(idx+1)+' / '+slides.length;jump.value=idx;
+  document.getElementById('progBar').style.width=((idx+1)/slides.length*100)+'%';
+  var n=slides[idx].querySelector('.notes');document.getElementById('notesPanel').innerHTML=n?n.innerHTML:'<p>No notes.</p>';
+  try{localStorage.setItem('dat-dodge-slide',idx);}catch(e){}}
+function next(){var h=steps().filter(function(s){return !s.classList.contains('shown');});if(h.length)h[0].classList.add('shown');else go(idx+1);}
+function prev(){var sh=steps().filter(function(s){return s.classList.contains('shown');});if(sh.length)sh[sh.length-1].classList.remove('shown');else go(idx-1,true);}
+document.getElementById('nextBtn').onclick=next;document.getElementById('prevBtn').onclick=prev;jump.onchange=function(){go(+jump.value);};
+function toggleNotes(){notesOpen=!notesOpen;document.getElementById('notesPanel').classList.toggle('open',notesOpen);document.getElementById('notesBtn').setAttribute('aria-pressed',notesOpen);}
+document.getElementById('notesBtn').onclick=toggleNotes;
+function fs(){if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}else document.exitFullscreen();}
+document.getElementById('fsBtn').onclick=fs;
+document.addEventListener('keydown',function(e){var t=e.target.tagName;if(t==='SELECT'||t==='INPUT'||t==='TEXTAREA')return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  else if(e.key==='n'||e.key==='N')toggleNotes();else if(e.key==='f'||e.key==='F')fs();
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1);});
+var fsel=document.getElementById('fontSel');fsel.onchange=function(){document.body.className=fsel.value;try{localStorage.setItem('dat-dodge-font',fsel.value);}catch(e){}};
+try{var f=localStorage.getItem('dat-dodge-font');if(f){fsel.value=f;document.body.className=f;}}catch(e){}
+var start=0;try{start=+(localStorage.getItem('dat-dodge-slide')||0);}catch(e){}
+slides[0].classList.add('active');go(start>=0&&start<slides.length?start:0);
+</script>
+</body>
+</html>

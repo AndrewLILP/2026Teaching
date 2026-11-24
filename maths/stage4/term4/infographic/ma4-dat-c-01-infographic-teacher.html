@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistical Infographics · Teacher Display · MA4-DAT-C-01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EFE9; --card:#FFFFFF; --ink:#22303F; --ink2:#4A5866; --muted:#6B7480;
+  --slate:#3D5A80; --forest:#4A7C59; --amber:#E89C2F; --terra:#C1614F;
+  --accent:#9A4A3B; /* outcome accent: deep terracotta, 6.6:1 on white, 5.8:1 on bg */
+  --line:#DCD3C8; --good:#2F6B44; --okay:#8A5A00; --poor:#A33A2B;
+  --body:'Nunito Sans',system-ui,sans-serif;
+}
+body.f-system{--body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+body.f-atkinson{--body:'Atkinson Hyperlegible',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden}
+body{font-size:clamp(17px,1.55vw,34px);line-height:1.4}
+h1,h2,h3{font-family:'Nunito',sans-serif;margin:0;color:var(--slate);line-height:1.15}
+h1{font-size:2.6em;font-weight:900}
+h2{font-size:1.75em;font-weight:900;margin-bottom:.45em}
+h3{font-size:1.1em;font-weight:800;margin-bottom:.3em}
+.kicker{font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.62em;color:var(--accent);margin-bottom:.3em}
+
+.deck{position:relative;width:100vw;height:100vh}
+.slide{position:absolute;inset:0;padding:3.2vh 4vw 9vh;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide-body{flex:1;min-height:0;display:flex;gap:2.2vw}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:1.4vh}
+.card{background:var(--card);border-radius:14px;padding:1.1em 1.3em;box-shadow:0 2px 0 rgba(0,0,0,.04),0 6px 20px rgba(61,90,128,.08);border:1px solid #EBE4DB}
+.card.tint{background:#FBF7F2}
+ul.big{margin:.2em 0;padding-left:1.1em} ul.big li{margin:.35em 0}
+.step{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+.step.shown{opacity:1;transform:none}
+svg .step{transform:none}
+.pill{display:inline-block;padding:.12em .6em;border-radius:999px;font-weight:800;font-size:.8em;font-family:'Nunito',sans-serif}
+.pill.slate{background:#E3E9F1;color:var(--slate)} .pill.terra{background:#F6E3DE;color:#8E3F31}
+.bignum{font-family:'Nunito',sans-serif;font-weight:900;font-size:3.2em;color:var(--accent);line-height:1}
+.hand{font-family:'Caveat',cursive;font-size:1.35em;color:var(--slate)}
+.small{font-size:.75em;color:var(--ink2)}
+.muted{color:var(--muted)}
+
+/* title slide */
+.title-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.2vh;max-width:70vw}
+.title-wrap h1 span{color:var(--accent)}
+.dots{display:flex;gap:.5em;margin-top:1em}
+.dots i{width:1.1em;height:1.1em;border-radius:50%;display:block}
+
+/* tables */
+table.guide{border-collapse:separate;border-spacing:0;width:100%;font-size:.86em}
+table.guide th,table.guide td{text-align:left;padding:.42em .7em;border-bottom:1px solid var(--line);vertical-align:top}
+table.guide th{font-family:'Nunito',sans-serif;color:var(--slate);font-weight:800;background:#F7F2EC}
+table.guide td:first-child{font-weight:700}
+table.data{border-collapse:collapse;font-size:.8em}
+table.data th,table.data td{padding:.2em .6em;border-bottom:1px solid var(--line);text-align:left}
+table.data td.n{text-align:right;font-variant-numeric:tabular-nums}
+
+/* quick-fire grid */
+.qf{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;flex:1}
+.qf .card{display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+.qf .ans{margin-top:.5em;font-weight:800;color:var(--good);visibility:hidden}
+.qf .card.open .ans{visibility:visible}
+.qf .q{font-size:1.15em}
+.qf .ans{font-size:1.1em}
+.qf .num{font-family:'Nunito';font-weight:900;color:var(--accent)}
+
+/* buttons */
+button{font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer}
+.btnrow{display:flex;flex-wrap:wrap;gap:.45em}
+.tbtn{font-size:.78em;padding:.45em .9em;border-radius:10px;border:2px solid var(--slate);background:#fff;color:var(--slate)}
+.tbtn[aria-pressed="true"]{background:var(--slate);color:#fff}
+.tbtn.alt{border-color:var(--accent);color:var(--accent)}
+.tbtn.alt[aria-pressed="true"]{background:var(--accent);color:#fff}
+.tbtn:focus-visible,.navbtn:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* chart area */
+.chartbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.chartbox svg{width:100%;height:100%;max-height:100%}
+svg{font-family:var(--body)}
+.verdict{font-size:.9em;border-radius:12px;padding:.6em .9em;border-left:8px solid var(--line);background:#fff;min-height:3.2em}
+.verdict.best{border-color:var(--good)} .verdict.ok{border-color:var(--okay)} .verdict.poor{border-color:var(--poor)}
+.verdict b.best{color:var(--good)} .verdict b.ok{color:var(--okay)} .verdict b.poor{color:var(--poor)}
+
+/* frame */
+.frame{font-size:1.05em;line-height:1.9}
+.frame .blank{display:inline-block;min-width:6em;border-bottom:3px solid var(--slate);text-align:center;font-family:'Caveat',cursive;font-size:1.3em;color:var(--accent);line-height:1.1}
+
+/* MCQ */
+.mcq{display:flex;flex-direction:column;gap:.4em}
+.opt{display:block;width:100%;text-align:left;font-family:var(--body);font-weight:600;font-size:.86em;padding:.45em .8em;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.opt.right{border-color:var(--good);background:#E9F3EC}
+.opt.wrong{border-color:var(--poor);background:#F9E9E6}
+.fb{font-size:.8em;min-height:1.3em}
+
+/* anatomy */
+.anat{display:grid;grid-template-columns:1.25fr 1fr;gap:2vw;flex:1;min-height:0}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;height:6.5vh;min-height:44px;display:flex;align-items:center;gap:.6em;padding:0 1.2vw;background:rgba(244,239,233,.95);border-top:1px solid var(--line);font-size:14px;z-index:10}
+.navbtn{border:1px solid var(--line);background:#fff;color:var(--slate);border-radius:8px;padding:.45em .8em;font-size:14px}
+.prog{flex:1;height:6px;background:#E6DED4;border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.count{font-family:'Nunito';font-weight:800;color:var(--ink2);min-width:4.5em;text-align:center}
+select.navbtn{font-family:'Nunito';font-weight:700}
+
+/* notes */
+.notes{display:none}
+#notesPanel{position:fixed;right:1vw;bottom:7.5vh;width:min(560px,44vw);max-height:70vh;overflow:auto;background:#FFFDF9;border:2px solid var(--accent);border-radius:14px;padding:14px 18px;font-size:15px;line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.18);display:none;z-index:11;color:var(--ink)}
+#notesPanel.open{display:block}
+#notesPanel h4{margin:0 0 6px;font-family:'Nunito';color:var(--accent)}
+#notesPanel p{margin:.4em 0}
+
+.hidden-hook{filter:blur(18px);opacity:.15;transition:filter .4s,opacity .4s}
+@media (max-aspect-ratio:4/3){.slide-body{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 TITLE -->
+<section class="slide" data-title="Title">
+  <div class="title-wrap">
+    <div class="kicker">MA4-DAT-C-01 · Data classification and visualisation · Year 8</div>
+    <h1>Telling a story with data:<br><span>statistical infographics</span></h1>
+    <p style="font-size:1.15em;margin:.2em 0;color:var(--ink2)">Using the 2021 Census to show how Aboriginal and Torres Strait Islander populations have changed.</p>
+    <div class="dots"><i style="background:var(--slate)"></i><i style="background:var(--terra)"></i><i style="background:var(--amber)"></i><i style="background:var(--forest)"></i></div>
+  </div>
+  <aside class="notes">
+    <h4>Lesson overview · 60 minutes</h4>
+    <p><b>Timing:</b> Opening 3 · Hook 5 · Revision 8 · Graph Swap 10 · Justify 3 · I Do 7 · We Do 5 · You Do 14 · Exit 5.</p>
+    <p><b>You need:</b> printed worksheet (5 pages, one per student), mini whiteboards, rulers, coloured pencils. Your own whiteboard beside the TV for modelling.</p>
+    <p><b>Keys:</b> → or Space = next step/slide · ← = back · N = notes · F = fullscreen.</p>
+  </aside>
+</section>
+
+<!-- 2 ACKNOWLEDGEMENT -->
+<section class="slide" data-title="Acknowledgement">
+  <div class="kicker">Before we begin</div>
+  <h2>Acknowledgement of Country</h2>
+  <div class="slide-body">
+    <div class="col" style="justify-content:center">
+      <div class="card tint" style="font-size:1.15em;max-width:62vw">
+        We acknowledge the Traditional Custodians of the land on which we learn today.<br>
+        We pay our respects to Elders past and present.<br>
+        We recognise that Aboriginal and Torres Strait Islander peoples have been the first teachers, mathematicians and storytellers of this land for tens of thousands of years.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Opening · 2–3 min</h4>
+    <p>Use your school’s Acknowledgement wording and name the local Country if that is your practice.</p>
+    <p>Follow with the class prayer or reflection as usual at your school.</p>
+    <p>Framing for today: we are using real Census data respectfully. Use the term “Aboriginal and Torres Strait Islander peoples” (capitalised). Don’t ask Aboriginal or Torres Strait Islander students to speak for their communities; welcome contributions if offered.</p>
+  </aside>
+</section>
+
+<!-- 3 LEARNING INTENTION -->
+<section class="slide" data-title="Learning intention">
+  <div class="kicker">Today</div>
+  <h2>What we’re learning</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card">
+        <h3>Learning intention</h3>
+        We are learning to represent a dataset using a statistical infographic and justify the graph we chose.
+      </div>
+      <div class="card">
+        <h3>Success criteria — I can…</h3>
+        <ul class="big">
+          <li class="step">match a dataset to the graph type that suits it best</li>
+          <li class="step">explain why another graph type would be a poor choice</li>
+          <li class="step">draw an accurate graph with a title, labelled axes, a scale and a source</li>
+          <li class="step">write a justification using “because…” and “…would be less suitable because…”</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>1 min</h4><p>Reveal each criterion. Students will tick these off on page 5 of the worksheet at the end.</p></aside>
+</section>
+
+<!-- 4 HOOK -->
+<section class="slide" data-title="Hook">
+  <div class="kicker">Hook · 10-second challenge</div>
+  <h2>Look closely. What will you remember?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:2">
+      <div class="card" id="hookCard" style="flex:1;display:flex;flex-direction:column">
+        <svg id="hookSvg" viewBox="0 0 900 420" role="img" aria-label="Mini infographic: 812,728 people identified as Aboriginal and/or Torres Strait Islander in 2021, up 25% since 2016; median age 24; about 1 in 10 speak an Aboriginal or Torres Strait Islander language at home"></svg>
+      </div>
+    </div>
+    <div class="col" style="flex:1;justify-content:center">
+      <div class="btnrow">
+        <button class="tbtn alt" id="hookHide" aria-pressed="false">Hide it</button>
+      </div>
+      <div class="card step">
+        <h3>On your mini whiteboard</h3>
+        Write down every fact you can remember.<br>
+        Which facts stuck?<br>
+        Why those ones?
+      </div>
+      <div class="card tint step">
+        Infographics use <b>big numbers</b>, <b>icons</b> and <b>simple graphs</b> so information is easier to remember.
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Hook · 5 min</h4>
+    <p>Show for about 10 seconds, then press <b>Hide it</b>. Students write everything they recall (1 min).</p>
+    <p>Take answers: most will recall the big number, “1 in 10” and the trend arrow, rarely exact figures. That is the point — visual design aids retention and recall.</p>
+    <p>Press Show again to check answers.</p>
+  </aside>
+</section>
+
+<!-- 5 ANATOMY -->
+<section class="slide" data-title="What is an infographic?">
+  <div class="kicker">Key idea</div>
+  <h2>What makes a <em>statistical</em> infographic?</h2>
+  <div class="anat">
+    <div class="card" style="display:flex"><svg id="anatSvg" viewBox="0 0 620 470" style="width:100%;height:100%" role="img" aria-label="Labelled diagram of an infographic: title, big number, graph, pictogram, short caption, source"></svg></div>
+    <div class="col">
+      <div class="card step"><b>Statistical</b> = it is built from real data, accurately graphed.<br>Not just decoration.</div>
+      <div class="card step">
+        <h3>Every infographic needs</h3>
+        <ul class="big" style="font-size:.9em">
+          <li>a clear <b>title</b> that tells the story</li>
+          <li>one or two <b>big numbers</b></li>
+          <li><b>graphs</b> chosen to suit each dataset</li>
+          <li>short <b>captions</b></li>
+          <li>the <b>source</b> of the data</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>2 min</h4><p>Point to each labelled part. Emphasise “statistical”: every graph must be accurate — correct scale, starting at zero, labelled.</p><p>Today’s worksheet asks students to make five panels that sit together as one infographic.</p></aside>
+</section>
+
+<!-- 6 GUIDE -->
+<section class="slide" data-title="Graph guide">
+  <div class="kicker">Revision · matching graph to data</div>
+  <h2>What job does the graph need to do?</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card" style="padding:.5em .6em">
+      <table class="guide">
+        <thead><tr><th>The data’s job is to show…</th><th>Choose…</th><th>Look for…</th></tr></thead>
+        <tbody>
+          <tr class="step"><td>change over time</td><td>line graph</td><td>years, months, hours in order</td></tr>
+          <tr class="step"><td>compare separate categories</td><td>column or bar graph</td><td>names, places, types</td></tr>
+          <tr class="step"><td>compare two groups across categories</td><td>side-by-side column graph</td><td>two years, two classes</td></tr>
+          <tr class="step"><td>parts of one whole (few parts)</td><td>sector (pie) graph or divided bar graph</td><td>percentages that add to 100%</td></tr>
+          <tr class="step"><td>one proportion, memorably</td><td>pictogram or 10 × 10 icon grid</td><td>“about 1 in 10”</td></tr>
+          <tr class="step"><td>spread of numerical data</td><td>dot plot or stem-and-leaf plot</td><td>a list of measurements or scores</td></tr>
+          <tr class="step"><td>one key fact</td><td>a big number</td><td>a total, a median, a record</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Revision · 3 min</h4><p>Reveal row by row. Before each reveal, ask: “What graph would you use for change over time?” etc.</p><p>Link back to data types: categorical data (states, identity) → column, sector, divided bar; numerical data → dot plot, stem-and-leaf; time → line.</p><p>This table is reprinted at the top of worksheet page 1.</p></aside>
+</section>
+
+<!-- 7 QUICK FIRE -->
+<section class="slide" data-title="Quick-fire">
+  <div class="kicker">Revision · mini whiteboards</div>
+  <h2>Quick-fire: which graph?</h2>
+  <div class="qf">
+    <div class="card" tabindex="0"><div class="q"><span class="num">1</span> Sydney’s temperature every hour on one day</div><div class="ans">✓ Line graph<br><span class="small">Time in order</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">2</span> Goals scored by each of 8 netball teams</div><div class="ans">✓ Column graph<br><span class="small">Separate categories</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">3</span> How Year 8 travel to school: bus, car, walk, train (as % of the year)</div><div class="ans">✓ Sector or divided bar<br><span class="small">Parts of one whole</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">4</span> The heights of 25 students in our class</div><div class="ans">✓ Dot plot or stem-and-leaf<br><span class="small">Spread of numerical data</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">5</span> Favourite sport of Year 7 compared with Year 8</div><div class="ans">✓ Side-by-side column<br><span class="small">Two groups, same categories</span></div></div>
+    <div class="card" tabindex="0"><div class="q"><span class="num">6</span> “3 in every 10 students play a musical instrument”</div><div class="ans">✓ Pictogram / icon grid<br><span class="small">One proportion</span></div></div>
+  </div>
+  <aside class="notes"><h4>5 min</h4><p>Read a card, students write their graph choice, “3-2-1 show me”. Click the card to reveal.</p><p>Push for the <i>because</i>: “What is it about the data that makes you choose that?”</p><p>Card 4: heights are numerical and continuous — a column graph of 25 individual heights would not show the spread.</p></aside>
+</section>
+
+<!-- 8 GRAPH SWAP -->
+<section class="slide" data-title="Graph Swap">
+  <div class="kicker">Graph Swap · 2021 Census</div>
+  <h2 id="swapTitle" style="margin-bottom:.25em">Same data, different graph. Does it work?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 28%">
+      <div class="card" style="padding:.7em .9em">
+        <h3>1. Pick a dataset</h3>
+        <div class="btnrow" id="dsBtns" style="flex-direction:column;align-items:stretch"></div>
+      </div>
+      <div class="card" style="padding:.7em .9em">
+        <h3>2. Pick a graph</h3>
+        <div class="btnrow" id="typeBtns"></div>
+      </div>
+      <div class="btnrow"><button class="tbtn alt" id="verdictBtn" aria-pressed="false">3. Reveal verdict</button></div>
+    </div>
+    <div class="col" style="flex:1">
+      <div class="card chartbox" style="padding:.4em"><svg id="swapSvg" viewBox="0 0 800 440" role="img" aria-label="Chart"></svg></div>
+      <div class="verdict" id="verdictBox" aria-live="polite"><span class="muted">Discuss: does this graph suit the data? Why or why not?</span></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <h4>Graph Swap · 10 min — the core of the lesson</h4>
+    <p>For each dataset, show a <b>poor</b> choice first, ask “What’s wrong?”, then switch to the best choice.</p>
+    <p>Suggested run: Census count → sector graph (✗ years aren’t parts of a whole) → line graph (✓).<br>
+    By state → line graph (✗ states have no order) → sector (8 slices, hard to read) → column (✓).<br>
+    How people identify → line (✗) → sector / divided bar (✓).</p>
+    <p>Note: the Census count is people who <i>identify</i> as Aboriginal and/or Torres Strait Islander. ABS analysis found more than half of the 2016–2021 increase came from changes in identification, not only births. Good discussion for why data needs context.</p>
+  </aside>
+</section>
+
+<!-- 9 JUSTIFY -->
+<section class="slide" data-title="Justify">
+  <div class="kicker">Writing a justification</div>
+  <h2>“Because…” is where the marks are</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card frame">
+        I chose a <span class="blank">line graph</span><br>
+        because the data shows <span class="blank">change over time</span><br>
+        and I want my reader to see <span class="blank">how fast the count grew</span>.<br>
+        <span class="step">A <span class="blank">sector graph</span> would be less suitable because <span class="blank">the years are not parts of one whole</span>.</span>
+      </div>
+      <div class="card tint step small" style="font-size:.85em">
+        <b>Useful words:</b> categorical · numerical · categories · parts of a whole · adds to 100% · trend · over time · compare · proportion · in order
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>3 min</h4><p>Read the frame aloud. The second sentence (what would be less suitable) shows deeper understanding — insist on it.</p><p>The same frame is printed under every panel on the worksheet.</p></aside>
+</section>
+
+<!-- 10 I DO -->
+<section class="slide" data-title="I Do: Panel 1">
+  <div class="kicker">I Do · Worksheet Panel 1 · copy with me</div>
+  <h2>Panel 1: How has the count changed?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 30%">
+      <div class="card">
+        <table class="data">
+          <tr><th>Census</th><th>People</th></tr>
+          <tr><td>2006</td><td class="n">455,028</td></tr>
+          <tr><td>2011</td><td class="n">548,368</td></tr>
+          <tr><td>2016</td><td class="n">649,171</td></tr>
+          <tr><td>2021</td><td class="n">812,728</td></tr>
+        </table>
+      </div>
+      <div class="card tint step" style="font-size:.85em"><b>Think aloud:</b><br>Years in order → change over time → <b>line graph</b>.</div>
+      <div class="card tint step" style="font-size:.85em"><b>Scale:</b> largest value 812,728.<br>Go to 900,000 in steps of 100,000.<br>Start at zero.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="idoSvg" viewBox="0 0 800 440" role="img" aria-label="Line graph being built step by step: Census count 2006 to 2021"></svg></div>
+      <div class="card step hand" style="font-size:1.1em;padding:.5em 1em">I chose a line graph because the years are in order and it shows the count growing faster each Census.<br>A sector graph would be less suitable because years are not parts of one whole.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>I Do · 7 min</h4><p>Model on your whiteboard while students copy into Panel 1 (worksheet page 3, axes pre-drawn). Press → to build each stage: axes → scale → points → line → title &amp; source → justification.</p><p>Plotting tip: 455,028 is a bit more than halfway between 400,000 and 500,000. Round to the nearest 10,000 for plotting.</p><p>Ask: “Is the growth the same each time?” Increases were 93,340 · 100,803 · 163,557.</p></aside>
+</section>
+
+<!-- 11 WE DO -->
+<section class="slide" data-title="We Do: Panel 2">
+  <div class="kicker">We Do · Worksheet Panel 2</div>
+  <h2>Panel 2: How did people identify in 2021?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 32%">
+      <div class="card">
+        <table class="data">
+          <tr><th>Identified as</th><th>%</th></tr>
+          <tr><td>Aboriginal</td><td class="n">91.4</td></tr>
+          <tr><td>Torres Strait Islander</td><td class="n">4.2</td></tr>
+          <tr><td>Both</td><td class="n">4.4</td></tr>
+          <tr><td><b>Total</b></td><td class="n"><b>100</b></td></tr>
+        </table>
+      </div>
+      <div class="card" style="padding:.7em .9em">
+        <h3>Class vote: which graph?</h3>
+        <div class="btnrow" id="voteBtns">
+          <button class="tbtn" data-t="sector">Sector</button>
+          <button class="tbtn" data-t="divided">Divided bar</button>
+          <button class="tbtn" data-t="pictogram">Icon grid</button>
+          <button class="tbtn" data-t="line">Line</button>
+        </div>
+      </div>
+      <div class="card tint step" style="font-size:.82em"><b>Drawing a sector graph without a protractor:</b><br>The circle on your worksheet has 100 tick marks.<br>Each tick = 1%.<br>Count 91.4 ticks for Aboriginal, then 4.2, then 4.4.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="wedoSvg" viewBox="0 0 800 440" role="img" aria-label="Chart of how people identified"></svg></div>
+      <div class="verdict" id="wedoVerdict" aria-live="polite"><span class="muted">Vote first, then click your choice.</span></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>We Do · 5 min</h4><p>Students vote on mini whiteboards with a reason. Click the winning choice, then try “Line” to show why it fails.</p><p>Sector and divided bar are both excellent; the worksheet gives a 100-tick circle and a 100-square bar so students choose one.</p><p>Angle check for extension students: 1% = 3.6°, so 91.4% ≈ 329°, 4.2% ≈ 15°, 4.4% ≈ 16°.</p></aside>
+</section>
+
+<!-- 12 YOU DO -->
+<section class="slide" data-title="You Do: Panels 3–5">
+  <div class="kicker">You Do · Worksheet pages 4–5</div>
+  <h2>Your turn: choose, draw, justify</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card"><span class="pill slate">Panel 3</span> <b>Where do people live?</b> Census count by state and territory.<br><span class="small">Choose your graph, draw it on the grid, write your justification.</span></div>
+      <div class="card"><span class="pill slate">Panel 4</span> <b>Languages at home:</b> 9.5% speak an Aboriginal or Torres Strait Islander language.<br><span class="small">167 different languages were spoken at home in 2021.</span></div>
+      <div class="card"><span class="pill terra">Panel 5 · Extension</span> <b>Age profile:</b> 2011 compared with 2021.<br><span class="small">Plus a big-number tile: median age 24.</span></div>
+      <div class="btnrow"><button class="tbtn alt" id="sampleBtn" aria-pressed="false">Show sample answers</button></div>
+    </div>
+    <div class="col" id="sampleCol" style="display:none">
+      <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s3" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+      <div style="display:flex;gap:1vw;flex:1;min-height:0">
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s4" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s5" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>You Do · 14 min</h4><p>Circulate. Common issues: scale not starting at zero; uneven scale steps; no source; justification that only names the graph without a “because”.</p><p>Panel 3: column graph sorted tallest to shortest is the strongest choice. Suggested scale 0–300,000 in steps of 50,000 (the grid has 12 squares up, so 25,000 per square).</p><p>Panel 4: 10 × 10 icon grid — shade 9 squares and half of a 10th.</p><p>Panel 5: side-by-side columns; ask “What happened to the share of older people?”</p><p>Hold sample answers back until most students have committed to a choice.</p></aside>
+</section>
+
+<!-- 13 CHECKLIST -->
+<section class="slide" data-title="Checklist">
+  <div class="kicker">Peer check · 2 min</div>
+  <h2>Swap with a partner. Does their infographic have…</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card" style="font-size:1.05em">
+        <ul class="big" style="list-style:none;padding-left:0">
+          <li>☐ a title that tells the story</li>
+          <li>☐ the right graph for each dataset</li>
+          <li>☐ axes labelled, with an even scale starting at zero</li>
+          <li>☐ a key or labels for every colour</li>
+          <li>☐ a justification with “because…” for each panel</li>
+          <li>☐ the source: <i>ABS, Census 2021</i></li>
+        </ul>
+      </div>
+    </div>
+    <div class="col" style="justify-content:center">
+      <div class="card tint"><span class="hand">One star ★ and one wish ✎</span><br>Write one thing they did well and one thing to improve in their worksheet margin.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>2–3 min</h4><p>The same checklist is on worksheet page 5.</p></aside>
+</section>
+
+<!-- 14 EXIT -->
+<section class="slide" data-title="Exit check">
+  <div class="kicker">Exit check · mini whiteboards</div>
+  <h2>Show me: which letter?</h2>
+  <div class="slide-body" style="gap:1.4vw">
+    <div class="col card"><h3>1. A café records coffees sold each hour from 6 am to 2 pm. Best graph?</h3>
+      <div class="mcq" data-q="1">
+        <button class="opt" data-result="wrong" data-msg="✗ A sector graph shows parts of a whole, not change over time.">A. Sector graph</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. Hours are in order, so a line graph shows change over time.">B. Line graph</button>
+        <button class="opt" data-result="wrong" data-msg="✗ A pictogram suits one proportion, not a trend across hours.">C. Pictogram</button>
+        <button class="opt" data-result="wrong" data-msg="✗ A divided bar shows parts of a whole.">D. Divided bar graph</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>2. Which is the <u>worst</u> choice for the Census count by state?</h3>
+      <div class="mcq" data-q="2">
+        <button class="opt" data-result="wrong" data-msg="✗ A column graph is the best choice for separate categories.">A. Column graph</button>
+        <button class="opt" data-result="wrong" data-msg="✗ Not ideal (8 slices), but it does show each state’s share.">B. Sector graph</button>
+        <button class="opt" data-result="wrong" data-msg="✗ A pictogram can work as an eye-catcher.">C. Pictogram</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. States have no order, so joining them with a line suggests a trend that does not exist.">D. Line graph</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>3. Why does a sector graph suit 91.4%, 4.2%, 4.4%?</h3>
+      <div class="mcq" data-q="3">
+        <button class="opt" data-result="wrong" data-msg="✗ There is no time in this data.">A. It shows change over time</button>
+        <button class="opt" data-result="wrong" data-msg="✗ There are only three categories — few categories is what suits a sector graph.">B. It has lots of categories</button>
+        <button class="opt" data-result="right" data-msg="✓ Correct. Three parts that add to 100% make one whole.">C. The parts add to one whole (100%)</button>
+        <button class="opt" data-result="wrong" data-msg="✗ Sector graphs don’t have an axis to start at zero.">D. Its scale starts at zero</button>
+      </div><div class="fb" aria-live="polite"></div></div>
+  </div>
+  <aside class="notes"><h4>Exit · 3 min</h4><p>Read each question; students write a letter; “3-2-1 show me”. Then click the class answer to show feedback. Answers: B, D, C.</p><p>Collect worksheets, or set unfinished panels for homework.</p></aside>
+</section>
+
+<!-- 15 SOURCES -->
+<section class="slide" data-title="Sources">
+  <div class="kicker">Where the data comes from</div>
+  <h2>Sources and a note on the data</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card" style="font-size:.85em">
+        <ul class="big">
+          <li>Australian Bureau of Statistics (2022), <i>Australia: Aboriginal and Torres Strait Islander population summary</i>, 2021 Census.</li>
+          <li>ABS (2022), <i>Snapshot of Australia</i>, 2021 Census.</li>
+          <li>ABS (2024), <i>Understanding change in counts of Aboriginal and Torres Strait Islander Australians</i>, Census 2006–2021.</li>
+        </ul>
+      </div>
+      <div class="card tint" style="font-size:.85em">
+        The Census asks each person whether they are of Aboriginal or Torres Strait Islander origin.<br>
+        The answer is self-identified.<br>
+        Counts grow through births and because more people choose to identify.
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Reference</h4><p>State counts sum to 812,497; the remaining 231 people lived in Other Territories (e.g. Jervis Bay), which is why the 2021 total is 812,728.</p><p>Age percentages for 2021 add to 100.1% because of rounding — a good “spot the rounding” question for fast finishers.</p></aside>
+</section>
+</div>
+
+<div id="notesPanel" role="region" aria-label="Teacher notes"></div>
+<nav class="nav" aria-label="Slide controls">
+  <button class="navbtn" id="prevBtn" aria-label="Previous">◀</button>
+  <span class="count" id="count">1 / 15</span>
+  <button class="navbtn" id="nextBtn" aria-label="Next">▶</button>
+  <select class="navbtn" id="jump" aria-label="Jump to slide"></select>
+  <div class="prog"><i id="progBar"></i></div>
+  <button class="navbtn" id="notesBtn" aria-pressed="false">Notes (N)</button>
+  <select class="navbtn" id="fontSel" aria-label="Font">
+    <option value="">Nunito Sans</option><option value="f-system">System</option><option value="f-atkinson">Atkinson Hyperlegible</option>
+  </select>
+  <button class="navbtn" id="fsBtn">Fullscreen (F)</button>
+</nav>
+
+<script>
+/* ---------- DATA (ABS Census 2021; verified in Python before build) ---------- */
+var C = {slate:'#3D5A80',terra:'#C1614F',amber:'#E89C2F',forest:'#4A7C59',ink:'#22303F',ink2:'#4A5866',muted:'#6B7480',grid:'#E3DBD0',axis:'#8A8F96',track:'#E6E1DA'};
+var RAMP = ['#24395A','#3D5A80','#5876A0','#7A96BC','#A3B8D3','#C1614F','#D98A79','#E89C2F','#F2C27D'];
+function fmtN(v){return Math.round(v).toLocaleString('en-AU');}
+function fmtP(v){return v+'%';}
+var DS = {
+  A:{label:'Census count, 2006–2021', title:'Census count of Aboriginal and/or Torres Strait Islander people',
+     cats:['2006','2011','2016','2021'], series:[{name:'People',vals:[455028,548368,649171,812728],col:C.slate}],
+     fmt:fmtN, yMax:900000, yStep:100000, yLab:'Number of people', picUnit:100000, picKey:'1 icon = 100,000 people'},
+  B:{label:'How people identified (2021)', title:'How people identified, 2021 (%)',
+     cats:['Aboriginal','Torres Strait Islander','Both'], series:[{name:'%',vals:[91.4,4.2,4.4]}], cols:[C.slate,C.terra,C.amber],
+     fmt:fmtP, yMax:100, yStep:20, yLab:'Percentage (%)', grid100:[91,4,5], picKey:'1 icon ≈ 1% (rounded to total 100)'},
+  C:{label:'Where people live, by state (2021)', title:'Aboriginal and/or Torres Strait Islander people by state and territory, 2021',
+     cats:['NSW','Qld','WA','Vic','NT','SA','Tas','ACT'], series:[{name:'People',vals:[278043,237303,88693,65646,61115,42562,30186,8949],col:C.slate}],
+     fmt:fmtN, yMax:300000, yStep:50000, yLab:'Number of people', picUnit:10000, picKey:'1 icon = 10,000 people'},
+  D:{label:'Age profile, 2011 vs 2021', title:'Age profile, 2011 and 2021 (% of population)',
+     cats:['0–4','5–14','15–24','25–34','35–44','45–54','55–64','65–74','75+'],
+     series:[{name:'2011',vals:[12.3,23.6,19.3,13.1,12.3,9.7,5.9,2.6,1.2],col:C.amber},{name:'2021',vals:[10.6,22.1,18.5,14.5,10.8,10.1,7.6,4.2,1.7],col:C.slate}],
+     fmt:fmtP, yMax:25, yStep:5, yLab:'Percentage (%)'},
+  E:{label:'Language spoken at home (2021)', title:'Speak an Aboriginal or Torres Strait Islander language at home, 2021',
+     cats:['Aboriginal or Torres Strait Islander language','Do not speak one at home'], series:[{name:'%',vals:[9.5,90.5]}], cols:[C.terra,C.track],
+     fmt:fmtP, yMax:100, yStep:20, yLab:'Percentage (%)', grid100:[9.5,90.5], picKey:'1 icon = 1% · about 1 in 10 people'}
+};
+var TYPES = [['column','Column'],['line','Line'],['sector','Sector'],['divided','Divided bar'],['pictogram','Pictogram']];
+var V = {
+ A:{column:['ok','Could work: four years, easy to compare heights.<br>A line graph shows the trend more clearly.'],
+    line:['best','Best choice: the years are in order, and the slope shows the growth speeding up.'],
+    sector:['poor','Poor choice: the years are not parts of one whole. The slices don’t add up to anything meaningful.'],
+    divided:['poor','Poor choice: a divided bar shows parts of a whole. These counts are separate years.'],
+    pictogram:['ok','Could work as an eye-catcher (1 icon = 100,000 people).<br>Part-icons are hard to read accurately.']},
+ B:{column:['ok','Could work: readable, but it hides the “parts of one whole” message.'],
+    line:['poor','Poor choice: there is no time order. Joining the points suggests a trend that doesn’t exist.'],
+    sector:['best','Best choice: three parts that add to 100% — a sector graph shows one whole instantly.'],
+    divided:['best','Also a best choice: one bar = 100%.<br>Easier to draw accurately than a sector graph.'],
+    pictogram:['ok','Could work: 100 icons, 1 icon ≈ 1%.<br>Memorable, but icons must be rounded to whole numbers.']},
+ C:{column:['best','Best choice: eight separate categories.<br>Sorting tallest to shortest makes the ranking easy to read.'],
+    line:['poor','Poor choice: states have no order. A line suggests a change from NSW to Qld, which is meaningless.'],
+    sector:['ok','Could work: it shows each state’s share.<br>But eight slices, some tiny (ACT 1.1%), are hard to compare.'],
+    divided:['ok','Could work: shows shares of one whole.<br>Small segments are too thin to label.'],
+    pictogram:['ok','Could work as an eye-catcher (1 icon = 10,000 people).<br>Rounding to part-icons loses accuracy.']},
+ D:{column:['best','Best choice: side-by-side columns compare 2011 with 2021 inside each age group.'],
+    line:['ok','Could work: age groups are in order, so two lines show the shape.<br>But the groups are not equal widths (0–4 is only 5 years).'],
+    sector:['poor','Poor choice: two pies with nine slices each are very hard to compare.'],
+    divided:['ok','Could work: two 100% bars can be compared, but nine segments is crowded.'],
+    pictogram:['poor','Poor choice: two years × nine groups needs far too many icons.']},
+ E:{column:['ok','Could work, but two bars waste space for one percentage.'],
+    line:['poor','Poor choice: there is no time order.'],
+    sector:['ok','Could work: one small part of a whole is easy to see.'],
+    divided:['ok','Could work: one bar, one small segment.'],
+    pictogram:['best','Best choice: “About 1 in 10 people” is memorable.<br>A 10 × 10 grid with 9 and a half icons shaded.']}
+};
+function vtxt(t){return t.replace(/^(Best choice|Poor choice|Could work|Also a best choice)[:,]\s*/,function(m,a){return a==='Also a best choice'?'Also excellent: ':'';}).replace(/^./,function(c){return c.toUpperCase();});}
+var VLAB = {best:'✓ Best choice',ok:'≈ Could work',poor:'✗ Poor choice'};
+
+/* ---------- SVG helpers ---------- */
+var NS='http://www.w3.org/2000/svg', uid=0;
+function el(tag,a,p,txt){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;if(p)p.appendChild(e);return e;}
+function clear(svg){while(svg.firstChild)svg.removeChild(svg.firstChild);}
+function personDefs(svg){var d=el('defs',{},svg);var s=el('symbol',{id:'person'+(++uid),viewBox:'0 0 20 40'},d);el('circle',{cx:10,cy:7,r:6.5},s);el('rect',{x:2.5,y:15,width:15,height:25,rx:6},s);return s.getAttribute('id');}
+function title(svg,t,sub){el('text',{x:14,y:28,'font-size':21,'font-weight':800,fill:C.ink,'font-family':'Nunito, sans-serif'},svg,t);if(sub)el('text',{x:14,y:50,'font-size':15,fill:C.ink2},svg,sub);}
+function source(svg,y){el('text',{x:14,y:y||432,'font-size':13,fill:C.muted},svg,'Source: ABS, Census 2021');}
+function legend(svg,items,x,y){items.forEach(function(it,i){var g=el('g',{},svg);el('rect',{x:x+i*120,y:y-12,width:16,height:16,rx:3,fill:it.col},g);el('text',{x:x+i*120+22,y:y+1,'font-size':16,fill:C.ink},g,it.name);});}
+function axes(svg,ds,L,T,W,H){
+  for(var v=0;v<=ds.yMax+1e-9;v+=ds.yStep){var y=T+H-(v/ds.yMax)*H;
+    el('line',{x1:L,x2:L+W,y1:y,y2:y,stroke:v===0?C.axis:C.grid,'stroke-width':v===0?2:1},svg);
+    el('text',{x:L-8,y:y+5,'text-anchor':'end','font-size':14,fill:C.ink2},svg,ds.fmt(v));}
+  el('line',{x1:L,x2:L,y1:T,y2:T+H,stroke:C.axis,'stroke-width':2},svg);
+  var yl=el('text',{x:0,y:0,'font-size':14,fill:C.ink2,'text-anchor':'middle',transform:'translate(16,'+(T+H/2)+') rotate(-90)'},svg,ds.yLab);
+}
+/* ---------- renderers ---------- */
+function rColumn(svg,ds){
+  var L=100,T=70,W=680,H=290,n=ds.cats.length,m=ds.series.length;
+  title(svg,ds.title);axes(svg,ds,L,T,W,H);
+  var gw=W/n,bw=Math.min(64,gw*0.72/m),lab=n*m<=10;
+  ds.series.forEach(function(s,si){s.vals.forEach(function(v,i){
+    var h=(v/ds.yMax)*H,x=L+i*gw+(gw-bw*m-2*(m-1))/2+si*(bw+2),y=T+H-h;
+    var col=s.col||(ds.cols?ds.cols[i]:C.slate);
+    var r=el('rect',{x:x,y:y,width:bw,height:h,rx:4,fill:col},svg);el('title',{},r,ds.cats[i]+(m>1?' ('+s.name+')':'')+': '+ds.fmt(v));
+    if(lab)el('text',{x:x+bw/2,y:y-7,'text-anchor':'middle','font-size':14,'font-weight':700,fill:C.ink},svg,ds.fmt(v));
+  });});
+  ds.cats.forEach(function(c,i){el('text',{x:L+i*gw+gw/2,y:T+H+22,'text-anchor':'middle','font-size':n>6?14:15,fill:C.ink},svg,c);});
+  if(m>1)legend(svg,ds.series,560,T-14);
+  source(svg);
+}
+function rLine(svg,ds){
+  var L=100,T=70,W=680,H=290,n=ds.cats.length,m=ds.series.length;
+  title(svg,ds.title);axes(svg,ds,L,T,W,H);
+  var gw=W/n;
+  ds.series.forEach(function(s,si){var pts=s.vals.map(function(v,i){return [L+i*gw+gw/2,T+H-(v/ds.yMax)*H];});
+    var col=s.col||C.slate;
+    el('polyline',{points:pts.map(function(p){return p.join(',');}).join(' '),fill:'none',stroke:col,'stroke-width':3,'stroke-linejoin':'round'},svg);
+    pts.forEach(function(p,i){var c=el('circle',{cx:p[0],cy:p[1],r:6,fill:col,stroke:'#fff','stroke-width':2},svg);el('title',{},c,ds.cats[i]+': '+ds.fmt(s.vals[i]));
+      if(n<=4&&m===1)el('text',{x:p[0],y:p[1]-14,'text-anchor':'middle','font-size':14,'font-weight':700,fill:C.ink},svg,ds.fmt(s.vals[i]));});
+  });
+  ds.cats.forEach(function(c,i){el('text',{x:L+i*gw+gw/2,y:T+H+22,'text-anchor':'middle','font-size':n>6?14:15,fill:C.ink},svg,c);});
+  if(m>1)legend(svg,ds.series,560,T-14);
+  source(svg);
+}
+function arc(cx,cy,r,a0,a1){var p0=[cx+r*Math.sin(a0),cy-r*Math.cos(a0)],p1=[cx+r*Math.sin(a1),cy-r*Math.cos(a1)];
+  if(a1-a0>=2*Math.PI-1e-6)return 'M'+(cx)+','+(cy-r)+' A'+r+','+r+' 0 1,1 '+(cx-0.01)+','+(cy-r)+' Z';
+  return 'M'+cx+','+cy+' L'+p0[0]+','+p0[1]+' A'+r+','+r+' 0 '+((a1-a0)>Math.PI?1:0)+',1 '+p1[0]+','+p1[1]+' Z';}
+function segCols(ds){return ds.cols||RAMP.slice(0,ds.cats.length);}
+function pie(svg,ds,vals,cx,cy,r,label){var sum=vals.reduce(function(a,b){return a+b;},0),a=0,cols=segCols(ds);
+  vals.forEach(function(v,i){var a1=a+v/sum*2*Math.PI;var p=el('path',{d:arc(cx,cy,r,a,a1),fill:cols[i],stroke:'#fff','stroke-width':2},svg);el('title',{},p,ds.cats[i]+': '+(v/sum*100).toFixed(1)+'%');a=a1;});
+  if(label)el('text',{x:cx,y:cy+r+26,'text-anchor':'middle','font-size':16,'font-weight':800,fill:C.ink},svg,label);}
+function keyList(svg,ds,vals,x,y,step){var sum=vals?vals.reduce(function(a,b){return a+b;},0):1,cols=segCols(ds);
+  ds.cats.forEach(function(c,i){el('rect',{x:x,y:y+i*step-13,width:18,height:18,rx:3,fill:cols[i]},svg);
+    el('text',{x:x+28,y:y+i*step+2,'font-size':c.length>30?14:16,fill:C.ink},svg,c+(vals?'  '+(vals[i]/sum*100).toFixed(1)+'%':''));});}
+function rSector(svg,ds){
+  title(svg,ds.title);
+  if(ds.series.length===1){var vals=ds.series[0].vals;pie(svg,ds,vals,230,240,160);keyList(svg,ds,vals,450,110+(8-ds.cats.length)*12,36);}
+  else{pie(svg,ds,ds.series[0].vals,150,210,120,ds.series[0].name);pie(svg,ds,ds.series[1].vals,420,210,120,ds.series[1].name);keyList(svg,ds,null,600,90,34);}
+  source(svg);
+}
+function rDivided(svg,ds){
+  title(svg,ds.title);var L=60,W=680,cols=segCols(ds);
+  ds.series.forEach(function(s,si){var sum=s.vals.reduce(function(a,b){return a+b;},0),x=L,y=110+si*110;
+    if(ds.series.length>1)el('text',{x:L,y:y-10,'font-size':16,'font-weight':800,fill:C.ink},svg,s.name);
+    s.vals.forEach(function(v,i){var w=v/sum*W;var r=el('rect',{x:x,y:y,width:Math.max(w-2,1),height:70,fill:cols[i]},svg);el('title',{},r,ds.cats[i]+': '+(v/sum*100).toFixed(1)+'%');
+      if(v/sum>=0.07){var dark=(cols[i]===C.track||cols[i]===C.amber||cols[i]==='#F2C27D'||cols[i]==='#A3B8D3'||cols[i]==='#D98A79');
+        el('text',{x:x+w/2,y:y+42,'text-anchor':'middle','font-size':15,'font-weight':800,fill:dark?C.ink:'#fff'},svg,Math.round(v/sum*100)+'%');}
+      x+=w;});
+  });
+  var ky=ds.series.length>1?340:230,per=ds.cats.length>4?5:4;
+  ds.cats.forEach(function(c,i){var col=i%per,row=Math.floor(i/per);var x=L+col*(ds.cats.length>4?140:220),y=ky+row*34;
+    el('rect',{x:x,y:y-13,width:18,height:18,rx:3,fill:cols[i]},svg);el('text',{x:x+26,y:y+2,'font-size':15,fill:C.ink},svg,c);});
+  source(svg);
+}
+function icon(svg,id,x,y,w,h,col,frac){
+  if(frac==null||frac>=1){el('use',{href:'#'+id,x:x,y:y,width:w,height:h,fill:col},svg);return;}
+  el('use',{href:'#'+id,x:x,y:y,width:w,height:h,fill:C.track},svg);
+  if(frac>0){var cid='clip'+(++uid);var cp=el('clipPath',{id:cid},svg);el('rect',{x:x,y:y,width:w*frac,height:h},cp);
+    var g=el('g',{'clip-path':'url(#'+cid+')'},svg);el('use',{href:'#'+id,x:x,y:y,width:w,height:h,fill:col},g);}
+}
+function rPictogram(svg,ds,key){
+  title(svg,ds.title);var id=personDefs(svg);
+  if(key==='D'){el('text',{x:400,y:220,'text-anchor':'middle','font-size':22,'font-weight':800,fill:C.terra},svg,'2 years × 9 age groups = far too many icons!');
+    el('text',{x:400,y:255,'text-anchor':'middle','font-size':17,fill:C.ink2},svg,'Try another graph.');return;}
+  if(ds.grid100){var counts=ds.grid100,cols=segCols(ds),k=0,cum=[];var t=0;counts.forEach(function(c){t+=c;cum.push(t);});
+    for(var i=0;i<100;i++){var r=Math.floor(i/10),c=i%10,x=60+c*26,y=64+r*34;var seg=0;while(i>=cum[seg]&&seg<cum.length-1)seg++;
+      var prev=seg?cum[seg-1]:0;var frac=null;
+      if(i<cum[seg]&&i+1>cum[seg]){frac=cum[seg]-i;} // partial icon
+      if(frac!=null){icon(svg,id,x,y,16,28,cols[seg],frac);}else icon(svg,id,x,y,16,28,cols[seg]);}
+    keyList(svg,ds,ds.series[0].vals,370,110,40);
+    el('text',{x:370,y:110+ds.cats.length*40+20,'font-size':15,fill:C.ink2},svg,ds.picKey);
+    if(key==='E')el('text',{x:370,y:330,'font-size':40,'font-weight':900,fill:C.terra,'font-family':'Nunito, sans-serif'},svg,'≈ 1 in 10');
+    source(svg);return;}
+  var n=ds.cats.length,rowH=Math.min(80,320/n),iw=key==='C'?15:26,ih=key==='C'?30:52,gap=key==='C'?22:34;
+  ds.series[0].vals.forEach(function(v,i){var y=72+i*rowH,u=v/ds.picUnit;
+    el('text',{x:80,y:y+ih*0.7,'text-anchor':'end','font-size':16,'font-weight':700,fill:C.ink},svg,ds.cats[i]);
+    for(var j=0;j<Math.ceil(u);j++){var f=Math.min(1,u-j);icon(svg,id,96+j*gap,y,iw,ih,C.slate,f<1?f:null);}
+  });
+  el('text',{x:14,y:52,'font-size':15,'font-weight':700,fill:C.ink2},svg,ds.picKey);
+  source(svg);
+}
+function render(svg,key,type){clear(svg);var ds=DS[key];
+  ({column:rColumn,line:rLine,sector:rSector,divided:rDivided,pictogram:rPictogram})[type](svg,ds,key);
+  svg.setAttribute('aria-label',ds.title+' shown as a '+type+' graph');}
+
+/* ---------- Graph Swap ---------- */
+var cur={ds:'A',type:'sector'};
+(function(){var dsb=document.getElementById('dsBtns'),tb=document.getElementById('typeBtns');
+  Object.keys(DS).forEach(function(k){var b=el2('button',{class:'tbtn','data-k':k},DS[k].label);dsb.appendChild(b);b.onclick=function(){cur.ds=k;swap();};});
+  TYPES.forEach(function(t){var b=el2('button',{class:'tbtn','data-t':t[0]},t[1]);tb.appendChild(b);b.onclick=function(){cur.type=t[0];swap();};});
+  document.getElementById('verdictBtn').onclick=function(){showVerdict(true);};
+})();
+function el2(tag,a,txt){var e=document.createElement(tag);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;return e;}
+function swap(){render(document.getElementById('swapSvg'),cur.ds,cur.type);
+  document.querySelectorAll('#dsBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.k===cur.ds);});
+  document.querySelectorAll('#typeBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.t===cur.type);});
+  showVerdict(false);}
+function showVerdict(on){var vb=document.getElementById('verdictBox'),btn=document.getElementById('verdictBtn');btn.setAttribute('aria-pressed',on);
+  if(!on){vb.className='verdict';vb.innerHTML='<span class="muted">Discuss: does this graph suit the data? Why or why not?</span>';return;}
+  var v=V[cur.ds][cur.type];vb.className='verdict '+v[0];vb.innerHTML='<b class="'+v[0]+'">'+VLAB[v[0]]+'</b><br>'+vtxt(v[1]);}
+swap();
+
+/* ---------- We Do ---------- */
+document.querySelectorAll('#voteBtns .tbtn').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('#voteBtns .tbtn').forEach(function(x){x.setAttribute('aria-pressed',x===b);});
+  render(document.getElementById('wedoSvg'),'B',b.dataset.t);var v=V.B[b.dataset.t],vb=document.getElementById('wedoVerdict');
+  vb.className='verdict '+v[0];vb.innerHTML='<b class="'+v[0]+'">'+VLAB[v[0]]+'</b><br>'+vtxt(v[1]);};});
+(function(){var s=document.getElementById('wedoSvg');el('text',{x:400,y:220,'text-anchor':'middle','font-size':24,fill:C.muted,'font-weight':700},s,'Which graph suits this data best?');})();
+
+/* ---------- You Do samples ---------- */
+document.getElementById('sampleBtn').onclick=function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);
+  document.getElementById('sampleCol').style.display=on?'flex':'none';
+  if(on){render(document.getElementById('s3'),'C','column');render(document.getElementById('s4'),'E','pictogram');render(document.getElementById('s5'),'D','column');}};
+
+/* ---------- Hook infographic ---------- */
+(function(){var s=document.getElementById('hookSvg');var id=personDefs(s);
+  el('rect',{x:0,y:0,width:900,height:420,rx:16,fill:'#FBF7F2'},s);
+  el('text',{x:30,y:50,'font-size':26,'font-weight':900,fill:C.slate,'font-family':'Nunito, sans-serif'},s,'Aboriginal and Torres Strait Islander peoples · Census 2021');
+  el('text',{x:30,y:150,'font-size':84,'font-weight':900,fill:'#9A4A3B','font-family':'Nunito, sans-serif'},s,'812,728');
+  el('text',{x:34,y:186,'font-size':22,fill:C.ink},s,'people identified — 3.2% of Australia');
+  var a=el('g',{},s);el('path',{d:'M40 300 L150 300 L150 270 L200 315 L150 360 L150 330 L40 330 Z',fill:C.forest},a);
+  el('text',{x:215,y:312,'font-size':40,'font-weight':900,fill:C.forest,'font-family':'Nunito, sans-serif'},s,'+25%');
+  el('text',{x:215,y:342,'font-size':19,fill:C.ink},s,'since 2016');
+  el('text',{x:520,y:150,'font-size':84,'font-weight':900,fill:C.slate,'font-family':'Nunito, sans-serif'},s,'24');
+  el('text',{x:524,y:186,'font-size':22,fill:C.ink},s,'median age (Australia: 38)');
+  for(var i=0;i<10;i++)icon(s,id,520+i*34,240,24,46,i===9?C.terra:C.track,i===9?null:null);
+  el('use',{href:'#'+id,x:520+9*34,y:240,width:24,height:46,fill:C.terra},s);
+  el('text',{x:520,y:322,'font-size':22,'font-weight':800,fill:C.terra},s,'≈ 1 in 10 speak an Aboriginal');
+  el('text',{x:520,y:348,'font-size':22,'font-weight':800,fill:C.terra},s,'or Torres Strait Islander');
+  el('text',{x:520,y:374,'font-size':22,'font-weight':800,fill:C.terra},s,'language at home');
+  el('text',{x:30,y:405,'font-size':14,fill:C.muted},s,'Source: ABS, Census 2021');
+  var hb=document.getElementById('hookHide');hb.onclick=function(){var on=hb.getAttribute('aria-pressed')!=='true';hb.setAttribute('aria-pressed',on);hb.textContent=on?'Show it':'Hide it';document.getElementById('hookSvg').classList.toggle('hidden-hook',on);};
+})();
+
+/* ---------- Anatomy diagram ---------- */
+(function(){var s=document.getElementById('anatSvg');var id=personDefs(s);
+  el('rect',{x:20,y:20,width:400,height:430,rx:14,fill:'#FBF7F2',stroke:C.grid,'stroke-width':2},s);
+  el('rect',{x:40,y:40,width:300,height:22,rx:6,fill:C.slate},s);
+  el('text',{x:40,y:115,'font-size':52,'font-weight':900,fill:'#9A4A3B','font-family':'Nunito, sans-serif'},s,'812,728');
+  [[50,40],[100,70],[150,120],[200,150]].forEach(function(p,i){el('rect',{x:50+i*44,y:300-p[1],width:30,height:p[1],rx:3,fill:C.slate},s);});
+  el('line',{x1:44,x2:240,y1:300,y2:300,stroke:C.axis,'stroke-width':2},s);
+  for(var i=0;i<10;i++)el('use',{href:'#'+id,x:260+(i%5)*28,y:i<5?180:236,width:18,height:36,fill:i===0?C.terra:C.track},s);
+  el('rect',{x:40,y:330,width:360,height:12,rx:4,fill:C.grid},s);el('rect',{x:40,y:352,width:280,height:12,rx:4,fill:C.grid},s);
+  el('text',{x:40,y:425,'font-size':14,fill:C.muted},s,'Source: ABS, Census 2021');
+  var L=[['Title',51],['Big number',97],['Pictogram',200],['Graph',270],['Caption',347],['Source',420]];
+  L.forEach(function(l){el('line',{x1:425,x2:460,y1:l[1],y2:l[1],stroke:C.terra,'stroke-width':2},s);el('circle',{cx:425,cy:l[1],r:4,fill:C.terra},s);
+    el('text',{x:468,y:l[1]+6,'font-size':19,'font-weight':800,fill:C.ink,'font-family':'Nunito, sans-serif'},s,l[0]);});
+})();
+
+/* ---------- I Do: build line graph in stages ---------- */
+(function(){var s=document.getElementById('idoSvg'),ds=DS.A,L=110,T=60,W=640,H=310,gw=W/4;
+  var g1=el('g',{class:'step'},s); // axes + labels
+  el('line',{x1:L,x2:L,y1:T,y2:T+H,stroke:C.ink,'stroke-width':2.5},g1);el('line',{x1:L,x2:L+W,y1:T+H,y2:T+H,stroke:C.ink,'stroke-width':2.5},g1);
+  ds.cats.forEach(function(c,i){el('text',{x:L+i*gw+gw/2,y:T+H+26,'text-anchor':'middle','font-size':16,fill:C.ink},g1,c);});
+  el('text',{x:L+W/2,y:T+H+52,'text-anchor':'middle','font-size':15,fill:C.ink2},g1,'Census year');
+  el('text',{'font-size':15,fill:C.ink2,'text-anchor':'middle',transform:'translate(18,'+(T+H/2)+') rotate(-90)'},g1,'Number of people');
+  var g2=el('g',{class:'step'},s); // scale
+  for(var v=0;v<=900000;v+=100000){var y=T+H-(v/900000)*H;if(v)el('line',{x1:L,x2:L+W,y1:y,y2:y,stroke:C.grid},g2);
+    el('text',{x:L-8,y:y+5,'text-anchor':'end','font-size':13,fill:C.ink2},g2,fmtN(v));}
+  var pts=ds.series[0].vals.map(function(v,i){return [L+i*gw+gw/2,T+H-(v/900000)*H];});
+  var g4=el('g',{class:'step'},s);
+  var g3=el('g',{class:'step'},s);
+  s.insertBefore(g3,g4); // points before line in reveal order
+  pts.forEach(function(p,i){el('circle',{cx:p[0],cy:p[1],r:7,fill:C.slate,stroke:'#fff','stroke-width':2},g3);
+    el('text',{x:p[0],y:p[1]-15,'text-anchor':'middle','font-size':14,'font-weight':700,fill:C.ink},g3,fmtN(ds.series[0].vals[i]));});
+  el('polyline',{points:pts.map(function(p){return p.join(',');}).join(' '),fill:'none',stroke:C.slate,'stroke-width':3},g4);
+  s.appendChild(g4);
+  var g5=el('g',{class:'step'},s);
+  el('text',{x:L,y:34,'font-size':20,'font-weight':800,fill:C.ink,'font-family':'Nunito, sans-serif'},g5,'Aboriginal and Torres Strait Islander Census count, 2006–2021');
+  el('text',{x:786,y:436,'text-anchor':'end','font-size':13,fill:C.muted},g5,'Source: ABS, Census 2021');
+})();
+
+/* ---------- MCQ (data-result / data-msg pattern) ---------- */
+function mcqAns(b){var box=b.parentNode,fb=box.nextElementSibling;
+  if(b.dataset.result==='right'){box.querySelectorAll('.opt').forEach(function(o){o.classList.remove('wrong');});b.classList.add('right');}
+  else{if(box.querySelector('.opt.right'))return;b.classList.add('wrong');}
+  fb.innerHTML=b.dataset.msg;fb.style.color=b.dataset.result==='right'?'var(--good)':'var(--poor)';}
+document.querySelectorAll('.opt').forEach(function(b){b.addEventListener('click',function(){mcqAns(this);});});
+
+/* quick-fire cards */
+document.querySelectorAll('.qf .card').forEach(function(c){c.addEventListener('click',function(){c.classList.toggle('open');});
+  c.addEventListener('keydown',function(e){if(e.key==='Enter'){c.classList.toggle('open');e.stopPropagation();}});});
+
+/* ---------- Deck navigation ---------- */
+var slides=[].slice.call(document.querySelectorAll('.slide')),idx=0,notesOpen=false;
+var jump=document.getElementById('jump');
+slides.forEach(function(s,i){var o=document.createElement('option');o.value=i;o.textContent=(i+1)+'. '+s.dataset.title;jump.appendChild(o);});
+function steps(){return [].slice.call(slides[idx].querySelectorAll('.step'));}
+function go(i,fromBack){if(i<0||i>=slides.length)return;slides[idx].classList.remove('active');idx=i;slides[idx].classList.add('active');
+  steps().forEach(function(st){st.classList.toggle('shown',!!fromBack);});
+  document.getElementById('count').textContent=(idx+1)+' / '+slides.length;jump.value=idx;
+  document.getElementById('progBar').style.width=((idx+1)/slides.length*100)+'%';
+  var n=slides[idx].querySelector('.notes');document.getElementById('notesPanel').innerHTML=n?n.innerHTML:'<p>No notes.</p>';
+  try{localStorage.setItem('dat-info-slide',idx);}catch(e){}}
+function next(){var h=steps().filter(function(s){return !s.classList.contains('shown');});if(h.length){h[0].classList.add('shown');}else go(idx+1);}
+function prev(){var sh=steps().filter(function(s){return s.classList.contains('shown');});if(sh.length){sh[sh.length-1].classList.remove('shown');}else go(idx-1,true);}
+document.getElementById('nextBtn').onclick=next;document.getElementById('prevBtn').onclick=prev;
+jump.onchange=function(){go(+jump.value);};
+function toggleNotes(){notesOpen=!notesOpen;document.getElementById('notesPanel').classList.toggle('open',notesOpen);document.getElementById('notesBtn').setAttribute('aria-pressed',notesOpen);}
+document.getElementById('notesBtn').onclick=toggleNotes;
+function fs(){if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}else document.exitFullscreen();}
+document.getElementById('fsBtn').onclick=fs;
+document.addEventListener('keydown',function(e){var t=e.target.tagName;if(t==='SELECT'||t==='INPUT'||t==='TEXTAREA')return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  else if(e.key==='n'||e.key==='N')toggleNotes();
+  else if(e.key==='f'||e.key==='F')fs();
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1);});
+var fsel=document.getElementById('fontSel');
+fsel.onchange=function(){document.body.className=fsel.value;try{localStorage.setItem('dat-info-font',fsel.value);}catch(e){}};
+try{var f=localStorage.getItem('dat-info-font');if(f){fsel.value=f;document.body.className=f;}}catch(e){}
+var start=0;try{start=+(localStorage.getItem('dat-info-slide')||0);}catch(e){}
+slides[0].classList.add('active');go(start>=0&&start<slides.length?start:0);
+</script>
+</body>
+</html>
