@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Season Results · Teacher Display · MA4-DAT-C-01 / C-02</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Nunito+Sans:wght@400;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EFE9; --card:#FFFFFF; --ink:#22303F; --ink2:#4A5866; --muted:#6B7480;
+  --slate:#3D5A80; --forest:#4A7C59; --amber:#E89C2F; --terra:#C1614F;
+  --accent:#A3262A; /* Trinity Red Kangaroos red: 7.3:1 on white, 6.4:1 on bg */
+  --line:#DCD3C8; --good:#2F6B44; --okay:#8A5A00; --poor:#A33A2B;
+  --body:'Nunito Sans',system-ui,sans-serif;
+}
+body.f-system{--body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+body.f-atkinson{--body:'Atkinson Hyperlegible',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);overflow:hidden}
+body{font-size:clamp(17px,1.55vw,34px);line-height:1.4}
+h1,h2,h3{font-family:'Nunito',sans-serif;margin:0;color:var(--slate);line-height:1.15}
+h1{font-size:2.6em;font-weight:900}
+h2{font-size:1.75em;font-weight:900;margin-bottom:.45em}
+h3{font-size:1.1em;font-weight:800;margin-bottom:.3em}
+.kicker{font-family:'Nunito',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.62em;color:var(--accent);margin-bottom:.3em}
+.deck{position:relative;width:100vw;height:100vh}
+.slide{position:absolute;inset:0;padding:3.2vh 4vw 9vh;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide-body{flex:1;min-height:0;display:flex;gap:2.2vw}
+.col{flex:1;min-width:0;display:flex;flex-direction:column;gap:1.4vh}
+.card{background:var(--card);border-radius:14px;padding:1.1em 1.3em;box-shadow:0 2px 0 rgba(0,0,0,.04),0 6px 20px rgba(61,90,128,.08);border:1px solid #EBE4DB}
+.card.tint{background:#FBF7F2}
+ul.big{margin:.2em 0;padding-left:1.1em} ul.big li{margin:.35em 0}
+.step{opacity:0;transform:translateY(8px);transition:opacity .35s,transform .35s}
+.step.shown{opacity:1;transform:none}
+svg .step{transform:none}
+svg{font-family:var(--body)}
+.pill{display:inline-block;padding:.12em .6em;border-radius:999px;font-weight:800;font-size:.8em;font-family:'Nunito',sans-serif}
+.pill.slate{background:#E3E9F1;color:var(--slate)} .pill.red{background:#F6E1E1;color:var(--accent)}
+.hand{font-family:'Caveat',cursive;font-size:1.35em;color:var(--slate)}
+.small{font-size:.75em;color:var(--ink2)}
+.muted{color:var(--muted)}
+.title-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.2vh;max-width:72vw}
+.title-wrap h1 span{color:var(--accent)}
+table.guide{border-collapse:separate;border-spacing:0;width:100%;font-size:.86em}
+table.guide th,table.guide td{text-align:left;padding:.42em .7em;border-bottom:1px solid var(--line);vertical-align:top}
+table.guide th{font-family:'Nunito',sans-serif;color:var(--slate);font-weight:800;background:#F7F2EC}
+table.guide td:first-child{font-weight:700}
+table.data{border-collapse:collapse;font-size:.78em;width:100%}
+table.data th,table.data td{padding:.18em .55em;border-bottom:1px solid var(--line);text-align:left}
+table.data th{font-family:'Nunito';color:var(--slate)}
+table.data td.n,table.data th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.data tr.flag td{background:#FBEDED}
+.qf{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;flex:1}
+.qf .card{display:flex;flex-direction:column;justify-content:space-between;cursor:pointer}
+.qf .q{font-size:1.1em}
+.qf .ans{margin-top:.5em;font-weight:800;color:var(--good);visibility:hidden;font-size:1.05em}
+.qf .card.open .ans{visibility:visible}
+.qf .num{font-family:'Nunito';font-weight:900;color:var(--accent)}
+button{font-family:'Nunito',sans-serif;font-weight:800;cursor:pointer}
+.btnrow{display:flex;flex-wrap:wrap;gap:.45em}
+.tbtn{font-size:.78em;padding:.45em .9em;border-radius:10px;border:2px solid var(--slate);background:#fff;color:var(--slate)}
+.tbtn[aria-pressed="true"]{background:var(--slate);color:#fff}
+.tbtn.alt{border-color:var(--accent);color:var(--accent)}
+.tbtn.alt[aria-pressed="true"]{background:var(--accent);color:#fff}
+.tbtn:focus-visible,.navbtn:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.chartbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.chartbox svg{width:100%;height:100%;max-height:100%}
+.verdict{font-size:.9em;border-radius:12px;padding:.6em .9em;border-left:8px solid var(--line);background:#fff;min-height:3.2em}
+.verdict.best{border-color:var(--good)} .verdict.ok{border-color:var(--okay)} .verdict.poor{border-color:var(--poor)}
+.verdict b.best{color:var(--good)} .verdict b.ok{color:var(--okay)} .verdict b.poor{color:var(--poor)}
+.frame{font-size:1.05em;line-height:1.9}
+.frame .blank{display:inline-block;min-width:6em;border-bottom:3px solid var(--slate);text-align:center;font-family:'Caveat',cursive;font-size:1.3em;color:var(--accent);line-height:1.1}
+.mcq{display:flex;flex-direction:column;gap:.4em}
+.opt{display:block;width:100%;text-align:left;font-family:var(--body);font-weight:600;font-size:.86em;padding:.45em .8em;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.opt.right{border-color:var(--good);background:#E9F3EC}
+.opt.wrong{border-color:var(--poor);background:#F9E9E6}
+.fb{font-size:.8em;min-height:1.3em}
+/* number cards for centre & spread */
+.nums{display:flex;flex-wrap:wrap;gap:.35em}
+.nums span{display:inline-flex;align-items:center;justify-content:center;min-width:2.1em;height:2.1em;border-radius:10px;background:#fff;border:2px solid var(--line);font-family:'Nunito';font-weight:900;font-size:1.05em;color:var(--ink)}
+.nums span.mid{border-color:var(--accent);background:#F6E1E1;color:var(--accent)}
+.nums span.mode{border-color:var(--slate);background:#E3E9F1}
+.nums span.out{border-style:dashed;border-color:var(--poor);color:var(--poor)}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1vw}
+.stat{background:#fff;border:1px solid #EBE4DB;border-radius:14px;padding:.6em .8em}
+.stat b{display:block;font-family:'Nunito';font-size:.75em;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)}
+.stat .v{font-family:'Nunito';font-weight:900;font-size:2em;color:var(--accent);line-height:1.1}
+.stat .w{font-size:.72em;color:var(--ink2)}
+.nav{position:fixed;left:0;right:0;bottom:0;height:6.5vh;min-height:44px;display:flex;align-items:center;gap:.6em;padding:0 1.2vw;background:rgba(244,239,233,.95);border-top:1px solid var(--line);font-size:14px;z-index:10}
+.navbtn{border:1px solid var(--line);background:#fff;color:var(--slate);border-radius:8px;padding:.45em .8em;font-size:14px}
+.prog{flex:1;height:6px;background:#E6DED4;border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.count{font-family:'Nunito';font-weight:800;color:var(--ink2);min-width:4.5em;text-align:center}
+select.navbtn{font-family:'Nunito';font-weight:700}
+.notes{display:none}
+#notesPanel{position:fixed;right:1vw;bottom:7.5vh;width:min(560px,44vw);max-height:70vh;overflow:auto;background:#FFFDF9;border:2px solid var(--accent);border-radius:14px;padding:14px 18px;font-size:15px;line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.18);display:none;z-index:11;color:var(--ink)}
+#notesPanel.open{display:block}
+#notesPanel h4{margin:0 0 6px;font-family:'Nunito';color:var(--accent)}
+#notesPanel p{margin:.4em 0}
+.hidden-hook{filter:blur(18px);opacity:.15;transition:filter .4s,opacity .4s}
+@media (max-aspect-ratio:4/3){.slide-body{flex-direction:column}}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:1vw;flex:1}
+.tile{background:#fff;border:1px solid #EBE4DB;border-radius:14px;padding:.6em .8em;border-top:8px solid var(--line);display:flex;flex-direction:column;justify-content:center}
+.tile.win{border-top-color:var(--accent)} .tile.loss{border-top-color:var(--slate)}
+.tile .r{font-size:.7em;color:var(--ink2);font-weight:700}
+.tile .sc{font-family:'Nunito';font-weight:900;font-size:1.9em;line-height:1.1}
+.tile .res{font-family:'Nunito';font-weight:900;font-size:.8em;letter-spacing:.08em}
+.tile.win .res{color:var(--accent)} .tile.loss .res{color:var(--slate)}
+table.data td.step{transform:none}
+#resTable{font-size:1.02em}
+.nums span.neg{border-color:var(--slate);color:var(--slate);border-style:dashed}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1 -->
+<section class="slide" data-title="Title">
+  <div class="title-wrap">
+    <div class="kicker">MA4-DAT-C-01 &amp; MA4-DAT-C-02 · Year 8 · Fictional season data</div>
+    <h1>Win, lose, by how much?<br><span>the Red Kangaroos’ season results</span></h1>
+    <p style="font-size:1.15em;margin:.2em 0;color:var(--ink2)">Graph the season, work with winning margins above and below zero, and find the toughest opponent.</p>
+  </div>
+  <aside class="notes"><h4>Lesson overview · 60 minutes</h4>
+    <p><b>Timing:</b> Opening 2 · Hook 5 · Results table 6 · Graph Swap 10 · Margins 7 · By opponent 5 · I Do 8 · We Do 4 · You Do 10 · Exit 3.</p>
+    <p><b>You need:</b> printed worksheet (5 pages), mini whiteboards, rulers, coloured pencils.</p>
+    <p>Same fictional season as the earlier Red Kangaroos lessons: Kangaroos hits per round and season totals match exactly.</p>
+    <p><b>Keys:</b> → / Space next · ← back · N notes · F fullscreen.</p></aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Learning intention">
+  <div class="kicker">Today</div><h2>What we’re learning</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card"><h3>Learning intention</h3>We are learning to choose and justify graphs for match results, including data with negative values, and to compare groups using the mean.</div>
+    <div class="card"><h3>Success criteria — I can…</h3><ul class="big">
+      <li class="step">calculate a winning margin, including negative margins for losses</li>
+      <li class="step">choose and justify a graph for results over time, a win–loss record and a ladder</li>
+      <li class="step">draw a column graph with values above and below zero</li>
+      <li class="step">use the mean margin to compare how the team went against each opponent</li></ul></div>
+  </div></div>
+  <aside class="notes"><h4>Opening · 2 min</h4><p>Class prayer or reflection as usual. Reveal each criterion.</p></aside>
+</section>
+
+<!-- 3 HOOK -->
+<section class="slide" data-title="Hook">
+  <div class="kicker">Hook · the season, one round at a time</div>
+  <h2>Predict: how many wins?</h2>
+  <div class="slide-body"><div class="col">
+    <div class="board" id="board"></div>
+    <div class="card tint step">Record: <b>6 wins, 2 losses</b>.<br>Which loss was closest?<br>Which win was biggest?</div>
+  </div></div>
+  <aside class="notes"><h4>Hook · 5 min</h4><p>Students write a prediction first (how many wins out of 8). Press → to reveal one round at a time; the class calls “win” or “loss”.</p><p>Closest loss: R5 v Wombats, 21–22. Biggest win: R8 v Possums, 20–16.</p></aside>
+</section>
+
+<!-- 4 RESULTS TABLE -->
+<section class="slide" data-title="Results table">
+  <div class="kicker">Winning margin · integers</div>
+  <h2>Margin = Kangaroos hits − opponent hits</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:1.5"><div class="card" style="padding:.5em .8em">
+      <table class="data" id="resTable"><tr><th>Round</th><th>Opponent</th><th class="n">Kangaroos</th><th class="n">Opponent</th><th class="n">Result</th><th class="n">Margin</th></tr></table></div></div>
+    <div class="col">
+      <div class="card tint">A win gives a <b>positive</b> margin.<br>A loss gives a <b>negative</b> margin.</div>
+      <div class="card step">R3: 18 − 21 = <b>−3</b><br>Lost by 3.</div>
+      <div class="card step">R5: 21 − 22 = <b>−1</b><br>Lost by 1.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Results table · 6 min</h4><p>Students complete Part A on worksheet page 1 (result and margin for all 8 rounds) on mini whiteboards first. Press → to reveal each row’s result and margin, then the two worked negatives.</p><p>Common error: writing 3 instead of −3 for R3. The order of subtraction matters.</p></aside>
+</section>
+
+<!-- 5 GRAPH SWAP -->
+<section class="slide" data-title="Graph Swap">
+  <div class="kicker">Graph Swap · season results</div>
+  <h2 style="margin-bottom:.25em">Same data, different graph. Does it work?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 28%">
+      <div class="card" style="padding:.7em .9em"><h3>1. Pick a dataset</h3><div class="btnrow" id="dsBtns" style="flex-direction:column;align-items:stretch"></div></div>
+      <div class="card" style="padding:.7em .9em"><h3>2. Pick a graph</h3><div class="btnrow" id="typeBtns"></div></div>
+      <div class="btnrow"><button class="tbtn alt" id="verdictBtn" aria-pressed="false">3. Reveal verdict</button></div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="swapSvg" viewBox="0 0 800 440" role="img" aria-label="Chart"></svg></div>
+      <div class="verdict" id="verdictBox" aria-live="polite"><span class="muted">Discuss: does this graph suit the data? Why or why not?</span></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>Graph Swap · 10 min</h4><p>Suggested run: Win–loss record → line (✗) → sector (✓ 8 matches make one whole).<br>Winning margins → sector (✗ negative numbers can’t be slices) → column (✓ above and below zero).<br>Kangaroos v opponents → column (✓ side by side) → line (✓ two lines; where they cross the Kangaroos lost).<br>Ladder → line (✗) → column (✓ sorted).</p></aside>
+</section>
+
+<!-- 6 MARGINS -->
+<section class="slide" data-title="Margins: centre &amp; spread">
+  <div class="kicker">Measures of centre and spread · MA4-DAT-C-02</div>
+  <h2>What was a typical margin?</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card"><div class="small" style="margin-bottom:.4em">Margins, R1 to R8:</div><div class="nums">2 · 3 · −3 · 2 · −1 · 3 · 2 · 4</div></div>
+    <div class="card step"><div class="small" style="margin-bottom:.4em">In order (negatives first):</div><div class="nums" id="sortedNums"></div></div>
+    <div class="statgrid">
+      <div class="stat step"><b>Mean</b><div class="v">1.5</div><div class="w">2 + 3 − 3 + 2 − 1 + 3 + 2 + 4 = 12<br>12 ÷ 8 = 1.5</div></div>
+      <div class="stat step"><b>Median</b><div class="v">2</div><div class="w">4th and 5th values are 2 and 2</div></div>
+      <div class="stat step"><b>Mode</b><div class="v">2</div><div class="w">2 appears three times</div></div>
+      <div class="stat step"><b>Range</b><div class="v">7</div><div class="w">4 − (−3) = 4 + 3</div></div>
+    </div>
+  </div></div>
+  <aside class="notes"><h4>Margins · 7 min</h4><p>Students calculate on mini whiteboards before each reveal.</p><p>Range with a negative: 4 − (−3) = 7. Show on a number line: the distance from −3 to 4 is 7 steps.</p><p>Check against totals: 156 hits for, 144 against, difference 12 = sum of margins.</p></aside>
+</section>
+
+<!-- 7 BY OPPONENT -->
+<section class="slide" data-title="By opponent">
+  <div class="kicker">Comparing groups with the mean</div>
+  <h2>Who was the toughest opponent?</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:1.2"><div class="card" style="padding:.6em .9em">
+      <table class="guide">
+        <tr><th>Opponent</th><th>Match 1</th><th>Match 2</th><th>Mean margin</th></tr>
+        <tr class="step"><td>Quokkas</td><td>+3</td><td>+3</td><td><b>3</b></td></tr>
+        <tr class="step"><td>Possums</td><td>+2</td><td>+4</td><td><b>3</b></td></tr>
+        <tr class="step"><td>Wombats</td><td>+2</td><td>−1</td><td><b>0.5</b></td></tr>
+        <tr class="step"><td>Echidnas</td><td>−3</td><td>+2</td><td><b>−0.5</b></td></tr>
+      </table></div></div>
+    <div class="col">
+      <div class="card step">The <b>Echidnas</b> have the lowest mean margin, −0.5.<br>Over two matches they out-hit the Kangaroos by 1.</div>
+      <div class="card tint step">Is two matches enough to decide?<br>What other data would help?</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>By opponent · 5 min</h4><p>Echidnas: (−3 + 2) ÷ 2 = −1 ÷ 2 = −0.5.<br>Wombats: (2 − 1) ÷ 2 = 0.5.</p><p>Discussion: two matches is a very small sample. The Wombats also beat the Kangaroos once. This is Panel 5 on the worksheet.</p></aside>
+</section>
+
+<!-- 8 I DO -->
+<section class="slide" data-title="I Do: Panel 1">
+  <div class="kicker">I Do · Worksheet Panel 1 · copy with me</div>
+  <h2>Panel 1: a column graph above and below zero</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 28%">
+      <div class="card tint step" style="font-size:.85em"><b>Scale:</b> from −4 to 5.<br>Zero is a bold line, not the bottom of the graph.</div>
+      <div class="card tint step" style="font-size:.85em"><b>Wins</b> go up from zero.</div>
+      <div class="card tint step" style="font-size:.85em"><b>Losses</b> go down from zero.</div>
+      <div class="card tint step" style="font-size:.85em">Add a dashed line at the <b>mean</b>, 1.5.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="idoSvg" viewBox="0 0 800 440" role="img" aria-label="Column graph of winning margins being built step by step"></svg></div>
+      <div class="card step hand" style="font-size:1.05em;padding:.5em 1em">I chose a column graph because the margins are in round order and some are negative.<br>Bars above and below zero show wins and losses at a glance.<br>A sector graph would be less suitable because negative numbers can’t be slices.</div>
+    </div>
+  </div>
+  <aside class="notes"><h4>I Do · 8 min</h4><p>Model on your whiteboard; students copy into Panel 1 (worksheet page 3, axis pre-drawn from −4 to 5). Press → to build: axes and zero line → win bars → loss bars → mean line → title and source → justification.</p></aside>
+</section>
+
+<!-- 9 WE DO -->
+<section class="slide" data-title="We Do: Panel 2">
+  <div class="kicker">We Do · Worksheet Panel 2</div>
+  <h2>Panel 2: the win–loss record</h2>
+  <div class="slide-body">
+    <div class="col" style="flex:0 0 32%">
+      <div class="card"><table class="data"><tr><th>Result</th><th class="n">Matches</th></tr><tr><td>Win</td><td class="n">6</td></tr><tr><td>Loss</td><td class="n">2</td></tr><tr><td><b>Total</b></td><td class="n"><b>8</b></td></tr></table></div>
+      <div class="card" style="padding:.7em .9em"><h3>Class vote</h3><div class="btnrow" id="voteBtns">
+        <button class="tbtn" data-t="sector">Sector</button><button class="tbtn" data-t="divided">Divided bar</button><button class="tbtn" data-t="column">Column</button><button class="tbtn" data-t="line">Line</button></div></div>
+      <div class="card tint step" style="font-size:.82em">The circle on your worksheet has 8 equal parts.<br>One part = one match = 45°.</div>
+    </div>
+    <div class="col">
+      <div class="card chartbox" style="padding:.4em"><svg id="wedoSvg" viewBox="0 0 800 440" role="img" aria-label="Win–loss chart"></svg></div>
+      <div class="verdict" id="wedoVerdict" aria-live="polite"><span class="muted">Vote first, then click your choice.</span></div>
+    </div>
+  </div>
+  <aside class="notes"><h4>We Do · 4 min</h4><p>Wins 6 × 45° = 270°, losses 2 × 45° = 90°.</p></aside>
+</section>
+
+<!-- 10 YOU DO -->
+<section class="slide" data-title="You Do: Panels 3–5">
+  <div class="kicker">You Do · Worksheet pages 4–5</div>
+  <h2>Your turn: choose, draw, calculate, justify</h2>
+  <div class="slide-body">
+    <div class="col">
+      <div class="card"><span class="pill slate">Panel 3</span> <b>Kangaroos v opponents</b>, hits in each round.<br><span class="small">Two groups across 8 rounds. Which graph?</span></div>
+      <div class="card"><span class="pill slate">Panel 4</span> <b>The final ladder</b>: wins for each team.<br><span class="small">Choose your graph and justify it.</span></div>
+      <div class="card"><span class="pill red">Panel 5 · Extension</span> <b>Mean margin against each opponent</b>.<br><span class="small">Graph it, then decide: who was the toughest opponent?</span></div>
+      <div class="btnrow"><button class="tbtn alt" id="sampleBtn" aria-pressed="false">Show sample answers</button></div>
+    </div>
+    <div class="col" id="sampleCol" style="display:none">
+      <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s3" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+      <div style="display:flex;gap:1vw;flex:1;min-height:0">
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s4" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+        <div class="card" style="flex:1;padding:.3em;display:flex"><svg id="s5" viewBox="0 0 800 440" style="width:100%;height:100%"></svg></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><h4>You Do · 10 min</h4><p><b>Panel 3:</b> side-by-side columns or a two-line graph. Opponent hits: 15, 16, 21, 18, 22, 17, 19, 16 (mean 18). Kangaroos mean 19.5.</p><p><b>Panel 4:</b> column graph sorted: Kangaroos 6, Echidnas 5, Wombats 4, Possums 3, Quokkas 2 (total 20 = 20 matches).</p><p><b>Panel 5:</b> column graph above and below zero: Quokkas 3, Possums 3, Wombats 0.5, Echidnas −0.5.</p></aside>
+</section>
+
+<!-- 11 EXIT -->
+<section class="slide" data-title="Exit check">
+  <div class="kicker">Exit check · mini whiteboards</div><h2>Show me: which letter?</h2>
+  <div class="slide-body" style="gap:1.4vw">
+    <div class="col card"><h3>1. Margins: −3, −1, 2, 2, 2, 3, 3, 4. What is the range?</h3><div class="mcq">
+      <button class="opt" data-result="wrong" data-msg="✗ Range = highest − lowest = 4 − (−3).">A. 1</button>
+      <button class="opt" data-result="wrong" data-msg="✗ That is 4 − 0. The lowest value is −3.">B. 4</button>
+      <button class="opt" data-result="right" data-msg="✓ Correct. 4 − (−3) = 4 + 3 = 7.">C. 7</button>
+      <button class="opt" data-result="wrong" data-msg="✗ Count the steps from −3 to 4 on a number line.">D. 8</button></div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>2. Best graph for a record of 6 wins and 2 losses?</h3><div class="mcq">
+      <button class="opt" data-result="wrong" data-msg="✗ A line graph shows change over time.">A. Line graph</button>
+      <button class="opt" data-result="wrong" data-msg="✗ A stem-and-leaf plot needs a list of numbers.">B. Stem-and-leaf plot</button>
+      <button class="opt" data-result="wrong" data-msg="✗ A dot plot shows spread of numerical data.">C. Dot plot</button>
+      <button class="opt" data-result="right" data-msg="✓ Correct. 8 matches make one whole: 6 parts win, 2 parts loss.">D. Sector graph</button></div><div class="fb" aria-live="polite"></div></div>
+    <div class="col card"><h3>3. Against one team the Kangaroos lost by 3, then won by 2. Mean margin?</h3><div class="mcq">
+      <button class="opt" data-result="wrong" data-msg="✗ (−3 + 2) = −1, then divide by 2.">A. −1</button>
+      <button class="opt" data-result="right" data-msg="✓ Correct. (−3 + 2) ÷ 2 = −1 ÷ 2 = −0.5.">B. −0.5</button>
+      <button class="opt" data-result="wrong" data-msg="✗ A loss is a negative margin: −3, not 3.">C. 0.5</button>
+      <button class="opt" data-result="wrong" data-msg="✗ That treats the loss as positive: (3 + 2) ÷ 2.">D. 2.5</button></div><div class="fb" aria-live="polite"></div></div>
+  </div>
+  <aside class="notes"><h4>Exit · 3 min</h4><p>Answers: C, D, B.</p></aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="About the data">
+  <div class="kicker">About the data</div><h2>This season is fictional</h2>
+  <div class="slide-body"><div class="col">
+    <div class="card">The Trinity Red Kangaroos, their opponents and every result were made up for this lesson.<br>They match the earlier Red Kangaroos lessons: 156 hits for across 8 rounds.</div>
+    <div class="card tint"><b>Take it further:</b> collect your own house or class competition results and work out each team’s mean margin.</div>
+  </div></div>
+  <aside class="notes"><h4>Reference data</h4><p>R1 Wombats 17–15 · R2 Quokkas 19–16 · R3 Echidnas 18–21 · R4 Possums 20–18 · R5 Wombats 21–22 · R6 Quokkas 20–17 · R7 Echidnas 21–19 · R8 Possums 20–16.<br>Totals 156–144. Ladder wins: Kangaroos 6, Echidnas 5, Wombats 4, Possums 3, Quokkas 2.</p></aside>
+</section>
+</div>
+
+<div id="notesPanel" role="region" aria-label="Teacher notes"></div>
+<nav class="nav" aria-label="Slide controls">
+  <button class="navbtn" id="prevBtn" aria-label="Previous">◀</button><span class="count" id="count"></span><button class="navbtn" id="nextBtn" aria-label="Next">▶</button>
+  <select class="navbtn" id="jump" aria-label="Jump to slide"></select><div class="prog"><i id="progBar"></i></div>
+  <button class="navbtn" id="notesBtn" aria-pressed="false">Notes (N)</button>
+  <select class="navbtn" id="fontSel" aria-label="Font"><option value="">Nunito Sans</option><option value="f-system">System</option><option value="f-atkinson">Atkinson Hyperlegible</option></select>
+  <button class="navbtn" id="fsBtn">Fullscreen (F)</button>
+</nav>
+
+<script>
+/* ---------- FICTIONAL DATA (verified in Python; matches earlier Red Kangaroos lessons) ---------- */
+var C={red:'#A3262A',slate:'#3D5A80',amber:'#E89C2F',forest:'#4A7C59',terra:'#C1614F',ink:'#22303F',ink2:'#4A5866',muted:'#6B7480',grid:'#E3DBD0',axis:'#8A8F96',track:'#E6E1DA',poor:'#A33A2B'};
+var ROUNDS=['R1','R2','R3','R4','R5','R6','R7','R8'];
+var OPP=['Wombats','Quokkas','Echidnas','Possums','Wombats','Quokkas','Echidnas','Possums'];
+var KH=[17,19,18,20,21,20,21,20],OH=[15,16,21,18,22,17,19,16];
+var MARG=KH.map(function(k,i){return k-OH[i];});
+var LADDER_T=['Kangaroos','Echidnas','Wombats','Possums','Quokkas'],LADDER=[6,5,4,3,2];
+function fm(v){return (v<0?'−':'')+Math.abs(v);}
+var DS={
+  A:{label:'Kangaroos v opponents',title:'Hits per round: Kangaroos v opponents',cats:ROUNDS,series:[{name:'Kangaroos',vals:KH,col:C.red},{name:'Opponents',vals:OH,col:C.slate}],yMin:0,yMax:25,yStep:5,yLab:'Hits',xLab:'Round'},
+  B:{label:'Win–loss record',title:'Win–loss record, 8 matches',cats:['Wins','Losses'],series:[{name:'Matches',vals:[6,2]}],cols:[C.red,C.slate],yMin:0,yMax:8,yStep:2,yLab:'Matches',cat:true},
+  C:{label:'Winning margins',title:'Winning margin each round',cats:ROUNDS,series:[{name:'Margin',vals:MARG}],signed:true,yMin:-4,yMax:5,yStep:1,yLab:'Margin (hits)',xLab:'Round',dotMin:-4,dotMax:5},
+  D:{label:'Final ladder: wins',title:'Final ladder: wins per team',cats:LADDER_T,series:[{name:'Wins',vals:LADDER}],cols:[C.red,C.slate,C.slate,C.slate,C.slate],yMin:0,yMax:8,yStep:2,yLab:'Wins',cat:true},
+  E:{label:'Mean margin by opponent',title:'Kangaroos’ mean margin against each opponent',cats:['Quokkas','Possums','Wombats','Echidnas'],series:[{name:'Mean margin',vals:[3,3,0.5,-0.5]}],signed:true,yMin:-1,yMax:4,yStep:1,yLab:'Mean margin (hits)',cat:true}
+};
+var TYPES=[['column','Column'],['line','Line'],['sector','Sector'],['divided','Divided bar'],['dot','Dot plot']];
+var V={
+ A:{column:['best','Side-by-side columns compare the two teams in every round.<br>Rounds where the slate column is taller are losses.'],
+    line:['best','Also excellent: two lines across the season.<br>Where the lines cross, the Kangaroos lost.'],
+    sector:['poor','Sixteen numbers that aren’t parts of one whole.'],divided:['poor','Two bars of eight segments hide the round-by-round story.'],
+    dot:['poor','Two datasets on one dot plot get confusing, and the round order is lost.']},
+ B:{column:['ok','Two columns are easy to compare, but it hides the “out of 8 matches” whole.'],
+    line:['poor','Wins and losses aren’t in time order. A line between them means nothing.'],
+    sector:['best','8 matches make one whole: 6 slices win, 2 slices loss.<br>Each match is 45°.'],
+    divided:['best','Also excellent: a bar of 8 equal parts, 6 shaded for wins.'],
+    dot:['ok','One dot per match stacked above Win or Loss. Works, but a sector shows the whole better.']},
+ C:{column:['best','Bars above zero are wins, bars below zero are losses.<br>The size of each bar is the margin.'],
+    line:['ok','Rounds are in order, so a line works, but bars above and below zero make wins and losses clearer.'],
+    sector:['poor','Negative numbers can’t be slices of a circle.'],divided:['poor','Negative numbers can’t be parts of a whole.'],
+    dot:['ok','Shows the spread of margins and makes the median easy to find, but loses the round order.']},
+ D:{column:['best','Five separate teams, sorted from most to fewest wins: exactly how a ladder reads.'],
+    line:['poor','Teams have no order in time. A line suggests a trend that doesn’t exist.'],
+    sector:['ok','Shows each team’s share of the 20 wins, but a ladder is about ranking, not shares.'],
+    divided:['ok','Shows shares of the 20 wins, but ranking is harder to read.'],
+    dot:['ok','One dot per win stacked above each team. Works as a pictogram-style ladder.']},
+ E:{column:['best','Four opponents compared, with a bar below zero for the Echidnas.'],
+    line:['poor','Opponents have no order. A line joining them means nothing.'],
+    sector:['poor','A negative mean can’t be a slice, and these aren’t parts of a whole.'],divided:['poor','A negative mean can’t be part of a whole.'],
+    dot:['poor','Only four values, each for a different team. A column graph names each one clearly.']}
+};
+var VLAB={best:'✓ Best choice',ok:'≈ Could work',poor:'✗ Poor choice'};
+
+/* ---------- SVG helpers ---------- */
+var NS='http://www.w3.org/2000/svg';
+function el(tag,a,p,txt){var e=document.createElementNS(NS,tag);for(var k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;if(p)p.appendChild(e);return e;}
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild);}
+function T(s,x,y,t,o){var a={x:x,y:y,'font-size':15,fill:C.ink};for(var k in o)a[k]=o[k];return el('text',a,s,t);}
+function title(s,t){T(s,14,28,t,{'font-size':21,'font-weight':800,'font-family':'Nunito, sans-serif'});}
+function src(s){T(s,14,432,'Fictional data · Trinity Red Kangaroos season',{'font-size':13,fill:C.muted});}
+function legend(s,items,x,y){items.forEach(function(it,i){el('rect',{x:x+i*130,y:y-12,width:16,height:16,rx:3,fill:it.col},s);T(s,x+i*130+22,y+1,it.name,{'font-size':16});});}
+function msg(s,ds,a,b){title(s,ds.title);T(s,400,215,a,{'text-anchor':'middle','font-size':22,'font-weight':800,fill:C.terra});T(s,400,250,b,{'text-anchor':'middle','font-size':17,fill:C.ink2});src(s);}
+function frame(s,ds,L,Tp,W,H){var Y=function(v){return Tp+H-(v-ds.yMin)/(ds.yMax-ds.yMin)*H;};
+  for(var v=ds.yMin;v<=ds.yMax+1e-9;v+=ds.yStep){var y=Y(v);el('line',{x1:L,x2:L+W,y1:y,y2:y,stroke:v===0?C.ink:C.grid,'stroke-width':v===0?2.5:1},s);T(s,L-8,y+5,fm(v),{'text-anchor':'end','font-size':14,fill:C.ink2});}
+  el('line',{x1:L,x2:L,y1:Tp,y2:Tp+H,stroke:C.axis,'stroke-width':2},s);
+  el('text',{'font-size':14,fill:C.ink2,'text-anchor':'middle',transform:'translate(18,'+(Tp+H/2)+') rotate(-90)'},s,ds.yLab);
+  if(ds.xLab)T(s,L+W/2,Tp+H+48,ds.xLab,{'text-anchor':'middle','font-size':14,fill:C.ink2});return Y;}
+function catLabels(s,ds,L,Tp,H,gw){ds.cats.forEach(function(c,i){T(s,L+gw*(i+.5),Tp+H+24,c,{'text-anchor':'middle','font-size':15});});}
+function rColumn(s,ds){var L=90,Tp=60,W=690,H=290,n=ds.cats.length,m=ds.series.length;title(s,ds.title);var Y=frame(s,ds,L,Tp,W,H),gw=W/n,bw=Math.min(70,gw*.74/m),lab=n*m<=10;
+  ds.series.forEach(function(se,si){se.vals.forEach(function(v,i){var x=L+gw*i+(gw-bw*m-2*(m-1))/2+si*(bw+2),y0=Y(0),y=Y(v),top=Math.min(y,y0),h=Math.abs(y-y0);
+    var col=ds.signed?(v<0?C.slate:C.red):(se.col||(ds.cols?ds.cols[i]:C.slate));var r=el('rect',{x:x,y:top,width:bw,height:Math.max(h,1),rx:3,fill:col},s);el('title',{},r,ds.cats[i]+(m>1?' ('+se.name+')':'')+': '+fm(v));
+    if(lab)T(s,x+bw/2,v<0?y+20:y-8,fm(v),{'text-anchor':'middle','font-weight':700});});});
+  if(ds.signed)ds.cats.forEach(function(c,i){T(s,L+gw*(i+.5),Tp+H+24,c,{'text-anchor':'middle','font-size':15});});else catLabels(s,ds,L,Tp,H,gw);
+  if(m>1)legend(s,ds.series,520,Tp-16);src(s);}
+function rLine(s,ds){var L=90,Tp=60,W=690,H=290,n=ds.cats.length;title(s,ds.title);var Y=frame(s,ds,L,Tp,W,H),gw=W/n;
+  ds.series.forEach(function(se){var col=se.col||C.red,pts=se.vals.map(function(v,i){return [L+gw*(i+.5),Y(v)];});
+    el('polyline',{points:pts.map(function(p){return p.join(',');}).join(' '),fill:'none',stroke:col,'stroke-width':3,'stroke-linejoin':'round'},s);
+    pts.forEach(function(p,i){var c=el('circle',{cx:p[0],cy:p[1],r:6,fill:col,stroke:'#fff','stroke-width':2},s);el('title',{},c,ds.cats[i]+': '+fm(se.vals[i]));
+      if(ds.series.length===1)T(s,p[0],p[1]-14,fm(se.vals[i]),{'text-anchor':'middle','font-weight':700});});});
+  catLabels(s,ds,L,Tp,H,gw);if(ds.series.length>1)legend(s,ds.series,520,Tp-16);src(s);}
+function arc(cx,cy,r,a0,a1){var p0=[cx+r*Math.sin(a0),cy-r*Math.cos(a0)],p1=[cx+r*Math.sin(a1),cy-r*Math.cos(a1)];return 'M'+cx+','+cy+' L'+p0[0]+','+p0[1]+' A'+r+','+r+' 0 '+((a1-a0)>Math.PI?1:0)+',1 '+p1[0]+','+p1[1]+' Z';}
+function hasNeg(ds){return ds.series.some(function(se){return se.vals.some(function(v){return v<0;});});}
+function pal(ds,n){return ds.cols&&!ds.signed&&ds.series.length===1?(ds.cats.length===2?ds.cols:[C.red,C.slate,'#5876A0','#7A96BC','#A3B8D3']):['#24395A','#3D5A80','#5876A0','#7A96BC','#A3B8D3','#A3262A','#C1614F','#E89C2F'].slice(0,n);}
+function rSector(s,ds){if(hasNeg(ds)){msg(s,ds,'Negative numbers can’t be slices.','A sector graph needs parts that add to one whole.');return;}
+  if(ds.series.length>1){msg(s,ds,'Sixteen values that aren’t parts of one whole.','Try side-by-side columns or two lines.');return;}
+  title(s,ds.title);var v=ds.series[0].vals,sum=v.reduce(function(a,b){return a+b;},0),cols=pal(ds,v.length),a=0;
+  v.forEach(function(x,i){var a1=a+x/sum*2*Math.PI;el('path',{d:arc(230,235,160,a,a1),fill:cols[i],stroke:'#fff','stroke-width':2},s);a=a1;});
+  ds.cats.forEach(function(c,i){var y=(ds.cats.length>5?80:140)+i*(ds.cats.length>5?36:42);el('rect',{x:450,y:y-13,width:18,height:18,rx:3,fill:cols[i]},s);T(s,478,y+2,c+'  '+v[i],{'font-size':17});});src(s);}
+function rDivided(s,ds){if(hasNeg(ds)){msg(s,ds,'Negative numbers can’t be parts of a whole.','Try a column graph with a zero line.');return;}
+  title(s,ds.title);var L=60,W=680;
+  ds.series.forEach(function(se,si){var sum=se.vals.reduce(function(a,b){return a+b;},0),x=L,y=90+si*105,cols=ds.series.length>1?null:pal(ds,se.vals.length);
+    if(ds.series.length>1)T(s,L,y-10,se.name,{'font-size':16,'font-weight':800});
+    se.vals.forEach(function(v,i){var w=v/sum*W,col=cols?cols[i]:(i%2?se.col:'#7A96BC');el('rect',{x:x,y:y,width:Math.max(w-2,.5),height:66,fill:cols?cols[i]:se.col,opacity:cols?1:(0.55+0.45*(i%2))},s);
+      if(w>44)T(s,x+w/2,y+40,v,{'text-anchor':'middle','font-weight':800,fill:'#fff'});x+=w;});});
+  if(ds.series.length===1){var cols=pal(ds,ds.cats.length);ds.cats.forEach(function(c,i){var x=L+(i%5)*136,y=210;el('rect',{x:x,y:y-13,width:18,height:18,rx:3,fill:cols[i]},s);T(s,x+26,y+2,c);});}
+  else T(s,L,330,'Each segment is one round, R1 to R8',{fill:C.ink2});
+  src(s);}
+function rDot(s,ds,key){if(ds.series.length>1){msg(s,ds,'Two datasets on one dot plot get confusing.','Try side-by-side columns or two lines.');return;}
+  title(s,ds.title);var L=70,R=760,base=330;
+  if(ds.cat){var n=ds.cats.length,gw=(R-L)/n;el('line',{x1:L,x2:R,y1:base,y2:base,stroke:C.ink,'stroke-width':2},s);
+    ds.series[0].vals.forEach(function(v,i){var cx=L+gw*(i+.5);if(v<0||v%1){T(s,cx,base-20,fm(v),{'text-anchor':'middle','font-weight':800,fill:C.terra});}else for(var k=0;k<v;k++)el('circle',{cx:cx,cy:base-20-k*34,r:14,fill:(ds.cols&&ds.cols[i])||C.slate},s);
+      T(s,cx,base+28,ds.cats[i],{'text-anchor':'middle','font-size':16});});
+    T(s,400,base+56,key==='B'?'Each dot = 1 match':(key==='D'?'Each dot = 1 win':'Can’t draw half a dot or a negative number of dots'),{'text-anchor':'middle','font-size':14,fill:C.ink2});src(s);return;}
+  var mn=ds.dotMin,mx=ds.dotMax,sc=(R-L)/(mx-mn),cnt={};el('line',{x1:L,x2:R,y1:base,y2:base,stroke:C.ink,'stroke-width':2},s);
+  for(var t=mn;t<=mx;t++){var x=L+(t-mn)*sc;el('line',{x1:x,x2:x,y1:base,y2:base+12,stroke:C.ink,'stroke-width':t===0?3:2},s);T(s,x,base+34,fm(t),{'text-anchor':'middle','font-size':16,'font-weight':t===0?800:400});}
+  T(s,(L+R)/2,base+60,ds.yLab,{'text-anchor':'middle','font-size':14,fill:C.ink2});
+  ds.series[0].vals.forEach(function(v,i){cnt[v]=(cnt[v]||0)+1;el('circle',{cx:L+(v-mn)*sc,cy:base-18-(cnt[v]-1)*34,r:14,fill:v<0?C.slate:C.red,stroke:'#fff','stroke-width':2},s);});src(s);}
+function render(s,key,type){clear(s);({column:rColumn,line:rLine,sector:rSector,divided:rDivided,dot:rDot})[type](s,DS[key],key);s.setAttribute('aria-label',DS[key].title+' as a '+type+' graph');}
+function vtxt(v){return '<b class="'+v[0]+'">'+VLAB[v[0]]+'</b><br>'+v[1];}
+
+/* ---------- board + results table ---------- */
+(function(){var b=document.getElementById('board');ROUNDS.forEach(function(r,i){var d=document.createElement('div');d.className='tile step '+(MARG[i]>0?'win':'loss');
+  d.innerHTML='<div class="r">'+r+' · v '+OPP[i]+'</div><div class="sc">'+KH[i]+' – '+OH[i]+'</div><div class="res">'+(MARG[i]>0?'WIN':'LOSS')+'</div>';b.appendChild(d);});
+  var t=document.getElementById('resTable');ROUNDS.forEach(function(r,i){var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+r+'</td><td>'+OPP[i]+'</td><td class="n">'+KH[i]+'</td><td class="n">'+OH[i]+'</td><td class="n step">'+(MARG[i]>0?'W':'L')+'</td><td class="n step"><b>'+(MARG[i]>0?'+':'')+fm(MARG[i])+'</b></td>';t.appendChild(tr);});
+  var sn=document.getElementById('sortedNums');MARG.slice().sort(function(a,b){return a-b;}).forEach(function(v,i){var sp=document.createElement('span');sp.textContent=fm(v);if(i===3||i===4)sp.className='mid';else if(v===2)sp.className='mode';else if(v<0)sp.className='neg';sn.appendChild(sp);});})();
+
+/* ---------- Graph Swap ---------- */
+var cur={ds:'B',type:'line'};
+function el2(tag,a,txt){var e=document.createElement(tag);for(var k in a)e.setAttribute(k,a[k]);if(txt)e.textContent=txt;return e;}
+(function(){var dsb=document.getElementById('dsBtns'),tb=document.getElementById('typeBtns');
+  ['B','C','A','D','E'].forEach(function(k){var b=el2('button',{class:'tbtn','data-k':k},DS[k].label);dsb.appendChild(b);b.onclick=function(){cur.ds=k;swap();};});
+  TYPES.forEach(function(t){var b=el2('button',{class:'tbtn','data-t':t[0]},t[1]);tb.appendChild(b);b.onclick=function(){cur.type=t[0];swap();};});
+  document.getElementById('verdictBtn').onclick=function(){showVerdict(true);};})();
+function swap(){render(document.getElementById('swapSvg'),cur.ds,cur.type);
+  document.querySelectorAll('#dsBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.k===cur.ds);});
+  document.querySelectorAll('#typeBtns .tbtn').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.t===cur.type);});showVerdict(false);}
+function showVerdict(on){var vb=document.getElementById('verdictBox');document.getElementById('verdictBtn').setAttribute('aria-pressed',on);
+  if(!on){vb.className='verdict';vb.innerHTML='<span class="muted">Discuss: does this graph suit the data? Why or why not?</span>';return;}
+  var v=V[cur.ds][cur.type];vb.className='verdict '+v[0];vb.innerHTML=vtxt(v);}
+swap();
+
+/* ---------- We Do ---------- */
+document.querySelectorAll('#voteBtns .tbtn').forEach(function(b){b.onclick=function(){document.querySelectorAll('#voteBtns .tbtn').forEach(function(x){x.setAttribute('aria-pressed',x===b);});
+  render(document.getElementById('wedoSvg'),'B',b.dataset.t);var v=V.B[b.dataset.t],vb=document.getElementById('wedoVerdict');vb.className='verdict '+v[0];vb.innerHTML=vtxt(v);};});
+T(document.getElementById('wedoSvg'),400,220,'Which graph suits this data best?',{'text-anchor':'middle','font-size':24,fill:C.muted,'font-weight':700});
+
+/* ---------- You Do samples ---------- */
+document.getElementById('sampleBtn').onclick=function(){var on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);
+  document.getElementById('sampleCol').style.display=on?'flex':'none';if(on){render(document.getElementById('s3'),'A','column');render(document.getElementById('s4'),'D','column');render(document.getElementById('s5'),'E','column');}};
+
+/* ---------- I Do build ---------- */
+(function(){var s=document.getElementById('idoSvg'),ds=DS.C,L=90,Tp=60,W=690,H=300,gw=W/8,bw=56;
+  var Y=function(v){return Tp+H-(v-ds.yMin)/(ds.yMax-ds.yMin)*H;};
+  var g1=el('g',{class:'step'},s);for(var v=-4;v<=5;v++){var y=Y(v);el('line',{x1:L,x2:L+W,y1:y,y2:y,stroke:v===0?C.ink:C.grid,'stroke-width':v===0?3:1},g1);T(g1,L-8,y+5,fm(v),{'text-anchor':'end','font-size':14,fill:C.ink2,'font-weight':v===0?800:400});}
+  el('line',{x1:L,x2:L,y1:Tp,y2:Tp+H,stroke:C.ink,'stroke-width':2},g1);el('text',{'font-size':14,fill:C.ink2,'text-anchor':'middle',transform:'translate(18,'+(Tp+H/2)+') rotate(-90)'},g1,'Margin (hits)');
+  ROUNDS.forEach(function(r,i){T(g1,L+gw*(i+.5),Tp+H+24,r,{'text-anchor':'middle'});});
+  var gw1=el('g',{class:'step'},s),gl=el('g',{class:'step'},s);
+  MARG.forEach(function(m,i){var x=L+gw*i+(gw-bw)/2,y0=Y(0),y=Y(m),g=m>0?gw1:gl;el('rect',{x:x,y:Math.min(y,y0),width:bw,height:Math.abs(y-y0),rx:3,fill:m>0?C.red:C.slate},g);T(g,x+bw/2,m>0?y-8:y+20,(m>0?'+':'')+fm(m),{'text-anchor':'middle','font-weight':700});});
+  var gm=el('g',{class:'step'},s),ym=Y(1.5);el('line',{x1:L,x2:L+W,y1:ym,y2:ym,stroke:C.forest,'stroke-width':3,'stroke-dasharray':'9 7'},gm);T(gm,L+gw*4.5,ym-10,'mean 1.5',{'text-anchor':'middle','font-weight':800,fill:C.forest});
+  var gt=el('g',{class:'step'},s);title(gt,'Red Kangaroos: winning margin each round');src(gt);})();
+
+/* ---------- MCQ ---------- */
+function mcqAns(b){var box=b.parentNode,fb=box.nextElementSibling;
+  if(b.dataset.result==='right'){box.querySelectorAll('.opt').forEach(function(o){o.classList.remove('wrong');});b.classList.add('right');}
+  else{if(box.querySelector('.opt.right'))return;b.classList.add('wrong');}
+  fb.innerHTML=b.dataset.msg;fb.style.color=b.dataset.result==='right'?'var(--good)':'var(--poor)';}
+document.querySelectorAll('.opt').forEach(function(b){b.addEventListener('click',function(){mcqAns(this);});});
+
+/* ---------- nav ---------- */
+var slides=[].slice.call(document.querySelectorAll('.slide')),idx=0,notesOpen=false,jump=document.getElementById('jump');
+slides.forEach(function(s,i){var o=document.createElement('option');o.value=i;o.textContent=(i+1)+'. '+s.dataset.title.replace('&amp;','&');jump.appendChild(o);});
+function steps(){return [].slice.call(slides[idx].querySelectorAll('.step'));}
+function go(i,fromBack){if(i<0||i>=slides.length)return;slides[idx].classList.remove('active');idx=i;slides[idx].classList.add('active');
+  steps().forEach(function(st){st.classList.toggle('shown',!!fromBack);});
+  document.getElementById('count').textContent=(idx+1)+' / '+slides.length;jump.value=idx;
+  document.getElementById('progBar').style.width=((idx+1)/slides.length*100)+'%';
+  var n=slides[idx].querySelector('.notes');document.getElementById('notesPanel').innerHTML=n?n.innerHTML:'<p>No notes.</p>';
+  try{localStorage.setItem('dat-results-slide',idx);}catch(e){}}
+function next(){var h=steps().filter(function(s){return !s.classList.contains('shown');});if(h.length)h[0].classList.add('shown');else go(idx+1);}
+function prev(){var sh=steps().filter(function(s){return s.classList.contains('shown');});if(sh.length)sh[sh.length-1].classList.remove('shown');else go(idx-1,true);}
+document.getElementById('nextBtn').onclick=next;document.getElementById('prevBtn').onclick=prev;jump.onchange=function(){go(+jump.value);};
+function toggleNotes(){notesOpen=!notesOpen;document.getElementById('notesPanel').classList.toggle('open',notesOpen);document.getElementById('notesBtn').setAttribute('aria-pressed',notesOpen);}
+document.getElementById('notesBtn').onclick=toggleNotes;
+function fs(){if(!document.fullscreenElement){document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}else document.exitFullscreen();}
+document.getElementById('fsBtn').onclick=fs;
+document.addEventListener('keydown',function(e){var t=e.target.tagName;if(t==='SELECT'||t==='INPUT'||t==='TEXTAREA')return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next();}
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev();}
+  else if(e.key==='n'||e.key==='N')toggleNotes();else if(e.key==='f'||e.key==='F')fs();
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(slides.length-1);});
+var fsel=document.getElementById('fontSel');fsel.onchange=function(){document.body.className=fsel.value;try{localStorage.setItem('dat-results-font',fsel.value);}catch(e){}};
+try{var f=localStorage.getItem('dat-results-font');if(f){fsel.value=f;document.body.className=f;}}catch(e){}
+var start=0;try{start=+(localStorage.getItem('dat-results-slide')||0);}catch(e){}
+slides[0].classList.add('active');go(start>=0&&start<slides.length?start:0);
+</script>
+</body>
+</html>
