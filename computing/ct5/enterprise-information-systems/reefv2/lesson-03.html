@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lesson 3: Runoff in a Database — Reef Data</title>
+<link rel="stylesheet" href="../../../assets/css/ct-shared.css">
+<link rel="stylesheet" href="../../../assets/css/ct-lessons.css">
+<link rel="stylesheet" href="reef.css">
+<style>
+  :root {
+    --accent:          #92400e;
+    --accent-dim:      #78350f;
+    --accent-bright:   #854d0e;
+    --accent-surface:  rgba(245, 158, 11, 0.14);
+    --accent-border:   rgba(180, 83, 9, 0.35);
+  }
+  .cpd-e-note { display: block; margin-top: var(--space-2); font-size: var(--text-xs); font-style: italic; color: var(--color-text-muted); }
+</style>
+</head>
+<body class="font-nunito">
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="ct-nav">
+  <a class="ct-logo" href="index.html">ct<span>::</span><em>reef</em></a>
+  <div class="ct-nav-context">
+    <span class="ct-nav-course">Analysing Data</span>
+    <span class="ct-nav-sep">/</span>
+    <span>Lesson 3</span>
+  </div>
+  <div class="ct-nav-actions">
+    <button type="button" class="rf-present-btn" title="Present (P)">&#9654; Present</button>
+    <a class="ct-nav-btn" href="data/reef.db">reef.db</a>
+    <div class="font-toggle" role="group" aria-label="Font preference">
+      <button class="font-btn" data-font="nunito" aria-pressed="true">Aa</button>
+      <button class="font-btn" data-font="system">Aa</button>
+      <button class="font-btn" data-font="dyslexia">Aa</button>
+    </div>
+  </div>
+</nav>
+
+<div class="ct-breadcrumb">
+  <ol>
+    <li><a href="index.html">Reef Data</a></li>
+    <li aria-current="page">Lesson 3 · Runoff in a database</li>
+  </ol>
+</div>
+
+<div class="page-wrap">
+
+  <aside class="ct-sidebar">
+    <div class="paper-binder-holes" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">On this page</p>
+      <nav class="sidebar-toc" id="sidebar-toc">
+        <a href="#intro">Learning intentions</a>
+        <a href="#why">Why a database?</a>
+        <a href="#select">First queries</a>
+        <a href="#group">Count and group</a>
+        <a href="#join">Join two tables</a>
+        <a href="#quality">Find and fix bad data</a>
+        <a href="#check">Quick check</a>
+        <a href="#report">Your query report</a>
+        <a href="#compare">Spreadsheet or database?</a>
+        <a href="#cpd">How this is graded</a>
+        <a href="#reflect">Reflection</a>
+      </nav>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Phase</p>
+      <span class="phase-pill phase-produce">Producing &amp; Implementing</span>
+      <span class="phase-pill phase-test" style="margin-top: var(--space-2);">Testing &amp; Evaluating</span>
+    </div>
+    <div class="sidebar-section">
+      <p class="sidebar-label">Tip</p>
+      <p style="font-size: var(--text-xs); color: var(--color-text-secondary);">Press <strong>Ctrl + Enter</strong> in a query box to run it. Every box on this page shares one database, so changes carry through. <em>Reset database</em> restores the original.</p>
+    </div>
+  </aside>
+
+  <main class="main-col" id="main" tabindex="-1">
+
+    <!-- ═══ 1 ═══ -->
+    <header class="page-hero" id="intro" data-slide="Learning intentions">
+      <p class="page-eyebrow">Lesson 3 of 3 · Enterprise information systems: Analysing data</p>
+      <h1>Runoff in a database</h1>
+      <p class="page-intro">Same river data, different tool. This time it is stored as two linked tables in a relational database, and you ask questions in SQL. You’ll find out what a database does better than a spreadsheet, and use it to catch three data problems hiding in nearly 2,000 rows.</p>
+      <div class="outcome-tags">
+        <span class="outcome-tag">CT5-DAT-01</span>
+        <span class="outcome-tag">CT5-DAT-02</span>
+        <span class="outcome-tag">CT5-THI-01</span>
+        <span class="outcome-tag">CT5-COM-01</span>
+      </div>
+      <div class="rf-intent">
+        <div class="rf-intent__box">
+          <p class="rf-intent__label">Learning intentions</p>
+          <p class="rf-intent__source">From the syllabus: Enterprise information systems — Analysing data</p>
+          <p>We are learning to:</p>
+          <ul><li>model entities and their attributes using structured data, and their relationships using relational data</li><li>analyse data in a relational database using queries</li><li>load, insert and update data in a database</li><li>compare the usability of a spreadsheet and a database to analyse the same dataset</li></ul>
+        </div>
+        <div class="rf-intent__box rf-intent__box--sc">
+          <p class="rf-intent__label">Success criteria</p>
+          <p>I can:</p>
+          <ul><li>identify the primary key and foreign key that model the relationship between sites and samples</li><li>write queries using SELECT, WHERE, ORDER BY, GROUP BY and JOIN</li><li>validate data with queries, then correct it using UPDATE, DELETE and INSERT</li><li>compare a spreadsheet and a database for the same task, using evidence from Lessons 2 and 3</li></ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ 2 ═══ -->
+    <section class="content-section" id="why" data-slide="Why a database?">
+      <span class="section-phase-tag research"><span class="dot"></span>Worked example <span class="rf-time">4 min</span> <span class="rf-release rf-release--i">I do</span></span>
+      <h2>Why a database?</h2>
+      <p>In Lesson 2, every one of the 1,842 sample rows repeated the site’s full name and river. That is a <strong>flat file</strong>. If a site name changed, you would have to fix it in more than 200 places, and miss some.</p>
+      <p>A <strong>relational database</strong> stores each fact once and links tables with a <strong>key</strong>. <span class="rf-booklet">Booklet p. 8</span></p>
+      <div class="rf-er" role="img" aria-label="Two tables: sites, with primary key site_id, and samples, with foreign key site_id linking each sample to one site. One site has many samples.">
+        <div class="rf-er__table">
+          <h4>sites (9 rows)</h4>
+          <ul>
+            <li>🔑 site_id <span class="muted">TEXT, primary key</span></li>
+            <li>site_name</li>
+            <li>river</li>
+            <li>land_use</li>
+            <li>din_trend_pct</li>
+            <li>ss_trend_pct</li>
+          </ul>
+        </div>
+        <div class="rf-er__link">one site<br>── has many ──▶<br>samples</div>
+        <div class="rf-er__table">
+          <h4>samples (1,843 rows)</h4>
+          <ul>
+            <li>🔑 sample_id <span class="muted">INTEGER, primary key</span></li>
+            <li>🔗 site_id <span class="muted">foreign key → sites</span></li>
+            <li>sample_date</li>
+            <li>year</li>
+            <li>din_mgl</li>
+            <li>ss_mgl</li>
+          </ul>
+        </div>
+      </div>
+      <div class="info-box"><strong>Same data as Lesson 2:</strong> the sites are real (James et al. 2026); the samples are simulated to follow each site’s published trend. Three data problems have been planted for you to find.</div>
+    </section>
+
+    <!-- ═══ 3 ═══ -->
+    <section class="content-section" id="select" data-slide="First queries">
+      <span class="section-phase-tag produce"><span class="dot"></span>SELECT, WHERE, ORDER BY <span class="rf-time">6 min</span> <span class="rf-release rf-release--we">We do</span></span>
+      <h2>First queries</h2>
+      <p>Run each query, then change one thing and run it again.</p>
+      <div class="rf-sql" data-rf-sql data-reset data-label="1. Show the whole sites table" data-query="SELECT * FROM sites;"></div>
+      <div class="rf-sql" data-rf-sql data-label="2. Filter rows with WHERE (try 'Burdekin')" data-query="SELECT site_name, land_use
+FROM sites
+WHERE river = 'Tully';"></div>
+      <div class="rf-sql" data-rf-sql data-label="3. Sort with ORDER BY: which site improved fastest for nitrogen?" data-query="SELECT site_id, din_trend_pct
+FROM sites
+ORDER BY din_trend_pct;"></div>
+    </section>
+
+    <!-- ═══ 4 ═══ -->
+    <section class="content-section" id="group" data-slide="Count and group">
+      <span class="section-phase-tag produce"><span class="dot"></span>Aggregate <span class="rf-time">6 min</span> <span class="rf-release rf-release--we">We do</span></span>
+      <h2>Count and group</h2>
+      <p><code>GROUP BY</code> does what a pivot table did in Lesson 2: it squashes many rows into one row per group.</p>
+      <div class="rf-sql" data-rf-sql data-label="4. How many samples in total?" data-query="SELECT COUNT(*) AS total_samples
+FROM samples;"></div>
+      <div class="rf-sql" data-rf-sql data-label="5. One row per site: samples and years monitored" data-query="SELECT site_id,
+       COUNT(*)   AS samples,
+       MIN(year)  AS first_year,
+       MAX(year)  AS last_year
+FROM samples
+GROUP BY site_id;"></div>
+      <div class="rf-sql" data-rf-sql data-label="6. First vs last 10 years for one site (change the site and years)" data-query="SELECT ROUND(AVG(ss_mgl), 1) AS avg_ss_first_10
+FROM samples
+WHERE site_id = 'BUR-INK' AND year BETWEEN 1996 AND 2005;"></div>
+    </section>
+
+    <!-- ═══ 5 ═══ -->
+    <section class="content-section" id="join" data-slide="Join two tables">
+      <span class="section-phase-tag produce"><span class="dot"></span>JOIN <span class="rf-time">6 min</span> <span class="rf-release rf-release--i">I do</span> <span class="rf-release rf-release--we">We do</span></span>
+      <h2>Join two tables</h2>
+      <p><em>Which river carries the most sediment on average?</em> The sediment is in <code>samples</code>; the river name is in <code>sites</code>. Neither table can answer alone. A <code>JOIN</code> matches rows on the key, like the lookup in Lesson 2.</p>
+      <div class="rf-sql" data-rf-sql data-label="7. Average sediment by river" data-query="SELECT sites.river,
+       ROUND(AVG(samples.ss_mgl), 1) AS avg_ss
+FROM samples
+JOIN sites ON samples.site_id = sites.site_id
+GROUP BY sites.river
+ORDER BY avg_ss DESC;"></div>
+      <div class="guided-box">
+        <p class="guided-box__eyebrow">Read the join aloud</p>
+        <p style="margin-bottom:0;">“Take every sample, find the site with the <em>same</em> <code>site_id</code>, keep both rows side by side, then group by river.” Try changing <code>ss_mgl</code> to <code>din_mgl</code>: which river has the most fertiliser nitrogen?</p>
+      </div>
+    </section>
+
+    <!-- ═══ 6 ═══ -->
+    <section class="content-section" id="quality" data-slide="Find and fix bad data">
+      <span class="section-phase-tag test"><span class="dot"></span>Validate and correct <span class="rf-time">7 min</span> <span class="rf-release rf-release--we">We do</span></span>
+      <h2>Find and fix three bad records</h2>
+      <p>Three problems are hiding in <code>samples</code>. Find each one with a query, then fix it.</p>
+      <div class="rf-sql" data-rf-sql data-reset data-label="8. Impossible values: sediment can’t be negative" data-query="SELECT * FROM samples
+WHERE ss_mgl < 0;"></div>
+      <div class="rf-sql" data-rf-sql data-label="9. Missing values: DIN not recorded (NULL is not the same as 0)" data-query="SELECT * FROM samples
+WHERE din_mgl IS NULL;"></div>
+      <div class="rf-sql" data-rf-sql data-label="10. Duplicates: the same site and date entered twice" data-query="SELECT site_id, sample_date, COUNT(*) AS copies
+FROM samples
+GROUP BY site_id, sample_date
+HAVING COUNT(*) > 1;"></div>
+      <div class="rf-sql" data-rf-sql data-label="11. Fix them (check the sample_id values from your results first)" data-query="UPDATE samples SET ss_mgl = NULL WHERE sample_id = 1595;
+DELETE FROM samples WHERE sample_id = 1843;
+SELECT COUNT(*) AS total_samples FROM samples;"></div>
+      <div class="rf-sql" data-rf-sql data-label="12. Add a new 2025 sample with INSERT, then check it" data-query="INSERT INTO samples (sample_id, site_id, sample_date, year, din_mgl, ss_mgl)
+VALUES (1844, 'BUR-INK', '2025-02-14', 2025, 0.052, 690.5);
+SELECT * FROM samples WHERE year = 2025;"></div>
+      <div class="expand-card">
+        <button class="expand-card__header" type="button" aria-expanded="false">Discuss: why not just delete the missing DIN value?
+          <svg class="expand-card__icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z"/></svg>
+        </button>
+        <div class="expand-card__body">
+          <p>That row still has a valid sediment value. <code>NULL</code> honestly records “not measured”, and <code>AVG()</code> skips <code>NULL</code>s automatically. Deleting the row would throw away good data. The negative sediment value is different: it is impossible, so it becomes <code>NULL</code> too, and you note why. A database can also stop bad data at the door: a rule like <code>CHECK (ss_mgl &gt;= 0)</code> would have rejected it on entry.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 7 ═══ -->
+    <section class="content-section" id="check" data-slide="Quick check">
+      <span class="section-phase-tag test"><span class="dot"></span>Quick check <span class="rf-time">3 min</span></span>
+      <h2>Check your understanding</h2>
+
+      <div class="mcq-card" data-q="1" data-correct="B"
+           data-feedback-a="Not quite — SQLite can store long text easily. The reason is about storing each fact once."
+           data-feedback-b="✓ Correct — the name lives once in sites; site_id is the foreign key that links each sample to it."
+           data-feedback-c="Not quite — codes are harder for people to read. The benefit is accuracy and easy updates."
+           data-feedback-d="Not quite — SQL sorts text perfectly well.">
+        <div class="mcq-question">Why does the samples table store <code>site_id</code> instead of the full site name?</div>
+        <div class="mcq-options" role="group" aria-label="Question 1 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> Site names are too long for SQLite to store</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> The name is stored once and site_id links to it</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> So the samples table is easier for people to read</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> SQL is not able to sort any text, only short codes</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-1"></div>
+        <button class="mcq-reset" id="mcq-reset-1">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="2" data-correct="D"
+           data-feedback-a="Not quite — that would be a query without GROUP BY."
+           data-feedback-b="Not quite — without GROUP BY, AVG gives one number. GROUP BY splits it by site."
+           data-feedback-c="Not quite — there’s no WHERE clause filtering for missing values."
+           data-feedback-d="✓ Correct — GROUP BY site_id makes one group per site, and AVG works inside each group.">
+        <div class="mcq-question">What does <code>SELECT site_id, AVG(din_mgl) FROM samples GROUP BY site_id;</code> return?</div>
+        <div class="mcq-options" role="group" aria-label="Question 2 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> One row for every single sample in the table</button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> One overall average of every DIN value stored</button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> Only the sites that have some missing values</button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> One average DIN value per site</button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-2"></div>
+        <button class="mcq-reset" id="mcq-reset-2">↩ Try again</button>
+      </div>
+
+      <div class="mcq-card" data-q="3" data-correct="A"
+           data-feedback-a="✓ Correct — NULL means “no value”, and you test for it with IS NULL."
+           data-feedback-b="Not quite — 0 is a real measurement (none detected). NULL means nothing was recorded."
+           data-feedback-c="Not quite — 'NULL' in quotes is the four-letter word, not a missing value."
+           data-feedback-d="Not quite — sorting shows NULLs at one end but doesn’t select them.">
+        <div class="mcq-question">Which query finds samples where DIN was not recorded?</div>
+        <div class="mcq-options" role="group" aria-label="Question 3 options">
+          <button class="mcq-option" data-idx="A"><span class="mcq-option-letter">A</span> <code>… WHERE din_mgl IS NULL;</code></button>
+          <button class="mcq-option" data-idx="B"><span class="mcq-option-letter">B</span> <code>… WHERE din_mgl = 0;</code></button>
+          <button class="mcq-option" data-idx="C"><span class="mcq-option-letter">C</span> <code>… WHERE din_mgl = 'NULL';</code></button>
+          <button class="mcq-option" data-idx="D"><span class="mcq-option-letter">D</span> <code>… ORDER BY din_mgl DESC;</code></button>
+        </div>
+        <div class="mcq-feedback" id="mcq-feedback-3"></div>
+        <button class="mcq-reset" id="mcq-reset-3">↩ Try again</button>
+      </div>
+    </section>
+
+    <!-- ═══ 8 ═══ -->
+    <section class="content-section" id="report" data-slide="Your query report">
+      <span class="section-phase-tag produce"><span class="dot"></span>Your task <span class="rf-time">12 min</span> <span class="rf-release rf-release--you">You do</span></span>
+      <h2>Your query report</h2>
+      <p>Answer the questions on booklet page 8 by writing queries in the box below. Copy each working query and its answer into your booklet. <span class="rf-booklet">Booklet p. 8</span></p>
+      <div class="tier-tasks">
+        <div class="tier-grid">
+          <div class="tier-card">
+            <span class="tier-badge tier-foundation">Foundation · D–E</span>
+            <h4>Change the examples</h4>
+            <p>1. List the sites on the Herbert River. 2. Count the Pioneer samples. 3. Find the largest SS value ever recorded (<code>MAX</code>).</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-core">Core · C</span>
+            <h4>Group and join</h4>
+            <p>4. Average DIN for each site, highest first. 5. Average SS by land use (JOIN). 6. Your Lesson 2 site’s first and last 10-year averages.</p>
+          </div>
+          <div class="tier-card">
+            <span class="tier-badge tier-extension">Extension · A–B</span>
+            <h4>One query, every site</h4>
+            <p>7. One query that shows each site’s first-decade and last-decade average SS side by side. Hint: <code>AVG(CASE WHEN year &lt;= 2005 THEN ss_mgl END)</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="rf-sql" data-rf-sql data-reset data-label="Your query" data-query="-- Write your query here, then press Run (or Ctrl + Enter)
+SELECT * FROM sites;"></div>
+    </section>
+
+    <!-- ═══ 9 ═══ -->
+    <section class="content-section" id="compare" data-slide="Spreadsheet or database?">
+      <span class="section-phase-tag test"><span class="dot"></span>Evaluate tools <span class="rf-time">3 min</span> <span class="rf-release rf-release--we">We do</span></span>
+      <h2>Spreadsheet or database?</h2>
+      <p>You have now analysed the same data both ways. Vote on each row, then compare. <span class="rf-booklet">Booklet p. 9</span></p>
+      <div class="spec-table-wrap">
+        <table class="spec-table">
+          <thead><tr><th>Job</th><th>Better tool</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Quick chart of a small table</td><td>Spreadsheet</td><td>Point and click; you can see every value.</td></tr>
+            <tr><td>Millions of rows (every rooftop system, every sample)</td><td>Database</td><td>Excel stops at 1,048,576 rows; databases are built for far more.</td></tr>
+            <tr><td>Keeping facts consistent (one site name, one place)</td><td>Database</td><td>Related tables and keys store each fact once.</td></tr>
+            <tr><td>Stopping bad data at entry</td><td>Database</td><td>Types, NOT NULL, CHECK rules and keys reject impossible values.</td></tr>
+            <tr><td>Trying “what if?” ideas</td><td>Spreadsheet</td><td>Change a cell and every formula updates.</td></tr>
+            <tr><td>Repeating the same analysis next year</td><td>Database</td><td>A saved query reruns exactly the same way on new data.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ 10 ═══ -->
+    <section class="cpd-section" id="cpd" data-slide="How this is graded">
+      <h2>How this lesson is graded</h2>
+      <p class="cpd-intro">Evidence sits against <strong>developing computing solutions using computational, design and systems thinking</strong> (CT5-THI-01) and <strong>selecting data, media and processes to communicate information</strong> (CT5-DAT-02, CT5-COM-01).</p>
+      <div class="cpd-strip">
+        <div class="cpd-grade cpd-grade-a" tabindex="0" role="button" aria-pressed="false"><span class="grade-label">A</span>
+          <p>“Develops highly effective computing solutions…” and “…<em>effectively</em> communicate information”. <strong>Today:</strong> concise queries that answer every question, including the single-query decade comparison, and a justified choice of tool.</p></div>
+        <div class="cpd-grade cpd-grade-b" tabindex="0" role="button" aria-pressed="false"><span class="grade-label">B</span>
+          <p>“Develops effective computing solutions…” and “…communicate <em>appropriate</em> information”. <strong>Today:</strong> correct GROUP BY and JOIN queries, and all three data problems found and fixed.</p></div>
+        <div class="cpd-grade cpd-grade-c" tabindex="0" role="button" aria-pressed="false"><span class="grade-label">C</span>
+          <p>“Develops sound computing solutions…” and “selects appropriate data, media and processes to communicate information”. <strong>Today:</strong> working WHERE, ORDER BY and GROUP BY queries, and the data problems found.</p></div>
+        <div class="cpd-grade cpd-grade-d" tabindex="0" role="button" aria-pressed="false"><span class="grade-label">D</span>
+          <p>“Develops basic computing solutions…” and “uses data to communicate basic information”. <strong>Today:</strong> you change example queries to answer simple questions.</p></div>
+        <div class="cpd-grade cpd-grade-e" tabindex="0" role="button" aria-pressed="false"><span class="grade-label">E</span>
+          <p>“Uses data to communicate information in a very limited way”. <strong>Today:</strong> with support, you run queries and read the results.
+            <span class="cpd-e-note">The thinking strand has no Grade E descriptor, so only the communication strand is quoted. “Today” lines describe evidence for this lesson only.</span></p></div>
+      </div>
+    </section>
+
+    <!-- ═══ 11 ═══ -->
+    <div class="notebook-prompt" id="reflect" data-slide="Reflection">
+      <p class="notebook-prompt__label">Reflection <span class="rf-time">2 min</span></p>
+      <ul>
+        <li>Name the primary key and foreign key in this database, and explain what each one does.</li>
+        <li>Which of the three data problems would have been hardest to spot in a spreadsheet? Why?</li>
+        <li>After three lessons: is the Great Barrier Reef’s story good news? Use one coral fact and one runoff fact.
+          <span class="sentence-starter">Sentence starter: “The data shows … but …”</span></li>
+      </ul>
+      <label for="reflection-3" style="font-weight: 700; font-size: var(--text-sm); display:block; margin-top: var(--space-4);">Or type your answers here (saved on this device only):</label>
+      <textarea class="reflection-textarea" id="reflection-3" data-progress-reflection></textarea>
+      <span class="reflection-status" data-progress-reflection-status aria-live="polite"></span>
+      <div class="progress-recap" data-progress-recap></div>
+    </div>
+
+    <nav class="lesson-nav" aria-label="Lesson navigation">
+      <a class="lesson-nav__link lesson-nav__link--prev" href="lesson-02.html">
+        <span class="lesson-nav__dir">← Back to</span>
+        <span class="lesson-nav__title">Lesson 2: Runoff in a spreadsheet</span>
+      </a>
+      <a class="lesson-nav__link lesson-nav__link--next" href="index.html">
+        <span class="lesson-nav__dir">Finish →</span>
+        <span class="lesson-nav__title">Reef Data</span>
+      </a>
+    </nav>
+
+  </main>
+</div>
+
+<script src="../../../assets/js/ct-core.js"></script>
+<script src="../../../assets/js/ct-interactive.js"></script>
+<script src="../../../assets/js/ct-progress.js"></script>
+<script src="vendor/sql-asm.js"></script>
+<script src="reef-db.js"></script>
+<script src="reef.js"></script>
+<script>
+  CTProgress.initLessonPage({ unitId: 'reef-demo', lessonId: 'lesson03', totalQuestions: 3 });
+</script>
+</body>
+</html>
